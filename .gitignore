@@ -1,6 +1,8 @@
 
 # own files
-_docs/
+.docs/
+_obj/
+_bin/
 
 # Prerequisites
 *.d
