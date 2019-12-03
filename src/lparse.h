@@ -21,7 +21,7 @@ enum TokenType
 	FOREACH_ENUM(GENERATE_ENUM)
 };
 // public api
-const char* TokenType_toString(enum TokenType self);
+const char* enumTokenType_toString(enum TokenType self);
 
 
 
@@ -29,6 +29,7 @@ const char* TokenType_toString(enum TokenType self);
 #define SYM_DOT 		"."
 #define SYM_COMMA 		","
 #define SYM_COLLON		":"
+#define SYM_SEMI_COLLON	";"
 
 // brackets
 #define LPARN 		 	"("
@@ -89,10 +90,10 @@ const char* TokenType_toString(enum TokenType self);
 #define KWORD_IMPORT 	"import"
 
 // built in func
-#define BUILTIN_PRINT "print"
-#define BUILTIN_MIN   "min"
-#define BUILTIN_MAX   "max"
-#define BUILTIN_RAND  "rand"
+#define BUILTIN_PRINT 	"print"
+#define BUILTIN_MIN   	"min"
+#define BUILTIN_MAX   	"max"
+#define BUILTIN_RAND  	"rand"
 
 
 #endif

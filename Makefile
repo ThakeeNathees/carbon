@@ -3,8 +3,8 @@ obj_out = ./_obj/
 
 all: carbon
 
-carbon: main.o lparse.o
-	gcc -o $(bin_out)carbon $(obj_out)main.o $(obj_out)lparse.o
+carbon: main.o lparse.o utils.o
+	gcc -o $(bin_out)carbon $(obj_out)main.o $(obj_out)lparse.o $(obj_out)utils.o
 
 main.o : ./src/carbon.c
 	gcc -c ./src/carbon.c -o $(obj_out)main.o 
@@ -12,6 +12,8 @@ main.o : ./src/carbon.c
 lparse.o: ./src/lparse.c ./src/lparse.h
 	gcc -c ./src/lparse.c -o $(obj_out)lparse.o
 
+utils.o: ./src/utils.c ./src/utils.h
+	gcc -c ./src/utils.c -o $(obj_out)utils.o
 
 
 test: ./tests/file_read.c
