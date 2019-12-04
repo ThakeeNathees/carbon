@@ -3,14 +3,14 @@ obj_out = ./_obj/
 
 all: carbon
 
-carbon: main.o lparse.o utils.o
-	gcc -o $(bin_out)carbon $(obj_out)main.o $(obj_out)lparse.o $(obj_out)utils.o
+carbon: main.o tkscanner.o utils.o
+	gcc -o $(bin_out)carbon $(obj_out)main.o $(obj_out)tkscanner.o $(obj_out)utils.o
 
 main.o : ./src/carbon.c
 	gcc -c ./src/carbon.c -o $(obj_out)main.o 
 
-lparse.o: ./src/lparse.c ./src/lparse.h
-	gcc -c ./src/lparse.c -o $(obj_out)lparse.o
+tkscanner.o: ./src/tkscanner.c ./src/tkscanner.h
+	gcc -c ./src/tkscanner.c -o $(obj_out)tkscanner.o
 
 utils.o: ./src/utils.c ./src/utils.h
 	gcc -c ./src/utils.c -o $(obj_out)utils.o

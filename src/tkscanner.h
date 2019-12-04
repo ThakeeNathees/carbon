@@ -1,28 +1,59 @@
-#ifndef LPARSE_H
-#define LPARSE_H
+#ifndef TKSCANNER_H
+#define TKSCANNER_H
 
+#include "carbon_conf.h"
+
+#define TOKEN_NAME_SIZE 100
 
 // token types
 #define FOREACH_ENUM(func) \
+	func(UNKNOWN)		\
 	func(SYMBOL) 		\
 	func(BRACKET) 		\
 	func(DTYPE)			\
 	func(OPERATOR)		\
 	func(KEYWORD)		\
 	func(BUILTIN)		\
+	func(NUMBER)		\
+	func(STRING) 		\
 	func(IDENTIFIER) // variable, function, class name
 
 #define GENERATE_ENUM(enum_name) enum_name,
 #define GENERATE_STRING(enum_name) #enum_name,
 
-
+/**************** CLASSES **********************/
 enum TokenType
 {
 	FOREACH_ENUM(GENERATE_ENUM)
 };
-// public api
+
+struct Token
+{
+	char* 			token_name;
+	int 			_name_len;
+	int 			_name_ptr;
+	enum TokenType 	token_type;
+};
+
+struct TokenScanner
+{
+	char* src;
+	struct Token current_token;
+};
+
+/****************** PUBLIC API ************************************/
 const char* enumTokenType_toString(enum TokenType self);
 
+// token
+void structToken_init(struct Token* self);
+int  structToken_toString(struct Token* self, char* buffer);
+void structToken_print(struct Token* self);
+
+// token scanner
+void  structTokenScanner_init(struct TokenScanner* self, char* src);
+bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos); // return true if eof
+
+/****************************************************************/
 
 
 // symbols
@@ -30,6 +61,8 @@ const char* enumTokenType_toString(enum TokenType self);
 #define SYM_COMMA 		","
 #define SYM_COLLON		":"
 #define SYM_SEMI_COLLON	";"
+#define SYM_DQUOTE		"\""
+#define SYM_SQUOTE 		"'"
 
 // brackets
 #define LPARN 		 	"("
@@ -58,11 +91,24 @@ const char* enumTokenType_toString(enum TokenType self);
 
 // arithmetic operators
 #define OP_PLUS			"+"
+#define OP_PLUSEQ 		"+="
 #define OP_MINUS		"-"
+#define OP_MINUSEQ 		"-="
 #define OP_MUL			"*"
+#define OP_MUEQ 		"*="
 #define OP_DIV 			"/"
+#define OP_DIVEQ 		"/="
 #define OP_MOD			"%"
 #define OP_DIV_FLOOR	"//"
+
+// bool operators
+#define OP_EQEQ 		"=="
+#define OP_GT 			">"
+#define OP_LT 			"<"
+#define OP_EQ 			"="
+#define OP_GTEQ 		">="
+#define OP_LTEQ 		"<="
+
 
 // bitwise operators
 #define OP_LSHIFT		"<<"
@@ -91,6 +137,7 @@ const char* enumTokenType_toString(enum TokenType self);
 
 // built in func
 #define BUILTIN_PRINT 	"print"
+#define BUILTIN_INPUT 	"input"
 #define BUILTIN_MIN   	"min"
 #define BUILTIN_MAX   	"max"
 #define BUILTIN_RAND  	"rand"
