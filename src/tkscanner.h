@@ -8,6 +8,7 @@
 // token types
 #define FOREACH_ENUM(func) \
 	func(UNKNOWN)		\
+	func(COMMENT)		\
 	func(SYMBOL) 		\
 	func(BRACKET) 		\
 	func(DTYPE)			\
@@ -90,16 +91,16 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos); // retu
 #define DTYPE_FUNC 		"func"
 
 // arithmetic operators
-#define OP_PLUS			"+"
+#define OP_PLUS			"+"   // operator ++, and --
 #define OP_PLUSEQ 		"+="
-#define OP_MINUS		"-"
+#define OP_MINUS		"-"   // can applied for negative numbers <num> - <num> or - <num>
 #define OP_MINUSEQ 		"-="
 #define OP_MUL			"*"
 #define OP_MUEQ 		"*="
 #define OP_DIV 			"/"
 #define OP_DIVEQ 		"/="
 #define OP_MOD			"%"
-#define OP_DIV_FLOOR	"//"
+// #define OP_DIV_FLOOR	"//" not an operator because // is for comment
 
 // bool operators
 #define OP_EQEQ 		"=="

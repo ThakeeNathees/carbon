@@ -11,11 +11,12 @@ int utils_read_file(char** text_p, const char* file_path){
 	long size = ftell(fptr);
 	fseek(fptr, 0L, SEEK_SET);
 
-	char* text = (char*)malloc(size);
+	char* text = (char*)malloc(size+1);
 	char c = fgetc(fptr); long i = 0;
 	while( c != EOF){
 		text[i++] = c; c = fgetc(fptr);
 	}
+	text[i] = '\0';
 
 	*text_p = text;
 	return 0;
