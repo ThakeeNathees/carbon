@@ -5,13 +5,6 @@
 
 int main(int argc, char** argv){
 
-	/*
-	char c = 'G';
-	bool ws = structTokenScanner_isCharNumber(c);
-	if (ws) printf("%c is num\n", c);
-	else printf("%c is not num\n", c);
-	//*/
-
 	if (argc < 2){
 		printf("usage: <file_path>\n");
 		return 1;
@@ -26,13 +19,25 @@ int main(int argc, char** argv){
 	printf("%s\n", text);
 
 	int pos = 0;
-	struct TokenScanner ts;
-	structTokenScanner_init(&ts, text);
+	struct Token tk; structToken_init(&tk);
+	struct TokenScanner ts; structTokenScanner_init(&ts, &tk, text, argv[1]);
 
-	bool eof = structTokenScanner_scaneToken(&ts, &pos);
+	int i=0;
+	struct Token* tokens[100];
+
+	bool eof = false;
 	while (!eof){
-		structToken_print(&(ts.current_token));
+		// new token
+		struct Token* new_tk = (struct Token*)malloc(sizeof(struct Token));
+		structToken_init(new_tk);
+		tokens[i++] = new_tk;
+		structTokenScanner_setToken(&ts, new_tk);
+
 		eof = structTokenScanner_scaneToken(&ts, &pos);
+	}
+
+	for (int j=0; j<i-1; j++){
+		structToken_print( tokens[j] );
 	}
 
 

@@ -5,41 +5,67 @@
 
 #define TOKEN_NAME_SIZE 100
 
+#define GENERATE_ENUM(enum_name) enum_name,
+#define GENERATE_STRING(enum_name) #enum_name,
+
 // token types
-#define FOREACH_ENUM(func) \
+#define FOREACH_TOKEN_TYPE(func) \
 	func(UNKNOWN)		\
 	func(COMMENT)		\
 	func(SYMBOL) 		\
 	func(BRACKET) 		\
-	func(DTYPE)			\
 	func(OPERATOR)		\
 	func(KEYWORD)		\
+	func(DTYPE)			\
 	func(BUILTIN)		\
 	func(NUMBER)		\
 	func(STRING) 		\
 	func(IDENTIFIER) // variable, function, class name
 
-#define GENERATE_ENUM(enum_name) enum_name,
-#define GENERATE_STRING(enum_name) #enum_name,
+#define FOREACH_NUMBER_TYPE(func) \
+	func(CHAR)		\
+	func(SHORT)		\
+	func(INT)		\
+	func(FLOAT)		\
+	func(DOUBLE)	\
+	func(LONG)		
+
 
 /**************** CLASSES **********************/
 enum TokenType
 {
-	FOREACH_ENUM(GENERATE_ENUM)
+	FOREACH_TOKEN_TYPE(GENERATE_ENUM)
+};
+
+union NumberValue
+{
+	char 	c;
+	short 	s;
+	int 	i;
+	float 	f;
+	double 	d;
+	long 	l;
+};
+enum NumberType
+{
+	FOREACH_NUMBER_TYPE(GENERATE_ENUM)
 };
 
 struct Token
 {
-	char* 			token_name;
-	int 			_name_len;
-	int 			_name_ptr;
-	enum TokenType 	token_type;
+	char* 				token_name;
+	int 				_name_len;
+	int 				_name_ptr;
+	enum  TokenType 	token_type;
+	union NumberValue 	number_value;
+	enum  NumberType	number_type;
 };
 
 struct TokenScanner
 {
 	char* src;
-	struct Token current_token;
+	char* file_name;
+	struct Token* current_token;
 };
 
 /****************** PUBLIC API ************************************/
@@ -51,7 +77,8 @@ int  structToken_toString(struct Token* self, char* buffer);
 void structToken_print(struct Token* self);
 
 // token scanner
-void  structTokenScanner_init(struct TokenScanner* self, char* src);
+void structTokenScanner_init(struct TokenScanner* self, struct Token* current_token, char* src, char* file_name);
+bool structTokenScanner_setToken(struct TokenScanner* self, struct Token* current_token);
 bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos); // return true if eof
 
 /****************************************************************/
@@ -76,6 +103,7 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos); // retu
 #define LTRI_BRACKET	">"
 
 // data types
+#define DTYPE_VOID 		"void"
 #define DTYPE_BOOL 	 	"bool"
 #define DTYPE_CAHR 	 	"char"
 #define DTYPE_SHORT	 	"short"
