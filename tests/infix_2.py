@@ -20,6 +20,8 @@ def is_operator(char):
 	return char in list('^+-*/')
 
 def is_func(string):
+	if string[0] == '.':
+		return True
 	return string in ['min', 'max', 'sin']
 
 def get_precedence(char):

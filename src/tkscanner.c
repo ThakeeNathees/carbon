@@ -127,6 +127,7 @@ void structTokenScanner_checkIdentifier(struct TokenScanner* self){
 	if (strcmp( self->current_token->token_name, KWORD_IF )==0)		{ self->current_token->token_type = KEYWORD; return;}
 	if (strcmp( self->current_token->token_name, KWORD_ELSE )==0)	{ self->current_token->token_type = KEYWORD; return;}
 	if (strcmp( self->current_token->token_name, KWORD_WHILE )==0)	{ self->current_token->token_type = KEYWORD; return;}
+	if (strcmp( self->current_token->token_name, KWORD_FOR )==0)	{ self->current_token->token_type = KEYWORD; return;}
 	if (strcmp( self->current_token->token_name, KWORD_BREAK )==0)	{ self->current_token->token_type = KEYWORD; return;}
 	if (strcmp( self->current_token->token_name, KWORD_CONTINUE )==0){ self->current_token->token_type = KEYWORD; return;}
 	if (strcmp( self->current_token->token_name, KWORD_AND )==0)	{ self->current_token->token_type = KEYWORD; return;}

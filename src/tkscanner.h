@@ -157,6 +157,7 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos); // retu
 #define KWORD_IF 		"if"
 #define KWORD_ELSE 		"else"
 #define KWORD_WHILE 	"while"
+#define KWARD_FOR 		"for"
 #define KWORD_BREAK 	"break"
 #define KWORD_CONTINUE 	"continue"
 #define KWORD_AND 		"and"
