@@ -1,6 +1,11 @@
 #ifndef CARBON_CONF_H
 #define CARBON_CONF_H
 
+// std includes
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+
 typedef unsigned char bool;
 #define true  1
 #define false 0
@@ -22,3 +27,21 @@ typedef unsigned char bool;
 
 // CARBON_CONF_H
 #endif
+
+/********* include order ****************
+
+
+[stdio.h, string.h, stdlib.h]
+	|
+	carbon_conf.h
+	|
+	utils.h 
+	|
+	tkscanner.h
+	|
+	ast.h
+	|
+	carbon.c
+
+
+******************************************/

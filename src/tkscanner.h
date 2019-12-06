@@ -1,7 +1,7 @@
 #ifndef TKSCANNER_H
 #define TKSCANNER_H
 
-#include "carbon_conf.h"
+#include "utils.h"
 // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
 #define TOKEN_NAME_SIZE 100
@@ -11,7 +11,7 @@
 
 // token types
 #define FOREACH_TOKEN_TYPE(func) \
-	func(UNKNOWN)		\
+	func(UNKNOWN)	\
 	func(COMMENT)		\
 	func(SYMBOL) 		\
 	func(BRACKET) 		\
@@ -24,6 +24,7 @@
 	func(IDENTIFIER) // variable, function, class name
 
 #define FOREACH_NUMBER_TYPE(func) \
+	func(NT_UNKNOWN)\
 	func(CHAR)		\
 	func(SHORT)		\
 	func(INT)		\
@@ -54,12 +55,18 @@ enum NumberType
 
 struct Token
 {
-	char* 				token_name;
+	enum  TokenType 	type;
+	// name
+	char* 				name;
 	int 				_name_len;
 	int 				_name_ptr;
-	enum  TokenType 	token_type;
+	// for number type
 	union NumberValue 	number_value;
 	enum  NumberType	number_type;
+
+	// for function type
+	bool func_is_method; // builtin - false
+	int  func_args_count;
 };
 
 struct TokenList
@@ -67,6 +74,7 @@ struct TokenList
 	struct Token** list;
 	int count;
 	int size;
+	int growth_size;
 };
 
 struct TokenScanner
@@ -79,6 +87,7 @@ struct TokenScanner
 
 /****************** PUBLIC API ************************************/
 const char* enumTokenType_toString(enum TokenType self);
+const char* enumNumberType_toString(enum NumberType self);
 
 // token
 void structToken_init(struct Token* self);
@@ -86,7 +95,7 @@ int  structToken_toString(struct Token* self, char* buffer);
 void structToken_print(struct Token* self);
 
 // token list
-void structTokenList_init(struct TokenList* self);
+void structTokenList_init(struct TokenList* self, int growth_size);
 void structTokenList_addToken(struct TokenList* self, struct Token* token);
 struct Token* structTokenList_createToken(struct TokenList* self);
 
@@ -130,7 +139,7 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self); // return true if
 #define DTYPE_ARRAY 	"array"
 #define DTYPE_MAP 		"map"
 #define DTYPE_STRING 	"string"
-#define DTYPE_FUNC 		"func"
+//#define DTYPE_FUNC 	"func" function is not a type anymore
 
 // arithmetic operators
 #define OP_PLUS			"+"   // operator ++, and --
@@ -187,7 +196,7 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self); // return true if
 #define BUILTIN_INPUT 	"input"
 #define BUILTIN_MIN   	"min"
 #define BUILTIN_MAX   	"max"
-#define BUILTIN_RAND  	"rand"
+#define BUILTIN_RAND  	"rand" // 0 <= rand(x) < x, x is an int
 
 
 #endif

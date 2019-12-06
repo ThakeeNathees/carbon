@@ -1,6 +1,4 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
+
 
 #include "carbon_conf.h"
 /* 	return 0 if success, text_p has result 

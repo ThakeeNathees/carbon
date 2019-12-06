@@ -1,7 +1,6 @@
-#include <stdio.h>
+#include "ast.h"
 
-#include "tkscanner.h"
-#include "utils.h"
+#define TOKEN_LIST_SIZE 100
 
 int main(int argc, char** argv){
 
@@ -18,7 +17,7 @@ int main(int argc, char** argv){
 	}
 	printf("%s\n", text);
 
-	struct TokenList    tl; structTokenList_init(&tl);
+	struct TokenList    tl; structTokenList_init(&tl, TOKEN_LIST_SIZE);
 	struct TokenScanner ts; structTokenScanner_init(&ts, text, argv[1]);
 
 	bool eof = false;
@@ -31,7 +30,7 @@ int main(int argc, char** argv){
 	}
 
 	for (int i=0; i<tl.count; i++){
-		structToken_print( tl.list[i] );
+		printf("%i ", i ); structToken_print( tl.list[i] );
 	}
 
 
