@@ -191,43 +191,43 @@ void structTokenScanner_checkIdentifier(struct TokenScanner* self){
 }
 
 // return true if EOF
-bool structTokenScanner_skipWhiteSpaces(struct TokenScanner* self, int* pos){
+bool structTokenScanner_skipWhiteSpaces(struct TokenScanner* self){
 	while (true){
-		if ( *pos >= strlen(self->src) ) return true;
-		char c = self->src[ *pos ];
+		if ( self->pos >= strlen(self->src) ) return true;
+		char c = self->src[ self->pos ];
 		if (!structTokenScanner_isCharWhiteSpace(c)) return false;
-		(*pos)++;
+		(self->pos)++;
 	}
 }
-bool structTokenScanner_skipComments(struct TokenScanner* self, int* pos){
-	if ( *pos >= strlen(self->src) ) return true;
-	char c = self->src[ *pos ];
+bool structTokenScanner_skipComments(struct TokenScanner* self){
+	if ( self->pos >= strlen(self->src) ) return true;
+	char c = self->src[ self->pos ];
 	if (c == '/'){
-		if ( (*pos)+1 >= strlen(self->src) ){ printf("Error: unexpected EOF\n"); exit(1);}
-		char next = self->src[(*pos)+1];
+		if ( (self->pos)+1 >= strlen(self->src) ){ printf("Error: unexpected EOF\n"); exit(1);}
+		char next = self->src[(self->pos)+1];
 		// //
 		if (next == '/'){ 
 			self->current_token->token_type = COMMENT;
 			while(c != '\n'){
 				structToken_addChar( self->current_token, c );
-				(*pos)++;
-				if ( (*pos) >= strlen(self->src) ) { printf("Error: unexpected EOF\n"); exit(1);}
-				c = self->src[*pos];
+				(self->pos)++;
+				if ( (self->pos) >= strlen(self->src) ) { printf("Error: unexpected EOF\n"); exit(1);}
+				c = self->src[self->pos];
 			} return false;
 		}
 
 		// /**/
 		if (next == '*'){
 			structToken_addChar( self->current_token, '/' );structToken_addChar( self->current_token, '*' );
-			self->current_token->token_type = COMMENT;(*pos)+=2;
+			self->current_token->token_type = COMMENT;(self->pos)+=2;
 			while (true){
-				if ( (*pos)+1 >= strlen(self->src)  ) { printf("Error: unexpected EOF\n"); exit(1);}
-				if ( self->src[*pos] == '*' && self->src[(*pos)+1] == '/' ){
+				if ( (self->pos)+1 >= strlen(self->src)  ) { printf("Error: unexpected EOF\n"); exit(1);}
+				if ( self->src[self->pos] == '*' && self->src[(self->pos)+1] == '/' ){
 					structToken_addChar( self->current_token, '*' );structToken_addChar( self->current_token, '/' );
-					(*pos)+=2; return false;
+					(self->pos)+=2; return false;
 				}
-				c = self->src[*pos]; structToken_addChar( self->current_token, c );
-				(*pos)++;
+				c = self->src[self->pos]; structToken_addChar( self->current_token, c );
+				(self->pos)++;
 
 			}
 		}
@@ -237,19 +237,19 @@ bool structTokenScanner_skipComments(struct TokenScanner* self, int* pos){
 	
 }
 
-bool structTokenScanner_isEof(struct TokenScanner* self, int* pos){
-	if ( *pos >= strlen(self->src) ){
+bool structTokenScanner_isEof(struct TokenScanner* self){
+	if ( self->pos >= strlen(self->src) ){
 		return true;
 	} return false;
 }
-void structTokenScanner_validateNumber(struct TokenScanner* self, int* pos){
+void structTokenScanner_validateNumber(struct TokenScanner* self){
 
 	// invalid number
 	char* numstr = self->current_token->token_name;
 	int   numlen = strlen(numstr);
 	int count = utils_char_count_in_str('.', numstr);
-	if (count > 1){ if(self->src[ *pos ] == '\n') (*pos)--;
-		char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+	if (count > 1){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+		char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 		printf("Error: invalid number @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 	}
 
@@ -262,13 +262,13 @@ void structTokenScanner_validateNumber(struct TokenScanner* self, int* pos){
 		};
 		arr_size = ARR_SIZE(invalid_chars_hex);
 			for (int i=0; i<arr_size; i++){
-			if (utils_char_in_str(invalid_chars_hex[i], numstr)) { if(self->src[ *pos ] == '\n') (*pos)--;
-			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+			if (utils_char_in_str(invalid_chars_hex[i], numstr)) { if(self->src[ self->pos ] == '\n') (self->pos)--;
+			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 			printf("Error: invalid number @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 		}
 		}
-		if (count > 1 || numstr[1] != 'x' || numstr[0] != '0' || utils_char_in_str('.', numstr) ){ if(self->src[ *pos ] == '\n') (*pos)--;
-			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+		if (count > 1 || numstr[1] != 'x' || numstr[0] != '0' || utils_char_in_str('.', numstr) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 			printf("Error: invalid number @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 		}
 		char hexstring[10]; // TODO: 10
@@ -280,8 +280,8 @@ void structTokenScanner_validateNumber(struct TokenScanner* self, int* pos){
 
 	if(utils_char_in_str('s', numstr)){
 		count = utils_char_count_in_str('s', numstr);
-		if (count > 1 || numstr[numlen-1] != 's' || utils_char_in_str('.', numstr)){ if(self->src[ *pos ] == '\n') (*pos)--;
-			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+		if (count > 1 || numstr[numlen-1] != 's' || utils_char_in_str('.', numstr)){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 			printf("Error: invalid number @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 		}
 		self->current_token->number_type 	= SHORT;
@@ -290,8 +290,8 @@ void structTokenScanner_validateNumber(struct TokenScanner* self, int* pos){
 	}
 	if(utils_char_in_str('l', numstr )){
 		count = utils_char_count_in_str('l', numstr);
-		if (count > 1 || numstr[numlen-1] != 'l' || utils_char_in_str('.', numstr)){ if(self->src[ *pos ] == '\n') (*pos)--;
-			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+		if (count > 1 || numstr[numlen-1] != 'l' || utils_char_in_str('.', numstr)){ if(self->src[self->pos ] == '\n') (self->pos)--;
+			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 			printf("Error: invalid number @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 		}
 		self->current_token->number_type 		= LONG;
@@ -300,8 +300,8 @@ void structTokenScanner_validateNumber(struct TokenScanner* self, int* pos){
 	}
 	if (utils_char_in_str('f', numstr)){
 		count = utils_char_count_in_str('f', numstr);
-		if (count > 1 || numstr[numlen-1] != 'f'){ if(self->src[ *pos ] == '\n') (*pos)--;
-			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+		if (count > 1 || numstr[numlen-1] != 'f'){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 			printf("Error: invalid number @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 		}
 		self->current_token->number_type 		= FLOAT;
@@ -310,8 +310,8 @@ void structTokenScanner_validateNumber(struct TokenScanner* self, int* pos){
 	}
 	if (utils_char_in_str('d', numstr)){
 		count = utils_char_count_in_str('d', numstr);
-		if (count > 1 || numstr[numlen-1] != 'd'){ if(self->src[ *pos ] == '\n') (*pos)--;
-			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+		if (count > 1 || numstr[numlen-1] != 'd'){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 			printf("Error: invalid number @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 		}
 		self->current_token->number_type 		= DOUBLE;
@@ -324,8 +324,8 @@ void structTokenScanner_validateNumber(struct TokenScanner* self, int* pos){
 	};
 	arr_size = ARR_SIZE(invalid_chars);
 	for (int i=0; i<arr_size; i++){
-		if (utils_char_in_str(invalid_chars[i], numstr)) { if(self->src[ *pos ] == '\n') (*pos)--;
-			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+		if (utils_char_in_str(invalid_chars[i], numstr)) { if(self->src[ self->pos ] == '\n') (self->pos)--;
+			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 			printf("Error: invalid number @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 		}
 	}
@@ -345,6 +345,7 @@ void structTokenScanner_validateNumber(struct TokenScanner* self, int* pos){
 void structTokenScanner_init(struct TokenScanner* self, char* src, char* file_name){
 	self->src = src;
 	self->file_name = file_name;
+	self->pos = 0;
 	// self->current_token = current_token; // not initialized, use setToken
 }
 bool structTokenScanner_setToken(struct TokenScanner* self, struct Token* current_token){
@@ -352,22 +353,22 @@ bool structTokenScanner_setToken(struct TokenScanner* self, struct Token* curren
 }
 
 // return true if eof
-bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos){
+bool structTokenScanner_scaneToken(struct TokenScanner* self){
 
 	structToken_clear(self->current_token);
-	bool eof = structTokenScanner_skipWhiteSpaces(self, pos); if (eof) return true;
-	eof = structTokenScanner_skipComments(self, pos); if (eof) return true;
-	char c = self->src[ *pos ];
+	bool eof = structTokenScanner_skipWhiteSpaces(self); if (eof) return true;
+	eof = structTokenScanner_skipComments(self); if (eof) return true;
+	char c = self->src[ self->pos ];
 
 	// identifier
 	if (structTokenScanner_isCharIdentifier(c)){
 		while (true){
-			structToken_addChar( self->current_token, c ); (*pos)++;
-			if ( structTokenScanner_isEof(self, pos) ){ if(self->src[ *pos ] == '\n') (*pos)--;
-				char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+			structToken_addChar( self->current_token, c ); (self->pos)++;
+			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+				char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 				printf("Error: unexpected EOF @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 			}
-			c = self->src[ *pos ];
+			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || structTokenScanner_isCharSymbol(c) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
 				self->current_token->token_type = IDENTIFIER;
 				structTokenScanner_checkIdentifier(self);
@@ -383,20 +384,20 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos){
 		// string
 		if (c == '"'){
 			while(true){
-				(*pos)++;
-				if ( structTokenScanner_isEof(self, pos) ){ if(self->src[ *pos ] == '\n') (*pos)--;
-					char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+				(self->pos)++;
+				if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+					char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 					printf("Error: unexpected EOF @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 				}
 
-				c = self->src[ *pos ];
+				c = self->src[ self->pos ];
 				if (c == '\\'){
-					(*pos)++;
-					if ( structTokenScanner_isEof(self, pos) ){ if(self->src[ *pos ] == '\n') (*pos)--;
-						char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+					(self->pos)++;
+					if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+						char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 						printf("Error: unexpected EOF @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 					}
-					c = self->src[*pos];
+					c = self->src[self->pos];
 					if 		(c == '"'); // do nothing
 					else if (c == '\\') c = '\\';
 					else if (c == 't') c = '\t';
@@ -408,7 +409,7 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos){
 					else structToken_addChar( self->current_token, '\\' ); // \ is not escaping 
 
 				} else if (c=='"'){
-					self->current_token->token_type = STRING; (*pos)++;
+					self->current_token->token_type = STRING; (self->pos)++;
 					return false;
 				}
 				structToken_addChar( self->current_token, c );
@@ -417,15 +418,15 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos){
 
 		// character
 		if (c == '\''){
-			(*pos)++;
-			c = self->src[*pos];
+			(self->pos)++;
+			c = self->src[self->pos];
 			if (c == '\\'){
-				(*pos)++;
-				if ( structTokenScanner_isEof(self, pos) ){
-					char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+				(self->pos)++;
+				if ( structTokenScanner_isEof(self) ){
+					char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 					printf("Error: unexpected EOF @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1);
 				}
-				c = self->src[*pos];
+				c = self->src[self->pos];
 				if 		(c == '"'); // donothing
 				else if (c == '\\') c = '\\';
 				else if (c == '\'') c = '\'';
@@ -436,47 +437,47 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos){
 				else if (c == 'v')  c = '\v';
 				else if (c == 'n')  c = '\n';
 				else { 
-					char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+					char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 					printf("Warning: unknown escaping @%s:%i\n%s\n", self->file_name, line_no, buff);
 				}
 			}
-			structToken_addChar( self->current_token, c ); (*pos)++;
+			structToken_addChar( self->current_token, c ); (self->pos)++;
 			self->current_token->token_type = NUMBER;
 			self->current_token->number_type = CHAR;
 			self->current_token->number_value.c = c;
-			if ( structTokenScanner_isEof(self, pos) ){ if(self->src[ *pos ] == '\n') (*pos)--;
-				char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+				char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 				printf("Error: unexpected EOF @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1);
 			}
-			if (self->src[(*pos)++] != '\''){  if(self->src[ *pos ] == '\n') (*pos)--;
-				char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+			if (self->src[(self->pos)++] != '\''){  if(self->src[ self->pos ] == '\n') (self->pos)--;
+				char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 				printf("Error: expected ' @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 			} 
 			return false;
 		}
 
 		// symbol not a string
-		structToken_addChar( self->current_token, c); (*pos)++;
+		structToken_addChar( self->current_token, c); (self->pos)++;
 		self->current_token->token_type = SYMBOL;
 		return false;
 	}
 
 	// bracket
 	if ( structTokenScanner_isCharBracket(c) ){
-		structToken_addChar( self->current_token, c ); (*pos)++;		
+		structToken_addChar( self->current_token, c ); (self->pos)++;		
 		self->current_token->token_type = BRACKET;
 		return false;
 	}
 
 	// operator TODO: negative numbers 
 	if ( structTokenScanner_isCharOperator(c) ){
-		structToken_addChar( self->current_token, c ); (*pos)++;
+		structToken_addChar( self->current_token, c ); (self->pos)++;
 		self->current_token->token_type = OPERATOR;
-		if ( structTokenScanner_isEof(self, pos) ){ if(self->src[ *pos ] == '\n') (*pos)--;
-			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+		if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+			char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 			printf("Error: unexpected EOF @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 		}
-		char next = self->src[(*pos)++];
+		char next = self->src[(self->pos)++];
 		if (c == '=' && next == '='){ structToken_addChar( self->current_token, next); return false; }
 		if (c == '!' && next == '='){ structToken_addChar( self->current_token, next); return false; }
 		if (c == '+' && next == '='){ structToken_addChar( self->current_token, next); return false; }
@@ -488,7 +489,7 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos){
 		if (c == '>' && next == '>'){ structToken_addChar( self->current_token, next); return false; }
 		if (c == '>' && next == '='){ structToken_addChar( self->current_token, next); return false; }
 		if (c == '<' && next == '='){ structToken_addChar( self->current_token, next); return false; }
-		(*pos)--;
+		(self->pos)--;
 		return false;
 	}
 
@@ -497,15 +498,15 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos){
 	if ( structTokenScanner_isCharNumber(c) ){
 		
 		while (true){
-			structToken_addChar( self->current_token, c ); (*pos)++;
-			if ( structTokenScanner_isEof(self, pos) ){ if(self->src[ *pos ] == '\n') (*pos)--;
-				char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(*pos, self->src, buff);
+			structToken_addChar( self->current_token, c ); (self->pos)++;
+			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
+				char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff);
 				printf("Error: unexpected EOF @%s:%i\n%s\n", self->file_name, line_no, buff); exit(1); 
 			}
-			c = self->src[ *pos ];
+			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || (structTokenScanner_isCharSymbol(c) && c != '.' ) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
 				self->current_token->token_type = NUMBER;
-				structTokenScanner_validateNumber(self, pos);
+				structTokenScanner_validateNumber(self);
 				return false;
 			}
 		}

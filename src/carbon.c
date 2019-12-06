@@ -18,7 +18,6 @@ int main(int argc, char** argv){
 	}
 	printf("%s\n", text);
 
-	int pos = 0;
 	struct TokenList    tl; structTokenList_init(&tl);
 	struct TokenScanner ts; structTokenScanner_init(&ts, text, argv[1]);
 
@@ -27,7 +26,7 @@ int main(int argc, char** argv){
 		
 		struct Token* tk = structTokenList_createToken(&tl);
 		structTokenScanner_setToken(&ts, tk);
-		eof = structTokenScanner_scaneToken(&ts, &pos);
+		eof = structTokenScanner_scaneToken(&ts);
 		
 	}
 

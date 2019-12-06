@@ -74,6 +74,7 @@ struct TokenScanner
 	char* src;
 	char* file_name;
 	struct Token* current_token;
+	int pos;
 };
 
 /****************** PUBLIC API ************************************/
@@ -92,7 +93,7 @@ struct Token* structTokenList_createToken(struct TokenList* self);
 // token scanner
 void structTokenScanner_init(struct TokenScanner* self, char* src, char* file_name);
 bool structTokenScanner_setToken(struct TokenScanner* self, struct Token* current_token);
-bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos); // return true if eof
+bool structTokenScanner_scaneToken(struct TokenScanner* self); // return true if eof
 
 /****************************************************************/
 
