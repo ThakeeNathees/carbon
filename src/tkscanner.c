@@ -74,7 +74,7 @@ static const char C_WHITE_SPACE[] 	= { ' ', '\t', '\n', '\v', '\f', '\r' };
 static const char C_NUMBER[]		= { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
 static const char C_SYMBOL[]     	= { '.', ',', ':', ';', '"', '\'' };			// symbols are only one character
 static const char C_BRACKET[]		= { '(', ')', '{', '}', '[', ']', /*'<', '>'*/  };
-static const char C_OPERATOR[] 		= { '+', '-', '*', '/', '%', '=', '<', '>', '&', '|', '^' };
+static const char C_OPERATOR[] 		= { '+', '-', '*', '/', '%', '!', '=', '<', '>', '&', '|', '^' };
 static const char C_IDENTIFIER[]  	= { 
 	'_',
 	'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z',
@@ -447,9 +447,11 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos){
 		}
 		char next = self->src[(*pos)++];
 		if (c == '=' && next == '='){ structToken_addChar( self->current_token, next); return false; }
+		if (c == '!' && next == '='){ structToken_addChar( self->current_token, next); return false; }
 		if (c == '+' && next == '='){ structToken_addChar( self->current_token, next); return false; }
 		if (c == '-' && next == '='){ structToken_addChar( self->current_token, next); return false; }
 		if (c == '*' && next == '='){ structToken_addChar( self->current_token, next); return false; }
+		if (c == '*' && next == '*'){ structToken_addChar( self->current_token, next); return false; }
 		if (c == '/' && next == '='){ structToken_addChar( self->current_token, next); return false; }
 		if (c == '<' && next == '<'){ structToken_addChar( self->current_token, next); return false; }
 		if (c == '>' && next == '>'){ structToken_addChar( self->current_token, next); return false; }

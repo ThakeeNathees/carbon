@@ -16,8 +16,9 @@ utils.o: ./src/utils.c ./src/utils.h
 	gcc -c ./src/utils.c -o $(obj_out)utils.o
 
 
-test: ./tests/file_read.c
+test: ./tests/file_read.c ./tests/infix.c
 	gcc ./tests/file_read.c -o $(bin_out)file_read.so
+	gcc ./tests/infix.c -o $(bin_out)infix.so
 
 clean:
 	rm -rf $(obj_out)*.o

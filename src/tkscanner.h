@@ -2,6 +2,7 @@
 #define TKSCANNER_H
 
 #include "carbon_conf.h"
+// https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
 #define TOKEN_NAME_SIZE 100
 
@@ -128,10 +129,13 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos); // retu
 #define OP_DIV 			"/"
 #define OP_DIVEQ 		"/="
 #define OP_MOD			"%"
+#define OP_NOT 			"!" // simmiler of not
+#define OP_POW			"**"
 // #define OP_DIV_FLOOR	"//" not an operator because // is for comment
 
 // bool operators
 #define OP_EQEQ 		"=="
+#define OP_NOTEQ		"!="
 #define OP_GT 			">"
 #define OP_LT 			"<"
 #define OP_EQ 			"="
