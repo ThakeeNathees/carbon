@@ -7,6 +7,7 @@
 #include "utils.h"
 
 #define ERROR_LINE_SIZE 80
+#define TOKEN_LIST_SIZE 100
 
 static const char* TOKEN_TYPE_STRING[] = {
 	FOREACH_TOKEN_TYPE(GENERATE_STRING)
@@ -64,6 +65,35 @@ void structToken_addChar(struct Token* self, char c){
 	self->token_name[(self->_name_ptr)] = '\0';
 }
 /***************** </Token> *************/
+
+/***************** <TokenList> *************/
+// private
+//public
+void structTokenList_init(struct TokenList* self){
+	self->list  = (struct Token**)malloc( sizeof(struct Token) * TOKEN_LIST_SIZE );
+	self->count = 0;
+	self->size  = TOKEN_LIST_SIZE;
+}
+void structTokenList_addToken(struct TokenList* self, struct Token* token){
+	if (self->count >= self->size){
+		struct Token** new_list = (struct Token**)malloc( sizeof(struct Token)*(self->size + TOKEN_LIST_SIZE) ) ;
+		self->size += TOKEN_LIST_SIZE;
+		for ( int i=0; i< self->count; i++){
+			new_list[i] = self->list[i];
+		}
+		free(self->list);
+		self->list = new_list;
+	}
+	self->list[(self->count)++] = token;	
+}
+struct Token* structTokenList_createToken(struct TokenList* self){
+	struct Token* new_tk = (struct Token*)malloc(sizeof(struct Token));
+	structToken_init(new_tk);
+	structTokenList_addToken(self, new_tk);
+	return new_tk;
+}
+/***************** </TokenList> *************/
+
 
 
 
@@ -127,7 +157,7 @@ void structTokenScanner_checkIdentifier(struct TokenScanner* self){
 	if (strcmp( self->current_token->token_name, KWORD_IF )==0)		{ self->current_token->token_type = KEYWORD; return;}
 	if (strcmp( self->current_token->token_name, KWORD_ELSE )==0)	{ self->current_token->token_type = KEYWORD; return;}
 	if (strcmp( self->current_token->token_name, KWORD_WHILE )==0)	{ self->current_token->token_type = KEYWORD; return;}
-	if (strcmp( self->current_token->token_name, KWORD_FOR )==0)	{ self->current_token->token_type = KEYWORD; return;}
+	if (strcmp( self->current_token->token_name, KWARD_FOR )==0)	{ self->current_token->token_type = KEYWORD; return;}
 	if (strcmp( self->current_token->token_name, KWORD_BREAK )==0)	{ self->current_token->token_type = KEYWORD; return;}
 	if (strcmp( self->current_token->token_name, KWORD_CONTINUE )==0){ self->current_token->token_type = KEYWORD; return;}
 	if (strcmp( self->current_token->token_name, KWORD_AND )==0)	{ self->current_token->token_type = KEYWORD; return;}
@@ -312,10 +342,10 @@ void structTokenScanner_validateNumber(struct TokenScanner* self, int* pos){
 }
 
 // public
-void structTokenScanner_init(struct TokenScanner* self, struct Token* current_token, char* src, char* file_name){
+void structTokenScanner_init(struct TokenScanner* self, char* src, char* file_name){
 	self->src = src;
 	self->file_name = file_name;
-	self->current_token = current_token;
+	// self->current_token = current_token; // not initialized, use setToken
 }
 bool structTokenScanner_setToken(struct TokenScanner* self, struct Token* current_token){
 	self->current_token = current_token;

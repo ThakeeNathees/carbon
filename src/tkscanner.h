@@ -62,6 +62,13 @@ struct Token
 	enum  NumberType	number_type;
 };
 
+struct TokenList
+{
+	struct Token** list;
+	int count;
+	int size;
+};
+
 struct TokenScanner
 {
 	char* src;
@@ -77,8 +84,13 @@ void structToken_init(struct Token* self);
 int  structToken_toString(struct Token* self, char* buffer);
 void structToken_print(struct Token* self);
 
+// token list
+void structTokenList_init(struct TokenList* self);
+void structTokenList_addToken(struct TokenList* self, struct Token* token);
+struct Token* structTokenList_createToken(struct TokenList* self);
+
 // token scanner
-void structTokenScanner_init(struct TokenScanner* self, struct Token* current_token, char* src, char* file_name);
+void structTokenScanner_init(struct TokenScanner* self, char* src, char* file_name);
 bool structTokenScanner_setToken(struct TokenScanner* self, struct Token* current_token);
 bool structTokenScanner_scaneToken(struct TokenScanner* self, int* pos); // return true if eof
 

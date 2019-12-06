@@ -19,25 +19,20 @@ int main(int argc, char** argv){
 	printf("%s\n", text);
 
 	int pos = 0;
-	struct Token tk; structToken_init(&tk);
-	struct TokenScanner ts; structTokenScanner_init(&ts, &tk, text, argv[1]);
-
-	int i=0;
-	struct Token* tokens[100];
+	struct TokenList    tl; structTokenList_init(&tl);
+	struct TokenScanner ts; structTokenScanner_init(&ts, text, argv[1]);
 
 	bool eof = false;
 	while (!eof){
-		// new token
-		struct Token* new_tk = (struct Token*)malloc(sizeof(struct Token));
-		structToken_init(new_tk);
-		tokens[i++] = new_tk;
-		structTokenScanner_setToken(&ts, new_tk);
-
+		
+		struct Token* tk = structTokenList_createToken(&tl);
+		structTokenScanner_setToken(&ts, tk);
 		eof = structTokenScanner_scaneToken(&ts, &pos);
+		
 	}
 
-	for (int j=0; j<i-1; j++){
-		structToken_print( tokens[j] );
+	for (int i=0; i<tl.count; i++){
+		structToken_print( tl.list[i] );
 	}
 
 
