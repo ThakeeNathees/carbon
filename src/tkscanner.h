@@ -2,8 +2,8 @@
 #define TKSCANNER_H
 
 #include "utils.h"
-// https://en.wikipedia.org/wiki/Shunting-yard_algorithm
 
+#define TOKEN_LIST_SIZE 100
 #define TOKEN_NAME_SIZE 100
 
 #define GENERATE_ENUM(enum_name) enum_name,
@@ -11,7 +11,8 @@
 
 // token types
 #define FOREACH_TOKEN_TYPE(func) \
-	func(UNKNOWN)	\
+	func(UNKNOWN)		\
+	func(TK_EOF)		\
 	func(COMMENT)		\
 	func(SYMBOL) 		\
 	func(BRACKET) 		\
@@ -21,7 +22,8 @@
 	func(BUILTIN)		\
 	func(NUMBER)		\
 	func(STRING) 		\
-	func(IDENTIFIER) // variable, function, class name
+	func(FUNCTION) 		\
+	func(IDENTIFIER) // variable, function when tkscan, ...
 
 #define FOREACH_NUMBER_TYPE(func) \
 	func(NT_UNKNOWN)\
@@ -60,13 +62,17 @@ struct Token
 	char* 				name;
 	int 				_name_len;
 	int 				_name_ptr;
+	int 				pos;
 	// for number type
 	union NumberValue 	number_value;
 	enum  NumberType	number_type;
 
 	// for function type
-	bool func_is_method; // builtin - false
+	bool func_is_method; // insts.method() : comes after . operator and after a '('
 	int  func_args_count;
+
+	// for identifier
+	bool idf_is_field; // instance.field : comes after . operator no brecket after
 };
 
 struct TokenList
@@ -98,17 +104,20 @@ void structToken_print(struct Token* self);
 void structTokenList_init(struct TokenList* self, int growth_size);
 void structTokenList_addToken(struct TokenList* self, struct Token* token);
 struct Token* structTokenList_createToken(struct TokenList* self);
+void structTokenList_print(struct TokenList* self);
+struct TokenList* structTokenList_new(); // static method
 
 // token scanner
 void structTokenScanner_init(struct TokenScanner* self, char* src, char* file_name);
 bool structTokenScanner_setToken(struct TokenScanner* self, struct Token* current_token);
 bool structTokenScanner_scaneToken(struct TokenScanner* self); // return true if eof
+struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // static method
 
 /****************************************************************/
 
 
 // symbols
-#define SYM_DOT 		"."
+#define SYM_DOT 		"." // or maybe operator
 #define SYM_COMMA 		","
 #define SYM_COLLON		":"
 #define SYM_SEMI_COLLON	";"
@@ -142,6 +151,7 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self); // return true if
 //#define DTYPE_FUNC 	"func" function is not a type anymore
 
 // arithmetic operators
+#define OP_EQ 			"="
 #define OP_PLUS			"+"   // operator ++, and --
 #define OP_PLUSEQ 		"+="
 #define OP_MINUS		"-"   // can applied for negative numbers <num> - <num> or - <num>
@@ -174,12 +184,14 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self); // return true if
 
 // keywords
 #define KWORD_NULL 		"null"
+#define KWORD_SELF 		"self"
 #define KWORD_TRUE 		"true"
 #define KWORD_FALSE		"false"
 #define KWORD_IF 		"if"
 #define KWORD_ELSE 		"else"
 #define KWORD_WHILE 	"while"
 #define KWARD_FOR 		"for"
+#define KWARD_FOREACH	"foreach"
 #define KWORD_BREAK 	"break"
 #define KWORD_CONTINUE 	"continue"
 #define KWORD_AND 		"and"

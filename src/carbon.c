@@ -1,6 +1,6 @@
 #include "ast.h"
 
-#define TOKEN_LIST_SIZE 100
+
 
 int main(int argc, char** argv){
 
@@ -15,23 +15,18 @@ int main(int argc, char** argv){
 		printf("Error: can't read the file : %s\n", argv[1]);
 		return 1;
 	}
+
+	// debug print
 	printf("%s\n", text);
 
-	struct TokenList    tl; structTokenList_init(&tl, TOKEN_LIST_SIZE);
-	struct TokenScanner ts; structTokenScanner_init(&ts, text, argv[1]);
+	struct Ast ast; structAst_init(&ast, text, argv[1]);
+	structAst_scane(&ast);
 
-	bool eof = false;
-	while (!eof){
-		
-		struct Token* tk = structTokenList_createToken(&tl);
-		structTokenScanner_setToken(&ts, tk);
-		eof = structTokenScanner_scaneToken(&ts);
-		
-	}
+	// debug print
+	structTokenList_print(ast.tokens);
 
-	for (int i=0; i<tl.count; i++){
-		printf("%i ", i ); structToken_print( tl.list[i] );
-	}
+	structAst_makeTree(&ast);
+
 
 
 	printf("main runned successfully!\n");

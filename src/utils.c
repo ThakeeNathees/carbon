@@ -37,7 +37,7 @@ int utils_char_count_in_str(char c, char* string){
 	return count;
 }
 
-int utils_pos_to_line(int pos, char* src, char* buffer ){
+int utils_pos_to_line(int pos, char* src, char* buffer, int* err_pos ){
 	int line_no = 1;
 	int line_begin_pos = 0;
 	for ( int i=0; i<pos; i++){
@@ -53,6 +53,15 @@ int utils_pos_to_line(int pos, char* src, char* buffer ){
 		buffer[i] = src[line_begin_pos+i]; i++;
 	}
 
+	if (err_pos != NULL) *err_pos = pos - line_begin_pos;
+
 	return line_no;
 
+}
+
+void utils_error_exit(char* err_msg, int pos, char* src, char* file_name){
+	int line_pos = 0;
+	char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(pos, src, buff, &line_pos);
+	printf("%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff);
+	for(int i=0; i<line_pos;i++) printf(" ");printf("^\n");exit(1); 
 }
