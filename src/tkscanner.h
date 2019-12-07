@@ -76,6 +76,9 @@ struct Token
 
 	// for identifier
 	bool idf_is_field; // instance.field : comes after . operator no brecket after
+
+	// for minus operator
+	bool minus_is_single_op;
 };
 
 struct TokenList

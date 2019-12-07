@@ -160,6 +160,7 @@ int structAst_countArgs(struct Ast* self){
 
 	// check -> idf ( ) : no args
 	if (self->tokens->count < self->pos + 3 ) utils_error_exit("Error: unexpected EOF, expected ')'", self->tokens->list[self->pos]->pos, self->src, self->file_name); 
+	if (self->tokens->list[self->pos+1]->type != BRACKET || strcmp(self->tokens->list[self->pos+1]->name,LPARN)!=0 ) utils_error_exit("Error: expected bracket '('", self->tokens->list[self->pos+1]->pos, self->src, self->file_name); 
 	struct Token* token = self->tokens->list[self->pos + 2 ];
 	if (token->type == BRACKET && strcmp(token->name, RPARN)==0) return 0;
 
@@ -182,7 +183,7 @@ struct Expression* structAst_scaneExpr(struct Ast* self, enum structAst_ExprEndT
 	struct Expression* expr = structExpression_new(self->tokens);
 	expr->begin_pos = self->pos;
 	while(true){
-		struct Token* token = self->tokens->list[++self->pos];
+		struct Token* token = self->tokens->list[(self->pos)];
 		if (token->type == TK_EOF ) utils_error_exit("Error: unexpected EOF", token->pos, self->src, self->file_name); 
 		if (end_type == EXPREND_SEMICOLLON && token->type == SYMBOL && strcmp(token->name, SYM_SEMI_COLLON)==0){ expr->end_pos = self->pos-1; break;}
 		else if (end_type == EXPREND_COMMA && token->type == SYMBOL && strcmp(token->name, SYM_COMMA)==0){ expr->end_pos = self->pos-1; break;}
@@ -230,6 +231,21 @@ struct Expression* structAst_scaneExpr(struct Ast* self, enum structAst_ExprEndT
 				utils_error_exit("", token->pos, self->src, self->file_name);}
 		}
 
+		// if token == '-' check it's single operator or binary
+		if (token->type == OPERATOR && strcmp(token->name, OP_MINUS)==0){
+			struct Token* before = self->tokens->list[self->pos-1]; if (before->type == TK_PASS) before = self->tokens->list[self->pos-2]; // skip TK_PASS
+			if (token->pos == expr->begin_pos) token->minus_is_single_op = true; 									   // begining minus is single op
+			else if ( before->type == OPERATOR ) token->minus_is_single_op = true; 									   // before minus is operator
+			else if ( before->type == BRACKET && strcmp(before->name, LPARN)==0 )  token->minus_is_single_op = true;    // before (
+			else if ( before->type == BRACKET && strcmp(before->name, RSQ_BRACKET)==0)token->minus_is_single_op = true; // before [
+			else if ( before->type == SYMBOL  && strcmp(before->name, SYM_COMMA)==0) token->minus_is_single_op = true;  // before ,
+			// after bool_op bool expected
+			//else if ( before->type == KEYWORD && strcmp(before->name, KWORD_AND)==0) token->minus_is_single_op = true;  // before and 
+			//else if ( before->type == KEYWORD && strcmp(before->name, KWORD_OR )==0) token->minus_is_single_op = true;  // before or
+			//else if ( before->type == KEYWORD && strcmp(before->name, KWORD_NOT)==0) token->minus_is_single_op = true;  // before not
+		}
+
+		(self->pos)++;
 	}
 }
 
@@ -310,9 +326,8 @@ void structAst_scane(struct Ast* self){
 
 void structAst_makeTree(struct Ast* self) {
 	while ( true ){
-
+		printf("count=%i pos=%i\n", self->tokens->count, self->pos );
 		struct Token* token = self->tokens->list[self->pos];
-		
 
 		if (self->pos == self->tokens->count -1){
 			if (token->type != TK_EOF) { printf("CompilerError: expected token TK_EOF\nfound: "); structToken_print(token); exit(1); }
@@ -343,7 +358,6 @@ void structAst_makeTree(struct Ast* self) {
 				stmn->statement.init.has_expr = true;
 			}
 			// TODO: add ast globals to variable
-
 			structStatementList_addStatement(self->stmn_list, stmn);
 		}
 
@@ -359,6 +373,7 @@ void structAst_makeTree(struct Ast* self) {
 
 		self->pos++;
 	}
+	
 
 
 }

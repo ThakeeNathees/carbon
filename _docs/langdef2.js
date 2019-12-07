@@ -31,7 +31,7 @@ if_statement_continue?  : else if, else  import, char, short, int, float, double
 	dtype   			 : int string char bool ...
 	idf/built/func/names : func_name, isnst_name, imported_name, ...
 )
-
+):
 // procedure
 create a global map for variables, functions, class defn and local for variables
 scane expr or statement // recursive - expr only contain expr, statement can contain both

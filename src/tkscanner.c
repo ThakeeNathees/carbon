@@ -21,16 +21,17 @@ const char* enumNumberType_toString(enum NumberType self){
 /***************** <Token> *************/
 // public
 void structToken_init(struct Token* self){
-	self->_name_len 		= TOKEN_NAME_SIZE;
-	self->_name_ptr 		= 0;
-	self->name 				= (char*)malloc(TOKEN_NAME_SIZE); // free after use
-	self->name[0] 			= '\0';
-	self->type 				= UNKNOWN;
-	self->number_value.l 	= 0;
-	self->number_type 		= INT;
-	self->func_args_count   = 0;
-	self->func_is_method    = false;
-	self->idf_is_field      = false;
+	self->_name_len 		 = TOKEN_NAME_SIZE;
+	self->_name_ptr 		 = 0;
+	self->name 				 = (char*)malloc(TOKEN_NAME_SIZE); // free after use
+	self->name[0] 			 = '\0';
+	self->type 				 = UNKNOWN;
+	self->number_value.l 	 = 0;
+	self->number_type 		 = INT;
+	self->func_args_count    = 0;
+	self->func_is_method     = false;
+	self->idf_is_field       = false;
+	self->minus_is_single_op = false;
 }
 int structToken_toString(struct Token* self, char* buffer){
 	return sprintf(buffer, "Token %s : %s", enumTokenType_toString(self->type), self->name);
@@ -45,6 +46,7 @@ void structToken_print(struct Token* self){
 		else if (self->number_type == LONG)  printf("Token %10s : %-10s | (%s, %ld)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.l);	
 	} 
 	else if (self->type == FUNCTION)  printf("Token %10s : %-10s | method=%i, args=%i\n", enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_count);
+	else if (self->type == OPERATOR && strcmp(self->name, OP_MINUS)==0)printf ("Token %10s : %-10s | single_op=%i\n", enumTokenType_toString(self->type), self->name, self->minus_is_single_op);
 	else{
 		printf("Token %10s : %s\n", enumTokenType_toString(self->type), self->name);
 	}
