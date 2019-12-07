@@ -108,6 +108,7 @@ struct Statement
 {
 	enum StatementType type;
 	union _Statement statement;
+	int indent; // for printing
 
 };
 
@@ -157,10 +158,12 @@ struct ExpressionList* structExpressionList_new(struct TokenList* token_list); /
 
 // statement
 void structStatement_init(struct Statement* self);
+void structStatement_print(struct Statement* self);
 struct Statement* structStatement_new(); // static method
 
 // statement list
 void structStatementList_init(struct StatementList* self, int growth_size);
+void structStatementList_print(struct StatementList* self);
 void structStatementList_addStatement(struct StatementList* self, struct Statement* statement);
 struct Statement* structStatementList_createStatement(struct StatementList* self);
 struct StatementList* structStatementList_new(); // static method

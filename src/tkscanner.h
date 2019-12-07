@@ -23,6 +23,7 @@
 	func(NUMBER)		\
 	func(STRING) 		\
 	func(FUNCTION) 		\
+	func(VARIABLE)		\
 	func(IDENTIFIER) // variable, function when tkscan, ...
 
 #define FOREACH_NUMBER_TYPE(func) \

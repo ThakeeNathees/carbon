@@ -17,10 +17,10 @@ void structExpression_init(struct Expression* self, struct TokenList* token_list
 	self->end_pos    = -1;
 }
 void structExpression_print(struct Expression* self, int indent){
-	for (int i=0; i< indent; i++) printf("\t"); printf("Expression:\n");
+	for (int i=0; i< indent; i++) printf("\t"); printf("Expr: ");
 	for (int i=self->begin_pos; i<=self->end_pos; i++){
-		for (int i=0; i< indent; i++) printf("\t"); printf("  "); structToken_print(self->token_list->list[i]);
-	}
+		printf("%s ", self->token_list->list[i]->name); //structToken_print(self->token_list->list[i]);
+	}printf("\n");
 }
 struct Expression* structExpression_new(struct TokenList* token_list){
 	struct Expression* expr = (struct Expression*)malloc( sizeof(struct Expression) );
@@ -64,6 +64,16 @@ struct ExpressionList* structExpressionList_new(struct TokenList* token_list){
 /***************** <Statement> *************/
 void structStatement_init(struct Statement* self){
 	self->type = STMNT_UNKNOWN;
+	self->indent = 0;
+}
+void structStatement_print(struct Statement* self){
+	if (self->type == STMNT_UNKNOWN){ for (int i=0; i< self->indent; i++) printf("\t");printf("Statement: Unknown\n"); }
+	else if (self->type == STMNT_IMPORT);
+	else if (self->type == STMNT_VAR_INIT){
+		for (int i=0; i< self->indent; i++) printf("\t");printf("Statement: VAR_INIT\n");
+		for (int i=0; i< self->indent+1; i++) printf("\t");printf("dtype=%s idf=%s\n", self->statement.init.dtype->name, self->statement.init.idf->name);
+		if (self->statement.init.has_expr) structExpression_print(self->statement.init.expr, self->indent+1);
+	}
 }
 struct Statement* structStatement_new(){
 	struct Statement* new_stmn = (struct Statement*)malloc(sizeof(struct Statement));
@@ -95,6 +105,11 @@ struct Statement* structStatementList_createStatement(struct StatementList* self
 	struct Statement* new_stmn = structStatement_new();
 	structStatementList_addStatement(self, new_stmn);
 	return new_stmn;
+}
+void structStatementList_print(struct StatementList* self){
+	for (int i=0; i< self->count; i++){
+		structStatement_print(self->list[i]);
+	}
 }
 struct StatementList* structStatementList_new(){
 	struct StatementList* stmn_list = (struct StatementList*)malloc( sizeof(struct StatementList) );
@@ -158,20 +173,35 @@ struct Expression* structAst_scaneExpr(struct Ast* self, enum structAst_ExprEndT
 				token->func_is_method  = true;
 				token->func_args_count = structAst_countArgs(self);
 			}
-			else { token->idf_is_field = true; }
+			else { token->idf_is_field = true; /* not conform */ }
 		}
 		
 		// token = idf check if expr is function
 		if (token->type == IDENTIFIER){
 			if ( (self->tokens->list[self->pos+1])->type == BRACKET && strcmp((self->tokens->list[self->pos+1])->name, LPARN )==0 ){
-				token->type = FUNCTION; // not method
 				// TODO: check if function is registered else error!
-				token->func_args_count = structAst_countArgs(self); // TODO: args count already known : assert
+				token->type = FUNCTION; // not method
+				// token->func_args_count == structAst_countArgs(self); // TODO: args count already known : assert
 			}
-			else { /* TODO: check if the variable is registered */ }
+			else {
+				// TODO: check if the variable is registered else error!
+				token->type = VARIABLE;
+			}
+		}
+
+		// if number and next is '(' : numbers anen't callable error
+		if (token->type == NUMBER){
+			if (self->tokens->list[self->pos+1]->type == BRACKET && strcmp(self->tokens->list[self->pos+1]->name, LPARN)==0)
+				utils_error_exit("TypeError: numbers aren't callable", self->tokens->list[self->pos+1]->pos, self->src, self->file_name);
 		}
 
 		// if builtin count arg count and assert
+		if (token->type == BUILTIN){
+			int args_count = structAst_countArgs(self);
+			if (token->func_args_count != args_count){ 
+				printf("TypeError: func:%s takes %i arguments (%i given)", token->name, token->func_args_count, args_count); 
+				utils_error_exit("", token->pos, self->src, self->file_name);}
+		}
 
 	}
 }
@@ -195,7 +225,7 @@ void structAst_scane(struct Ast* self){
 	}
 }
 
-void structAst_makeTree(struct Ast* self){
+void structAst_makeTree(struct Ast* self) {
 	while ( true ){
 
 		struct Token* token = self->tokens->list[self->pos];
@@ -215,22 +245,32 @@ void structAst_makeTree(struct Ast* self){
 			stmn->statement.init.dtype = token;
 			token = self->tokens->list[++self->pos];
 			if (token->type != IDENTIFIER){ utils_error_exit("Error: expected an identifier", token->pos, self->src, self->file_name); }
-			// if already defined error
+			// TODO: if already defined, or dtype, kword, ... are error
 			stmn->statement.init.idf = token;
 			token = self->tokens->list[++self->pos];
 			if ( token->type == SYMBOL && strcmp(token->name , SYM_SEMI_COLLON)==0 ){
 				stmn->statement.init.has_expr = false;
 			} else { // scane expr
-				if (token->type != OPERATOR && strcmp(token->name, OP_EQ)!=0){ utils_error_exit("Error: expected operator =", token->pos, self->src, self->file_name); }
-				++self->pos; // scane for expr ends with ;
+				if (token->type != OPERATOR && strcmp(token->name, OP_EQ)!=0){ utils_error_exit("Error: expected '=' or ';'", token->pos, self->src, self->file_name); }
+				++self->pos;
 				struct Expression* expr = structAst_scaneExpr(self, EXPREND_SEMICOLLON);
 				stmn->statement.init.expr = expr;
-
-				structExpression_print(expr, 0);
+				stmn->statement.init.has_expr = true;
 			}
+			// TODO: add ast globals to variable
+
+			structStatementList_addStatement(self->stmn_list, stmn);
 		}
+
+		// if token == static && ast state != reading class error!
+
+
+
+
 
 		self->pos++;
 	}
+
+
 }
 /***************** </Ast> *************/
