@@ -10,9 +10,11 @@
 #define GENERATE_STRING(enum_name) #enum_name,
 
 // token types
+// tk_pass : if >> to > and > use tk_pass
 #define FOREACH_TOKEN_TYPE(func) \
 	func(UNKNOWN)		\
 	func(TK_EOF)		\
+	func(TK_PASS)		\
 	func(COMMENT)		\
 	func(SYMBOL) 		\
 	func(BRACKET) 		\
@@ -146,7 +148,6 @@ struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // stat
 #define DTYPE_DOUBLE  	"double"
 
 #define DTYPE_LIST 		"list"
-#define DTYPE_ARRAY 	"array"
 #define DTYPE_MAP 		"map"
 #define DTYPE_STRING 	"string"
 //#define DTYPE_FUNC 	"func" function is not a type anymore

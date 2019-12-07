@@ -29,6 +29,29 @@ struct Expression* structExpression_new(struct TokenList* token_list){
 }
 /***************** </Expression> *************/
 
+/***************** <ExprDtype> *************/
+void structExprDtype_init(struct ExprDtype* self, struct Token* dtype){
+	self->dtype   = dtype;
+	self->is_map  = false;
+	self->is_list = false;
+}
+void structExprDtype_print(struct ExprDtype* self, int indent){
+	for (int i=0; i< indent; i++) printf("\t"); printf("ExprDtype: "); printf("%s\n", self->dtype->name);
+	if (self->is_list){
+		structExprDtype_print(self->value, indent+1);
+
+	} else if (self->is_map){
+		for (int i=0; i< indent+1; i++) printf("\t");printf("key=%s, value=\n", self->key->name );
+		structExprDtype_print(self->value, indent+1);
+	}
+}
+struct ExprDtype* structExprDtype_new(struct Token* dtype){
+	struct ExprDtype* new_dtype = (struct ExprDtype*)malloc(sizeof(struct ExprDtype));
+	structExprDtype_init(new_dtype, dtype);
+	return new_dtype;
+}
+/***************** </ExprDtype> *************/
+
 /***************** <ExpressionList> *************/
 void structExpressionList_init(struct ExpressionList* self, int growth_size, struct TokenList* token_list){
 	self->count = 0;
@@ -71,8 +94,11 @@ void structStatement_print(struct Statement* self){
 	else if (self->type == STMNT_IMPORT);
 	else if (self->type == STMNT_VAR_INIT){
 		for (int i=0; i< self->indent; i++) printf("\t");printf("Statement: VAR_INIT\n");
-		for (int i=0; i< self->indent+1; i++) printf("\t");printf("dtype=%s idf=%s\n", self->statement.init.dtype->name, self->statement.init.idf->name);
+		structExprDtype_print(self->statement.init.dtype,self->indent+1);
+		for (int i=0; i< self->indent+1; i++) printf("\t");printf("idf=%s\n", self->statement.init.idf->name);
 		if (self->statement.init.has_expr) structExpression_print(self->statement.init.expr, self->indent+1);
+		//for (int i=0; i< self->indent+1; i++) printf("\t");printf("dtype=%s idf=%s\n", self->statement.init.dtype->dtype->name, self->statement.init.idf->name);
+		//if (self->statement.init.has_expr) structExpression_print(self->statement.init.expr, self->indent+1);
 	}
 }
 struct Statement* structStatement_new(){
@@ -151,6 +177,7 @@ int structAst_countArgs(struct Ast* self){
 	}
 }
 
+// semicollon or other end type not included in expr
 struct Expression* structAst_scaneExpr(struct Ast* self, enum structAst_ExprEndType end_type){
 	struct Expression* expr = structExpression_new(self->tokens);
 	expr->begin_pos = self->pos;
@@ -175,7 +202,7 @@ struct Expression* structAst_scaneExpr(struct Ast* self, enum structAst_ExprEndT
 			}
 			else { token->idf_is_field = true; /* not conform */ }
 		}
-		
+
 		// token = idf check if expr is function
 		if (token->type == IDENTIFIER){
 			if ( (self->tokens->list[self->pos+1])->type == BRACKET && strcmp((self->tokens->list[self->pos+1])->name, LPARN )==0 ){
@@ -206,6 +233,56 @@ struct Expression* structAst_scaneExpr(struct Ast* self, enum structAst_ExprEndT
 	}
 }
 
+struct ExprDtype* structAst_scaneDtype(struct Ast* self){
+
+	struct Token* token = self->tokens->list[self->pos];
+	if (token->type != DTYPE) utils_error_exit("Error: expected a data type", token->pos, self->src, self->file_name); 
+	struct ExprDtype* ret =  structExprDtype_new(token);
+
+	// for map<dtype, dtype> list<dtype> 
+	if (strcmp(token->name, DTYPE_LIST)==0){
+		ret->is_list = true;
+		token = self->tokens->list[++self->pos];
+		if (token->type != OPERATOR || strcmp(token->name, RTRI_BRACKET)!=0) utils_error_exit("Error: expected bracket '<'", token->pos, self->src, self->file_name); 
+		token->type = BRACKET;
+		++self->pos; ret->value = structAst_scaneDtype(self);
+		token = self->tokens->list[self->pos];
+
+		if (token->type == OPERATOR && strcmp(token->name, OP_RSHIFT)==0 && (self->tokens->list[self->pos+1])->type == TK_PASS ){
+			token->name[1] = '\0'; // now token is '>'
+			(self->tokens->list[self->pos+1])->type = OPERATOR; (self->tokens->list[self->pos+1])->name[0] = '>'; (self->tokens->list[self->pos+1])->name[1] = '\0';
+		}
+		else if (token->type != OPERATOR || strcmp(token->name, LTRI_BRACKET)!=0 ) utils_error_exit("Error: exprcted bracket '>'", token->pos, self->src, self->file_name);
+		token->type = BRACKET;
+	}
+	else if (strcmp(token->name, DTYPE_MAP)==0){
+		ret->is_map = true;
+		token = self->tokens->list[++self->pos];
+		if (token->type != OPERATOR || strcmp(token->name, RTRI_BRACKET)!=0) utils_error_exit("Error: expected bracket '<'", token->pos, self->src, self->file_name); 
+		token->type = BRACKET;
+		token = self->tokens->list[++self->pos];
+		if (token->type != DTYPE) utils_error_exit("Error: expected a data type", token->pos, self->src, self->file_name); 
+		if (strcmp(token->name, DTYPE_LIST)==0 ) utils_error_exit("Error: list objects can't be a key", token->pos, self->src, self->file_name); 
+		if (strcmp(token->name, DTYPE_MAP)==0 ) utils_error_exit("Error: map objects can't be a key", token->pos, self->src, self->file_name);
+		ret->key = token;
+		token = self->tokens->list[++self->pos];
+		if (token->type != SYMBOL || strcmp(token->name, SYM_COMMA)!=0 ) utils_error_exit("Error: exprcted symbol ','", token->pos, self->src, self->file_name);
+		token = self->tokens->list[++self->pos];
+		ret->value = structAst_scaneDtype(self);
+		token = self->tokens->list[self->pos];
+		if (token->type == OPERATOR && strcmp(token->name, OP_RSHIFT)==0 && (self->tokens->list[self->pos+1])->type == TK_PASS ){
+			token->name[1] = '\0'; // now token is '>'
+			(self->tokens->list[self->pos+1])->type = OPERATOR; (self->tokens->list[self->pos+1])->name[0] = '>'; (self->tokens->list[self->pos+1])->name[1] = '\0';
+		}
+		else if (token->type != OPERATOR || strcmp(token->name, LTRI_BRACKET)!=0 ) utils_error_exit("Error: exprcted bracket '>'", token->pos, self->src, self->file_name);
+		token->type = BRACKET;
+	}
+
+	++self->pos;
+	return ret;
+
+}
+
 // public
 void structAst_init(struct Ast* self, char* src, char* file_name){
 	self->src 			= src;
@@ -222,8 +299,14 @@ void structAst_scane(struct Ast* self){
 		structTokenScanner_setToken(self->token_scanner, tk);
 		eof = structTokenScanner_scaneToken(self->token_scanner);
 		if (eof) tk->type = TK_EOF;
+		if ( tk->type == OPERATOR && strcmp(tk->name, OP_RSHIFT)==0){ // if tk == >> add pass to make it > > for close bracket : list<list<char>>
+			tk = structTokenList_createToken(self->tokens);
+			tk->type = TK_PASS;
+		}
 	}
 }
+
+
 
 void structAst_makeTree(struct Ast* self) {
 	while ( true ){
@@ -240,10 +323,12 @@ void structAst_makeTree(struct Ast* self) {
 		if (token->type == COMMENT); // do nothing
 
 		else if (token->type == DTYPE){
+
 			struct Statement* stmn = structStatement_new();
 			stmn->type = STMNT_VAR_INIT;
-			stmn->statement.init.dtype = token;
-			token = self->tokens->list[++self->pos];
+			stmn->statement.init.dtype = structAst_scaneDtype(self);
+
+			token = self->tokens->list[self->pos];
 			if (token->type != IDENTIFIER){ utils_error_exit("Error: expected an identifier", token->pos, self->src, self->file_name); }
 			// TODO: if already defined, or dtype, kword, ... are error
 			stmn->statement.init.idf = token;
@@ -260,6 +345,10 @@ void structAst_makeTree(struct Ast* self) {
 			// TODO: add ast globals to variable
 
 			structStatementList_addStatement(self->stmn_list, stmn);
+		}
+
+		else if (token->type == IDENTIFIER){ // could be variable, function, 
+
 		}
 
 		// if token == static && ast state != reading class error!

@@ -23,10 +23,12 @@ int main(int argc, char** argv){
 	structAst_scane(&ast);
 
 	// debug print
-	// structTokenList_print(ast.tokens);
+	//structTokenList_print(ast.tokens);
 
 	structAst_makeTree(&ast);
+	
 	// debug print
+	structTokenList_print(ast.tokens);
 	structStatementList_print( ast.stmn_list );
 
 

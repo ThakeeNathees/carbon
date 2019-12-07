@@ -30,6 +30,17 @@ struct Expression
 	int end_pos;
 };
 
+struct ExprDtype // to store dtype int, string, map<int, map<string, list<string>>>
+{
+	struct Token* dtype;
+
+	bool is_list;
+	bool is_map;
+
+	struct Token*     key; // key cant be list or map
+	struct ExprDtype* value; // value is for both list and map
+};
+
 /*********************************************/
 struct _StatementImport
 {
@@ -37,7 +48,7 @@ struct _StatementImport
 };
 struct _StatementVarInit
 {
-	struct Token* dtype;   // dtype dif; or dtype idf = expr;
+	struct ExprDtype* dtype;
 	struct Token* idf;
 	struct Expression* expr;
 	bool has_expr;
@@ -65,22 +76,22 @@ struct _StatementWhile
 };
 struct _StatementFor
 {
-	struct Expression* expr_ini;   // for (expr_ini; expr_bool; expr_end){ stmn_list; }
+	struct Expression* expr_ini;   // for (expr_ini; expr_bool; expr_end){ stmn_list; } TODO: change to statement list
 	struct Expression* expr_bool;
 	struct Expression* expr_end;
 	struct StatementList* stmn_list;
 };
 struct _StatementForEach
 {
-	struct Expression* expr_ini;   // foreach(expr_ini; expr_itter){ stmn_list; }
+	struct Expression* expr_ini;   // foreach(expr_ini; expr_itter){ stmn_list; } TODO: change to statement list
 	struct Expression* expr_itter;  
 	struct StatementList* stmn_list;
 };
 struct _StatementFuncDefn
 {
 	struct Token* idf;
-	struct ExpressionList* args;
-	struct Expression* ret_type;
+	struct ExpressionList* args;  // TODO: change to list of statement ini
+	struct ExprDtype* ret_type;
 	struct StatementList* stmn_list;
 };
 struct _StatementClassDefn
@@ -149,6 +160,11 @@ const char* enumStatementType_toString(enum StatementType self);
 void structExpression_init(struct Expression* self, struct TokenList* token_list);
 void structExpression_print(struct Expression* self, int indent);
 struct Expression* structExpression_new(struct TokenList* token_list); // static
+
+// expression dtype
+void structExprDtype_init(struct ExprDtype* self, struct Token* dtype);
+void structExprDtype_print(struct ExprDtype* self, int indent);
+struct ExprDtype* structExprDtype_new(struct Token* dtype);
 
 // expression list
 void structExpressionList_init(struct ExpressionList* self, int growth_size, struct TokenList* token_list);
