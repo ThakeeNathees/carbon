@@ -101,7 +101,6 @@ const char* enumNumberType_toString(enum NumberType self);
 
 // token
 void structToken_init(struct Token* self);
-int  structToken_toString(struct Token* self, char* buffer);
 void structToken_print(struct Token* self);
 bool structToken_isAssignmentOperator(struct Token* self);
 
@@ -114,8 +113,8 @@ struct TokenList* structTokenList_new(); // static method
 
 // token scanner
 void structTokenScanner_init(struct TokenScanner* self, char* src, char* file_name);
-bool structTokenScanner_setToken(struct TokenScanner* self, struct Token* current_token);
-bool structTokenScanner_scaneToken(struct TokenScanner* self); // return true if eof
+void structTokenScanner_setToken(struct TokenScanner* self, struct Token* current_token);
+struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, bool* is_eof); // return true if eof
 struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // static method
 
 /****************************************************************/

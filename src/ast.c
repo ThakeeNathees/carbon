@@ -298,53 +298,55 @@ struct CarbonError* structAst_isNextStmnAssign(struct Ast* self, bool* ret, int*
 	return err;
 }
 
-struct ExprDtype* structAst_scaneDtype(struct Ast* self){
+struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** ret){
 
 	struct Token* token = self->tokens->list[self->pos];
-	if (token->type != DTYPE) utils_error_exit("Error: expected a data type", token->pos, self->src, self->file_name); 
-	struct ExprDtype* ret =  structExprDtype_new(token);
+	if (token->type != DTYPE) return utils_make_error("SyntexError: expected a data type", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); 
+	*ret =  structExprDtype_new(token);
 
 	// for map<dtype, dtype> list<dtype> 
 	if (strcmp(token->name, DTYPE_LIST)==0){
-		ret->is_list = true;
+		(*ret)->is_list = true;
 		token = self->tokens->list[++self->pos];
-		if (token->type != OPERATOR || strcmp(token->name, RTRI_BRACKET)!=0) utils_error_exit("Error: expected bracket '<'", token->pos, self->src, self->file_name); 
+		if (token->type != OPERATOR || strcmp(token->name, RTRI_BRACKET)!=0) return utils_make_error("SyntaxError: expected bracket '<'", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); 
 		token->type = BRACKET;
-		++self->pos; ret->value = structAst_scaneDtype(self);
+		++self->pos; 
+		struct CarbonError* err = structAst_scaneDtype(self, &((*ret)->value)); if (err->type != ERROR_SUCCESS) return err;
 		token = self->tokens->list[self->pos];
 
 		if (token->type == OPERATOR && strcmp(token->name, OP_RSHIFT)==0 && (self->tokens->list[self->pos+1])->type == TK_PASS ){
 			token->name[1] = '\0'; // now token is '>'
 			(self->tokens->list[self->pos+1])->type = OPERATOR; (self->tokens->list[self->pos+1])->name[0] = '>'; (self->tokens->list[self->pos+1])->name[1] = '\0';
 		}
-		else if (token->type != OPERATOR || strcmp(token->name, LTRI_BRACKET)!=0 ) utils_error_exit("Error: exprcted bracket '>'", token->pos, self->src, self->file_name);
+		else if (token->type != OPERATOR || strcmp(token->name, LTRI_BRACKET)!=0 ) return utils_make_error("SyntexError: exprcted bracket '>'", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
 		token->type = BRACKET;
 	}
 	else if (strcmp(token->name, DTYPE_MAP)==0){
-		ret->is_map = true;
+		(*ret)->is_map = true;
 		token = self->tokens->list[++self->pos];
-		if (token->type != OPERATOR || strcmp(token->name, RTRI_BRACKET)!=0) utils_error_exit("Error: expected bracket '<'", token->pos, self->src, self->file_name); 
+		if (token->type != OPERATOR || strcmp(token->name, RTRI_BRACKET)!=0) return utils_make_error("SyntaxError: expected bracket '<'", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); 
 		token->type = BRACKET;
 		token = self->tokens->list[++self->pos];
-		if (token->type != DTYPE) utils_error_exit("Error: expected a data type", token->pos, self->src, self->file_name); 
-		if (strcmp(token->name, DTYPE_LIST)==0 ) utils_error_exit("Error: list objects can't be a key", token->pos, self->src, self->file_name); 
-		if (strcmp(token->name, DTYPE_MAP)==0 ) utils_error_exit("Error: map objects can't be a key", token->pos, self->src, self->file_name);
-		ret->key = token;
+		if (token->type != DTYPE) return utils_make_error("SyntaxError: expected a data type", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); 
+		if (strcmp(token->name, DTYPE_LIST)==0 ) return utils_make_error("TypeError: list objects can't be a key", ERROR_TYPE, token->pos, self->src, self->file_name, false); 
+		if (strcmp(token->name, DTYPE_MAP)==0 ) return utils_make_error("TypeError: map objects can't be a key", ERROR_TYPE, token->pos, self->src, self->file_name, false);
+		(*ret)->key = token;
 		token = self->tokens->list[++self->pos];
-		if (token->type != SYMBOL || strcmp(token->name, SYM_COMMA)!=0 ) utils_error_exit("Error: exprcted symbol ','", token->pos, self->src, self->file_name);
+		if (token->type != SYMBOL || strcmp(token->name, SYM_COMMA)!=0 ) return utils_make_error("SyntaxError: exprcted symbol ','", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
 		token = self->tokens->list[++self->pos];
-		ret->value = structAst_scaneDtype(self);
+
+		struct CarbonError* err = structAst_scaneDtype(self, &((*ret)->value)); if(err->type != ERROR_SUCCESS) return err;
 		token = self->tokens->list[self->pos];
 		if (token->type == OPERATOR && strcmp(token->name, OP_RSHIFT)==0 && (self->tokens->list[self->pos+1])->type == TK_PASS ){
 			token->name[1] = '\0'; // now token is '>'
 			(self->tokens->list[self->pos+1])->type = OPERATOR; (self->tokens->list[self->pos+1])->name[0] = '>'; (self->tokens->list[self->pos+1])->name[1] = '\0';
 		}
-		else if (token->type != OPERATOR || strcmp(token->name, LTRI_BRACKET)!=0 ) utils_error_exit("Error: exprcted bracket '>'", token->pos, self->src, self->file_name);
+		else if (token->type != OPERATOR || strcmp(token->name, LTRI_BRACKET)!=0 ) return utils_make_error("SyntaxError: exprcted bracket '>'", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
 		token->type = BRACKET;
 	}
 
 	++self->pos;
-	return ret;
+	return structCarbonError_new(); //return ret;
 
 }
 
@@ -358,20 +360,21 @@ void structAst_init(struct Ast* self, char* src, char* file_name){
 	self->stmn_list 	= structStatementList_new();
 }
 
-void structAst_scane(struct Ast* self){
+struct CarbonError* structAst_scane(struct Ast* self){
 	bool eof = false;
 	while (!eof){
 		struct Token* tk = structTokenList_createToken(self->tokens);
 		structTokenScanner_setToken(self->token_scanner, tk);
-		eof = structTokenScanner_scaneToken(self->token_scanner);
+		struct CarbonError* err = structTokenScanner_scaneToken(self->token_scanner, &eof); if (err->type != ERROR_SUCCESS) return err;
 		if (eof) tk->type = TK_EOF;
 		if ( tk->type == OPERATOR && strcmp(tk->name, OP_RSHIFT)==0){ // if tk == >> add pass to make it > > for close bracket : list<list<char>>
-			tk = structTokenList_createToken(self->tokens);
-			tk->type = TK_PASS;
+			struct Token* pass_tk = structTokenList_createToken(self->tokens); pass_tk->pos = tk->pos+1;
+			pass_tk->type = TK_PASS;
 		}
 	}
 	// set tk_eof position = last token
 	if (self->tokens->count > 1) self->tokens->list[self->tokens->count -1]->pos = self->tokens->list[self->tokens->count -2]->pos;
+	return structCarbonError_new();
 }
 
 
@@ -394,7 +397,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 
 			struct Statement* stmn = structStatement_new();
 			stmn->type = STMNT_VAR_INIT;
-			stmn->statement.init.dtype = structAst_scaneDtype(self);
+			err = structAst_scaneDtype(self, &(stmn->statement.init.dtype)); if (err->type != ERROR_SUCCESS) return err;
 			token = self->tokens->list[self->pos];
 			if (token->type != IDENTIFIER){ return utils_make_error("SyntaxError: expected an identifier", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); }
 			stmn->statement.init.idf = token;
@@ -412,7 +415,9 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			structStatementList_addStatement(statement_list, stmn);
 		}
 
-		else if (token->type == IDENTIFIER){ // could be variable, function, 
+		// TODO: builtin (or just add to identifier with || )
+
+		else if (token->type == IDENTIFIER || token->type == BUILTIN){ // could be variable, function, 
 			// assignment statement
 			bool is_next_assign; err = structAst_isNextStmnAssign(self, &is_next_assign, NULL); if (err->type != ERROR_SUCCESS) return err;
 			if (is_next_assign){
@@ -427,7 +432,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 				err = structAst_scaneExpr(self, stmn->statement.assign.expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err;
 				structStatementList_addStatement(statement_list, stmn);
 			} else {
-				// if have globals : identifier is known or undefined, if idf is func stmn is func call // TODO: 
+				// if have globals : identifier is known or undefined, if idf is func/builtin stmn is func call // TODO: 
 				struct Statement* stmn = structStatement_new();
 				stmn->statement.unknown.expr = structExpression_new(self->tokens);
 				structAst_scaneExpr(self, stmn->statement.unknown.expr, EXPREND_SEMICOLLON);
@@ -440,7 +445,8 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			struct Statement* stmn = structStatement_new();
 			int err_pos = 0; 
 			bool is_next_assign; err = structAst_isNextStmnAssign(self, &is_next_assign, NULL); if (err->type != ERROR_SUCCESS) return err;
-			if (structAst_isNextStmnAssign(self, &is_next_assign, &err_pos)) return utils_make_error("TypeError: can't assign to literls", ERROR_TYPE, err_pos, self->src, self->file_name, false);
+			if (is_next_assign) return utils_make_error("TypeError: can't assign to literls", ERROR_TYPE, err_pos, self->src, self->file_name, false);
+			stmn->statement.unknown.expr = structExpression_new(self->tokens);
 			err = structAst_scaneExpr(self, stmn->statement.unknown.expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err;
 			stmn->statement.unknown.has_expr = true;
 			structStatementList_addStatement(statement_list, stmn);
@@ -460,11 +466,10 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 
 		// if token == static && ast state != reading class error!
 
-
-
 		self->pos++;
 	}
 
+	// code never reaches here
 
 }
 /***************** </Ast> *************/

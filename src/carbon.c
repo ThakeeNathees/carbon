@@ -16,20 +16,25 @@ int main(int argc, char** argv){
 		return 1;
 	}
 
-	// debug print
+	// debug print src
 	printf("%s\n", text);
 
+	struct CarbonError* err;
+
+	// read tokens
 	struct Ast ast; structAst_init(&ast, text, argv[1]);
-	structAst_scane(&ast);
+	err = structAst_scane(&ast); if (err->type != ERROR_SUCCESS){ printf("%s\n", err->message.buffer ); exit(-1); }
 
-	// debug print
-	//structTokenList_print(ast.tokens); // not classified
+	// debug print tokens
+	//structTokenList_print(ast.tokens);
 
-	struct CarbonError* err = structAst_makeTree(&ast, ast.stmn_list);
-	printf("%s\n", err->message.buffer );
+	// create tree
+	err = structAst_makeTree(&ast, ast.stmn_list); if (err->type != ERROR_SUCCESS){ printf("%s\n", err->message.buffer ); exit(-1);}
 	
-	// debug print
-	//structTokenList_print(ast.tokens); // classified
+	// debug print tokens
+	structTokenList_print(ast.tokens);
+
+	// debug print statements
 	structStatementList_print( ast.stmn_list );
 
 	printf("main runned successfully!\n");
