@@ -23,15 +23,13 @@ int main(int argc, char** argv){
 	structAst_scane(&ast);
 
 	// debug print
-	//structTokenList_print(ast.tokens);
+	//structTokenList_print(ast.tokens); // not classified
 
 	structAst_makeTree(&ast);
 	
 	// debug print
-	structTokenList_print(ast.tokens);
+	//structTokenList_print(ast.tokens); // classified
 	structStatementList_print( ast.stmn_list );
-
-
 
 	printf("main runned successfully!\n");
 	return 0;

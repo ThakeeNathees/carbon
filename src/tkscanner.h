@@ -105,6 +105,7 @@ const char* enumNumberType_toString(enum NumberType self);
 void structToken_init(struct Token* self);
 int  structToken_toString(struct Token* self, char* buffer);
 void structToken_print(struct Token* self);
+bool structToken_isAssignmentOperator(struct Token* self);
 
 // token list
 void structTokenList_init(struct TokenList* self, int growth_size);

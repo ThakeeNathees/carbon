@@ -57,6 +57,15 @@ void structToken_clear(struct Token* self){
 	self->type 	= UNKNOWN;
 	// TODO: free name and allocate new mem
 }
+bool structToken_isAssignmentOperator(struct Token* self){
+	if (self->type != OPERATOR){ return false; }
+	if ( strcmp(self->name, OP_EQ)==0      || strcmp(self->name, OP_PLUSEQ)==0 ||  
+		 strcmp(self->name, OP_MINUSEQ)==0 || strcmp(self->name, OP_MUEQ)==0   ||
+		 strcmp(self->name, OP_DIVEQ)==0 ){
+		return true;
+	}
+	return false;
+}
 //private
 void structToken_addChar(struct Token* self, char c){
 	// TODO: if name_ptr > _name_len
@@ -453,7 +462,7 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self){
 				utils_error_exit("Error: unexpected EOF", self->current_token->pos, self->src, self->file_name);
 			}
 			if (self->src[(self->pos)++] != '\''){  if(self->src[ self->pos ] == '\n') (self->pos)--;
-				utils_error_exit("Error: unexpected EOF", self->current_token->pos, self->src, self->file_name);
+				utils_error_exit("Error: expected symbol ' (use \" for strings)", self->pos-1, self->src, self->file_name);
 			} 
 			return false;
 		}

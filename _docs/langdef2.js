@@ -2,16 +2,14 @@
 expression:
 
 // class defn must be global scope and func only glob and class scope
-random literals in src code not allowed
-ex: 12; or "random string for comment";
 
 statement :
  0. import expr    : import "path/str" ;
  1. initialize     : dtype idf [ = expr] ;  // done
  2. class var init : [static] dtype idf [ = expr ] ;
- 3. assignment     : idf [=, +=, -=, *=, ...] expr ; // not == < > <= >= and or ...
- 4. function call  : idf_func ( expr, ... ) [ . idf_meth ( expr, ... ) ... ] ;
- 5. method call    : idf . idf_meth ( expr, ... ) [ . dif_meth ( expr, ... ) ... ] ;
+ 3. assignment     : idf [=, +=, -=, *=, ...] expr ; // done
+ 4. function call  : idf_func ( expr, ... ) [ . idf_meth ( expr, ... ) ... ] ; // done
+ 5. method call    : idf . idf_meth ( expr, ... ) [ . dif_meth ( expr, ... ) ... ] ; // done
 
  6. if statement   : if ( expr_bool ) { statement; ... } [ else if ( expr_bool ) { statement; ... } ... [ else { statement; ... } ] ]
  7. while loop     : while ( expr_bool ) { statement; ... }

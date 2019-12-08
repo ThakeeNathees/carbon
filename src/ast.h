@@ -4,18 +4,19 @@
 #define EXPRESSION_LIST_SIZE 10
 #define STATEMENT_LIST_SIZE  50
 
+// statement unknowns are: 3; "some str"; func_call(); method.call();
 #define FOREACH_STATEMENT_TYPE(func) \
 	func(STMNT_UNKNOWN)	    \
 	func(STMNT_IMPORT)	    \
 	func(STMNT_VAR_INIT)    \
 	func(STMNT_ASSIGN) 	    \
-	func(STMNT_FUNC_CALL)   \
 	func(STMNT_IF)		    \
 	func(STMNT_WHILE) 	    \
 	func(STMNT_FOR)		    \
 	func(STMNT_FOREACH)	    \
 	func(STMNT_FUNC_DEFN)   \
 	func(STMNT_CLASS_DEFN)
+	//func(STMNT_FUNC_CALL) \ it's unknonwn
 
 enum StatementType
 {
@@ -56,13 +57,14 @@ struct _StatementVarInit
 
 struct _StatementVarAssign
 {
-	struct Token* idf;      // idf op expr;
+	struct Expression* idf; // idf can be : my_ins.get_position().x = 2;
 	struct Token* op; 		// op can be =, +=. -=. *=, ...
 	struct Expression* expr;
 };
-struct _StatementFuncCall
+struct _StatementUnknown
 {
-	struct Expression* expr; // a func call = expr ex: myfunc().somemethod(); also method call
+	bool has_expr;
+	struct Expression* expr; // just execute the expr
 };
 struct _StatementIf
 {
@@ -102,10 +104,10 @@ struct _StatementClassDefn
 };
 union _Statement
 {
+	struct _StatementUnknown	unknown;
 	struct _StatementImport 	import;
 	struct _StatementVarInit 	init;
 	struct _StatementVarAssign	assign;
-	struct _StatementFuncCall	func_call;
 	struct _StatementIf			stm_if;
 	struct _StatementWhile		stm_while;
 	struct _StatementFor 		stm_for;
@@ -163,7 +165,7 @@ struct Expression* structExpression_new(struct TokenList* token_list); // static
 
 // expression dtype
 void structExprDtype_init(struct ExprDtype* self, struct Token* dtype);
-void structExprDtype_print(struct ExprDtype* self, int indent);
+void structExprDtype_print(struct ExprDtype* self, int indent, bool new_line); // call with new_line true; false internal
 struct ExprDtype* structExprDtype_new(struct Token* dtype);
 
 // expression list
