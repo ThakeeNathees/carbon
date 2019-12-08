@@ -172,9 +172,9 @@ enum structAst_ExprEndType
 struct CarbonError* structAst_countArgs(struct Ast* self, int* count){
 
 	// check -> idf ( ) : no args
-	//utils_make_error("Error: unexpected EOF, expected ')'", ERROR_UNEXP_EOF, self->tokens->list[self->pos]->pos, self->src, self->file_name);
-	if (self->tokens->count < self->pos + 3 ) utils_error_exit("Error: unexpected EOF, expected ')'", self->tokens->list[self->pos]->pos, self->src, self->file_name); 
-	if (self->tokens->list[self->pos+1]->type != BRACKET || strcmp(self->tokens->list[self->pos+1]->name,LPARN)!=0 ) utils_error_exit("Error: expected bracket '('", self->tokens->list[self->pos+1]->pos, self->src, self->file_name); 
+	if (self->tokens->count < self->pos + 3 ) return utils_make_error("EofError: unexpected EOF, expected ')'", ERROR_UNEXP_EOF, self->tokens->list[self->pos]->pos, self->src, self->file_name, false); 
+	if (self->tokens->list[self->pos+1]->type != BRACKET || strcmp(self->tokens->list[self->pos+1]->name,LPARN)!=0 ) utils_error_exit("InternalError: expected bracket '('", self->tokens->list[self->pos+1]->pos, self->src, self->file_name);
+	if (self->tokens->list[self->pos+2]->type == SYMBOL && strcmp(self->tokens->list[self->pos+2]->name, SYM_COMMA)==0 )return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, self->tokens->list[self->pos+2]->pos, self->src, self->file_name, false); 
 	struct Token* token = self->tokens->list[self->pos + 2 ];
 	if (token->type == BRACKET && strcmp(token->name, RPARN)==0) {*count = 0; return structCarbonError_new(); }
 
@@ -185,21 +185,22 @@ struct CarbonError* structAst_countArgs(struct Ast* self, int* count){
 		else if (token->type == SYMBOL && strcmp(token->name, SYM_COMMA)==0 ){ 
 			arg_count++; 
 			token = self->tokens->list[self->pos + i ];
-			if (token->type == BRACKET) utils_error_exit("Error: unexpected character", token->pos, self->src, self->file_name);  // func(arg , )
+			if (token->type == BRACKET) return utils_make_error("SyntaxError: unexpected character", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);  // func(arg , )
 		}
-		else if (token->type == SYMBOL && strcmp(token->name, SYM_SEMI_COLLON)==0) utils_error_exit("Error: unexpected semicollon, expected ')' or args", token->pos, self->src, self->file_name); 
-		else if (token->type == TK_EOF) utils_error_exit("Error: unexpected EOF, expected ')'", token->pos, self->src, self->file_name); 
-		else if (structToken_isAssignmentOperator(token)) utils_error_exit("Error: unexpected operator", token->pos, self->src, self->file_name); 
+		else if (token->type == SYMBOL && strcmp(token->name, SYM_SEMI_COLLON)==0) return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); 
+		else if (token->type == TK_EOF) return utils_make_error("EofError: unexpected EOF, expected ')'", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); 
+		else if (structToken_isAssignmentOperator(token)) return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); 
 	}
 }
 
 // semicollon or other end type not included in expr
-struct Expression* structAst_scaneExpr(struct Ast* self, enum structAst_ExprEndType end_type){
-	struct Expression* expr = structExpression_new(self->tokens);
+struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* expr, enum structAst_ExprEndType end_type){
+	//struct Expression* expr = structExpression_new(self->tokens);
 	expr->begin_pos = self->pos;
 	while(true){
+		
 		struct Token* token = self->tokens->list[(self->pos)];
-		if (token->type == TK_EOF ) utils_error_exit("Error: unexpected EOF", token->pos, self->src, self->file_name); 
+		if (token->type == TK_EOF ) return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, token->pos, self->src, self->file_name, false); 
 		if (end_type == EXPREND_SEMICOLLON && token->type == SYMBOL && strcmp(token->name, SYM_SEMI_COLLON)==0){ expr->end_pos = self->pos-1; break;}
 		else if (end_type == EXPREND_COMMA && token->type == SYMBOL && strcmp(token->name, SYM_COMMA)==0){ expr->end_pos = self->pos-1; break;}
 		else if (end_type == EXPREND_RPRAN && token->type == BRACKET && strcmp(token->name,RPARN)==0){ expr->end_pos = self->pos-1; break;}
@@ -211,10 +212,10 @@ struct Expression* structAst_scaneExpr(struct Ast* self, enum structAst_ExprEndT
 		// token = "." check if expr is method or field
 		if (token->type == SYMBOL && strcmp(token->name, SYM_DOT)==0){
 			token = self->tokens->list[++self->pos];
-			if (token->type != IDENTIFIER ) utils_error_exit("Error: expected an identifier", token->pos, self->src, self->file_name);
+			if (token->type != IDENTIFIER ) return utils_make_error("SyntaxError: expected an identifier", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
 			if ( (self->tokens->list[self->pos+1])->type == BRACKET && strcmp((self->tokens->list[self->pos+1])->name, LPARN )==0 ){
 				token->type = FUNCTION; token->func_is_method  = true;
-				structAst_countArgs(self, &(token->func_args_count)); // TODO: err_handle
+				struct CarbonError* err = structAst_countArgs(self, &(token->func_args_count)); if (err->type != ERROR_SUCCESS){ return err; }
 			}
 			else { token->idf_is_field = true; /* not conform */ }
 		}
@@ -235,10 +236,12 @@ struct Expression* structAst_scaneExpr(struct Ast* self, enum structAst_ExprEndT
 		// if builtin count arg count and assert
 		if (token->type == BUILTIN){
 			int args_count;
-			structAst_countArgs(self, &args_count); // TODO: ERROR handle
-			if (token->func_args_count != args_count){ 
-				printf("TypeError: func:%s takes %i arguments (%i given)", token->name, token->func_args_count, args_count); 
-				utils_error_exit("", token->pos, self->src, self->file_name);}
+			struct CarbonError* err = structAst_countArgs(self, &args_count); if (err->type != ERROR_SUCCESS){ return err; }
+			if (token->func_args_count != args_count){
+				char* err_msg = (char*)malloc(ERROR_LINE_SIZE);
+				snprintf(err_msg, ERROR_LINE_SIZE, "TypeError: func:%s takes %i arguments (%i given)", token->name, token->func_args_count, args_count);
+				return utils_make_error(err_msg, ERROR_TYPE, token->pos, self->src, self->file_name, true);
+			}
 		}
 
 		// if token == '-' check it's single operator or binary
@@ -259,37 +262,40 @@ struct Expression* structAst_scaneExpr(struct Ast* self, enum structAst_ExprEndT
 		// if number and next is '(' : numbers anen't callable error
 		if (token->type == NUMBER){
 			if (self->tokens->list[self->pos+1]->type == BRACKET && strcmp(self->tokens->list[self->pos+1]->name, LPARN)==0)
-				utils_error_exit("Error: numbers aren't callable", self->tokens->list[self->pos+1]->pos, self->src, self->file_name);
+				return utils_make_error("TypeError: numbers aren't callable", ERROR_TYPE, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false);
 		}
 		// two numbers can't come next to each other
 		if (token->type == NUMBER && self->tokens->list[self->pos+1]->type == NUMBER)
-			utils_error_exit("Error: invalid syntax", self->tokens->list[self->pos+1]->pos, self->src, self->file_name);
+			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false);
 		// after a close bracket number cant come
 		if (token->type == BRACKET && strcmp(token->name, RPARN)==0 && self->tokens->list[self->pos+1]->type == NUMBER)
-			utils_error_exit("Error: invalid syntax", self->tokens->list[self->pos+1]->pos, self->src, self->file_name);
+			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false);
 		if (token->type == BRACKET && strcmp(token->name, RCRU_BRACKET)==0 && self->tokens->list[self->pos+1]->type == NUMBER)
-			utils_error_exit("Error: invalid syntax", self->tokens->list[self->pos+1]->pos, self->src, self->file_name);
+			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false);
 		if (token->type == BRACKET && strcmp(token->name, LSQ_BRACKET)==0 && self->tokens->list[self->pos+1]->type == NUMBER)
-			utils_error_exit("Error: invalid syntax", self->tokens->list[self->pos+1]->pos, self->src, self->file_name);
+			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false);
 		/********************************************************/
 
 
 		(self->pos)++;
 	}
+	return structCarbonError_new();
 }
 
-bool structAst_isNextStmnAssign(struct Ast* self, int* assign_op_pos){
+struct CarbonError* structAst_isNextStmnAssign(struct Ast* self, bool* ret, int* assign_op_pos){
+	struct CarbonError* err = structCarbonError_new();
 	int i = 0;
 	while(true){
 		struct Token* token = self->tokens->list[ self->pos + i ];
-		if (token->type == TK_EOF ) utils_error_exit("Error: unexpected EOF", token->pos, self->src, self->file_name); 
-		if (token->type == SYMBOL && strcmp(token->name, SYM_SEMI_COLLON)==0){ return false;}
+		if (token->type == TK_EOF ) return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, token->pos, self->src, self->file_name, false); 
+		if (token->type == SYMBOL && strcmp(token->name, SYM_SEMI_COLLON)==0){ *ret = false; return err; }
 		if (structToken_isAssignmentOperator(token)){ 
 			if (assign_op_pos != NULL) *assign_op_pos = token->pos;
-			return true; 
+			*ret = true; return err;
 		}
 		i++;
 	}
+	return err;
 }
 
 struct ExprDtype* structAst_scaneDtype(struct Ast* self){
@@ -351,6 +357,7 @@ void structAst_init(struct Ast* self, char* src, char* file_name){
 	self->token_scanner = structTokenScanner_new(src, file_name);
 	self->stmn_list 	= structStatementList_new();
 }
+
 void structAst_scane(struct Ast* self){
 	bool eof = false;
 	while (!eof){
@@ -369,16 +376,17 @@ void structAst_scane(struct Ast* self){
 
 
 
-void structAst_makeTree(struct Ast* self, struct StatementList* statement_list) {
-	while ( true ){
+struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* statement_list) {
+	struct CarbonError* err;
+
+	while ( true ) {
 		
 		struct Token* token = self->tokens->list[self->pos];
 
 		if (self->pos == self->tokens->count -1){
 			if (token->type != TK_EOF) { printf("InternalError: expected token TK_EOF\nfound: "); structToken_print(token); exit(1); }
-			break;
+			return err; //break;
 		}
-
 
 		if (token->type == COMMENT); // do nothing
 
@@ -387,17 +395,17 @@ void structAst_makeTree(struct Ast* self, struct StatementList* statement_list) 
 			struct Statement* stmn = structStatement_new();
 			stmn->type = STMNT_VAR_INIT;
 			stmn->statement.init.dtype = structAst_scaneDtype(self);
-
 			token = self->tokens->list[self->pos];
-			if (token->type != IDENTIFIER){ utils_error_exit("Error: expected an identifier", token->pos, self->src, self->file_name); }
+			if (token->type != IDENTIFIER){ return utils_make_error("SyntaxError: expected an identifier", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); }
 			stmn->statement.init.idf = token;
 			token = self->tokens->list[++self->pos];
 			if ( token->type == SYMBOL && strcmp(token->name , SYM_SEMI_COLLON)==0 ){
 				stmn->statement.init.has_expr = false;
 			} else { // scane expr
-				if (token->type != OPERATOR && strcmp(token->name, OP_EQ)!=0){ utils_error_exit("Error: expected '=' or ';'", token->pos, self->src, self->file_name); }
+				if (token->type != OPERATOR && strcmp(token->name, OP_EQ)!=0){ return utils_make_error("SyntaxError: expected '=' or ';'", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); }
 				++self->pos;
-				struct Expression* expr = structAst_scaneExpr(self, EXPREND_SEMICOLLON);
+				struct Expression* expr = structExpression_new(self->tokens);
+				err = structAst_scaneExpr(self, expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err;
 				stmn->statement.init.expr = expr;
 				stmn->statement.init.has_expr = true;
 			}
@@ -406,20 +414,23 @@ void structAst_makeTree(struct Ast* self, struct StatementList* statement_list) 
 
 		else if (token->type == IDENTIFIER){ // could be variable, function, 
 			// assignment statement
-			if (structAst_isNextStmnAssign(self, NULL)){
+			bool is_next_assign; err = structAst_isNextStmnAssign(self, &is_next_assign, NULL); if (err->type != ERROR_SUCCESS) return err;
+			if (is_next_assign){
 				struct Statement* stmn = structStatement_new();
 				stmn->type = STMNT_ASSIGN;
-
-				stmn->statement.assign.idf = structAst_scaneExpr(self, EXPREND_ASSIGN);
+				stmn->statement.assign.idf = structExpression_new(self->tokens);
+				err = structAst_scaneExpr(self, stmn->statement.assign.idf, EXPREND_ASSIGN);  if (err->type != ERROR_SUCCESS) return err;
 				token = self->tokens->list[self->pos++];
-				if (!structToken_isAssignmentOperator(token)) utils_error_exit("InternalError: expected an assignment operator", token->pos, self->src, self->file_name);
+				if (!structToken_isAssignmentOperator(token)) utils_error_exit("InternalError: expected an assignment operator", token->pos, self->src, self->file_name); // COMPLIER INTERNAL ERROR EXIT(1)
 				stmn->statement.assign.op = token;
-				stmn->statement.assign.expr = structAst_scaneExpr(self, EXPREND_SEMICOLLON);
+				stmn->statement.assign.expr = structExpression_new(self->tokens);
+				err = structAst_scaneExpr(self, stmn->statement.assign.expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err;
 				structStatementList_addStatement(statement_list, stmn);
 			} else {
 				// if have globals : identifier is known or undefined, if idf is func stmn is func call // TODO: 
 				struct Statement* stmn = structStatement_new();
-				stmn->statement.unknown.expr = structAst_scaneExpr(self, EXPREND_SEMICOLLON);
+				stmn->statement.unknown.expr = structExpression_new(self->tokens);
+				structAst_scaneExpr(self, stmn->statement.unknown.expr, EXPREND_SEMICOLLON);
 				stmn->statement.unknown.has_expr = true;
 				structStatementList_addStatement(statement_list, stmn);
 			}
@@ -427,8 +438,10 @@ void structAst_makeTree(struct Ast* self, struct StatementList* statement_list) 
 
 		else if ( token->type == NUMBER || token->type == STRING ){
 			struct Statement* stmn = structStatement_new();
-			int err_pos = 0; if (structAst_isNextStmnAssign(self, &err_pos)) utils_error_exit("Error: can't assign to literls", err_pos, self->src, self->file_name);
-			stmn->statement.unknown.expr = structAst_scaneExpr(self, EXPREND_SEMICOLLON);
+			int err_pos = 0; 
+			bool is_next_assign; err = structAst_isNextStmnAssign(self, &is_next_assign, NULL); if (err->type != ERROR_SUCCESS) return err;
+			if (structAst_isNextStmnAssign(self, &is_next_assign, &err_pos)) return utils_make_error("TypeError: can't assign to literls", ERROR_TYPE, err_pos, self->src, self->file_name, false);
+			err = structAst_scaneExpr(self, stmn->statement.unknown.expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err;
 			stmn->statement.unknown.has_expr = true;
 			structStatementList_addStatement(statement_list, stmn);
 		}
@@ -437,11 +450,11 @@ void structAst_makeTree(struct Ast* self, struct StatementList* statement_list) 
 			struct Statement* stmn = structStatement_new();
 			stmn->type = STMNT_IMPORT;
 			token = self->tokens->list[++self->pos];
-			if (token->type != STRING)utils_error_exit("Error: expected import path string", token->pos, self->src, self->file_name);
+			if (token->type != STRING)return utils_make_error("SyntaxError: expected import path string", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
 			// TODO: validate token path
 			stmn->statement.import.path = token;
 			token = self->tokens->list[++self->pos];
-			if (token->type != SYMBOL || strcmp(token->name, SYM_SEMI_COLLON)!=0 )utils_error_exit("Error: expected a semicollon", token->pos, self->src, self->file_name);
+			if (token->type != SYMBOL || strcmp(token->name, SYM_SEMI_COLLON)!=0 )return utils_make_error("SyntaxError: expected a semicollon", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
 			structStatementList_addStatement(statement_list, stmn);
 		}
 
@@ -451,7 +464,6 @@ void structAst_makeTree(struct Ast* self, struct StatementList* statement_list) 
 
 		self->pos++;
 	}
-	
 
 
 }

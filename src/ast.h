@@ -189,6 +189,6 @@ struct StatementList* structStatementList_new(); // static method
 // ast
 void structAst_init(struct Ast* self, char* src, char* fiel_name);
 void structAst_scane(struct Ast* self);
-void structAst_makeTree(struct Ast* self, struct StatementList* statement_list);
+struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* statement_list);
 
 /****************************************************************/

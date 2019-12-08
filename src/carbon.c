@@ -25,7 +25,8 @@ int main(int argc, char** argv){
 	// debug print
 	//structTokenList_print(ast.tokens); // not classified
 
-	structAst_makeTree(&ast, ast.stmn_list);
+	struct CarbonError* err = structAst_makeTree(&ast, ast.stmn_list);
+	printf("%s\n", err->message.buffer );
 	
 	// debug print
 	//structTokenList_print(ast.tokens); // classified

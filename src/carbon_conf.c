@@ -19,7 +19,7 @@ void structString_init(struct String* self){
 void structString_minSize(struct String* self, int min_size){
 	if (self->buff_size < min_size){
 		char* new_buff = (char*)malloc(min_size);
-		self->buff_size = min_size;
+		self->buff_size = min_size; self->buff_pos = 0;
 		free(self->buffer);
 		self->buffer = new_buff;
 	}

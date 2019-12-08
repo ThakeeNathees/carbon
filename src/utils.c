@@ -66,10 +66,13 @@ void utils_error_exit(char* err_msg, int pos, char* src, char* file_name){
 	for(int i=0; i<line_pos;i++) printf(" ");printf("^\n");exit(1); 
 }
 
-struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, int pos, char* src, char* file_name){
+struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, int pos, char* src, char* file_name, bool free_msg){
 	int line_pos = 0; struct CarbonError* err = structCarbonError_new(); err->type = err_type;
-	char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(pos, src, buff, &line_pos);
-	int msg_min_size = snprintf(NULL, 0,                  "%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff); structString_minSize(&(err->message), msg_min_size);
-	snprintf(err->message.buffer, err->message.buff_size, "%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff);
+	char buff[ERROR_LINE_SIZE];  int line_no = utils_pos_to_line(pos, src, buff, &line_pos);
+	int msg_min_size = snprintf(NULL, 0,                                 "%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff); structString_minSize(&(err->message), msg_min_size+100); // TOOD: 100 is for ^ printing
+	int msg_size = snprintf(err->message.buffer, err->message.buff_size, "%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff);
+	err->message.buff_pos += msg_size;
+	for(int i=0; i<line_pos;i++) err->message.buffer[err->message.buff_pos++]= ' ';err->message.buffer[err->message.buff_pos++]='^';
+	if (free_msg) free(err_msg);
 	return err;
 }

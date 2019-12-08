@@ -1,7 +1,7 @@
 
 #include "carbon_conf.h"
 
-#define ERROR_LINE_SIZE 80
+#define ERROR_LINE_SIZE 100
 
 /* 	return 0 if success, text_p has result 
 	don't forget to free(*text_p)
@@ -17,4 +17,5 @@ int  utils_pos_to_line(int pos, char* src, char* buffer, int* err_pos);
 // dipricated
 void utils_error_exit(char* err_msg, int pos, char* src, char* file_name);
 
-struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, int pos, char* src, char* file_name);
+// free_msg -> free the error message after writing to new error obj
+struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, int pos, char* src, char* file_name, bool free_msg);
