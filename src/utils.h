@@ -13,4 +13,8 @@ bool utils_char_in_str(char c, char* string);
 int  utils_char_count_in_str(char c, char* string);
 int  utils_pos_to_line(int pos, char* src, char* buffer, int* err_pos);
 
+
+// dipricated
 void utils_error_exit(char* err_msg, int pos, char* src, char* file_name);
+
+struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, int pos, char* src, char* file_name);

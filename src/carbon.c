@@ -25,7 +25,7 @@ int main(int argc, char** argv){
 	// debug print
 	//structTokenList_print(ast.tokens); // not classified
 
-	structAst_makeTree(&ast);
+	structAst_makeTree(&ast, ast.stmn_list);
 	
 	// debug print
 	//structTokenList_print(ast.tokens); // classified

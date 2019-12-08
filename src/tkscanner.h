@@ -4,10 +4,8 @@
 #include "utils.h"
 
 #define TOKEN_LIST_SIZE 100
-#define TOKEN_NAME_SIZE 100
-
-#define GENERATE_ENUM(enum_name) enum_name,
-#define GENERATE_STRING(enum_name) #enum_name,
+#define TOKEN_NAME_SIZE 10
+#define TOKEN_STRING_GROWTH 100
 
 // token types
 // tk_pass : if >> to > and > use tk_pass

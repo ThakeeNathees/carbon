@@ -68,7 +68,17 @@ bool structToken_isAssignmentOperator(struct Token* self){
 }
 //private
 void structToken_addChar(struct Token* self, char c){
-	// TODO: if name_ptr > _name_len
+	
+	if (self->_name_ptr >= self->_name_len-1){ // one space for '\0'
+		int growth_size = TOKEN_NAME_SIZE; if (self->type == STRING) growth_size = TOKEN_STRING_GROWTH;
+		char* new_name = (char*)malloc( self->_name_len + growth_size ) ;
+		self->_name_len += growth_size;
+		for ( int i=0; i < self->_name_ptr; i++){
+			new_name[i] = self->name[i];
+		}
+		free(self->name);
+		self->name = new_name;
+	}
 	self->name[(self->_name_ptr)++] = c;
 	self->name[(self->_name_ptr)] = '\0';
 }
@@ -397,6 +407,7 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self){
 		
 		// string
 		if (c == '"'){
+			self->current_token->type = STRING;
 			while(true){
 				(self->pos)++;
 				if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
@@ -421,7 +432,7 @@ bool structTokenScanner_scaneToken(struct TokenScanner* self){
 					else structToken_addChar( self->current_token, '\\' ); // \ is not escaping 
 
 				} else if (c=='"'){
-					self->current_token->type = STRING; (self->pos)++;
+					(self->pos)++;
 					return false;
 				}
 				structToken_addChar( self->current_token, c );
