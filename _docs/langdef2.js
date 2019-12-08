@@ -4,7 +4,7 @@ expression:
 // class defn must be global scope and func only glob and class scope
 
 statement :
- 0. import expr    : import "path/str" ;
+ 0. import expr    : import "path/str" ;    // done
  1. initialize     : dtype idf [ = expr] ;  // done
  2. class var init : [static] dtype idf [ = expr ] ;
  3. assignment     : idf [=, +=, -=, *=, ...] expr ; // done

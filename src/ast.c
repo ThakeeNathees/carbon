@@ -464,6 +464,21 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			structStatementList_addStatement(statement_list, stmn);
 		}
 
+		/*
+		else if (token->type == KEYWORD && strcmp(token->name, KWORD_WHILE)==0){
+			struct Statement* stmn = structStatement_new();
+			stmn->type = STMNT_WHILE;
+			token = self->tokens->list[++self->pos];
+			if (token->type != BRACKET || strcmp(token->name, LPARN)|=0)return utils_make_error("SyntaxError: expected symbol '('", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
+			++self->pos;
+			struct Expression* expr = structExpression_new(self->tokens);
+			err = structAst_scaneExpr(self, expr, EXPREND_RPRAN); if (err->type != ERROR_SUCCESS) return err;
+			stmn->statement.stmn_while.expr_bool = expr;
+			stmn->statement.stmn_while.stmn_list = structStatementList_new();
+			// TODO: scane 
+		}
+		*/
+		
 		// if token == static && ast state != reading class error!
 
 		self->pos++;
