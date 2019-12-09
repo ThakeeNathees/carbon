@@ -89,29 +89,39 @@ struct ExpressionList* structExpressionList_new(struct TokenList* token_list){
 void structStatement_init(struct Statement* self){
 	self->type = STMNT_UNKNOWN;
 	self->statement.unknown.has_expr = false;
-	self->indent = 0;
 }
-void structStatement_print(struct Statement* self){
+void structStatement_print(struct Statement* self, int indent){
 	if (self->type == STMNT_UNKNOWN){ 
-		for (int i=0; i< self->indent; i++)  printf("\t");printf("Stmnt : Unknown\n"); 
-		if (self->statement.unknown.has_expr)structExpression_print(self->statement.unknown.expr, self->indent+1);
+		for (int i=0; i< indent; i++)  printf("\t");printf("Stmnt : "); 
+		if (self->statement.unknown.has_expr)structExpression_print(self->statement.unknown.expr, 0);
 	}
 	else if (self->type == STMNT_IMPORT){
-		for (int i=0; i< self->indent; i++) printf("\t");printf("Stmnt : IMPORT\n");
-		for (int i=0; i< self->indent+1; i++) printf("\t");printf("path  : %s\n", self->statement.import.path->name );
+		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : IMPORT | "); printf("path  : %s\n", self->statement.import.path->name );
 	}
 	else if (self->type == STMNT_VAR_INIT){
-		for (int i=0; i< self->indent; i++) printf("\t");printf("Stmnt : VAR_INIT\n");
-		structExprDtype_print(self->statement.init.dtype,self->indent+1, true);
-		for (int i=0; i< self->indent+1; i++) printf("\t");printf("idf   : %-6s\n", self->statement.init.idf->name);
-		if (self->statement.init.has_expr) structExpression_print(self->statement.init.expr, self->indent+1);
+		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : VA_INI \n");
+		structExprDtype_print(self->statement.init.dtype, indent+1, true);
+		for (int i=0; i< indent+1; i++) printf("\t");printf("idf   : %-6s\n", self->statement.init.idf->name);
+		if (self->statement.init.has_expr) structExpression_print(self->statement.init.expr, indent+1);
 	}
 	else if (self->type == STMNT_ASSIGN){
-		for (int i=0; i< self->indent; i++) printf("\t");printf("Stmnt : ASSIGN\n");
-		structExpression_print(self->statement.assign.idf, self->indent+1);
-		for (int i=0; i< self->indent+1; i++) printf("\t");printf("op    : %-6s\n", self->statement.assign.op->name);
-		structExpression_print(self->statement.assign.expr, self->indent+1);
+		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : ASSIGN\n");
+		structExpression_print(self->statement.assign.idf, indent+1);
+		for (int i=0; i< indent+1; i++) printf("\t");printf("op    : %-6s\n", self->statement.assign.op->name);
+		structExpression_print(self->statement.assign.expr, indent+1);
 	}
+	else if (self->type == STMNT_WHILE){
+		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : WHILE | "); structExpression_print(self->statement.stm_while.expr_bool, 0);
+		structStatementList_print(self->statement.stm_while.stmn_list);
+
+	}
+	else if (self->type == STMNT_BREAK){
+		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : BREAK\n");
+	}
+	else if (self->type == STMNT_CONTINUE){
+		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : CONTINUE\n");
+	}
+	
 }
 struct Statement* structStatement_new(){
 	struct Statement* new_stmn = (struct Statement*)malloc(sizeof(struct Statement));
@@ -122,10 +132,12 @@ struct Statement* structStatement_new(){
 
 /***************** <StatementList> *************/
 void structStatementList_init(struct StatementList* self, int growth_size){
+	self->parent = NULL;
 	self->count = 0;
 	self->growth_size = growth_size;
 	self->size  = self->growth_size;
 	self->list  = (struct Statement**)malloc( sizeof(struct Statement) * self->growth_size );
+	self->indent = 0;
 }
 void structStatementList_addStatement(struct StatementList* self, struct Statement* statement){
 	if (self->count >= self->size){
@@ -146,7 +158,7 @@ struct Statement* structStatementList_createStatement(struct StatementList* self
 }
 void structStatementList_print(struct StatementList* self){
 	for (int i=0; i< self->count; i++){
-		structStatement_print(self->list[i]);
+		structStatement_print(self->list[i], self->indent);
 	}
 }
 struct StatementList* structStatementList_new(){
@@ -215,7 +227,7 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 			if (token->type != IDENTIFIER ) return utils_make_error("SyntaxError: expected an identifier", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
 			if ( (self->tokens->list[self->pos+1])->type == BRACKET && strcmp((self->tokens->list[self->pos+1])->name, LPARN )==0 ){
 				token->type = FUNCTION; token->func_is_method  = true;
-				struct CarbonError* err = structAst_countArgs(self, &(token->func_args_count)); if (err->type != ERROR_SUCCESS){ return err; }
+				struct CarbonError* err = structAst_countArgs(self, &(token->func_args_given)); if (err->type != ERROR_SUCCESS){ return err; }
 			}
 			else { token->idf_is_field = true; /* not conform */ }
 		}
@@ -225,7 +237,7 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 			if ( (self->tokens->list[self->pos+1])->type == BRACKET && strcmp((self->tokens->list[self->pos+1])->name, LPARN )==0 ){
 				// TODO: check if function is registered else error!
 				token->type = FUNCTION; // not method
-				// token->func_args_count == structAst_countArgs(self); // TODO: args count already known : assert
+				struct CarbonError* err = structAst_countArgs(self, &(token->func_args_given)); if (err->type != ERROR_SUCCESS) return err;
 			}
 			else {
 				// TODO: check if the variable is registered else error!
@@ -235,11 +247,10 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 
 		// if builtin count arg count and assert
 		if (token->type == BUILTIN){
-			int args_count;
-			struct CarbonError* err = structAst_countArgs(self, &args_count); if (err->type != ERROR_SUCCESS){ return err; }
-			if (token->func_args_count != args_count){
+			struct CarbonError* err = structAst_countArgs(self, &(token->func_args_given)); if (err->type != ERROR_SUCCESS){ return err; }
+			if (token->func_args_given != token->func_args_count){
 				char* err_msg = (char*)malloc(ERROR_LINE_SIZE);
-				snprintf(err_msg, ERROR_LINE_SIZE, "TypeError: func:%s takes %i arguments (%i given)", token->name, token->func_args_count, args_count);
+				snprintf(err_msg, ERROR_LINE_SIZE, "TypeError: func:%s takes %i arguments (%i given)", token->name, token->func_args_count, token->func_args_given);
 				return utils_make_error(err_msg, ERROR_TYPE, token->pos, self->src, self->file_name, true);
 			}
 		}
@@ -347,7 +358,6 @@ struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** re
 
 	++self->pos;
 	return structCarbonError_new(); //return ret;
-
 }
 
 // public
@@ -360,7 +370,7 @@ void structAst_init(struct Ast* self, char* src, char* file_name){
 	self->stmn_list 	= structStatementList_new();
 }
 
-struct CarbonError* structAst_scane(struct Ast* self){
+struct CarbonError* structAst_scaneTokens(struct Ast* self){
 	bool eof = false;
 	while (!eof){
 		struct Token* tk = structTokenList_createToken(self->tokens);
@@ -377,7 +387,9 @@ struct CarbonError* structAst_scane(struct Ast* self){
 	return structCarbonError_new();
 }
 
-
+/*
+makeTree terminates for tk_eof, and rcur_bracket
+*/
 
 struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* statement_list) {
 	struct CarbonError* err;
@@ -385,10 +397,13 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 	while ( true ) {
 		
 		struct Token* token = self->tokens->list[self->pos];
-
+		// scane terminations
 		if (self->pos == self->tokens->count -1){
 			if (token->type != TK_EOF) { printf("InternalError: expected token TK_EOF\nfound: "); structToken_print(token); exit(1); }
-			return err; //break;
+			return structCarbonError_new(); //break;
+		}
+		if (token->type == BRACKET && strcmp(token->name, RCRU_BRACKET)==0){
+			return structCarbonError_new();
 		}
 
 		if (token->type == COMMENT); // do nothing
@@ -464,20 +479,38 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			structStatementList_addStatement(statement_list, stmn);
 		}
 
-		/*
 		else if (token->type == KEYWORD && strcmp(token->name, KWORD_WHILE)==0){
 			struct Statement* stmn = structStatement_new();
 			stmn->type = STMNT_WHILE;
 			token = self->tokens->list[++self->pos];
-			if (token->type != BRACKET || strcmp(token->name, LPARN)|=0)return utils_make_error("SyntaxError: expected symbol '('", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
+			if (token->type != BRACKET || strcmp(token->name, LPARN)!=0)return utils_make_error("SyntaxError: expected symbol '('", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
 			++self->pos;
 			struct Expression* expr = structExpression_new(self->tokens);
 			err = structAst_scaneExpr(self, expr, EXPREND_RPRAN); if (err->type != ERROR_SUCCESS) return err;
-			stmn->statement.stmn_while.expr_bool = expr;
-			stmn->statement.stmn_while.stmn_list = structStatementList_new();
-			// TODO: scane 
+			stmn->statement.stm_while.expr_bool = expr;
+			struct StatementList* stmn_list = structStatementList_new(); stmn_list->indent = statement_list->indent+1;
+			stmn->statement.stm_while.stmn_list = stmn_list; 
+			err = structAst_makeTree(self, stmn->statement.stm_while.stmn_list); if (err->type != ERROR_SUCCESS) return err;
+			structStatementList_addStatement(statement_list, stmn);
 		}
-		*/
+
+		// break
+		else if (token->type == KEYWORD && strcmp(token->name, KWORD_BREAK)==0){
+			token = self->tokens->list[++self->pos];
+			if (token->type != SYMBOL || strcmp(token->name, SYM_SEMI_COLLON)!=0){ return utils_make_error("SyntaxError: expected symbol ';'", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); }
+			struct Statement* stmn = structStatement_new(); stmn->type = STMNT_BREAK;
+			structStatementList_addStatement(statement_list, stmn);
+		}
+
+		// continue
+		else if (token->type == KEYWORD && strcmp(token->name, KWORD_CONTINUE)==0){
+			token = self->tokens->list[++self->pos];
+			if (token->type != SYMBOL || strcmp(token->name, SYM_SEMI_COLLON)!=0){ return utils_make_error("SyntaxError: expected symbol ';'", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); }
+			struct Statement* stmn = structStatement_new(); stmn->type = STMNT_CONTINUE;
+			structStatementList_addStatement(statement_list, stmn);
+		}
+
+
 		
 		// if token == static && ast state != reading class error!
 

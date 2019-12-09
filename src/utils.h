@@ -11,7 +11,7 @@ int utils_read_file(char** text_p, const char* file_path);
 // string util
 bool utils_char_in_str(char c, char* string);
 int  utils_char_count_in_str(char c, char* string);
-int  utils_pos_to_line(int pos, char* src, char* buffer, int* err_pos);
+int  utils_pos_to_line(int pos, char* src, char* buffer, char* location_str);
 
 
 // dipricated

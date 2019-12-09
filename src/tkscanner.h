@@ -71,6 +71,7 @@ struct Token
 	// for function type
 	bool func_is_method; // insts.method() : comes after . operator and after a '('
 	int  func_args_count;
+	int  func_args_given; // for check count == given
 
 	// for identifier
 	bool idf_is_field; // instance.field : comes after . operator no brecket after

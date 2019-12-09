@@ -37,42 +37,56 @@ int utils_char_count_in_str(char c, char* string){
 	return count;
 }
 
-int utils_pos_to_line(int pos, char* src, char* buffer, int* err_pos ){
-	int line_no = 1;
+int utils_pos_to_line(int pos, char* src, char* buffer, char* location_str ){
+
+	int line_no = 1; int loc_ptr = 0;
 	int line_begin_pos = 0;
 	for ( int i=0; i<pos; i++){
+		if (src[i] == '\t' && location_str != NULL) location_str[loc_ptr++] = '\t';
+		else if (location_str != NULL) location_str[loc_ptr++] = ' ';
+
+
 		if (src[i] == '\n'){ 
+			if (location_str != NULL) { loc_ptr =0; location_str[loc_ptr] = '\0'; } 
 			line_begin_pos = i+1;
 			(line_no)++;
 		}
 	}
-
+	location_str[loc_ptr++] = '^';location_str[loc_ptr++] = '\0';
+	
 	int i=0;
 	while(true){
 		if (src[line_begin_pos+i]=='\n' || src[line_begin_pos+i]=='\0'){ buffer[i] = '\0'; break; }
 		buffer[i] = src[line_begin_pos+i]; i++;
 	}
 
-	if (err_pos != NULL) *err_pos = pos - line_begin_pos;
-
 	return line_no;
 
 }
 
 void utils_error_exit(char* err_msg, int pos, char* src, char* file_name){
-	int line_pos = 0;
-	char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(pos, src, buff, &line_pos);
+	char location_str[ERROR_LINE_SIZE];
+	char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(pos, src, buff, location_str);
 	printf("%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff);
-	for(int i=0; i<line_pos;i++) printf(" ");printf("^\n");exit(1); 
+	printf("%s\n", location_str);
+	exit(1);
 }
 
 struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, int pos, char* src, char* file_name, bool free_msg){
-	int line_pos = 0; struct CarbonError* err = structCarbonError_new(); err->type = err_type;
-	char buff[ERROR_LINE_SIZE];  int line_no = utils_pos_to_line(pos, src, buff, &line_pos);
+	char location_str[ERROR_LINE_SIZE];
+	char buff[ERROR_LINE_SIZE];  int line_no = utils_pos_to_line(pos, src, buff, location_str);
+	struct CarbonError* err = structCarbonError_new(); err->type = err_type;
 	int msg_min_size = snprintf(NULL, 0,                                 "%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff); structString_minSize(&(err->message), msg_min_size+100); // TOOD: 100 is for ^ printing
 	int msg_size = snprintf(err->message.buffer, err->message.buff_size, "%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff);
 	err->message.buff_pos += msg_size;
-	for(int i=0; i<line_pos;i++) err->message.buffer[err->message.buff_pos++]= ' ';err->message.buffer[err->message.buff_pos++]='^';
+
+	int i=0; 
+	while( true ){
+		char c = location_str[i++];
+		err->message.buffer[(err->message.buff_pos)++]= c;
+		if (c == '\0') break;
+	}
+	
 	if (free_msg) free(err_msg);
 	return err;
 }

@@ -23,16 +23,16 @@ int main(int argc, char** argv){
 
 	// read tokens
 	struct Ast ast; structAst_init(&ast, text, argv[1]);
-	err = structAst_scane(&ast); if (err->type != ERROR_SUCCESS){ printf("%s\n", err->message.buffer ); exit(-1); }
+	err = structAst_scaneTokens(&ast); if (err->type != ERROR_SUCCESS){ printf("%s\n", err->message.buffer ); exit(-1); }
 
 	// debug print tokens
 	//structTokenList_print(ast.tokens);
 
 	// create tree
 	err = structAst_makeTree(&ast, ast.stmn_list); if (err->type != ERROR_SUCCESS){ printf("%s\n", err->message.buffer ); exit(-1);}
-	
+
 	// debug print tokens
-	structTokenList_print(ast.tokens);
+	// structTokenList_print(ast.tokens);
 
 	// debug print statements
 	structStatementList_print( ast.stmn_list );

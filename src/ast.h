@@ -11,6 +11,8 @@
 	func(STMNT_VAR_INIT)    \
 	func(STMNT_ASSIGN) 	    \
 	func(STMNT_IF)		    \
+	func(STMNT_BREAK)		\
+	func(STMNT_CONTINUE) 	\
 	func(STMNT_WHILE) 	    \
 	func(STMNT_FOR)		    \
 	func(STMNT_FOREACH)	    \
@@ -121,7 +123,6 @@ struct Statement
 {
 	enum StatementType type;
 	union _Statement statement;
-	int indent; // for printing
 
 };
 
@@ -136,9 +137,11 @@ struct ExpressionList
 struct StatementList
 {
 	struct Statement** list;
+	struct Statement* parent;
 	int count;
 	int size;
 	int growth_size;
+	int indent; // for printing
 };
 
 /*********************************************/
@@ -176,7 +179,7 @@ struct ExpressionList* structExpressionList_new(struct TokenList* token_list); /
 
 // statement
 void structStatement_init(struct Statement* self);
-void structStatement_print(struct Statement* self);
+void structStatement_print(struct Statement* self, int indent);
 struct Statement* structStatement_new(); // static method
 
 // statement list
@@ -188,7 +191,7 @@ struct StatementList* structStatementList_new(); // static method
 
 // ast
 void structAst_init(struct Ast* self, char* src, char* fiel_name);
-struct CarbonError* structAst_scane(struct Ast* self);
+struct CarbonError* structAst_scaneTokens(struct Ast* self);
 struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* statement_list);
 
 /****************************************************************/
