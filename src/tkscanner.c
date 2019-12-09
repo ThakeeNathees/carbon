@@ -141,37 +141,37 @@ static const char C_IDENTIFIER[]  	= {
 // private static methods
 bool structTokenScanner_isCharWhiteSpace(char c){
 	size_t arr_size = ARR_SIZE(C_WHITE_SPACE);
-	for (int i=0; i < arr_size; i++){
+	for (unsigned int i=0; i < arr_size; i++){
 		if ( c == C_WHITE_SPACE[i] ) return true;
 	} return false;
 }
 bool structTokenScanner_isCharNumber(char c){
 	size_t arr_size = ARR_SIZE(C_NUMBER);
-	for (int i=0; i < arr_size; i++){
+	for (unsigned int i=0; i < arr_size; i++){
 		if ( c == C_NUMBER[i] ) return true;
 	} return false;
 }
 bool structTokenScanner_isCharSymbol(char c){
 	size_t arr_size = ARR_SIZE(C_SYMBOL);
-	for (int i=0; i < arr_size; i++){
+	for (unsigned int i=0; i < arr_size; i++){
 		if ( c == C_SYMBOL[i] ) return true;
 	} return false;
 }
 bool structTokenScanner_isCharBracket(char c){
 	size_t arr_size = ARR_SIZE(C_BRACKET);
-	for (int i=0; i < arr_size; i++){
+	for (unsigned int i=0; i < arr_size; i++){
 		if ( c == C_BRACKET[i] ) return true;
 	} return false;
 }
 bool structTokenScanner_isCharOperator(char c){
 	size_t arr_size = ARR_SIZE(C_OPERATOR);
-	for (int i=0; i<arr_size; i++){
+	for (unsigned int i=0; i<arr_size; i++){
 		if (c == C_OPERATOR[i]) return true;
 	} return false;
 }
 bool structTokenScanner_isCharIdentifier(char c){
 	size_t arr_size = ARR_SIZE(C_IDENTIFIER);
-	for (int i=0; i < arr_size; i++){
+	for (unsigned int i=0; i < arr_size; i++){
 		if (c == C_IDENTIFIER[i]) return true;
 	} return false;
 }
@@ -283,7 +283,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 
 	// invalid number
 	char* numstr = self->current_token->name;
-	int   numlen = strlen(numstr);
+	size_t   numlen = strlen(numstr);
 	int count = utils_char_count_in_str('.', numstr);
 	if (count > 1){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 		return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
@@ -297,7 +297,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		'A',  'B',  'C',  'D',  'E',  'F', 'G',  'H',  'I',  'J',  'K',  'L',  'M',  'N',  'O',  'P',  'Q',  'R',  'S',  'T',  'U',  'V',  'W',  'X',  'Y',  'Z',
 		};
 		arr_size = ARR_SIZE(invalid_chars_hex);
-			for (int i=0; i<arr_size; i++){
+			for (unsigned int i=0; i<arr_size; i++){
 			if (utils_char_in_str(invalid_chars_hex[i], numstr)) { if(self->src[ self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
@@ -327,7 +327,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
 		self->current_token->number_type 		= LONG;
-		self->current_token->number_value.l 	= atof(numstr);
+		self->current_token->number_value.l 	= atol(numstr);
 		return structCarbonError_new();
 	}
 	if (utils_char_in_str('f', numstr)){
@@ -336,7 +336,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
 		self->current_token->number_type 		= FLOAT;
-		self->current_token->number_value.f 	= atof(numstr);
+		self->current_token->number_value.f 	= (float)atof(numstr);
 		return structCarbonError_new();
 	}
 	if (utils_char_in_str('d', numstr)){
@@ -353,7 +353,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	'A',  'B',  'C',  'D',  'E',  'F',  'G',  'H',  'I',  'J',  'K',  'L',  'M',  'N',  'O',  'P',  'Q',  'R',  'S',  'T',  'U',  'V',  'W',  'X',  'Y',  'Z',
 	};
 	arr_size = ARR_SIZE(invalid_chars);
-	for (int i=0; i<arr_size; i++){
+	for (unsigned int i=0; i<arr_size; i++){
 		if (utils_char_in_str(invalid_chars[i], numstr)) { if(self->src[ self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
@@ -530,7 +530,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		while (true){
 			structToken_addChar( self->current_token, c ); (self->pos)++;
 			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
+			return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
 			}
 			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || (structTokenScanner_isCharSymbol(c) && c != '.' ) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
@@ -538,8 +538,9 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 				return structTokenScanner_validateNumber(self);
 			}
 		}
-
 	}
+	utils_error_exit("InternalError: scane token reached an invalid point", self->current_token->pos, self->src, self->file_name);
+	return structCarbonError_new();
 }
 
 struct TokenScanner* structTokenScanner_new(char* src, char* file_name){
@@ -547,5 +548,6 @@ struct TokenScanner* structTokenScanner_new(char* src, char* file_name){
 	structTokenScanner_init(token_scanner, src, file_name);
 	return token_scanner;
 }
+
 
 /***************** </TokenScanner> *************/

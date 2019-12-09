@@ -24,14 +24,14 @@ int utils_read_file(char** text_p, const char* file_path){
 }
 
 bool utils_char_in_str(char c, char* string){
-	for (int i=0; i<strlen(string); i++){
+	for (unsigned int i=0; i<strlen(string); i++){
 		if (string[i] == c) return true;
 	}
 	return false;
 }
 int utils_char_count_in_str(char c, char* string){
 	int count = 0;
-	for (int i=0; i<strlen(string); i++){
+	for (unsigned int i=0; i<strlen(string); i++){
 		if (string[i] == c) count++;
 	}
 	return count;
@@ -52,7 +52,7 @@ int utils_pos_to_line(int pos, char* src, char* buffer, char* location_str ){
 			(line_no)++;
 		}
 	}
-	location_str[loc_ptr++] = '^';location_str[loc_ptr++] = '\0';
+	if (location_str != NULL) { location_str[loc_ptr++] = '^'; location_str[loc_ptr++] = '\0'; }
 	
 	int i=0;
 	while(true){

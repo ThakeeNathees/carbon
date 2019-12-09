@@ -93,7 +93,7 @@ struct TokenScanner
 	char* src;
 	char* file_name;
 	struct Token* current_token;
-	int pos;
+	unsigned int pos;
 };
 
 /****************** PUBLIC API ************************************/
