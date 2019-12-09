@@ -2,7 +2,12 @@
 # own files
 _obj/
 _bin/
+
 .vs/
+Carbon.sln
+Carbon.vcxproj
+Carbon.vcxproj.filters
+Carbon.vcxproj.user
 
 # Prerequisites
 *.d
