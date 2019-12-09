@@ -209,15 +209,20 @@ struct CarbonError* structAst_countArgs(struct Ast* self, int* count){
 struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* expr, enum structAst_ExprEndType end_type){
 	//struct Expression* expr = structExpression_new(self->tokens);
 	expr->begin_pos = self->pos;
+	int bracket_ptr = 1; // if open bracket increase, close bracket degrease | starting pos is after thr first bracket -> bracket_ptr = 1
 	while(true){
 		
 		struct Token* token = self->tokens->list[(self->pos)];
+		if (token->type == BRACKET && strcmp(token->name, LPARN)==0) bracket_ptr++;
+		else if (token->type == BRACKET && strcmp(token->name, RPARN)==0) bracket_ptr--;
+		// TODO : if bracket_ptr < 0 error  
+
 		if (token->type == TK_EOF ) return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, token->pos, self->src, self->file_name, false); 
 		if (end_type == EXPREND_SEMICOLLON && token->type == SYMBOL && strcmp(token->name, SYM_SEMI_COLLON)==0){ expr->end_pos = self->pos-1; break;}
-		else if (end_type == EXPREND_COMMA && token->type == SYMBOL && strcmp(token->name, SYM_COMMA)==0){ expr->end_pos = self->pos-1; break;}
-		else if (end_type == EXPREND_RPRAN && token->type == BRACKET && strcmp(token->name,RPARN)==0){ expr->end_pos = self->pos-1; break;}
+		else if (end_type == EXPREND_COMMA && token->type == SYMBOL && strcmp(token->name, SYM_COMMA)==0 && bracket_ptr==0){ expr->end_pos = self->pos-1; break;}
+		else if (end_type == EXPREND_RPRAN && token->type == BRACKET && strcmp(token->name,RPARN)==0 && bracket_ptr == 0){ expr->end_pos = self->pos-1; break;}
 		else if (end_type == EXPREND_ASSIGN && structToken_isAssignmentOperator(token) ){ expr->end_pos = self->pos-1; break; }
-		else if (end_type == EXPREND_COMMA_OR_RPRAN && ( (token->type == BRACKET && strcmp(token->name,RPARN)==0) || (token->type == SYMBOL && strcmp(token->name, SYM_COMMA)==0) ) ){ 
+		else if (end_type == EXPREND_COMMA_OR_RPRAN && ( (token->type == BRACKET && strcmp(token->name,RPARN)==0 && bracket_ptr==0) || (token->type == SYMBOL && strcmp(token->name, SYM_COMMA)==0) ) ){ 
 			expr->end_pos = self->pos-1; break;
 		}
 
