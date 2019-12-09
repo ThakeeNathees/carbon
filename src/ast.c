@@ -214,10 +214,15 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		
 		struct Token* token = self->tokens->list[(self->pos)];
 		if (token->type == BRACKET && strcmp(token->name, LPARN)==0) bracket_ptr++;
-		else if (token->type == BRACKET && strcmp(token->name, RPARN)==0) bracket_ptr--;
-		// TODO : if bracket_ptr < 0 error  
+		else if (token->type == BRACKET && strcmp(token->name, RPARN)==0){ 
+			bracket_ptr--;
+			if (bracket_ptr < 0) return utils_make_error("SyntaxError: unexpected symbol", ERROR_UNEXP_EOF, token->pos, self->src, self->file_name, false);
+		}
 
-		if (token->type == TK_EOF ) return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, token->pos, self->src, self->file_name, false); 
+		if (token->type == TK_EOF ) return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, token->pos, self->src, self->file_name, false);
+		else if ( (end_type !=EXPREND_SEMICOLLON) && (token->type == SYMBOL && strcmp(token->name, SYM_SEMI_COLLON)==0) ) 
+			return utils_make_error("SyntaxError: unexpected symbol", ERROR_UNEXP_EOF, token->pos, self->src, self->file_name, false);
+
 		if (end_type == EXPREND_SEMICOLLON && token->type == SYMBOL && strcmp(token->name, SYM_SEMI_COLLON)==0){ expr->end_pos = self->pos-1; break;}
 		else if (end_type == EXPREND_COMMA && token->type == SYMBOL && strcmp(token->name, SYM_COMMA)==0 && bracket_ptr==0){ expr->end_pos = self->pos-1; break;}
 		else if (end_type == EXPREND_RPRAN && token->type == BRACKET && strcmp(token->name,RPARN)==0 && bracket_ptr == 0){ expr->end_pos = self->pos-1; break;}
@@ -413,6 +418,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 
 		if (token->type == COMMENT); // do nothing
 
+		// datatype init
 		else if (token->type == DTYPE){
 
 			struct Statement* stmn = structStatement_new();
@@ -436,7 +442,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 		}
 
 		// TODO: builtin (or just add to identifier with || )
-
+		// identifier
 		else if (token->type == IDENTIFIER || token->type == BUILTIN){ // could be variable, function, 
 			// assignment statement
 			bool is_next_assign; err = structAst_isNextStmnAssign(self, &is_next_assign, NULL); if (err->type != ERROR_SUCCESS) return err;
@@ -461,6 +467,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			}
 		}
 
+		// number or string
 		else if ( token->type == NUMBER || token->type == STRING ){
 			struct Statement* stmn = structStatement_new();
 			int err_pos = 0; 
@@ -472,6 +479,17 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			structStatementList_addStatement(statement_list, stmn);
 		}
 
+		// open bracket (
+		else if (token->type == BRACKET && strcmp(token->name, LPARN)==0){
+			++self->pos;
+			struct Statement* stmn = structStatement_new();
+			stmn->statement.unknown.expr = structExpression_new(self->tokens);
+			err = structAst_scaneExpr(self, stmn->statement.unknown.expr, EXPREND_RPRAN); if (err->type != ERROR_SUCCESS) return err;
+			stmn->statement.unknown.has_expr = true;
+			structStatementList_addStatement(statement_list, stmn);
+		}
+
+		// import
 		else if ( token->type == KEYWORD && strcmp(token->name, KWORD_IMPORT)==0){
 			struct Statement* stmn = structStatement_new();
 			stmn->type = STMNT_IMPORT;
@@ -484,6 +502,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			structStatementList_addStatement(statement_list, stmn);
 		}
 
+		// while
 		else if (token->type == KEYWORD && strcmp(token->name, KWORD_WHILE)==0){
 			struct Statement* stmn = structStatement_new();
 			stmn->type = STMNT_WHILE;
