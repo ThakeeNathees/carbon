@@ -2,6 +2,7 @@
 # own files
 _obj/
 _bin/
+.vs/
 
 # Prerequisites
 *.d
