@@ -96,7 +96,7 @@ void structStatement_print(struct Statement* self, int indent){
 		if (self->statement.unknown.has_expr)structExpression_print(self->statement.unknown.expr, 0);
 	}
 	else if (self->type == STMNT_IMPORT){
-		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : IMPORT | "); printf("path  : %s\n", self->statement.import.path->name );
+		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : IMPORT| "); printf("path  : %s\n", self->statement.import.path->name );
 	}
 	else if (self->type == STMNT_VAR_INIT){
 		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : VA_INI \n");
@@ -245,14 +245,11 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		// token = idf check if expr is function
 		if (token->type == IDENTIFIER){
 			if ( (self->tokens->list[self->pos+1])->type == BRACKET && strcmp((self->tokens->list[self->pos+1])->name, LPARN )==0 ){
-				// TODO: check if function is registered else error!
 				token->type = FUNCTION; // not method
 				struct CarbonError* err = structAst_countArgs(self, &(token->func_args_given)); if (err->type != ERROR_SUCCESS) return err;
 			}
-			else {
-				// TODO: check if the variable is registered else error!
-				token->type = VARIABLE;
-			}
+			else  token->type = VARIABLE;
+			
 		}
 
 		// if builtin count arg count and assert
@@ -273,10 +270,6 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 			else if ( before->type == BRACKET && strcmp(before->name, LPARN)==0 )  token->minus_is_single_op = true;    // before (
 			else if ( before->type == BRACKET && strcmp(before->name, RSQ_BRACKET)==0)token->minus_is_single_op = true; // before [
 			else if ( before->type == SYMBOL  && strcmp(before->name, SYM_COMMA)==0) token->minus_is_single_op = true;  // before ,
-			// after bool_op bool expected
-			//else if ( before->type == KEYWORD && strcmp(before->name, KWORD_AND)==0) token->minus_is_single_op = true;  // before and 
-			//else if ( before->type == KEYWORD && strcmp(before->name, KWORD_OR )==0) token->minus_is_single_op = true;  // before or
-			//else if ( before->type == KEYWORD && strcmp(before->name, KWORD_NOT)==0) token->minus_is_single_op = true;  // before not
 		}
 
 		/**************** INVALID SYNTAX ***********************/
@@ -385,7 +378,7 @@ struct CarbonError* structAst_scaneTokens(struct Ast* self){
 	while (!eof){
 		struct Token* tk = structTokenList_createToken(self->tokens);
 		structTokenScanner_setToken(self->token_scanner, tk);
-		struct CarbonError* err = structTokenScanner_scaneToken(self->token_scanner, &eof); if (err->type != ERROR_SUCCESS) return err;
+		struct CarbonError* err = structTokenScanner_scaneToken(self->token_scanner, &eof); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 		if (eof) tk->type = TK_EOF;
 		if ( tk->type == OPERATOR && strcmp(tk->name, OP_RSHIFT)==0){ // if tk == >> add pass to make it > > for close bracket : list<list<char>>
 			struct Token* pass_tk = structTokenList_createToken(self->tokens); pass_tk->pos = tk->pos+1;
@@ -423,7 +416,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 
 			struct Statement* stmn = structStatement_new();
 			stmn->type = STMNT_VAR_INIT;
-			err = structAst_scaneDtype(self, &(stmn->statement.init.dtype)); if (err->type != ERROR_SUCCESS) return err;
+			err = structAst_scaneDtype(self, &(stmn->statement.init.dtype)); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 			token = self->tokens->list[self->pos];
 			if (token->type != IDENTIFIER){ return utils_make_error("SyntaxError: expected an identifier", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); }
 			stmn->statement.init.idf = token;
@@ -434,7 +427,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 				if (token->type != OPERATOR && strcmp(token->name, OP_EQ)!=0){ return utils_make_error("SyntaxError: expected '=' or ';'", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); }
 				++self->pos;
 				struct Expression* expr = structExpression_new(self->tokens);
-				err = structAst_scaneExpr(self, expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err;
+				err = structAst_scaneExpr(self, expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 				stmn->statement.init.expr = expr;
 				stmn->statement.init.has_expr = true;
 			}
@@ -445,17 +438,17 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 		// identifier
 		else if (token->type == IDENTIFIER || token->type == BUILTIN){ // could be variable, function, 
 			// assignment statement
-			bool is_next_assign; err = structAst_isNextStmnAssign(self, &is_next_assign, NULL); if (err->type != ERROR_SUCCESS) return err;
+			bool is_next_assign; err = structAst_isNextStmnAssign(self, &is_next_assign, NULL); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 			if (is_next_assign){
 				struct Statement* stmn = structStatement_new();
 				stmn->type = STMNT_ASSIGN;
 				stmn->statement.assign.idf = structExpression_new(self->tokens);
-				err = structAst_scaneExpr(self, stmn->statement.assign.idf, EXPREND_ASSIGN);  if (err->type != ERROR_SUCCESS) return err;
+				err = structAst_scaneExpr(self, stmn->statement.assign.idf, EXPREND_ASSIGN);  if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 				token = self->tokens->list[self->pos++];
 				if (!structToken_isAssignmentOperator(token)) utils_error_exit("InternalError: expected an assignment operator", token->pos, self->src, self->file_name); // COMPLIER INTERNAL ERROR EXIT(1)
 				stmn->statement.assign.op = token;
 				stmn->statement.assign.expr = structExpression_new(self->tokens);
-				err = structAst_scaneExpr(self, stmn->statement.assign.expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err;
+				err = structAst_scaneExpr(self, stmn->statement.assign.expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 				structStatementList_addStatement(statement_list, stmn);
 			} else {
 				// if have globals : identifier is known or undefined, if idf is func/builtin stmn is func call // TODO: 
@@ -471,10 +464,10 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 		else if ( token->type == NUMBER || token->type == STRING ){
 			struct Statement* stmn = structStatement_new();
 			int err_pos = 0; 
-			bool is_next_assign; err = structAst_isNextStmnAssign(self, &is_next_assign, NULL); if (err->type != ERROR_SUCCESS) return err;
+			bool is_next_assign; err = structAst_isNextStmnAssign(self, &is_next_assign, NULL); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 			if (is_next_assign) return utils_make_error("TypeError: can't assign to literls", ERROR_TYPE, err_pos, self->src, self->file_name, false);
 			stmn->statement.unknown.expr = structExpression_new(self->tokens);
-			err = structAst_scaneExpr(self, stmn->statement.unknown.expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err;
+			err = structAst_scaneExpr(self, stmn->statement.unknown.expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 			stmn->statement.unknown.has_expr = true;
 			structStatementList_addStatement(statement_list, stmn);
 		}
@@ -484,7 +477,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			++self->pos;
 			struct Statement* stmn = structStatement_new();
 			stmn->statement.unknown.expr = structExpression_new(self->tokens);
-			err = structAst_scaneExpr(self, stmn->statement.unknown.expr, EXPREND_RPRAN); if (err->type != ERROR_SUCCESS) return err;
+			err = structAst_scaneExpr(self, stmn->statement.unknown.expr, EXPREND_RPRAN); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 			stmn->statement.unknown.has_expr = true;
 			structStatementList_addStatement(statement_list, stmn);
 		}
@@ -510,11 +503,11 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			if (token->type != BRACKET || strcmp(token->name, LPARN)!=0)return utils_make_error("SyntaxError: expected symbol '('", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
 			++self->pos;
 			struct Expression* expr = structExpression_new(self->tokens);
-			err = structAst_scaneExpr(self, expr, EXPREND_RPRAN); if (err->type != ERROR_SUCCESS) return err;
+			err = structAst_scaneExpr(self, expr, EXPREND_RPRAN); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 			stmn->statement.stm_while.expr_bool = expr;
 			struct StatementList* stmn_list = structStatementList_new(); stmn_list->indent = statement_list->indent+1;
 			stmn->statement.stm_while.stmn_list = stmn_list; 
-			err = structAst_makeTree(self, stmn->statement.stm_while.stmn_list); if (err->type != ERROR_SUCCESS) return err;
+			err = structAst_makeTree(self, stmn->statement.stm_while.stmn_list); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 			structStatementList_addStatement(statement_list, stmn);
 		}
 

@@ -68,10 +68,12 @@ const char* enumErrorType_toString(enum ErrorType self );
 // string
 void structString_init(struct String* self);
 void structString_minSize(struct String* self, int min_size); // min size to sprinf
+void structString_free(struct String* self);
 struct String* structString_new(); // static method
 
 // carbon error
 void structCarbonError_init(struct CarbonError* self);
+void structCarbonError_free(struct CarbonError* self);
 struct CarbonError* structCarbonError_new(); // static method
 /********************************************/
 

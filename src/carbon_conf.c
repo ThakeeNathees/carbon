@@ -24,6 +24,11 @@ void structString_minSize(struct String* self, int min_size){
 		self->buffer = new_buff;
 	}
 }
+void structString_free(struct String* self) {
+	free(self->buffer);
+	free(self);
+}
+
 struct String* structString_new(){
 	struct String* new_str = (struct String*)malloc(sizeof(struct String));
 	structString_init(new_str);
@@ -35,6 +40,10 @@ struct String* structString_new(){
 void structCarbonError_init(struct CarbonError* self){
 	self->type = ERROR_SUCCESS;
 	structString_init( &(self->message) );
+}
+void structCarbonError_free(struct CarbonError* self) {
+	free(self->message.buffer);
+	free(self);
 }
 struct CarbonError* structCarbonError_new(){
 	struct CarbonError* new_err = (struct CarbonError*)malloc(sizeof(struct CarbonError));

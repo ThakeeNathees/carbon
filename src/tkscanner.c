@@ -270,7 +270,8 @@ struct CarbonError* structTokenScanner_skipWhiteSpaceAndComments(struct TokenSca
 		if ( self->pos >= strlen(self->src) ){ *is_eof = true; return structCarbonError_new();}
 		
 		char c = self->src[ self->pos ];
-		struct CarbonError* err = structTokenScanner_skipComments(self); if (err->type != ERROR_SUCCESS) return err;
+		struct CarbonError* err = structTokenScanner_skipComments(self); if (err->type != ERROR_SUCCESS) return err; 
+		structCarbonError_free(err);
 		if (structTokenScanner_isEof(self)) { *is_eof = true; return structCarbonError_new(); }
 
 		c = self->src[ self->pos ];
@@ -386,7 +387,8 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 	*is_eof = false;
 	structToken_clear(self->current_token);
 	struct CarbonError* err = structTokenScanner_skipWhiteSpaceAndComments(self, is_eof); if (err->type != ERROR_SUCCESS) return err;
-	if (*is_eof) return err;
+	structCarbonError_free(err);
+	if (*is_eof) return structCarbonError_new();
 	//*is_eof = structTokenScanner_skipWhiteSpaces(self); if(*is_eof) return structCarbonError_new();
 	//*is_eof = structTokenScanner_skipComments(self); if (*is_eof) return structCarbonError_new();
 	char c = self->src[ self->pos ];
@@ -530,7 +532,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		while (true){
 			structToken_addChar( self->current_token, c ); (self->pos)++;
 			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
+				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
 			}
 			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || (structTokenScanner_isCharSymbol(c) && c != '.' ) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
@@ -540,7 +542,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		}
 	}
 	utils_error_exit("InternalError: scane token reached an invalid point", self->current_token->pos, self->src, self->file_name);
-	return structCarbonError_new();
+	return structCarbonError_new(); // for complier warning
 }
 
 struct TokenScanner* structTokenScanner_new(char* src, char* file_name){

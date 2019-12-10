@@ -4,16 +4,16 @@ expression:
 // class defn must be global scope and func only glob and class scope
 
 statement :
- 0. import expr    : import "path/str" ;    // done
- 1. initialize     : dtype idf [ = expr] ;  // done
- 2. class var init : [static] dtype idf [ = expr ] ;
- 3. assignment     : idf [=, +=, -=, *=, ...] expr ; // done
- 4. function call  : idf_func ( expr, ... ) [ . idf_meth ( expr, ... ) ... ] ; // done
- 5. method call    : idf . idf_meth ( expr, ... ) [ . dif_meth ( expr, ... ) ... ] ; // done
+ 0. import expr    : import "path/str" ;												// done
+ 1. initialize     : dtype idf [ = expr] ;												// done
+ 2. class var init : [static] dtype idf [ = expr ] ;									
+ 3. assignment     : idf [=, +=, -=, *=, ...] expr ;									// done
+ 4. function call  : idf_func ( expr, ... ) [ . idf_meth ( expr, ... ) ... ] ;			// done
+ 5. method call    : idf . idf_meth ( expr, ... ) [ . dif_meth ( expr, ... ) ... ] ;	// done
 
- 6. if statement   : if ( expr_bool ) { statement; ... } [ else if ( expr_bool ) { statement; ... } ... [ else { statement; ... } ] ]
- 7. while loop     : while ( expr_bool ) { statement; ... }
- 8. for loop       : for ( [expr]; [expr]; [expr] ) { statement; ... }
+ 6. while loop     : while ( expr_bool ) { statement; ... }								// done
+ 7. if statement   : if ( expr_bool ) { statement; ... } [ else if ( expr_bool ) { statement; ... } ... [ else { statement; ... } ] ]
+ 8. for loop       : for ( [expr]; [expr]; [expr] ) { statement; ... }								// first expression can be assignment or any expression or empty, other must be expression or empty
  9. for each loop  : foreach ( expr_initialize ; idf_iter ) { statement; ... }
 10. func defn      : function idf_func ( dtype idf, dtype idf, ... ) [: dtype] { statement; statement; ... } // handle if not returned 
 11. method defn    : [static] function idf_func( ...
