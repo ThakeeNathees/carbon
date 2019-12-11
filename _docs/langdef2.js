@@ -58,4 +58,27 @@ consider minus - as binary op:
 // tree maker : statement start with
 dtype : initialize statement
 
+// pre post incr ----------------
+post incr
+<close bracket> ++
+++ <operator>
+++ <comma>
+<number type> ++
+++ <semicollon>
+
+pre incr
+<operator> ++ 
+<open bracket>
+<comma> ++
+++ <number type>
+<semicollon> ++
+++ <function>
+
+error
+//<keyword> before/after
+//<dot>
+<collon>
+before and after are operators
+//-------------------------------------
+
 

@@ -42,7 +42,8 @@ void structToken_init(struct Token* self){
 	self->func_args_given    = 0;
 	self->func_is_method     = false;
 	self->idf_is_field       = false;
-	self->minus_is_single_op = false;
+	self->op_is_single = false;
+	self->op_is_pre			 = false;
 }
 void structToken_print(struct Token* self){
 	if (self->group == TKG_NUMBER){
@@ -54,7 +55,7 @@ void structToken_print(struct Token* self){
 		else if (self->type == TK_VALUE_LONG)  printf("Token %-20s : %-10s | value = %ld\n",enumTokenType_toString(self->type), self->name, self->number_value.l);	
 	} 
 	else if (self->group == TKG_FUNCTION || self->group == TKG_BUILTIN)		printf("Token %-20s : %-10s | method=%i, args_given=%i\n",	enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
-	else if (self->group == TKG_OPERATOR && strcmp(self->name, OP_MINUS)==0)printf("Token %-20s : %-10s | single_op=%i\n",				enumTokenType_toString(self->type), self->name, self->minus_is_single_op);
+	else if (self->group == TKG_OPERATOR && strcmp(self->name, OP_MINUS)==0)printf("Token %-20s : %-10s | single_op=%i\n",				enumTokenType_toString(self->type), self->name, self->op_is_single);
 	else																	printf("Token %-20s : %s\n",									enumTokenType_toString(self->type), self->name);
 	
 }
@@ -66,13 +67,62 @@ void structToken_clear(struct Token* self){
 }
 bool structToken_isAssignmentOperator(struct Token* self){
 	if (self->group != TKG_OPERATOR){ return false; }
-	if ( strcmp(self->name, OP_EQ)==0      || strcmp(self->name, OP_PLUSEQ)==0 ||  
-		 strcmp(self->name, OP_MINUSEQ)==0 || strcmp(self->name, OP_MUEQ)==0   ||
-		 strcmp(self->name, OP_DIVEQ)==0 ){
-		return true;
-	}
+	if ( self->type == TK_OP_EQ      || 
+		 self->type == TK_OP_PLUSEQ  ||  
+		 self->type == TK_OP_MINUSEQ || 
+		 self->type == TK_OP_MULEQ   ||
+		 self->type == TK_OP_DIVEQ 
+	) return true;
 	return false;
 }
+
+bool structToken_isOpenBracket(struct Token* self) {
+	if (self->group != TKG_BRACKET) return false;
+	if (self->type == TK_BRACKET_LPARAN ||
+		self->type == TK_BRACKET_LCUR	||
+		self->type == TK_BRACKET_LSQ	||
+		self->type == TK_BRACKET_LTRI
+		) return true;
+	return false;
+}
+bool structToken_isCloseBracket(struct Token* self) {
+	if (self->group != TKG_BRACKET) return false;
+	if (self->type == TK_BRACKET_RPARAN ||
+		self->type == TK_BRACKET_RCUR	||
+		self->type == TK_BRACKET_RSQ	||
+		self->type == TK_BRACKET_RTRI
+		) return true;
+	return false;
+}
+// value <op> value -> binary operator, plus and minus are not binary operator
+bool structToken_isBinaryOperator(struct Token* self) {
+	if (self->group != TKG_OPERATOR) return false;
+	if (
+		self->type == TK_OP_EQ		||
+		self->type == TK_OP_PLUSEQ	||
+		self->type == TK_OP_MINUSEQ ||
+		self->type == TK_OP_MUL		||
+		self->type == TK_OP_MULEQ	||
+		self->type == TK_OP_DIV		||
+		self->type == TK_OP_DIVEQ	||
+		self->type == TK_OP_MOD		||
+		self->type == TK_OP_POW		||
+		self->type == TK_OP_EQEQ	||
+		self->type == TK_OP_NOTEQ	||
+		self->type == TK_OP_GT		||
+		self->type == TK_OP_LT		||
+		self->type == TK_OP_GTEQ	||
+		self->type == TK_OP_LTEQ	||
+		self->type == TK_OP_LSHIFT	||
+		self->type == TK_OP_RSHIFT	||
+		self->type == TK_OP_OR		||
+		self->type == TK_OP_AND		||
+		self->type == TK_OP_XOR
+		) return true;
+	// TK_OP_PLUS, TK_OP_MINUS, TK_OP_NOT, TK_OP_INCR, TK_OP_DECR
+	return false;
+}
+
 //private
 void structToken_addChar(struct Token* self, char c){
 	
@@ -238,6 +288,8 @@ void structTokenScanner_checkOperator(struct TokenScanner* self) {
 	if (strcmp(self->current_token->name, OP_OR) == 0)		{ self->current_token->type = TK_OP_OR;			return; }
 	if (strcmp(self->current_token->name, OP_AND) == 0)		{ self->current_token->type = TK_OP_AND;		return; }
 	if (strcmp(self->current_token->name, OP_XOR) == 0)		{ self->current_token->type = TK_OP_XOR;		return; }
+	if (strcmp(self->current_token->name, OP_INCR) == 0)	{ self->current_token->type = TK_OP_INCR;		return; }
+	if (strcmp(self->current_token->name, OP_XOR) == 0)		{ self->current_token->type = TK_OP_DECR;		return; }
 	
 	utils_error_exit("InternalError: unknown operator", self->pos, self->src, self->file_name);
 }
@@ -590,7 +642,9 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		if (c == '<' && next == '<'){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
 		if (c == '>' && next == '>'){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
 		if (c == '>' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
-		if (c == '<' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '<' && next == '=') { structToken_addChar(self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '+' && next == '+') { structToken_addChar(self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '-' && next == '-'){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
 		structTokenScanner_checkOperator(self);
 		(self->pos)--;
 		return structCarbonError_new();

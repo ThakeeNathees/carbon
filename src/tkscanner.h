@@ -80,6 +80,8 @@
 	func(TK_OP_OR)		\
 	func(TK_OP_AND)		\
 	func(TK_OP_XOR)		\
+	func(TK_OP_INCR)	\
+	func(TK_OP_DECR)	\
 	func(TK_KWORD_NULL)			\
 	func(TK_KWORD_SELF)			\
 	func(TK_KWORD_TRUE)			\
@@ -157,6 +159,7 @@ struct Token
 	int 				_name_len;
 	int 				_name_ptr;
 	int 				pos;
+
 	// for number type
 	union NumberValue 	number_value;
 
@@ -169,7 +172,10 @@ struct Token
 	bool idf_is_field; // instance.field : comes after . operator no brecket after
 
 	// for minus operator
-	bool minus_is_single_op;
+	bool op_is_single;
+
+	// for incr and decr operator
+	bool op_is_pre;
 };
 
 struct TokenList
@@ -197,6 +203,9 @@ const char* enumTokenType_toString(enum TokenType self);
 void structToken_init(struct Token* self);
 void structToken_print(struct Token* self);
 bool structToken_isAssignmentOperator(struct Token* self);
+bool structToken_isOpenBracket(struct Token* self);
+bool structToken_isCloseBracket(struct Token* self);
+bool structToken_isBinaryOperator(struct Token* self);
 
 // token list
 void structTokenList_init(struct TokenList* self, int growth_size);
@@ -260,6 +269,8 @@ struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // stat
 #define OP_MOD			"%"
 #define OP_NOT 			"!" // simmiler of not
 #define OP_POW			"**"
+#define OP_INCR			"++"
+#define OP_DECR			"--"
 // #define OP_DIV_FLOOR	"//" not an operator because // is for comment
 
 // bool operators

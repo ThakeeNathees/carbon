@@ -119,7 +119,7 @@ void structStatement_print(struct Statement* self, int indent){
 		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : IMPORT| "); printf("path  : %s\n", self->statement.import.path->name );
 	}
 	else if (self->type == STMNT_VAR_INIT){
-		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : VA_INI \n");
+		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : VA_INI\n");
 		structExprDtype_print(self->statement.init.dtype, indent+1, true);
 		for (int i=0; i< indent+1; i++) printf("\t");printf("idf   : %-6s\n", self->statement.init.idf->name);
 		if (self->statement.init.expr != NULL) structExpression_print(self->statement.init.expr, indent+1);
@@ -130,16 +130,27 @@ void structStatement_print(struct Statement* self, int indent){
 		for (int i=0; i< indent+1; i++) printf("\t");printf("op    : %-6s\n", self->statement.assign.op->name);
 		structExpression_print(self->statement.assign.expr, indent+1);
 	}
-	else if (self->type == STMNT_WHILE){
-		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : WHILE | "); structExpression_print(self->statement.stm_while.expr_bool, 0);
-		if (self->statement.stm_while.stmn_list != NULL) structStatementList_print(self->statement.stm_while.stmn_list);
-
-	}
 	else if (self->type == STMNT_BREAK){
 		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : BREAK\n");
 	}
 	else if (self->type == STMNT_CONTINUE){
 		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : CONTINUE\n");
+	}
+	else if (self->type == STMNT_WHILE){
+		for (int i=0; i< indent; i++) printf("\t");printf("Stmnt : WHILE | "); structExpression_print(self->statement.stm_while.expr_bool, 0);
+		if (self->statement.stm_while.stmn_list != NULL) structStatementList_print(self->statement.stm_while.stmn_list);
+
+	}
+	else if (self->type == STMNT_FOR) {
+		for (int i = 0; i < indent; i++) printf("\t"); printf("Stmnt : FOR\n");
+		if (self->statement.stm_for.stmn_ini  != NULL) { structStatement_print(self->statement.stm_for.stmn_ini, indent + 1); }
+		else { for (int i = 0; i < indent + 1; i++) printf("\t"); printf("(No IniStmn)\n"); }
+		if (self->statement.stm_for.expr_bool != NULL) { structExpression_print(self->statement.stm_for.expr_bool, indent + 1); }
+		else { for (int i = 0; i < indent + 1; i++) printf("\t"); printf("(No ExprBool)\n"); }
+		if (self->statement.stm_for.expr_end  != NULL) { structExpression_print(self->statement.stm_for.expr_end, indent + 1); }
+		else { for (int i = 0; i < indent + 1; i++) printf("\t"); printf("(No ExprEnd)\n"); }
+		if (self->statement.stm_for.stmn_list != NULL) {  structStatementList_print(self->statement.stm_for.stmn_list);}
+		else { for (int i = 0; i < indent + 1; i++) printf("\t"); printf("(No BoolExpr)\n"); }
 	}
 	
 }
@@ -211,10 +222,17 @@ struct CarbonError* structAst_countArgs(struct Ast* self, int* count){
 	struct Token* token = self->tokens->list[self->pos + 2 ];
 	if (token->type == TK_BRACKET_RPARAN) {*count = 0; return structCarbonError_new(); }
 
-	int i = 0, arg_count = 1;
+	int i = 0, arg_count = 1, bracket_ptr = 0;
 	while (true){
 		token = self->tokens->list[self->pos + i++ ];
-		if (token->type == TK_BRACKET_RPARAN){ *count = arg_count; return structCarbonError_new(); }
+
+		if (token->type == TK_BRACKET_LPARAN) bracket_ptr++;
+		else if (token->type == TK_BRACKET_RPARAN) {
+			bracket_ptr--;
+			if (bracket_ptr < 0) return utils_make_error("SyntaxError: unexpected symbol", ERROR_UNEXP_EOF, token->pos, self->src, self->file_name, false);
+		}
+
+		if (token->type == TK_BRACKET_RPARAN && bracket_ptr == 0){ *count = arg_count; return structCarbonError_new(); }
 		else if (token->type == TK_SYM_COMMA ){ 
 			arg_count++; 
 			token = self->tokens->list[self->pos + i ];
@@ -231,7 +249,8 @@ struct CarbonError* structAst_countArgs(struct Ast* self, int* count){
 struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* expr, enum structAst_ExprEndType end_type){
 	//struct Expression* expr = structExpression_new(self->tokens);
 	expr->begin_pos = self->pos;
-	int bracket_ptr = 1; // if open bracket increase, close bracket degrease | starting pos is after thr first bracket -> bracket_ptr = 1
+	int bracket_ptr = 1; // if open bracket increase, close bracket degrease | starting pos is after thr first bracket -> bracket_ptr = 1, 
+	//TODO: change bracket_ptr to 0 1 only for while so begin at the bracket or check end_type == rparan
 	while(true){
 		
 		struct Token* token = self->tokens->list[(self->pos)];
@@ -255,6 +274,10 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 
 		// token = "." check if expr is method or field
 		if (token->type == TK_SYM_DOT){
+
+			// dot cant be at the begining
+			if (self->pos == expr->begin_pos || self->pos == 0) return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, self->pos, self->src, self->file_name, false);
+			
 			token = self->tokens->list[++self->pos];
 			if (token->group != TKG_IDENTIFIER ) return utils_make_error("SyntaxError: expected an identifier", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
 			if ( (self->tokens->list[self->pos+1])->type == TK_BRACKET_LPARAN ){
@@ -284,14 +307,29 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 			}
 		}
 
-		// if token == '-' check it's single operator or binary
-		if (token->type == TK_OP_MINUS){
+		// if token == '+' or '-' check it is a single operator or binary
+		if (token->type == TK_OP_MINUS || token->type == TK_OP_PLUS){
 			struct Token* before = self->tokens->list[self->pos-1]; if (before->group == TKG_PASS) before = self->tokens->list[self->pos-2]; // skip TK_PASS
-			if (token->pos == expr->begin_pos) token->minus_is_single_op = true; 									   // begining minus is single op
-			else if ( before->group == TKG_OPERATOR ) token->minus_is_single_op = true; 									   // before minus is operator
-			else if ( before->type == TK_BRACKET_LPARAN )  token->minus_is_single_op = true;    // before (
-			else if ( before->type == TK_BRACKET_RSQ)token->minus_is_single_op = true;			// before [
-			else if ( before->type == TK_SYM_COMMA) token->minus_is_single_op = true;			// before ,
+			if (token->pos == expr->begin_pos)				token->op_is_single = true; // begining minus is single op
+			else if ( before->group == TKG_OPERATOR )		token->op_is_single = true; // before minus is operator
+			else if ( before->type == TK_BRACKET_LPARAN )	token->op_is_single = true;	// before (
+			else if ( before->type == TK_BRACKET_RSQ)		token->op_is_single = true;	// before [
+			else if ( before->type == TK_SYM_COMMA)			token->op_is_single = true;	// before ,
+		}
+
+		// if token == ++ or -- check it is a pre or post
+		if (token->type == TK_OP_INCR || token->type == TK_OP_DECR) {
+			if (self->pos == 0 || self->pos == expr->begin_pos) token->op_is_pre = true; // very first token
+			else {
+				// errors
+				struct Token* before = self->tokens->list[self->pos - 1]; if (before->type == TK_PASS) before = self->tokens->list[self->pos - 2];
+				struct Token* next   = self->tokens->list[self->pos + 1]; if (before->type == TK_PASS) next = self->tokens->list[self->pos + 2];
+				if (before->group == TKG_OPERATOR && next->group == TKG_OPERATOR) { // before and after are operator
+					return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, self->pos, self->src, self->file_name, false);
+				}
+				// TODO: 
+				//if (structToken_isCloseBracket(self->tokens->list[self->pos - 1])) token->op_is_pre = false;
+			}
 		}
 
 		/**************** INVALID SYNTAX ***********************/
@@ -303,13 +341,21 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		// two numbers can't come next to each other
 		if (token->group == TKG_NUMBER && self->tokens->list[self->pos+1]->group == TKG_NUMBER)
 			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false);
-		// after a close bracket number cant come
-		if (token->type == TK_BRACKET_RPARAN && self->tokens->list[self->pos+1]->group == TKG_NUMBER)
-			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false);
-		if (token->type == TK_BRACKET_RCUR && self->tokens->list[self->pos+1]->group == TKG_NUMBER)
-			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false);
-		if (token->type == TK_BRACKET_LSQ && self->tokens->list[self->pos+1]->group == TKG_NUMBER)
-			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false);
+		// after a close bracket number or an identifier can't come
+		if (structToken_isCloseBracket(token)) {
+			if (self->tokens->list[self->pos+1]->group == TKG_NUMBER ||  self->tokens->list[self->pos + 1]->group == TKG_IDENTIFIER )
+				return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false);
+		}
+		// collon cant be inside an expr
+		if (token->type == TK_SYM_COLLON) {
+			return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
+		}
+		// two binary operators can't be next to each other
+		if (structToken_isBinaryOperator(token)) {
+			struct Token* next = self->tokens->list[self->pos + 1]; if (next->type == TK_PASS) next = self->tokens->list[self->pos + 2];
+			if (structToken_isBinaryOperator(next))
+				return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, next->pos, self->src, self->file_name, false);
+		}
 		/********************************************************/
 
 
@@ -334,10 +380,12 @@ struct CarbonError* structAst_isNextStmnAssign(struct Ast* self, bool* ret, int*
 	return err;
 }
 
+// after scan pos = idf
 struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** ret){
 
 	struct Token* token = self->tokens->list[self->pos];
-	if (token->group != TKG_DTYPE) return utils_make_error("SyntexError: expected a data type", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); 
+
+	if ( (token->group != TKG_DTYPE) && (token->group != TKG_IDENTIFIER) /*token may be a class name*/ ) return utils_make_error("SyntexError: expected a data type", ERROR_SYNTAX, token->pos, self->src, self->file_name, false); 
 	*ret =  structExprDtype_new(token);
 
 	// for map<dtype, dtype> list<dtype> 
@@ -348,7 +396,7 @@ struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** re
 		token->group = TKG_BRACKET; token->type = TK_BRACKET_LTRI;
 		++self->pos; 
 		struct CarbonError* err = structAst_scaneDtype(self, &((*ret)->value)); if (err->type != ERROR_SUCCESS) return err;
-		token = self->tokens->list[self->pos];
+		token = self->tokens->list[self->pos]; if (token->type == TK_OP_GT) token->type = TK_BRACKET_RTRI;
 
 		if (token->type == TK_OP_RSHIFT && (self->tokens->list[self->pos+1])->group == TKG_PASS ){
 			token->name[1] = '\0'; // now token is '>'
@@ -374,7 +422,7 @@ struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** re
 		token = self->tokens->list[++self->pos];
 
 		struct CarbonError* err = structAst_scaneDtype(self, &((*ret)->value)); if(err->type != ERROR_SUCCESS) return err;
-		token = self->tokens->list[self->pos];
+		token = self->tokens->list[self->pos]; if (token->type == TK_OP_GT) token->type = TK_BRACKET_RTRI;
 		if (token->type == TK_OP_RSHIFT && (self->tokens->list[self->pos+1])->group == TKG_PASS ){
 			token->name[1] = '\0'; // now token is '>'
 			(self->tokens->list[self->pos+1])->group = TKG_OPERATOR; (self->tokens->list[self->pos + 1])->type = TK_BRACKET_RTRI;
@@ -389,6 +437,7 @@ struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** re
 	return structCarbonError_new(); //return ret;
 }
 
+// after end pos = semicollon, don't use this for function arguments (because stmn end type = comma or ')' )
 struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct Statement* stmn) {
 	stmn->type = STMNT_VAR_INIT;
 	struct CarbonError* err = structAst_scaneDtype(self, &(stmn->statement.init.dtype)); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
@@ -537,7 +586,10 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			token = self->tokens->list[++self->pos];
 
 			// if curly bracket - multiple statements else single statement ends with semi collon
-			if (token->type == TK_BRACKET_LCUR) {
+			if (token->type == TK_SYM_SEMI_COLLON) {
+				structStatementList_addStatement(statement_list, stmn); /* while(cond); */
+			} 
+			else if (token->type == TK_BRACKET_LCUR) {
 				token = self->tokens->list[++self->pos];
 				if (token->type == TK_BRACKET_RCUR) {
 					structStatementList_addStatement(statement_list, stmn); /* while(cond){} */
@@ -549,10 +601,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 					structStatementList_addStatement(statement_list, stmn);
 				}
 			}
-			else if (token->type == TK_SYM_SEMI_COLLON) {
-				structStatementList_addStatement(statement_list, stmn); /* while(cond); */
-			}
-			else{
+			else{ // single statement
 				struct StatementList* stmn_list = structStatementList_new(); stmn_list->indent = statement_list->indent + 1;
 				stmn->statement.stm_while.stmn_list = stmn_list;
 				struct Expression* expr = structExpression_new(self->tokens);
@@ -585,32 +634,68 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			stmn->type = STMNT_FOR;
 			token = self->tokens->list[++self->pos];
 			if (token->type != TK_BRACKET_LPARAN)return utils_make_error("SyntaxError: expected symbol '('", ERROR_SYNTAX, token->pos, self->src, self->file_name, false);
+
 			token = self->tokens->list[++self->pos];
 			if (token->type == TK_SYM_SEMI_COLLON) {
-
-			}
-			else {
+				// no stmn_ini
+			} else {
 				struct Statement* stmn_ini = structStatement_new();
 				err = structAst_getVarInitStatement(self, stmn_ini); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 				stmn->statement.stm_for.stmn_ini = stmn_ini;
+			}
+
+			token = self->tokens->list[++self->pos];
+			if (token->type == TK_SYM_SEMI_COLLON) {
+				// no bool expr
+			} else {
 				struct Expression* expr_bool = structExpression_new(self->tokens);
 				err = structAst_scaneExpr(self, expr_bool, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
-
-				
-
+				stmn->statement.stm_for.expr_bool = expr_bool;
 			}
-			/*
 
-			struct Expression* expr = structExpression_new(self->tokens);
-			err = structAst_scaneExpr(self, expr, EXPREND_RPRAN); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
-			stmn->statement.stm_while.expr_bool = expr;
-			struct StatementList* stmn_list = structStatementList_new(); stmn_list->indent = statement_list->indent + 1;
-			stmn->statement.stm_while.stmn_list = stmn_list;
-			err = structAst_makeTree(self, stmn->statement.stm_while.stmn_list); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
-			structStatementList_addStatement(statement_list, stmn);
-			*/
+			token = self->tokens->list[++self->pos];
+			if (token->type == TK_BRACKET_RPARAN) {
+				// no expr_end
+			} else {
+				struct Expression* expr_end = structExpression_new(self->tokens);
+				err = structAst_scaneExpr(self, expr_end, EXPREND_RPRAN); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+				stmn->statement.stm_for.expr_end = expr_end;
+			}
+
+			token = self->tokens->list[++self->pos];
+			if (token->type == TK_SYM_SEMI_COLLON) {
+				structStatementList_addStatement(statement_list, stmn); /* for(;;); */
+			}
+			else if (token->type == TK_BRACKET_LCUR) {
+				token = self->tokens->list[++self->pos];
+				if (token->type == TK_BRACKET_RCUR) {
+					structStatementList_addStatement(statement_list, stmn); /* for(;;){} */
+				}
+				else {
+					struct StatementList* stmn_list = structStatementList_new(); stmn_list->indent = statement_list->indent + 1;
+					stmn->statement.stm_for.stmn_list = stmn_list;
+					err = structAst_makeTree(self, stmn->statement.stm_for.stmn_list, STMNEND_BRACKET_RCUR);
+					if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+					structStatementList_addStatement(statement_list, stmn);
+				}
+			}
+			else { // single statement
+				struct StatementList* stmn_list = structStatementList_new(); stmn_list->indent = statement_list->indent + 1;
+				stmn->statement.stm_for.stmn_list = stmn_list;
+				struct Expression* expr = structExpression_new(self->tokens);
+				err = structAst_scaneExpr(self, expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+				struct Statement* stmn_for_body = structStatement_new(); stmn_for_body->statement.unknown.expr = expr;
+				structStatementList_addStatement(stmn->statement.stm_for.stmn_list, stmn_for_body);
+				structStatementList_addStatement(statement_list, stmn);
+			}
+			
 		}
 
+
+		/*** illegal tokens at the begining of an statement **********************************************/
+		// TODO: close brackets, collon, dot, binary opeartors, 
+
+		/*************************************************/
 
 		
 		// if token == static && ast state != reading class error!
