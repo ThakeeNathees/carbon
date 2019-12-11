@@ -1,7 +1,5 @@
 import "path/to/another/carbon/src";
-while(some_cond){
-	int my_var = some.very(longExpr, withFunc, calls);
-	my_var = assigning().toSome(other, value);
-	break;
-	continue;
-}
+
+while(some_cond)
+	print(2);
+

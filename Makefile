@@ -1,5 +1,5 @@
-bin_out = ./_bin/linux/
-obj_out = ./_obj/linux/
+bin_out = ./_bin/Linux/
+obj_out = ./_obj/Linux/
 
 all: carbon
 

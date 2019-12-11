@@ -53,8 +53,7 @@ struct _StatementVarInit
 {
 	struct ExprDtype* dtype;
 	struct Token* idf;
-	struct Expression* expr;
-	bool has_expr;
+	struct Expression* expr; // can be NULL
 };
 
 struct _StatementVarAssign
@@ -65,44 +64,43 @@ struct _StatementVarAssign
 };
 struct _StatementUnknown
 {
-	bool has_expr;
-	struct Expression* expr; // just execute the expr
+	struct Expression* expr; // just execute the expr, CAN BE NULL
 };
 struct _StatementIf
 {
 	struct Expression* expr_bool;
-	struct StatementList* stmn_list;
+	struct StatementList* stmn_list; // can be NULL
 };
 struct _StatementWhile
 {
 	struct Expression* expr_bool;
-	struct StatementList* stmn_list;
+	struct StatementList* stmn_list; // can be NULL
 };
 struct _StatementFor
 {
-	struct Expression* expr_ini;   // for (expr_ini; expr_bool; expr_end){ stmn_list; } TODO: change to statement list
-	struct Expression* expr_bool;
-	struct Expression* expr_end;
-	struct StatementList* stmn_list;
+	struct Statement* stmn_ini;      // can be NULL
+	struct Expression* expr_bool;    // can be NULL, if not boolean = error
+	struct Expression* expr_end;     // can be NULL
+	struct StatementList* stmn_list; // can be NULL
 };
 struct _StatementForEach
 {
-	struct Expression* expr_ini;   // foreach(expr_ini; expr_itter){ stmn_list; } TODO: change to statement list
-	struct Expression* expr_itter;  
-	struct StatementList* stmn_list;
+	struct Statement* stmn_ini;      // can be NULL
+	struct Expression* expr_itter;   // can be NULL
+	struct StatementList* stmn_list; // can be NULL
 };
 struct _StatementFuncDefn
 {
 	struct Token* idf;
-	struct ExpressionList* args;  // TODO: change to list of statement ini
-	struct ExprDtype* ret_type;
-	struct StatementList* stmn_list;
+	struct StatementList* args;      // can be NULL, statement list of stmn_ini,
+	struct ExprDtype* ret_type;      // can be NULL = void
+	struct StatementList* stmn_list; // can be NULL
 };
 struct _StatementClassDefn
 {
 	struct Token* idf;
-	struct Token* par;
-	struct StatementList* stmn_list;
+	struct Token* par;				 // can be NULL
+	struct StatementList* stmn_list; // can be NULL
 };
 union _Statement
 {

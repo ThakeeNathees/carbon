@@ -32,6 +32,16 @@ int main(int argc, char** argv){
 	// create tree
 	err = structAst_makeTree(&ast, ast.stmn_list); if (err->type != ERROR_SUCCESS){ printf("%s\n", err->message.buffer ); exit(-1);}
 	structCarbonError_free(err);
+	struct Token* token = ast.tokens->list[ast.pos];
+	if (token->type != TKT_EOF) {
+		if (token->type == TKT_BRACKET && strcmp(token->name, RCRU_BRACKET) == 0) {
+			struct CarbonError* err = utils_make_error("SyntaxError: unexpected bracket", ERROR_SYNTAX, token->pos, ast.src, ast.file_name, false);
+			printf("%s\n", err->message.buffer); exit(-1);
+		}
+		else {
+			printf("InternalError: expected token TK_EOF\nfound: "); structToken_print(token); exit(-1);
+		}
+	}
 
 	// debug print tokens
 	// structTokenList_print(ast.tokens);

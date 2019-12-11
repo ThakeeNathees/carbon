@@ -25,9 +25,9 @@ void structToken_init(struct Token* self){
 	self->_name_ptr 		 = 0;
 	self->name 				 = (char*)malloc(TOKEN_NAME_SIZE); // free after use
 	self->name[0] 			 = '\0';
-	self->type 				 = UNKNOWN;
+	self->type 				 = TKT_UNKNOWN;
 	self->number_value.l 	 = 0;
-	self->number_type 		 = INT;
+	self->number_type 		 = NT_INT;
 	self->func_args_count    = 0;
 	self->func_args_given    = 0;
 	self->func_is_method     = false;
@@ -35,16 +35,16 @@ void structToken_init(struct Token* self){
 	self->minus_is_single_op = false;
 }
 void structToken_print(struct Token* self){
-	if (self->type == NUMBER){
-		if 		(self->number_type == CHAR)  printf("Token %10s : %-10s | (%s, %c)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.c);
-		else if (self->number_type == SHORT) printf("Token %10s : %-10s | (%s, %i)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.s);
-		else if (self->number_type == INT)   printf("Token %10s : %-10s | (%s, %i)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.i);
-		else if (self->number_type == FLOAT) printf("Token %10s : %-10s | (%s, %f)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.f);
-		else if (self->number_type == DOUBLE)printf("Token %10s : %-10s | (%s, %f)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.d);
-		else if (self->number_type == LONG)  printf("Token %10s : %-10s | (%s, %ld)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.l);	
+	if (self->type == TKT_NUMBER){
+		if 		(self->number_type == NT_CHAR)  printf("Token %10s : %-10s | (%s, %c)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.c);
+		else if (self->number_type == NT_SHORT) printf("Token %10s : %-10s | (%s, %i)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.s);
+		else if (self->number_type == NT_INT)   printf("Token %10s : %-10s | (%s, %i)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.i);
+		else if (self->number_type == NT_FLOAT) printf("Token %10s : %-10s | (%s, %f)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.f);
+		else if (self->number_type == NT_DOUBLE)printf("Token %10s : %-10s | (%s, %f)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.d);
+		else if (self->number_type == NT_LONG)  printf("Token %10s : %-10s | (%s, %ld)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.l);	
 	} 
-	else if (self->type == FUNCTION || self->type == BUILTIN)  printf("Token %10s : %-10s | method=%i, args_given=%i\n", enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
-	else if (self->type == OPERATOR && strcmp(self->name, OP_MINUS)==0)printf ("Token %10s : %-10s | single_op=%i\n", enumTokenType_toString(self->type), self->name, self->minus_is_single_op);
+	else if (self->type == TKT_FUNCTION || self->type == TKT_BUILTIN)  printf("Token %10s : %-10s | method=%i, args_given=%i\n", enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
+	else if (self->type == TKT_OPERATOR && strcmp(self->name, OP_MINUS)==0)printf ("Token %10s : %-10s | single_op=%i\n", enumTokenType_toString(self->type), self->name, self->minus_is_single_op);
 	else{
 		printf("Token %10s : %s\n", enumTokenType_toString(self->type), self->name);
 	}
@@ -52,11 +52,11 @@ void structToken_print(struct Token* self){
 void structToken_clear(struct Token* self){
 	self->_name_ptr 	= 0;
 	self->name[0] = '\0';
-	self->type 	= UNKNOWN;
+	self->type 	= TKT_UNKNOWN;
 	// TODO: free name and allocate new mem
 }
 bool structToken_isAssignmentOperator(struct Token* self){
-	if (self->type != OPERATOR){ return false; }
+	if (self->type != TKT_OPERATOR){ return false; }
 	if ( strcmp(self->name, OP_EQ)==0      || strcmp(self->name, OP_PLUSEQ)==0 ||  
 		 strcmp(self->name, OP_MINUSEQ)==0 || strcmp(self->name, OP_MUEQ)==0   ||
 		 strcmp(self->name, OP_DIVEQ)==0 ){
@@ -68,7 +68,7 @@ bool structToken_isAssignmentOperator(struct Token* self){
 void structToken_addChar(struct Token* self, char c){
 	
 	if (self->_name_ptr >= self->_name_len-1){ // one space for '\0'
-		int growth_size = TOKEN_NAME_SIZE; if (self->type == STRING) growth_size = TOKEN_STRING_GROWTH;
+		int growth_size = TOKEN_NAME_SIZE; if (self->type == TKT_STRING) growth_size = TOKEN_STRING_GROWTH;
 		char* new_name = (char*)malloc( self->_name_len + growth_size ) ;
 		self->_name_len += growth_size;
 		for ( int i=0; i < self->_name_ptr; i++){
@@ -178,45 +178,45 @@ bool structTokenScanner_isCharIdentifier(char c){
 
 // private
 void structTokenScanner_checkIdentifier(struct TokenScanner* self){
-	if (strcmp( self->current_token->name, KWORD_NULL )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_SELF )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_TRUE )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_FALSE )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_IF )==0)		{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_ELSE )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_WHILE )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWARD_FOR )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWARD_FOREACH )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_BREAK )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_CONTINUE )==0){ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_AND )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_OR )==0)		{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_NOT )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_RETURN )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_STATIC )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_FUNCTION )==0){ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_CLASS )==0)	{ self->current_token->type = KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_IMPORT )==0)	{ self->current_token->type = KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_NULL )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_SELF )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_TRUE )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_FALSE )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_IF )==0)		{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_ELSE )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_WHILE )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_FOR )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_FOREACH )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_BREAK )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_CONTINUE )==0){ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_AND )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_OR )==0)		{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_NOT )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_RETURN )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_STATIC )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_FUNCTION )==0){ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_CLASS )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+	if (strcmp( self->current_token->name, KWORD_IMPORT )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
 
-	if (strcmp( self->current_token->name, DTYPE_VOID )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_BOOL )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_CAHR )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_SHORT )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_INT )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_LONG )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_FLOAT )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_DOUBLE )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_LIST )==0)	{ self->current_token->type = DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_VOID )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_BOOL )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_CAHR )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_SHORT )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_INT )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_LONG )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_FLOAT )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_DOUBLE )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_LIST )==0)	{ self->current_token->type = TKT_DTYPE; return;}
 	//if (strcmp( self->current_token->name, DTYPE_ARRAY )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_MAP )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_STRING )==0)	{ self->current_token->type = DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_MAP )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	if (strcmp( self->current_token->name, DTYPE_STRING )==0)	{ self->current_token->type = TKT_DTYPE; return;}
 	//if (strcmp( self->current_token->name, DTYPE_FUNC )==0)	{ self->current_token->type = DTYPE; return;}
 
-	if (strcmp( self->current_token->name, BUILTIN_PRINT )==0)  { self->current_token->type = BUILTIN; self->current_token->func_args_count = 1; return;}
-	if (strcmp( self->current_token->name, BUILTIN_INPUT )==0)  { self->current_token->type = BUILTIN; self->current_token->func_args_count = 1; return;}
-	if (strcmp( self->current_token->name, BUILTIN_MIN )==0)	{ self->current_token->type = BUILTIN; self->current_token->func_args_count = 2; return;}
-	if (strcmp( self->current_token->name, BUILTIN_MAX )==0)	{ self->current_token->type = BUILTIN; self->current_token->func_args_count = 2; return;}
-	if (strcmp( self->current_token->name, BUILTIN_RAND )==0)	{ self->current_token->type = BUILTIN; self->current_token->func_args_count = 1; return;}
+	if (strcmp( self->current_token->name, BUILTIN_PRINT )==0)  { self->current_token->type = TKT_BUILTIN; self->current_token->func_args_count = 1; return;}
+	if (strcmp( self->current_token->name, BUILTIN_INPUT )==0)  { self->current_token->type = TKT_BUILTIN; self->current_token->func_args_count = 1; return;}
+	if (strcmp( self->current_token->name, BUILTIN_MIN )==0)	{ self->current_token->type = TKT_BUILTIN; self->current_token->func_args_count = 2; return;}
+	if (strcmp( self->current_token->name, BUILTIN_MAX )==0)	{ self->current_token->type = TKT_BUILTIN; self->current_token->func_args_count = 2; return;}
+	if (strcmp( self->current_token->name, BUILTIN_RAND )==0)	{ self->current_token->type = TKT_BUILTIN; self->current_token->func_args_count = 1; return;}
 }
 
 struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
@@ -228,7 +228,7 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 		char next = self->src[(self->pos)+1];
 		// //
 		if (next == '/'){ 
-			self->current_token->type = COMMENT;
+			self->current_token->type = TKT_COMMENT;
 			while(c != '\n'){
 				structToken_addChar( self->current_token, c );
 				if ( (++self->pos) >= strlen(self->src) ){ return structCarbonError_new(); } 
@@ -241,7 +241,7 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 		// /**/
 		if (next == '*'){
 			structToken_addChar( self->current_token, '/' );structToken_addChar( self->current_token, '*' );
-			self->current_token->type = COMMENT;(self->pos)+=2;
+			self->current_token->type = TKT_COMMENT;(self->pos)+=2;
 			while (true){
 				if ( (self->pos)+1 >= strlen(self->src)  ) { return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false);}
 				if ( self->src[self->pos] == '*' && self->src[(self->pos)+1] == '/' ){
@@ -308,7 +308,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		}
 		char hexstring[10]; // TODO: 10
 		strcpy(hexstring, numstr+2); // ignore 0x
-		self->current_token->number_type 	= INT;
+		self->current_token->number_type 	= NT_INT;
 		self->current_token->number_value.i 	= (int)strtol(hexstring, NULL, 16);
 		return structCarbonError_new();
 	}
@@ -318,7 +318,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		if (count > 1 || numstr[numlen-1] != 's' || utils_char_in_str('.', numstr)){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
-		self->current_token->number_type 	= SHORT;
+		self->current_token->number_type 	= NT_SHORT;
 		self->current_token->number_value.s 	= (short)atoi(numstr);
 		return structCarbonError_new();
 	}
@@ -327,7 +327,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		if (count > 1 || numstr[numlen-1] != 'l' || utils_char_in_str('.', numstr)){ if(self->src[self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
-		self->current_token->number_type 		= LONG;
+		self->current_token->number_type 		= NT_LONG;
 		self->current_token->number_value.l 	= atol(numstr);
 		return structCarbonError_new();
 	}
@@ -336,7 +336,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		if (count > 1 || numstr[numlen-1] != 'f'){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
-		self->current_token->number_type 		= FLOAT;
+		self->current_token->number_type 		= NT_FLOAT;
 		self->current_token->number_value.f 	= (float)atof(numstr);
 		return structCarbonError_new();
 	}
@@ -345,7 +345,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		if (count > 1 || numstr[numlen-1] != 'd'){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
-		self->current_token->number_type 		= DOUBLE;
+		self->current_token->number_type 		= NT_DOUBLE;
 		self->current_token->number_value.d 	= strtod(numstr, NULL);
 		return structCarbonError_new();
 	}
@@ -361,11 +361,11 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	}
 
 	if (utils_char_in_str('.', numstr)){
-		self->current_token->number_type 	= DOUBLE;
+		self->current_token->number_type 	= NT_DOUBLE;
 		self->current_token->number_value.d 	= strtod(numstr, NULL);
 		return structCarbonError_new();
 	} else {
-		self->current_token->number_type 	= INT;
+		self->current_token->number_type 	= NT_INT;
 		self->current_token->number_value.i 	= atoi(numstr);
 		return structCarbonError_new();
 	}
@@ -404,7 +404,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 			}
 			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || structTokenScanner_isCharSymbol(c) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
-				self->current_token->type = IDENTIFIER;
+				self->current_token->type = TKT_IDENTIFIER;
 				structTokenScanner_checkIdentifier(self);
 				return structCarbonError_new();
 			}
@@ -417,7 +417,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		
 		// string
 		if (c == '"'){
-			self->current_token->type = STRING;
+			self->current_token->type = TKT_STRING;
 			while(true){
 				(self->pos)++;
 				if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
@@ -479,8 +479,8 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 				return utils_make_error("TypeError: invalid char", ERROR_TYPE, self->current_token->pos, self->src, self->file_name, false);
 			}
 			structToken_addChar( self->current_token, c ); (self->pos)++;
-			self->current_token->type = NUMBER;
-			self->current_token->number_type = CHAR;
+			self->current_token->type = TKT_NUMBER;
+			self->current_token->number_type = NT_CHAR;
 			self->current_token->number_value.c = c;
 			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
@@ -493,21 +493,21 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 
 		// symbol not a string
 		structToken_addChar( self->current_token, c); (self->pos)++;
-		self->current_token->type = SYMBOL;
+		self->current_token->type = TKT_SYMBOL;
 		return structCarbonError_new();
 	}
 
 	// bracket
 	if ( structTokenScanner_isCharBracket(c) ){
 		structToken_addChar( self->current_token, c ); (self->pos)++;		
-		self->current_token->type = BRACKET;
+		self->current_token->type = TKT_BRACKET;
 		return structCarbonError_new();
 	}
 
 	// operator TODO:
 	if ( structTokenScanner_isCharOperator(c) ){
 		structToken_addChar( self->current_token, c ); (self->pos)++;
-		self->current_token->type = OPERATOR;
+		self->current_token->type = TKT_OPERATOR;
 		if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
 		}
@@ -536,7 +536,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 			}
 			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || (structTokenScanner_isCharSymbol(c) && c != '.' ) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
-				self->current_token->type = NUMBER;
+				self->current_token->type = TKT_NUMBER;
 				return structTokenScanner_validateNumber(self);
 			}
 		}

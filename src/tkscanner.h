@@ -10,31 +10,30 @@
 // token types
 // tk_pass : if >> to > and > use tk_pass
 #define FOREACH_TOKEN_TYPE(func) \
-	func(UNKNOWN)		\
-	func(TK_EOF)		\
-	func(TK_PASS)		\
-	func(COMMENT)		\
-	func(SYMBOL) 		\
-	func(BRACKET) 		\
-	func(OPERATOR)		\
-	func(KEYWORD)		\
-	func(DTYPE)			\
-	func(BUILTIN)		\
-	func(NUMBER)		\
-	func(STRING) 		\
-	func(FUNCTION) 		\
-	func(VARIABLE)		\
-	func(IDENTIFIER) // variable, function when tkscan, ...
+	func(TKT_UNKNOWN)		\
+	func(TKT_EOF)			\
+	func(TKT_PASS)			\
+	func(TKT_COMMENT)		\
+	func(TKT_SYMBOL) 		\
+	func(TKT_BRACKET) 		\
+	func(TKT_OPERATOR)		\
+	func(TKT_KEYWORD)		\
+	func(TKT_DTYPE)			\
+	func(TKT_BUILTIN)		\
+	func(TKT_NUMBER)		\
+	func(TKT_STRING) 		\
+	func(TKT_FUNCTION) 		\
+	func(TKT_VARIABLE)		\
+	func(TKT_IDENTIFIER) // variable, function when tkscan, ...
 
 #define FOREACH_NUMBER_TYPE(func) \
-	func(NT_UNKNOWN)\
-	func(CHAR)		\
-	func(SHORT)		\
-	func(INT)		\
-	func(FLOAT)		\
-	func(DOUBLE)	\
-	func(LONG)		
-
+	func(NT_UNKNOWN)	\
+	func(NT_CHAR)		\
+	func(NT_SHORT)		\
+	func(NT_INT)		\
+	func(NT_FLOAT)		\
+	func(NT_DOUBLE)		\
+	func(NT_LONG)		
 
 /**************** CLASSES **********************/
 enum TokenType
@@ -194,8 +193,8 @@ struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // stat
 #define KWORD_IF 		"if"
 #define KWORD_ELSE 		"else"
 #define KWORD_WHILE 	"while"
-#define KWARD_FOR 		"for"
-#define KWARD_FOREACH	"foreach"
+#define KWORD_FOR 		"for"
+#define KWORD_FOREACH	"foreach"
 #define KWORD_BREAK 	"break"
 #define KWORD_CONTINUE 	"continue"
 #define KWORD_AND 		"and"
