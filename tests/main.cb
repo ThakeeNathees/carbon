@@ -1,5 +1,3 @@
 import "path/to/another/carbon/src";
 
-while(some_cond)
-	print(2);
-
+while(some_cond) {print(2); test();}

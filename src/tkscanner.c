@@ -1,21 +1,30 @@
 
 #include "tkscanner.h"
 
+static const char* TOKEN_GROUP_STRING[] = {
+	FOREACH_TOKEN_GROUP(GENERATE_STRING)
+};
 static const char* TOKEN_TYPE_STRING[] = {
 	FOREACH_TOKEN_TYPE(GENERATE_STRING)
 };
+/*
 static const char* NUMBER_TYPE_STRING[] = {
 	FOREACH_NUMBER_TYPE(GENERATE_STRING)
 };
+*/
 
 // public api
-const char* enumTokenType_toString(enum TokenType self ){
+const char* enumTokenGroup_toString(enum TokenGroup self ){
+	return TOKEN_GROUP_STRING[self];
+}
+const char* enumTokenType_toString(enum TokenType self) {
 	return TOKEN_TYPE_STRING[self];
 }
-
+/*
 const char* enumNumberType_toString(enum NumberType self){
 	return NUMBER_TYPE_STRING[self];
 }
+*/
 
 
 /***************** <Token> *************/
@@ -25,9 +34,10 @@ void structToken_init(struct Token* self){
 	self->_name_ptr 		 = 0;
 	self->name 				 = (char*)malloc(TOKEN_NAME_SIZE); // free after use
 	self->name[0] 			 = '\0';
-	self->type 				 = TKT_UNKNOWN;
+	self->type				 = TK_UNKNOWN;
+	self->group 			 = TKG_UNKNOWN;
 	self->number_value.l 	 = 0;
-	self->number_type 		 = NT_INT;
+	//self->number_type 		 = NT_INT;
 	self->func_args_count    = 0;
 	self->func_args_given    = 0;
 	self->func_is_method     = false;
@@ -35,28 +45,27 @@ void structToken_init(struct Token* self){
 	self->minus_is_single_op = false;
 }
 void structToken_print(struct Token* self){
-	if (self->type == TKT_NUMBER){
-		if 		(self->number_type == NT_CHAR)  printf("Token %10s : %-10s | (%s, %c)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.c);
-		else if (self->number_type == NT_SHORT) printf("Token %10s : %-10s | (%s, %i)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.s);
-		else if (self->number_type == NT_INT)   printf("Token %10s : %-10s | (%s, %i)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.i);
-		else if (self->number_type == NT_FLOAT) printf("Token %10s : %-10s | (%s, %f)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.f);
-		else if (self->number_type == NT_DOUBLE)printf("Token %10s : %-10s | (%s, %f)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.d);
-		else if (self->number_type == NT_LONG)  printf("Token %10s : %-10s | (%s, %ld)\n", enumTokenType_toString(self->type), self->name, enumNumberType_toString(self->number_type), self->number_value.l);	
+	if (self->group == TKG_NUMBER){
+		if 		(self->type == TK_VALUE_CHAR)  printf("Token %-20s : %-10s | value = %c\n", enumTokenType_toString(self->type), self->name, self->number_value.c);
+		else if (self->type == TK_VALUE_SHORT) printf("Token %-20s : %-10s | value = %i\n", enumTokenType_toString(self->type), self->name, self->number_value.s);
+		else if (self->type == TK_VALUE_INT)   printf("Token %-20s : %-10s | value = %i\n", enumTokenType_toString(self->type), self->name, self->number_value.i);
+		else if (self->type == TK_VALUE_FLOAT) printf("Token %-20s : %-10s | value = %f\n", enumTokenType_toString(self->type), self->name, self->number_value.f);
+		else if (self->type == TK_VALUE_DOUBLE)printf("Token %-20s : %-10s | value = %f\n", enumTokenType_toString(self->type), self->name, self->number_value.d);
+		else if (self->type == TK_VALUE_LONG)  printf("Token %-20s : %-10s | value = %ld\n",enumTokenType_toString(self->type), self->name, self->number_value.l);	
 	} 
-	else if (self->type == TKT_FUNCTION || self->type == TKT_BUILTIN)  printf("Token %10s : %-10s | method=%i, args_given=%i\n", enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
-	else if (self->type == TKT_OPERATOR && strcmp(self->name, OP_MINUS)==0)printf ("Token %10s : %-10s | single_op=%i\n", enumTokenType_toString(self->type), self->name, self->minus_is_single_op);
-	else{
-		printf("Token %10s : %s\n", enumTokenType_toString(self->type), self->name);
-	}
+	else if (self->group == TKG_FUNCTION || self->group == TKG_BUILTIN)		printf("Token %-20s : %-10s | method=%i, args_given=%i\n",	enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
+	else if (self->group == TKG_OPERATOR && strcmp(self->name, OP_MINUS)==0)printf("Token %-20s : %-10s | single_op=%i\n",				enumTokenType_toString(self->type), self->name, self->minus_is_single_op);
+	else																	printf("Token %-20s : %s\n",									enumTokenType_toString(self->type), self->name);
+	
 }
 void structToken_clear(struct Token* self){
 	self->_name_ptr 	= 0;
 	self->name[0] = '\0';
-	self->type 	= TKT_UNKNOWN;
+	self->group 	= TKG_UNKNOWN;
 	// TODO: free name and allocate new mem
 }
 bool structToken_isAssignmentOperator(struct Token* self){
-	if (self->type != TKT_OPERATOR){ return false; }
+	if (self->group != TKG_OPERATOR){ return false; }
 	if ( strcmp(self->name, OP_EQ)==0      || strcmp(self->name, OP_PLUSEQ)==0 ||  
 		 strcmp(self->name, OP_MINUSEQ)==0 || strcmp(self->name, OP_MUEQ)==0   ||
 		 strcmp(self->name, OP_DIVEQ)==0 ){
@@ -68,7 +77,7 @@ bool structToken_isAssignmentOperator(struct Token* self){
 void structToken_addChar(struct Token* self, char c){
 	
 	if (self->_name_ptr >= self->_name_len-1){ // one space for '\0'
-		int growth_size = TOKEN_NAME_SIZE; if (self->type == TKT_STRING) growth_size = TOKEN_STRING_GROWTH;
+		int growth_size = TOKEN_NAME_SIZE; if (self->group == TKG_STRING) growth_size = TOKEN_STRING_GROWTH;
 		char* new_name = (char*)malloc( self->_name_len + growth_size ) ;
 		self->_name_len += growth_size;
 		for ( int i=0; i < self->_name_ptr; i++){
@@ -177,46 +186,105 @@ bool structTokenScanner_isCharIdentifier(char c){
 }
 
 // private
-void structTokenScanner_checkIdentifier(struct TokenScanner* self){
-	if (strcmp( self->current_token->name, KWORD_NULL )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_SELF )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_TRUE )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_FALSE )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_IF )==0)		{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_ELSE )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_WHILE )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_FOR )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_FOREACH )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_BREAK )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_CONTINUE )==0){ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_AND )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_OR )==0)		{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_NOT )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_RETURN )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_STATIC )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_FUNCTION )==0){ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_CLASS )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
-	if (strcmp( self->current_token->name, KWORD_IMPORT )==0)	{ self->current_token->type = TKT_KEYWORD; return;}
+void structTokenScanner_checkSymbol(struct TokenScanner* self) {
+	if (self->current_token->group != TKG_SYMBOL)  utils_error_exit("InternalError: expected token group symbol", self->pos, self->src, self->file_name);
+	
+	if (strcmp(self->current_token->name, SYM_DOT) == 0)				{ self->current_token->type = TK_SYM_DOT;			return; }
+	else if (strcmp(self->current_token->name, SYM_COMMA) == 0)			{ self->current_token->type = TK_SYM_COMMA;			return; }
+	else if (strcmp(self->current_token->name, SYM_COLLON) == 0)		{ self->current_token->type = TK_SYM_COLLON;		return; }
+	else if (strcmp(self->current_token->name, SYM_SEMI_COLLON) == 0)	{ self->current_token->type = TK_SYM_SEMI_COLLON;	return; }
+	else if (strcmp(self->current_token->name, SYM_DQUOTE) == 0)		{ self->current_token->type = TK_SYM_DQUOTE;		return; }
+	else if (strcmp(self->current_token->name, SYM_SQUOTE) == 0)		{ self->current_token->type = TK_SYM_SQUOTE;		return; }
 
-	if (strcmp( self->current_token->name, DTYPE_VOID )==0)	{ self->current_token->type = TKT_DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_BOOL )==0)	{ self->current_token->type = TKT_DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_CAHR )==0)	{ self->current_token->type = TKT_DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_SHORT )==0)	{ self->current_token->type = TKT_DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_INT )==0)	{ self->current_token->type = TKT_DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_LONG )==0)	{ self->current_token->type = TKT_DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_FLOAT )==0)	{ self->current_token->type = TKT_DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_DOUBLE )==0)	{ self->current_token->type = TKT_DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_LIST )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	utils_error_exit("InternalError: unknown symbol", self->pos, self->src, self->file_name);
+}
+void structTokenScanner_ckeckBracket(struct TokenScanner* self) { // for < and > assign at scane expr
+	if (self->current_token->group != TKG_BRACKET)  utils_error_exit("InternalError: expected token group bracket", self->pos, self->src, self->file_name);
+	
+	if (strcmp(self->current_token->name, LPARN) == 0)				{ self->current_token->type = TK_BRACKET_LPARAN;	return; }
+	else if (strcmp(self->current_token->name, RPARN) == 0)			{ self->current_token->type = TK_BRACKET_RPARAN;	return; }
+	else if (strcmp(self->current_token->name, LCUR_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_LCUR;		return; }
+	else if (strcmp(self->current_token->name, RCUR_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_RCUR;		return; }
+	else if (strcmp(self->current_token->name, RSQ_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_RSQ;		return; }
+	else if (strcmp(self->current_token->name, LSQ_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_LSQ;		return; }
+	else if (strcmp(self->current_token->name, LTRI_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_RTRI;		return; }
+	else if (strcmp(self->current_token->name, RTRI_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_LTRI;		return; }
+	
+	utils_error_exit("InternalError: unknown bracket", self->pos, self->src, self->file_name);
+}
+void structTokenScanner_checkOperator(struct TokenScanner* self) {
+	if (self->current_token->group != TKG_OPERATOR)  utils_error_exit("InternalError: expected token group operator", self->pos, self->src, self->file_name);
+
+	if (strcmp(self->current_token->name, OP_EQ) == 0)		{ self->current_token->type = TK_OP_EQ;			return; }
+	if (strcmp(self->current_token->name, OP_PLUS) == 0)	{ self->current_token->type = TK_OP_PLUS;		return; }
+	if (strcmp(self->current_token->name, OP_PLUSEQ) == 0)	{ self->current_token->type = TK_OP_PLUSEQ;		return; }
+	if (strcmp(self->current_token->name, OP_MINUS) == 0)	{ self->current_token->type = TK_OP_MINUS;		return; }
+	if (strcmp(self->current_token->name, OP_MINUSEQ) == 0) { self->current_token->type = TK_OP_MINUSEQ;	return; }
+	if (strcmp(self->current_token->name, OP_MUL) == 0)		{ self->current_token->type = TK_OP_MUL;		return; }
+	if (strcmp(self->current_token->name, OP_MUEQ) == 0)	{ self->current_token->type = TK_OP_MULEQ;		return; }
+	if (strcmp(self->current_token->name, OP_DIV) == 0)		{ self->current_token->type = TK_OP_DIV;		return; }
+	if (strcmp(self->current_token->name, OP_DIVEQ) == 0)	{ self->current_token->type = TK_OP_DIVEQ;		return; }
+	if (strcmp(self->current_token->name, OP_MOD) == 0)		{ self->current_token->type = TK_OP_MOD;		return; }
+	if (strcmp(self->current_token->name, OP_NOT) == 0)		{ self->current_token->type = TK_OP_NOT;		return; }
+	if (strcmp(self->current_token->name, OP_POW) == 0)		{ self->current_token->type = TK_OP_POW;		return; }
+	if (strcmp(self->current_token->name, OP_EQEQ) == 0)	{ self->current_token->type = TK_OP_EQEQ;		return; }
+	if (strcmp(self->current_token->name, OP_NOTEQ) == 0)	{ self->current_token->type = TK_OP_NOTEQ;		return; }
+	if (strcmp(self->current_token->name, OP_GT) == 0)		{ self->current_token->type = TK_OP_GT;			return; }
+	if (strcmp(self->current_token->name, OP_LT) == 0)		{ self->current_token->type = TK_OP_LT;			return; }
+	if (strcmp(self->current_token->name, OP_GTEQ) == 0)	{ self->current_token->type = TK_OP_GTEQ;		return; }
+	if (strcmp(self->current_token->name, OP_LTEQ) == 0)	{ self->current_token->type = TK_OP_LTEQ;		return; }
+	if (strcmp(self->current_token->name, OP_LSHIFT) == 0)	{ self->current_token->type = TK_OP_LSHIFT;		return; }
+	if (strcmp(self->current_token->name, OP_RSHIFT) == 0)	{ self->current_token->type = TK_OP_RSHIFT;		return; }
+	if (strcmp(self->current_token->name, OP_OR) == 0)		{ self->current_token->type = TK_OP_OR;			return; }
+	if (strcmp(self->current_token->name, OP_AND) == 0)		{ self->current_token->type = TK_OP_AND;		return; }
+	if (strcmp(self->current_token->name, OP_XOR) == 0)		{ self->current_token->type = TK_OP_XOR;		return; }
+	
+	utils_error_exit("InternalError: unknown operator", self->pos, self->src, self->file_name);
+}
+void structTokenScanner_checkIdentifier(struct TokenScanner* self){
+	if (self->current_token->group != TKG_IDENTIFIER) utils_error_exit("InternalError: expected token group identifier", self->pos, self->src, self->file_name);
+
+	if (strcmp( self->current_token->name, KWORD_NULL) == 0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_NULL;		return; }
+	else if (strcmp( self->current_token->name, KWORD_SELF )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_SELF;		return; }
+	else if (strcmp( self->current_token->name, KWORD_TRUE )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_TRUE;		return; }
+	else if (strcmp( self->current_token->name, KWORD_FALSE )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_FALSE;		return; }
+	else if (strcmp( self->current_token->name, KWORD_IF )==0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_IF;		return; }
+	else if (strcmp( self->current_token->name, KWORD_ELSE )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_ELSE;		return; }
+	else if (strcmp( self->current_token->name, KWORD_WHILE )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_WHILE;		return; }
+	else if (strcmp( self->current_token->name, KWORD_FOR )==0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_FOR;		return; }
+	else if (strcmp( self->current_token->name, KWORD_FOREACH )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_FOREACH;	return; }
+	else if (strcmp( self->current_token->name, KWORD_BREAK )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_BREAK;		return; }
+	else if (strcmp( self->current_token->name, KWORD_CONTINUE )==0){ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_CONTINUE;	return; }
+	else if (strcmp( self->current_token->name, KWORD_AND )==0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_AND;		return; }
+	else if (strcmp( self->current_token->name, KWORD_OR )==0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_OR;		return; }
+	else if (strcmp( self->current_token->name, KWORD_NOT )==0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_NOT;		return; }
+	else if (strcmp( self->current_token->name, KWORD_RETURN )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_RETURN;	return; }
+	else if (strcmp( self->current_token->name, KWORD_STATIC )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_STATIC;	return; }
+	else if (strcmp( self->current_token->name, KWORD_FUNCTION )==0){ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_FUNCTION;	return; }
+	else if (strcmp( self->current_token->name, KWORD_CLASS )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_CLASS;		return; }
+	else if (strcmp( self->current_token->name, KWORD_IMPORT )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_IMPORT;	return; }
+
+	else if (strcmp( self->current_token->name, DTYPE_VOID )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_VOID;	return; }
+	else if (strcmp( self->current_token->name, DTYPE_BOOL )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_BOOL;	return; }
+	else if (strcmp( self->current_token->name, DTYPE_CAHR )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_CHAR;	return; }
+	else if (strcmp( self->current_token->name, DTYPE_SHORT )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_SHORT;	return; }
+	else if (strcmp( self->current_token->name, DTYPE_INT )==0)		{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_INT;	return; }
+	else if (strcmp( self->current_token->name, DTYPE_LONG )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_LONG;	return; }
+	else if (strcmp( self->current_token->name, DTYPE_FLOAT )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_FLOAT;	return; }
+	else if (strcmp( self->current_token->name, DTYPE_DOUBLE )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_DOUBLE; return; }
+	else if (strcmp( self->current_token->name, DTYPE_LIST )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_LIST;	return; }
+	else if (strcmp( self->current_token->name, DTYPE_MAP )==0)		{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_MAP;	return; }
 	//if (strcmp( self->current_token->name, DTYPE_ARRAY )==0)	{ self->current_token->type = DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_MAP )==0)	{ self->current_token->type = TKT_DTYPE; return;}
-	if (strcmp( self->current_token->name, DTYPE_STRING )==0)	{ self->current_token->type = TKT_DTYPE; return;}
+	else if (strcmp( self->current_token->name, DTYPE_STRING )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_STRING; return;}
 	//if (strcmp( self->current_token->name, DTYPE_FUNC )==0)	{ self->current_token->type = DTYPE; return;}
 
-	if (strcmp( self->current_token->name, BUILTIN_PRINT )==0)  { self->current_token->type = TKT_BUILTIN; self->current_token->func_args_count = 1; return;}
-	if (strcmp( self->current_token->name, BUILTIN_INPUT )==0)  { self->current_token->type = TKT_BUILTIN; self->current_token->func_args_count = 1; return;}
-	if (strcmp( self->current_token->name, BUILTIN_MIN )==0)	{ self->current_token->type = TKT_BUILTIN; self->current_token->func_args_count = 2; return;}
-	if (strcmp( self->current_token->name, BUILTIN_MAX )==0)	{ self->current_token->type = TKT_BUILTIN; self->current_token->func_args_count = 2; return;}
-	if (strcmp( self->current_token->name, BUILTIN_RAND )==0)	{ self->current_token->type = TKT_BUILTIN; self->current_token->func_args_count = 1; return;}
+	else if (strcmp(self->current_token->name, BUILTIN_PRINT) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_PRINT;	self->current_token->func_args_count = 1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_INPUT) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_INPUT;	self->current_token->func_args_count = 1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_MIN) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_MIN;		self->current_token->func_args_count = 2; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_MAX) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_MAX;		self->current_token->func_args_count = 2; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_RAND) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_RAND;	self->current_token->func_args_count = 1; return; }
+
+	else { self->current_token->type = TK_IDENTIFIER; return; }
 }
 
 struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
@@ -228,7 +296,7 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 		char next = self->src[(self->pos)+1];
 		// //
 		if (next == '/'){ 
-			self->current_token->type = TKT_COMMENT;
+			self->current_token->group = TKG_COMMENT;
 			while(c != '\n'){
 				structToken_addChar( self->current_token, c );
 				if ( (++self->pos) >= strlen(self->src) ){ return structCarbonError_new(); } 
@@ -241,7 +309,7 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 		// /**/
 		if (next == '*'){
 			structToken_addChar( self->current_token, '/' );structToken_addChar( self->current_token, '*' );
-			self->current_token->type = TKT_COMMENT;(self->pos)+=2;
+			self->current_token->group = TKG_COMMENT;(self->pos)+=2;
 			while (true){
 				if ( (self->pos)+1 >= strlen(self->src)  ) { return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false);}
 				if ( self->src[self->pos] == '*' && self->src[(self->pos)+1] == '/' ){
@@ -308,7 +376,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		}
 		char hexstring[10]; // TODO: 10
 		strcpy(hexstring, numstr+2); // ignore 0x
-		self->current_token->number_type 	= NT_INT;
+		self->current_token->type 				= TK_VALUE_INT;
 		self->current_token->number_value.i 	= (int)strtol(hexstring, NULL, 16);
 		return structCarbonError_new();
 	}
@@ -318,7 +386,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		if (count > 1 || numstr[numlen-1] != 's' || utils_char_in_str('.', numstr)){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
-		self->current_token->number_type 	= NT_SHORT;
+		self->current_token->type 				= TK_VALUE_SHORT;
 		self->current_token->number_value.s 	= (short)atoi(numstr);
 		return structCarbonError_new();
 	}
@@ -327,7 +395,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		if (count > 1 || numstr[numlen-1] != 'l' || utils_char_in_str('.', numstr)){ if(self->src[self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
-		self->current_token->number_type 		= NT_LONG;
+		self->current_token->type 				= TK_VALUE_LONG;
 		self->current_token->number_value.l 	= atol(numstr);
 		return structCarbonError_new();
 	}
@@ -336,7 +404,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		if (count > 1 || numstr[numlen-1] != 'f'){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
-		self->current_token->number_type 		= NT_FLOAT;
+		self->current_token->type 				= TK_VALUE_FLOAT;
 		self->current_token->number_value.f 	= (float)atof(numstr);
 		return structCarbonError_new();
 	}
@@ -345,7 +413,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		if (count > 1 || numstr[numlen-1] != 'd'){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
 		}
-		self->current_token->number_type 		= NT_DOUBLE;
+		self->current_token->type 				= TK_VALUE_DOUBLE;
 		self->current_token->number_value.d 	= strtod(numstr, NULL);
 		return structCarbonError_new();
 	}
@@ -361,11 +429,11 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	}
 
 	if (utils_char_in_str('.', numstr)){
-		self->current_token->number_type 	= NT_DOUBLE;
+		self->current_token->type 				= TK_VALUE_DOUBLE;
 		self->current_token->number_value.d 	= strtod(numstr, NULL);
 		return structCarbonError_new();
 	} else {
-		self->current_token->number_type 	= NT_INT;
+		self->current_token->type 				= TK_VALUE_INT;
 		self->current_token->number_value.i 	= atoi(numstr);
 		return structCarbonError_new();
 	}
@@ -389,8 +457,6 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 	struct CarbonError* err = structTokenScanner_skipWhiteSpaceAndComments(self, is_eof); if (err->type != ERROR_SUCCESS) return err;
 	structCarbonError_free(err);
 	if (*is_eof) return structCarbonError_new();
-	//*is_eof = structTokenScanner_skipWhiteSpaces(self); if(*is_eof) return structCarbonError_new();
-	//*is_eof = structTokenScanner_skipComments(self); if (*is_eof) return structCarbonError_new();
 	char c = self->src[ self->pos ];
 
 	self->current_token->pos = self->pos;
@@ -404,7 +470,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 			}
 			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || structTokenScanner_isCharSymbol(c) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
-				self->current_token->type = TKT_IDENTIFIER;
+				self->current_token->group = TKG_IDENTIFIER;
 				structTokenScanner_checkIdentifier(self);
 				return structCarbonError_new();
 			}
@@ -417,7 +483,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		
 		// string
 		if (c == '"'){
-			self->current_token->type = TKT_STRING;
+			self->current_token->group = TKG_STRING; self->current_token->type = TK_STRING;
 			while(true){
 				(self->pos)++;
 				if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
@@ -479,8 +545,8 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 				return utils_make_error("TypeError: invalid char", ERROR_TYPE, self->current_token->pos, self->src, self->file_name, false);
 			}
 			structToken_addChar( self->current_token, c ); (self->pos)++;
-			self->current_token->type = TKT_NUMBER;
-			self->current_token->number_type = NT_CHAR;
+			self->current_token->group			= TKG_NUMBER;
+			self->current_token->type			= TK_VALUE_CHAR;
 			self->current_token->number_value.c = c;
 			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
@@ -493,36 +559,39 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 
 		// symbol not a string
 		structToken_addChar( self->current_token, c); (self->pos)++;
-		self->current_token->type = TKT_SYMBOL;
+		self->current_token->group = TKG_SYMBOL; 
+		structTokenScanner_checkSymbol(self);
 		return structCarbonError_new();
 	}
 
 	// bracket
 	if ( structTokenScanner_isCharBracket(c) ){
 		structToken_addChar( self->current_token, c ); (self->pos)++;		
-		self->current_token->type = TKT_BRACKET;
+		self->current_token->group = TKG_BRACKET;
+		structTokenScanner_ckeckBracket(self);
 		return structCarbonError_new();
 	}
 
 	// operator TODO:
 	if ( structTokenScanner_isCharOperator(c) ){
 		structToken_addChar( self->current_token, c ); (self->pos)++;
-		self->current_token->type = TKT_OPERATOR;
+		self->current_token->group = TKG_OPERATOR;
 		if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
 			return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
 		}
 		char next = self->src[(self->pos)++];
-		if (c == '=' && next == '='){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
-		if (c == '!' && next == '='){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
-		if (c == '+' && next == '='){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
-		if (c == '-' && next == '='){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
-		if (c == '*' && next == '='){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
-		if (c == '*' && next == '*'){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
-		if (c == '/' && next == '='){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
-		if (c == '<' && next == '<'){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
-		if (c == '>' && next == '>'){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
-		if (c == '>' && next == '='){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
-		if (c == '<' && next == '='){ structToken_addChar( self->current_token, next); return structCarbonError_new(); }
+		if (c == '=' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '!' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '+' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '-' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '*' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '*' && next == '*'){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '/' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '<' && next == '<'){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '>' && next == '>'){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '>' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '<' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		structTokenScanner_checkOperator(self);
 		(self->pos)--;
 		return structCarbonError_new();
 	}
@@ -536,7 +605,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 			}
 			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || (structTokenScanner_isCharSymbol(c) && c != '.' ) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
-				self->current_token->type = TKT_NUMBER;
+				self->current_token->group = TKG_NUMBER;
 				return structTokenScanner_validateNumber(self);
 			}
 		}

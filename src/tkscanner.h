@@ -9,23 +9,109 @@
 
 // token types
 // tk_pass : if >> to > and > use tk_pass
-#define FOREACH_TOKEN_TYPE(func) \
-	func(TKT_UNKNOWN)		\
-	func(TKT_EOF)			\
-	func(TKT_PASS)			\
-	func(TKT_COMMENT)		\
-	func(TKT_SYMBOL) 		\
-	func(TKT_BRACKET) 		\
-	func(TKT_OPERATOR)		\
-	func(TKT_KEYWORD)		\
-	func(TKT_DTYPE)			\
-	func(TKT_BUILTIN)		\
-	func(TKT_NUMBER)		\
-	func(TKT_STRING) 		\
-	func(TKT_FUNCTION) 		\
-	func(TKT_VARIABLE)		\
-	func(TKT_IDENTIFIER) // variable, function when tkscan, ...
+#define FOREACH_TOKEN_GROUP(func) \
+	func(TKG_UNKNOWN)		\
+	func(TKG_EOF)			\
+	func(TKG_PASS)			\
+	func(TKG_COMMENT)		\
+	func(TKG_SYMBOL) 		\
+	func(TKG_BRACKET) 		\
+	func(TKG_OPERATOR)		\
+	func(TKG_KEYWORD)		\
+	func(TKG_DTYPE)			\
+	func(TKG_BUILTIN)		\
+	func(TKG_NUMBER)		\
+	func(TKG_STRING) 		\
+	func(TKG_FUNCTION) 		\
+	func(TKG_VARIABLE)		\
+	func(TKG_IDENTIFIER) // variable, function when tkscan, ...
 
+#define FOREACH_TOKEN_TYPE(func)\
+	func(TK_UNKNOWN)	\
+	func(TK_EOF)		\
+	func(TK_PASS)		\
+	func(TK_STRING)		\
+	func(TK_IDENTIFIER)	\
+	func(TK_SYM_DOT)		\
+	func(TK_SYM_COMMA)		\
+	func(TK_SYM_COLLON)		\
+	func(TK_SYM_SEMI_COLLON)\
+	func(TK_SYM_DQUOTE)		\
+	func(TK_SYM_SQUOTE)		\
+	func(TK_BRACKET_LPARAN)		\
+	func(TK_BRACKET_RPARAN)		\
+	func(TK_BRACKET_LCUR)		\
+	func(TK_BRACKET_RCUR)		\
+	func(TK_BRACKET_RSQ)		\
+	func(TK_BRACKET_LSQ)		\
+	func(TK_BRACKET_RTRI)		\
+	func(TK_BRACKET_LTRI)		\
+	func(TK_DT_VOID)		\
+	func(TK_DT_BOOL)		\
+	func(TK_DT_CHAR)		\
+	func(TK_DT_SHORT)		\
+	func(TK_DT_INT)			\
+	func(TK_DT_LONG)		\
+	func(TK_DT_FLOAT)		\
+	func(TK_DT_DOUBLE)		\
+	func(TK_DT_LIST)		\
+	func(TK_DT_MAP)			\
+	func(TK_DT_STRING)		\
+	func(TK_OP_EQ)		\
+	func(TK_OP_PLUS)	\
+	func(TK_OP_PLUSEQ)	\
+	func(TK_OP_MINUS)	\
+	func(TK_OP_MINUSEQ)	\
+	func(TK_OP_MUL)		\
+	func(TK_OP_MULEQ)	\
+	func(TK_OP_DIV)		\
+	func(TK_OP_DIVEQ)	\
+	func(TK_OP_MOD)		\
+	func(TK_OP_NOT)		\
+	func(TK_OP_POW)		\
+	func(TK_OP_EQEQ)	\
+	func(TK_OP_NOTEQ)	\
+	func(TK_OP_GT)		\
+	func(TK_OP_LT)		\
+	func(TK_OP_GTEQ)	\
+	func(TK_OP_LTEQ)	\
+	func(TK_OP_LSHIFT)	\
+	func(TK_OP_RSHIFT)	\
+	func(TK_OP_OR)		\
+	func(TK_OP_AND)		\
+	func(TK_OP_XOR)		\
+	func(TK_KWORD_NULL)			\
+	func(TK_KWORD_SELF)			\
+	func(TK_KWORD_TRUE)			\
+	func(TK_KWORD_FALSE)		\
+	func(TK_KWORD_IF)			\
+	func(TK_KWORD_ELSE)			\
+	func(TK_KWORD_WHILE)		\
+	func(TK_KWORD_FOR)			\
+	func(TK_KWORD_FOREACH)		\
+	func(TK_KWORD_BREAK)		\
+	func(TK_KWORD_CONTINUE)		\
+	func(TK_KWORD_AND)			\
+	func(TK_KWORD_OR)			\
+	func(TK_KWORD_NOT)			\
+	func(TK_KWORD_RETURN)		\
+	func(TK_KWORD_STATIC)		\
+	func(TK_KWORD_FUNCTION)		\
+	func(TK_KWORD_CLASS)		\
+	func(TK_KWORD_IMPORT)		\
+	func(TK_BUILTIN_PRINT)	\
+	func(TK_BUILTIN_INPUT)	\
+	func(TK_BUILTIN_MIN)	\
+	func(TK_BUILTIN_MAX)	\
+	func(TK_BUILTIN_RAND)	\
+	func(TK_VALUE_CHAR)			\
+	func(TK_VALUE_SHORT)		\
+	func(TK_VALUE_INT)			\
+	func(TK_VALUE_LONG)			\
+	func(TK_VALUE_FLOAT)		\
+	func(TK_VALUE_DOUBLE)
+
+/*
 #define FOREACH_NUMBER_TYPE(func) \
 	func(NT_UNKNOWN)	\
 	func(NT_CHAR)		\
@@ -34,10 +120,15 @@
 	func(NT_FLOAT)		\
 	func(NT_DOUBLE)		\
 	func(NT_LONG)		
+*/
 
 /**************** CLASSES **********************/
-enum TokenType
+enum TokenGroup
 {
+	FOREACH_TOKEN_GROUP(GENERATE_ENUM)
+};
+
+enum TokenType {
 	FOREACH_TOKEN_TYPE(GENERATE_ENUM)
 };
 
@@ -50,14 +141,17 @@ union NumberValue
 	double 	d;
 	long 	l;
 };
+/*
 enum NumberType
 {
 	FOREACH_NUMBER_TYPE(GENERATE_ENUM)
 };
+*/
 
 struct Token
 {
-	enum  TokenType 	type;
+	enum TokenType		type;
+	enum TokenGroup 	group;
 	// name
 	char* 				name;
 	int 				_name_len;
@@ -65,7 +159,6 @@ struct Token
 	int 				pos;
 	// for number type
 	union NumberValue 	number_value;
-	enum  NumberType	number_type;
 
 	// for function type
 	bool func_is_method; // insts.method() : comes after . operator and after a '('
@@ -96,8 +189,9 @@ struct TokenScanner
 };
 
 /****************** PUBLIC API ************************************/
+const char* enumTokenGroup_toString(enum TokenGroup self);
 const char* enumTokenType_toString(enum TokenType self);
-const char* enumNumberType_toString(enum NumberType self);
+//const char* enumNumberType_toString(enum NumberType self);
 
 // token
 void structToken_init(struct Token* self);
@@ -131,12 +225,12 @@ struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // stat
 // brackets
 #define LPARN 		 	"("
 #define RPARN 		 	")"
-#define LCRU_BRACKET 	"{"
-#define RCRU_BRACKET 	"}"
+#define LCUR_BRACKET 	"{"
+#define RCUR_BRACKET 	"}"
 #define RSQ_BRACKET 	"["
 #define LSQ_BRACKET 	"]"
-#define RTRI_BRACKET	"<"
-#define LTRI_BRACKET	">"
+#define LTRI_BRACKET	"<"
+#define RTRI_BRACKET	">"
 
 // data types
 #define DTYPE_VOID 		"void"
@@ -173,7 +267,6 @@ struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // stat
 #define OP_NOTEQ		"!="
 #define OP_GT 			">"
 #define OP_LT 			"<"
-#define OP_EQ 			"="
 #define OP_GTEQ 		">="
 #define OP_LTEQ 		"<="
 

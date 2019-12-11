@@ -117,6 +117,12 @@ union _Statement
 };
 /*********************************************/
 
+enum structAst_StmnEndType
+{
+	STMNEND_EOF,
+	STMNEND_BRACKET_RCUR,
+};
+
 struct Statement
 {
 	enum StatementType type;
@@ -190,6 +196,6 @@ struct StatementList* structStatementList_new(); // static method
 // ast
 void structAst_init(struct Ast* self, char* src, char* fiel_name);
 struct CarbonError* structAst_scaneTokens(struct Ast* self);
-struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* statement_list);
+struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* statement_list, enum structAst_StmnEndType end_type);
 
 /****************************************************************/
