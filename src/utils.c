@@ -73,7 +73,7 @@ void utils_error_exit(const char* err_msg, size_t pos, const char* src, const ch
 	exit(1);
 }
 
-struct CarbonError* utils_make_error(const char* err_msg, enum ErrorType err_type, size_t pos, char* src, char* file_name, bool free_msg, size_t error_len){
+struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, size_t pos, const char* src, const char* file_name, bool free_msg, size_t error_len){
 	char location_str[ERROR_LINE_SIZE];
 	char buff[ERROR_LINE_SIZE];  int line_no = utils_pos_to_line(pos, src, buff, location_str, error_len);
 	struct CarbonError* err = structCarbonError_new(); err->type = err_type;

@@ -7,8 +7,13 @@ int main(int argc, char** argv)
 {
     void *handle;
     void (*my_func)(const char*);
+
+    if (argc<2){
+        printf("usage: <shared lib name>\n");
+        exit(1);
+    }
 	
-	handle = dlopen("./mylib.dll", RTLD_LAZY);
+	handle = dlopen(argv[1], RTLD_LAZY);// "./mylib.dll" or "./mylib.so"
     
     if (!handle) {
         /* fail to load the library */

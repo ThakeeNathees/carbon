@@ -6,7 +6,7 @@ rem or use them both gcc -shared -o mylib.dll mylib.c
 
 gcc test.c -o test.exe
 
-test.exe
+test.exe mylib.dll
 
 echo press any key to clean
 pause
