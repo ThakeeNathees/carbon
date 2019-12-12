@@ -64,7 +64,7 @@ void structExpressionList_addExpression(struct ExpressionList* self, struct Expr
 	if (self->count >= self->size){
 		struct Expression** new_list = (struct Expression**)malloc( sizeof(struct Expression)*(self->size + self->growth_size) ) ;
 		self->size += self->growth_size;
-		for ( int i=0; i< self->count; i++){
+		for ( size_t i=0; i< self->count; i++){
 			new_list[i] = self->list[i];
 		}
 		free(self->list);
@@ -150,7 +150,7 @@ void structStatement_print(struct Statement* self, int indent){
 		if (self->statement.stm_for.expr_end  != NULL) { structExpression_print(self->statement.stm_for.expr_end, indent + 1); }
 		else { for (int i = 0; i < indent + 1; i++) printf("\t"); printf("(No ExprEnd)\n"); }
 		if (self->statement.stm_for.stmn_list != NULL) {  structStatementList_print(self->statement.stm_for.stmn_list);}
-		else { for (int i = 0; i < indent + 1; i++) printf("\t"); printf("(No BoolExpr)\n"); }
+		else { for (int i = 0; i < indent + 1; i++) printf("\t"); printf("(No StmnList)\n"); }
 	}
 	
 }
@@ -208,7 +208,7 @@ enum structAst_ExprEndType
 	EXPREND_SEMICOLLON,
 	EXPREND_COMMA, // ',' function
 	EXPREND_RPRAN, // ')'
-	EXPREND_COMMA_OR_RPRAN,
+	EXPREND_COMMA_OR_RPRAN, // for func args
 	EXPREND_ASSIGN, // for assignment statement
 };
 
@@ -244,7 +244,7 @@ struct CarbonError* structAst_countArgs(struct Ast* self, int* count, size_t* en
 	}
 }
 
-// semicollon or other end type not included in expr
+// semicollon or other end type not included in expr, TODO: handle unexpected comma
 // after the scane position points to exprend_
 struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* expr, enum structAst_ExprEndType end_type){
 	//struct Expression* expr = structExpression_new(self->tokens);
@@ -334,6 +334,33 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		}
 
 		/**************** INVALID SYNTAX ***********************/
+		// expr cant contain an assignment operator
+		if (structToken_isAssignmentOperator(token)) {
+			return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, token->_name_ptr);
+		}
+		// illegal symbols in an expr // TODO: add \@#$ 
+		if (token->type == TK_SYM_COLLON) {
+			return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, 1);
+		}
+		// illegal keywords in an expr
+		if (token->group == TKG_KEYWORD) {
+			if (
+				token->type == TK_KWORD_IF ||
+				token->type == TK_KWORD_ELSE ||
+				token->type == TK_KWORD_WHILE ||
+				token->type == TK_KWORD_FOR ||
+				token->type == TK_KWORD_FOREACH ||
+				token->type == TK_KWORD_BREAK ||
+				token->type == TK_KWORD_CONTINUE ||
+				token->type == TK_KWORD_RETURN ||
+				token->type == TK_KWORD_STATIC ||
+				token->type == TK_KWORD_FUNCTION ||
+				token->type == TK_KWORD_CLASS ||
+				token->type == TK_KWORD_IMPORT
+				)
+			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, token->_name_ptr);
+		}
+
 		// if number and next is '(' : numbers anen't callable error
 		if (token->group == TKG_NUMBER){
 			if (self->tokens->list[self->pos+1]->type == TK_BRACKET_LPARAN)
@@ -342,20 +369,34 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		// two numbers can't come next to each other
 		if (token->group == TKG_NUMBER && self->tokens->list[self->pos+1]->group == TKG_NUMBER)
 			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false, self->tokens->list[self->pos + 1]->_name_ptr );
-		// after a close bracket number or an identifier can't come
+		
+		// calling a number
 		if (structToken_isCloseBracket(token)) {
 			if (self->tokens->list[self->pos+1]->group == TKG_NUMBER ||  self->tokens->list[self->pos + 1]->group == TKG_IDENTIFIER )
 				return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->tokens->list[self->pos+1]->pos, self->src, self->file_name, false, self->tokens->list[self->pos + 1]->_name_ptr);
 		}
-		// collon cant be inside an expr
-		if (token->type == TK_SYM_COLLON) {
-			return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, 1);
-		}
-		// two binary operators can't be next to each other
+
+		// binary operator
 		if (structToken_isBinaryOperator(token)) {
+
+			// binary operator can't be at the beggining of an expr, after an open bracket
+			if (self->pos == expr->begin_pos) return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, token->_name_ptr);
+			if ( structToken_isOpenBracket(self->tokens->list[self->pos-1]) ) return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, token->_name_ptr);
+			
+			// two binary operators can't be next to each other 
 			struct Token* next = self->tokens->list[self->pos + 1]; if (next->type == TK_PASS) next = self->tokens->list[self->pos + 2];
 			if (structToken_isBinaryOperator(next))
-				return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, next->pos, self->src, self->file_name, false, next->_name_ptr );
+				return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, next->pos, self->src, self->file_name, false, next->_name_ptr);
+		}
+
+		// illegal before ending
+		struct Token* tk_next = self->tokens->list[self->pos + 1]; if (tk_next->group == TKG_PASS) tk_next = self->tokens->list[self->pos + 2];
+		if (tk_next->type == TK_SYM_SEMI_COLLON || structToken_isCloseBracket(tk_next)) {
+			if (structToken_isBinaryOperator(token))  return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, token->_name_ptr);
+			if (token->type == TK_OP_PLUS   || token->type == TK_OP_MINUS ||
+				token->type == TK_SYM_COMMA || token->type == TK_SYM_COLLON
+			) 
+				return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, token->_name_ptr);
 		}
 		/********************************************************/
 
@@ -482,7 +523,11 @@ struct CarbonError* structAst_scaneTokens(struct Ast* self){
 		}
 	}
 	// set tk_eof position = last token
-	if (self->tokens->count > 1) self->tokens->list[self->tokens->count -1]->pos = self->tokens->list[self->tokens->count -2]->pos;
+	if (self->tokens->count > 1) {
+		struct Token* tk_eof  = self->tokens->list[self->tokens->count - 1];
+		struct Token* tk_last = self->tokens->list[self->tokens->count - 2];
+		tk_eof->pos = tk_last->pos + tk_last->_name_ptr;
+	}
 	return structCarbonError_new();
 }
 
@@ -693,7 +738,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 		}
 
 
-		/*** illegal tokens at the begining of an statement **********************************************/
+		/*** Illegal tokens at the begining of an statement **********************************************/
 		// TODO: close brackets, collon, dot, binary opeartors, 
 
 		// unexpected symbols
@@ -705,13 +750,23 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 		else if (structToken_isBinaryOperator(token)) {
 			return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, token->_name_ptr);
 		}
+		// after open bracket
+		else if (structToken_isOpenBracket(token)) {
+			// binary opeartor can't be
+			struct Token* next = self->tokens->list[self->pos + 1];
+			if(structToken_isBinaryOperator(next)) utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, next->pos, self->src, self->file_name, false, next->_name_ptr);
+		}
 
 		// else cant be at the begining of a statement
 		else if (token->type == TK_KWORD_ELSE) {
-			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, token->_name_ptr);
+		return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, token->_name_ptr);
 		}
 
 		/*************************************************/
+
+		else {
+			return utils_make_error("InternalError: unhandled token", ERROR_SYNTAX, token->pos, self->src, self->file_name, false, token->_name_ptr);
+		}
 
 		
 		// if token == static && ast state != reading class error!

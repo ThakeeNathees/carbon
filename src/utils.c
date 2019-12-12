@@ -23,13 +23,13 @@ int utils_read_file(char** text_p, const char* file_path){
 
 }
 
-bool utils_char_in_str(char c, char* string){
+bool utils_char_in_str(char c, const char* string){
 	for (unsigned int i=0; i<strlen(string); i++){
 		if (string[i] == c) return true;
 	}
 	return false;
 }
-int utils_char_count_in_str(char c, char* string){
+int utils_char_count_in_str(char c, const char* string){
 	int count = 0;
 	for (unsigned int i=0; i<strlen(string); i++){
 		if (string[i] == c) count++;
@@ -38,7 +38,7 @@ int utils_char_count_in_str(char c, char* string){
 }
 
 // error_len = number of ^^^^
-int utils_pos_to_line(int pos, char* src, char* buffer, char* location_str, size_t error_len ){
+int utils_pos_to_line(int pos, const char* src, char* buffer, char* location_str, size_t error_len ){
 
 	int line_no = 1; int loc_ptr = 0;
 	int line_begin_pos = 0;
@@ -65,7 +65,7 @@ int utils_pos_to_line(int pos, char* src, char* buffer, char* location_str, size
 
 }
 
-void utils_error_exit(char* err_msg, size_t pos, char* src, char* file_name){
+void utils_error_exit(const char* err_msg, size_t pos, const char* src, const char* file_name){
 	char location_str[ERROR_LINE_SIZE];
 	char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(pos, src, buff, location_str, 1);
 	printf("%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff);
@@ -73,7 +73,7 @@ void utils_error_exit(char* err_msg, size_t pos, char* src, char* file_name){
 	exit(1);
 }
 
-struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, size_t pos, char* src, char* file_name, bool free_msg, size_t error_len){
+struct CarbonError* utils_make_error(const char* err_msg, enum ErrorType err_type, size_t pos, char* src, char* file_name, bool free_msg, size_t error_len){
 	char location_str[ERROR_LINE_SIZE];
 	char buff[ERROR_LINE_SIZE];  int line_no = utils_pos_to_line(pos, src, buff, location_str, error_len);
 	struct CarbonError* err = structCarbonError_new(); err->type = err_type;
@@ -90,4 +90,11 @@ struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, siz
 	
 	if (free_msg) free(err_msg);
 	return err;
+}
+
+void utils_warning_print(const char* warn_msg, size_t pos, const char* src, const char* file_name, size_t err_len) {
+	char location_str[ERROR_LINE_SIZE]; char buff[ERROR_LINE_SIZE];
+	int line_no = utils_pos_to_line(pos, src, buff, location_str, err_len);
+	printf("%s ", warn_msg);
+	printf("@%s:%i\n%s\n%s\n", file_name, line_no, buff, location_str);
 }

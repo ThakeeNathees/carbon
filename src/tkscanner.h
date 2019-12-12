@@ -7,6 +7,15 @@
 #define TOKEN_NAME_SIZE 10
 #define TOKEN_STRING_GROWTH 100
 
+/*
+new keyword:
+	expr scanner : illegal keyword 
+	token scanner
+	enum
+new symbol:
+	expr scanner : illegal before ending, illegal in an expr
+*/
+
 // token types
 // tk_pass : if >> to > and > use tk_pass
 #define FOREACH_TOKEN_GROUP(func) \
@@ -25,6 +34,7 @@
 	func(TKG_FUNCTION) 		\
 	func(TKG_VARIABLE)		\
 	func(TKG_IDENTIFIER) // variable, function when tkscan, ...
+
 
 #define FOREACH_TOKEN_TYPE(func)\
 	func(TK_UNKNOWN)	\
@@ -113,16 +123,6 @@
 	func(TK_VALUE_FLOAT)		\
 	func(TK_VALUE_DOUBLE)
 
-/*
-#define FOREACH_NUMBER_TYPE(func) \
-	func(NT_UNKNOWN)	\
-	func(NT_CHAR)		\
-	func(NT_SHORT)		\
-	func(NT_INT)		\
-	func(NT_FLOAT)		\
-	func(NT_DOUBLE)		\
-	func(NT_LONG)		
-*/
 
 /**************** CLASSES **********************/
 enum TokenGroup
@@ -181,8 +181,8 @@ struct Token
 struct TokenList
 {
 	struct Token** list;
-	int count;
-	int size;
+	size_t count;
+	size_t size;
 	int growth_size;
 };
 
@@ -191,7 +191,7 @@ struct TokenScanner
 	char* src;
 	char* file_name;
 	struct Token* current_token;
-	unsigned int pos;
+	size_t pos;
 };
 
 /****************** PUBLIC API ************************************/

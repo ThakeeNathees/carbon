@@ -134,17 +134,17 @@ struct ExpressionList
 {
 	struct TokenList* token_list;
 	struct Expression** list;
-	int count;
-	int size;
-	int growth_size;
+	size_t count;
+	size_t size;
+	size_t growth_size;
 };
 struct StatementList
 {
 	struct Statement** list;
 	struct Statement* parent;
-	int count;
-	int size;
-	int growth_size;
+	size_t count;
+	size_t size;
+	size_t growth_size;
 	int indent; // for printing
 };
 

@@ -46,17 +46,18 @@ void structToken_init(struct Token* self){
 	self->op_is_pre			 = false;
 }
 void structToken_print(struct Token* self){
-	if (self->group == TKG_NUMBER){
-		if 		(self->type == TK_VALUE_CHAR)  printf("Token %-20s : %-10s | value = %c\n", enumTokenType_toString(self->type), self->name, self->number_value.c);
+	if (self->group == TKG_NUMBER) {
+		if (self->type == TK_VALUE_CHAR)  printf("Token %-20s : %-10s | value = %c\n", enumTokenType_toString(self->type), self->name, self->number_value.c);
 		else if (self->type == TK_VALUE_SHORT) printf("Token %-20s : %-10s | value = %i\n", enumTokenType_toString(self->type), self->name, self->number_value.s);
 		else if (self->type == TK_VALUE_INT)   printf("Token %-20s : %-10s | value = %i\n", enumTokenType_toString(self->type), self->name, self->number_value.i);
 		else if (self->type == TK_VALUE_FLOAT) printf("Token %-20s : %-10s | value = %f\n", enumTokenType_toString(self->type), self->name, self->number_value.f);
 		else if (self->type == TK_VALUE_DOUBLE)printf("Token %-20s : %-10s | value = %f\n", enumTokenType_toString(self->type), self->name, self->number_value.d);
-		else if (self->type == TK_VALUE_LONG)  printf("Token %-20s : %-10s | value = %ld\n",enumTokenType_toString(self->type), self->name, self->number_value.l);	
-	} 
-	else if (self->group == TKG_FUNCTION || self->group == TKG_BUILTIN)		printf("Token %-20s : %-10s | method=%i, args_given=%i\n",	enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
-	else if (self->group == TKG_OPERATOR && strcmp(self->name, OP_MINUS)==0)printf("Token %-20s : %-10s | single_op=%i\n",				enumTokenType_toString(self->type), self->name, self->op_is_single);
-	else																	printf("Token %-20s : %s\n",									enumTokenType_toString(self->type), self->name);
+		else if (self->type == TK_VALUE_LONG)  printf("Token %-20s : %-10s | value = %ld\n", enumTokenType_toString(self->type), self->name, self->number_value.l);
+	}
+	else if (self->group == TKG_FUNCTION || self->group == TKG_BUILTIN)		printf("Token %-20s : %-10s | method=%i, args_given=%i\n", enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
+	else if (self->type == TK_OP_MINUS   || self->type == TK_OP_PLUS)		printf("Token %-20s : %-10s | single_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_single);
+	else if (self->type == TK_OP_INCR    || self->type == TK_OP_DECR)		printf("Token %-20s : %-10s | pre_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_pre);
+	else																	printf("Token %-20s : %s\n",								enumTokenType_toString(self->type), self->name);
 	
 }
 void structToken_clear(struct Token* self){
@@ -154,7 +155,7 @@ void structTokenList_addToken(struct TokenList* self, struct Token* token){
 	if (self->count >= self->size){
 		struct Token** new_list = (struct Token**)malloc( sizeof(struct Token)*(self->size + self->growth_size) ) ;
 		self->size += self->growth_size;
-		for ( int i=0; i< self->count; i++){
+		for ( size_t i=0; i< self->count; i++){
 			new_list[i] = self->list[i];
 		}
 		free(self->list);
@@ -518,7 +519,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		while (true){
 			structToken_addChar( self->current_token, c ); (self->pos)++;
 			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-				return utils_make_error("EofError: s unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
+				return utils_make_error("EofError: s unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false, 1);
 			}
 			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || structTokenScanner_isCharSymbol(c) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
@@ -539,14 +540,14 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 			while(true){
 				(self->pos)++;
 				if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-					return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
+					return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false, 1);
 				}
 
 				c = self->src[ self->pos ];
 				if (c == '\\'){
 					(self->pos)++;
 					if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-						return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
+						return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false, 1);
 					}
 					c = self->src[self->pos];
 					if 		(c == '"'); // do nothing
@@ -557,7 +558,11 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 					else if (c == 'r') c = '\r';
 					else if (c == 'v') c = '\v';
 					else if (c == 'n') c = '\n';
-					else structToken_addChar( self->current_token, '\\' ); // \ is not escaping 
+					else {
+						utils_warning_print("Warning: unknown escaping", self->pos - 1, self->src, self->file_name, 2);
+
+						structToken_addChar(self->current_token, '\\'); // \ is not escaping 
+					}
 
 				} else if (c=='"'){
 					(self->pos)++;
@@ -573,7 +578,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 			if (c == '\\'){
 				(self->pos)++;
 				if ( structTokenScanner_isEof(self) ){
-						return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
+						return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false, 1);
 				}
 				c = self->src[self->pos];
 				if 		(c == '"'); // donothing
@@ -586,10 +591,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 				else if (c == 'v')  c = '\v';
 				else if (c == 'n')  c = '\n';
 				else { 
-					char location_str[ERROR_LINE_SIZE];
-					char buff[ERROR_LINE_SIZE]; int line_no = utils_pos_to_line(self->pos, self->src, buff, location_str);
-					printf("Warning: unknown escaping @%s:%i\n%s\n", self->file_name, line_no, buff);
-					printf("%s\n", location_str);
+					utils_warning_print("Warning: unknown escaping", self->pos - 1, self->src, self->file_name, 2);
 				}
 			} 
 			else if (c == '\''){
@@ -600,7 +602,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 			self->current_token->type			= TK_VALUE_CHAR;
 			self->current_token->number_value.c = c;
 			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
+				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false, 1);
 			}
 			if (self->src[(self->pos)++] != '\''){  if(self->src[ self->pos ] == '\n') (self->pos)--;
 				return utils_make_error("SyntaxError: expected symbol ' (use \" for strings)", ERROR_SYNTAX, self->pos-1, self->src, self->file_name, false, 1);
@@ -628,7 +630,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		structToken_addChar( self->current_token, c ); (self->pos)++;
 		self->current_token->group = TKG_OPERATOR;
 		if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
+			return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false, 1);
 		}
 		char next = self->src[(self->pos)++];
 		if (c == '=' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
@@ -654,7 +656,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		while (true){
 			structToken_addChar( self->current_token, c ); (self->pos)++;
 			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
+				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false, 1);
 			}
 			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || (structTokenScanner_isCharSymbol(c) && c != '.' ) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
@@ -663,7 +665,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 			}
 		}
 	}
-	utils_error_exit("InternalError: scane token reached an invalid point", self->current_token->pos, self->src, self->file_name);
+	utils_error_exit("InternalError: scane token reached an invalid point", self->pos, self->src, self->file_name);
 	return structCarbonError_new(); // for complier warning
 }
 
