@@ -156,9 +156,9 @@ struct Token
 	enum TokenGroup 	group;
 	// name
 	char* 				name;
-	int 				_name_len;
-	int 				_name_ptr;
-	int 				pos;
+	size_t 				_name_len;
+	size_t 				_name_ptr;
+	size_t 				pos;
 
 	// for number type
 	union NumberValue 	number_value;

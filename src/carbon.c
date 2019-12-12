@@ -35,7 +35,7 @@ int main(int argc, char** argv){
 	struct Token* token = ast.tokens->list[ast.pos];
 	if (token->group != TKG_EOF) {
 		if (token->group == TKG_BRACKET && strcmp(token->name, RCUR_BRACKET) == 0) {
-			struct CarbonError* err = utils_make_error("SyntaxError: unexpected bracket", ERROR_SYNTAX, token->pos, ast.src, ast.file_name, false);
+			struct CarbonError* err = utils_make_error("SyntaxError: unexpected bracket", ERROR_SYNTAX, token->pos, ast.src, ast.file_name, false, 1);
 			printf("%s\n", err->message.buffer); exit(-1);
 		}
 		else {

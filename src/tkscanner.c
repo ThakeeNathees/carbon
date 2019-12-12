@@ -344,7 +344,7 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 	if ( self->pos >= strlen(self->src) ) return structCarbonError_new();
 	char c = self->src[ self->pos ];
 	if (c == '/'){
-		if ( (self->pos)+1 >= strlen(self->src) ){ return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false);}
+		if ( (self->pos)+1 >= strlen(self->src) ){ return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false, 1);}
 		char next = self->src[(self->pos)+1];
 		// //
 		if (next == '/'){ 
@@ -363,7 +363,7 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 			structToken_addChar( self->current_token, '/' );structToken_addChar( self->current_token, '*' );
 			self->current_token->group = TKG_COMMENT;(self->pos)+=2;
 			while (true){
-				if ( (self->pos)+1 >= strlen(self->src)  ) { return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false);}
+				if ( (self->pos)+1 >= strlen(self->src)  ) { return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false, 1);}
 				if ( self->src[self->pos] == '*' && self->src[(self->pos)+1] == '/' ){
 					structToken_addChar( self->current_token, '*' );structToken_addChar( self->current_token, '/' );
 					(self->pos)+=2; return structCarbonError_new();
@@ -407,7 +407,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	size_t   numlen = strlen(numstr);
 	int count = utils_char_count_in_str('.', numstr);
 	if (count > 1){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-		return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
+		return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
 	}
 
 	size_t arr_size;
@@ -420,11 +420,11 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		arr_size = ARR_SIZE(invalid_chars_hex);
 			for (unsigned int i=0; i<arr_size; i++){
 			if (utils_char_in_str(invalid_chars_hex[i], numstr)) { if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
 		}
 		}
 		if (count > 1 || numstr[1] != 'x' || numstr[0] != '0' || utils_char_in_str('.', numstr) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
 		}
 		char hexstring[10]; // TODO: 10
 		strcpy(hexstring, numstr+2); // ignore 0x
@@ -436,7 +436,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	if(utils_char_in_str('s', numstr)){
 		count = utils_char_count_in_str('s', numstr);
 		if (count > 1 || numstr[numlen-1] != 's' || utils_char_in_str('.', numstr)){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
 		}
 		self->current_token->type 				= TK_VALUE_SHORT;
 		self->current_token->number_value.s 	= (short)atoi(numstr);
@@ -445,7 +445,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	if(utils_char_in_str('l', numstr )){
 		count = utils_char_count_in_str('l', numstr);
 		if (count > 1 || numstr[numlen-1] != 'l' || utils_char_in_str('.', numstr)){ if(self->src[self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
 		}
 		self->current_token->type 				= TK_VALUE_LONG;
 		self->current_token->number_value.l 	= atol(numstr);
@@ -454,7 +454,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	if (utils_char_in_str('f', numstr)){
 		count = utils_char_count_in_str('f', numstr);
 		if (count > 1 || numstr[numlen-1] != 'f'){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
 		}
 		self->current_token->type 				= TK_VALUE_FLOAT;
 		self->current_token->number_value.f 	= (float)atof(numstr);
@@ -463,7 +463,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	if (utils_char_in_str('d', numstr)){
 		count = utils_char_count_in_str('d', numstr);
 		if (count > 1 || numstr[numlen-1] != 'd'){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
 		}
 		self->current_token->type 				= TK_VALUE_DOUBLE;
 		self->current_token->number_value.d 	= strtod(numstr, NULL);
@@ -476,7 +476,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	arr_size = ARR_SIZE(invalid_chars);
 	for (unsigned int i=0; i<arr_size; i++){
 		if (utils_char_in_str(invalid_chars[i], numstr)) { if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false);
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
 		}
 	}
 
@@ -518,7 +518,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		while (true){
 			structToken_addChar( self->current_token, c ); (self->pos)++;
 			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-				return utils_make_error("EofError: s unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
+				return utils_make_error("EofError: s unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
 			}
 			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || structTokenScanner_isCharSymbol(c) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){
@@ -539,14 +539,14 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 			while(true){
 				(self->pos)++;
 				if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-					return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
+					return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
 				}
 
 				c = self->src[ self->pos ];
 				if (c == '\\'){
 					(self->pos)++;
 					if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-						return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
+						return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
 					}
 					c = self->src[self->pos];
 					if 		(c == '"'); // do nothing
@@ -569,12 +569,11 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 
 		// character
 		if (c == '\''){
-			(self->pos)++;
-			c = self->src[self->pos];
+			c = self->src[++self->pos];
 			if (c == '\\'){
 				(self->pos)++;
 				if ( structTokenScanner_isEof(self) ){
-						return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
+						return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
 				}
 				c = self->src[self->pos];
 				if 		(c == '"'); // donothing
@@ -594,17 +593,17 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 				}
 			} 
 			else if (c == '\''){
-				return utils_make_error("TypeError: invalid char", ERROR_TYPE, self->current_token->pos, self->src, self->file_name, false);
+				return utils_make_error("TypeError: invalid char", ERROR_TYPE, self->current_token->pos-1, self->src, self->file_name, false, 2);
 			}
 			structToken_addChar( self->current_token, c ); (self->pos)++;
 			self->current_token->group			= TKG_NUMBER;
 			self->current_token->type			= TK_VALUE_CHAR;
 			self->current_token->number_value.c = c;
 			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
+				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
 			}
 			if (self->src[(self->pos)++] != '\''){  if(self->src[ self->pos ] == '\n') (self->pos)--;
-				return utils_make_error("SyntaxError: expected symbol ' (use \" for strings)", ERROR_SYNTAX, self->pos-1, self->src, self->file_name, false);
+				return utils_make_error("SyntaxError: expected symbol ' (use \" for strings)", ERROR_SYNTAX, self->pos-1, self->src, self->file_name, false, 1);
 			} 
 			return structCarbonError_new();
 		}
@@ -629,7 +628,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		structToken_addChar( self->current_token, c ); (self->pos)++;
 		self->current_token->group = TKG_OPERATOR;
 		if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
+			return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
 		}
 		char next = self->src[(self->pos)++];
 		if (c == '=' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
@@ -655,7 +654,7 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		while (true){
 			structToken_addChar( self->current_token, c ); (self->pos)++;
 			if ( structTokenScanner_isEof(self) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false);
+				return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->current_token->pos, self->src, self->file_name, false, 1);
 			}
 			c = self->src[ self->pos ];
 			if ( structTokenScanner_isCharWhiteSpace(c) || (structTokenScanner_isCharSymbol(c) && c != '.' ) || structTokenScanner_isCharBracket(c) || structTokenScanner_isCharOperator(c) ){

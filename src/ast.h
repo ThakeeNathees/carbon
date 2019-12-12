@@ -29,8 +29,8 @@ enum StatementType
 struct Expression
 {
 	struct TokenList* token_list;
-	int begin_pos;
-	int end_pos;
+	size_t begin_pos;
+	size_t end_pos;
 };
 
 struct ExprDtype // to store dtype int, string, map<int, map<string, list<string>>>
@@ -154,7 +154,7 @@ struct Ast
 {
 	char* src;
 	char* file_name;
-	int pos;
+	size_t pos;
 	struct TokenScanner* token_scanner;
 	struct TokenList* tokens;
 	struct StatementList* stmn_list;

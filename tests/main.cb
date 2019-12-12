@@ -1,2 +1,3 @@
 
-x.test( )), );
+while(cond.test())
+	print(3);
