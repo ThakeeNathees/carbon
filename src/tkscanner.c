@@ -30,20 +30,21 @@ const char* enumNumberType_toString(enum NumberType self){
 /***************** <Token> *************/
 // public
 void structToken_init(struct Token* self){
-	self->_name_len 		 = TOKEN_NAME_SIZE;
-	self->_name_ptr 		 = 0;
-	self->name 				 = (char*)malloc(TOKEN_NAME_SIZE); // free after use
-	self->name[0] 			 = '\0';
-	self->type				 = TK_UNKNOWN;
-	self->group 			 = TKG_UNKNOWN;
-	self->number_value.l 	 = 0;
-	//self->number_type 		 = NT_INT;
-	self->func_args_count    = 0;
-	self->func_args_given    = 0;
-	self->func_is_method     = false;
-	self->idf_is_field       = false;
-	self->op_is_single = false;
-	self->op_is_pre			 = false;
+	self->_name_len 		= TOKEN_NAME_SIZE;
+	self->_name_ptr 		= 0;
+	self->name 				= (char*)malloc(TOKEN_NAME_SIZE); // free after use
+	self->name[0] 			= '\0';
+	self->type				= TK_UNKNOWN;
+	self->group 			= TKG_UNKNOWN;
+	self->number_value.l 	= 0;
+	//self->number_type 	= NT_INT;
+	self->func_args_count   = 0;
+	self->func_args_given   = 0;
+	self->func_is_method    = false;
+	self->idf_is_field      = false;
+	self->op_is_single		= false;
+	self->op_is_pre			= false;
+	self->comma_is_valid	= false;
 }
 void structToken_print(struct Token* self){
 	if (self->group == TKG_NUMBER) {
