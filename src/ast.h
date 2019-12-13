@@ -11,6 +11,7 @@
 	func(STMNT_VAR_INIT)    \
 	func(STMNT_ASSIGN) 	    \
 	func(STMNT_IF)		    \
+	func(STMNT_ELSE_IF)	    \
 	func(STMNT_BREAK)		\
 	func(STMNT_CONTINUE) 	\
 	func(STMNT_WHILE) 	    \
@@ -69,8 +70,16 @@ struct _StatementUnknown
 struct _StatementIf
 {
 	struct Expression* expr_bool;
-	struct StatementList* stmn_list; // can be NULL
+	struct StatementList* stmn_list;	// can be NULL
+	struct StatementList* else_if_list; // can be NULL, list of statements type = else_if
+	struct StatementList* stmn_list_else; // can be NULL
 };
+struct _StatementElseIf
+{
+	struct Expression* expr_bool;
+	struct StatementList* stmn_list;	// can be NULL
+};
+
 struct _StatementWhile
 {
 	struct Expression* expr_bool;
@@ -109,6 +118,7 @@ union _Statement
 	struct _StatementVarInit 	init;
 	struct _StatementVarAssign	assign;
 	struct _StatementIf			stm_if;
+	struct _StatementElseIf		stmn_else_if;
 	struct _StatementWhile		stm_while;
 	struct _StatementFor 		stm_for;
 	struct _StatementForEach 	stm_foreach;

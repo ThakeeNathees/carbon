@@ -132,7 +132,7 @@ void structToken_addChar(struct Token* self, char c){
 		int growth_size = TOKEN_NAME_SIZE; if (self->group == TKG_STRING) growth_size = TOKEN_STRING_GROWTH;
 		char* new_name = (char*)malloc( self->_name_len + growth_size ) ;
 		self->_name_len += growth_size;
-		for ( int i=0; i < self->_name_ptr; i++){
+		for ( size_t i=0; i < self->_name_ptr; i++){
 			new_name[i] = self->name[i];
 		}
 		free(self->name);
@@ -171,7 +171,7 @@ struct Token* structTokenList_createToken(struct TokenList* self){
 	return new_tk;
 }
 void structTokenList_print(struct TokenList* self){
-	for (int i=0; i< self->count; i++){
+	for (size_t i=0; i< self->count; i++){
 		printf("%03i ", i ); structToken_print( self->list[i] );
 	}
 }

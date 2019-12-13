@@ -1,2 +1,6 @@
 
-foreach( int x;n );
+if (cond){
+	while(cond){	
+		__declspec(dllimport);
+	}
+}
