@@ -8,7 +8,7 @@
 #define FOREACH_STATEMENT_TYPE(func) \
 	func(STMNT_UNKNOWN)	    \
 	func(STMNT_IMPORT)	    \
-	func(STMNT_VAR_INIT)    \
+	func(STMNT_VAR_INI)    \
 	func(STMNT_ASSIGN) 	    \
 	func(STMNT_IF)		    \
 	func(STMNT_ELSE_IF)	    \
@@ -101,7 +101,7 @@ struct _StatementForEach
 struct _StatementFuncDefn
 {
 	struct Token* idf;
-	struct StatementList* args;      // can be NULL, statement list of stmn_ini,
+	struct StatementList* args;      // can be NULL, null=0 args, statement list of stmn_ini,
 	struct ExprDtype* ret_type;      // can be NULL = void
 	struct StatementList* stmn_list; // can be NULL
 };
@@ -177,7 +177,7 @@ const char* enumStatementType_toString(enum StatementType self);
 
 // expression
 void structExpression_init(struct Expression* self, struct TokenList* token_list);
-void structExpression_print(struct Expression* self, int indent);
+void structExpression_print(struct Expression* self, int indent, bool new_line);
 struct Expression* structExpression_new(struct TokenList* token_list); // static
 
 // expression dtype
@@ -192,15 +192,15 @@ struct Expression* structExpressionList_createExpression(struct ExpressionList* 
 struct ExpressionList* structExpressionList_new(struct TokenList* token_list); // static method
 
 // statement
-void structStatement_init(struct Statement* self);
+void structStatement_init(struct Statement* self, enum StatementType type);
 void structStatement_print(struct Statement* self, int indent);
-struct Statement* structStatement_new(); // static method
+struct Statement* structStatement_new(enum StatementType type); // static method
 
 // statement list
 void structStatementList_init(struct StatementList* self, int growth_size);
 void structStatementList_print(struct StatementList* self);
 void structStatementList_addStatement(struct StatementList* self, struct Statement* statement);
-struct Statement* structStatementList_createStatement(struct StatementList* self);
+struct Statement* structStatementList_createStatement(struct StatementList* self, enum StatementType type);
 struct StatementList* structStatementList_new(); // static method
 
 // ast

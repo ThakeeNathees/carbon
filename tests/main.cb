@@ -1,6 +1,3 @@
 
-if (cond){
-	while(cond){	
-		__declspec(dllimport);
-	}
-}
+function f(list<int> x, int x ):int{}
+
