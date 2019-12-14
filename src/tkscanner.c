@@ -48,7 +48,10 @@ void structToken_init(struct Token* self){
 }
 void structToken_print(struct Token* self){
 	if (self->group == TKG_NUMBER) {
-		if (self->type == TK_VALUE_CHAR)  printf("Token %-20s : %-10s | value = %c\n", enumTokenType_toString(self->type), self->name, self->number_value.c);
+		if (self->type == TK_VALUE_CHAR) {
+			printf("Token %-20s : ", enumTokenType_toString(self->type));
+			utils_print_char(self->number_value.c, true);
+		}
 		else if (self->type == TK_VALUE_SHORT) printf("Token %-20s : %-10s | value = %i\n", enumTokenType_toString(self->type), self->name, self->number_value.s);
 		else if (self->type == TK_VALUE_INT)   printf("Token %-20s : %-10s | value = %i\n", enumTokenType_toString(self->type), self->name, self->number_value.i);
 		else if (self->type == TK_VALUE_FLOAT) printf("Token %-20s : %-10s | value = %f\n", enumTokenType_toString(self->type), self->name, self->number_value.f);
@@ -56,8 +59,10 @@ void structToken_print(struct Token* self){
 		else if (self->type == TK_VALUE_LONG)  printf("Token %-20s : %-10s | value = %ld\n", enumTokenType_toString(self->type), self->name, self->number_value.l);
 	}
 	else if (self->group == TKG_FUNCTION || self->group == TKG_BUILTIN)		printf("Token %-20s : %-10s | method=%i, args_given=%i\n", enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
-	else if (self->type == TK_OP_MINUS   || self->type == TK_OP_PLUS)		printf("Token %-20s : %-10s | single_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_single);
-	else if (self->type == TK_OP_INCR    || self->type == TK_OP_DECR)		printf("Token %-20s : %-10s | pre_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_pre);
+	else if (self->type == TK_OP_MINUS || self->type == TK_OP_PLUS)		printf("Token %-20s : %-10s | single_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_single);
+	else if (self->type == TK_OP_INCR || self->type == TK_OP_DECR)		printf("Token %-20s : %-10s | pre_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_pre);
+
+	else if (self->type == TK_STRING) { printf("Token %-20s : ", enumTokenType_toString(self->type)); utils_print_str_without_esc(self->name, true, true); }
 	else																	printf("Token %-20s : %s\n",								enumTokenType_toString(self->type), self->name);
 	
 }
@@ -125,7 +130,6 @@ bool structToken_isBinaryOperator(struct Token* self) {
 	return false;
 }
 
-//private
 void structToken_addChar(struct Token* self, char c){
 	
 	if (self->_name_ptr >= self->_name_len-1){ // one space for '\0'
@@ -259,8 +263,8 @@ void structTokenScanner_ckeckBracket(struct TokenScanner* self) { // for < and >
 	else if (strcmp(self->current_token->name, RCUR_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_RCUR;		return; }
 	else if (strcmp(self->current_token->name, RSQ_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_RSQ;		return; }
 	else if (strcmp(self->current_token->name, LSQ_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_LSQ;		return; }
-	else if (strcmp(self->current_token->name, LTRI_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_RTRI;		return; }
-	else if (strcmp(self->current_token->name, RTRI_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_LTRI;		return; }
+	else if (strcmp(self->current_token->name, LTRI_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_LTRI;		return; }
+	else if (strcmp(self->current_token->name, RTRI_BRACKET) == 0)	{ self->current_token->type = TK_BRACKET_RTRI;		return; }
 	
 	utils_error_exit("InternalError: unknown bracket", self->pos, self->src, self->file_name);
 }
@@ -291,7 +295,7 @@ void structTokenScanner_checkOperator(struct TokenScanner* self) {
 	if (strcmp(self->current_token->name, OP_AND) == 0)		{ self->current_token->type = TK_OP_AND;		return; }
 	if (strcmp(self->current_token->name, OP_XOR) == 0)		{ self->current_token->type = TK_OP_XOR;		return; }
 	if (strcmp(self->current_token->name, OP_INCR) == 0)	{ self->current_token->type = TK_OP_INCR;		return; }
-	if (strcmp(self->current_token->name, OP_XOR) == 0)		{ self->current_token->type = TK_OP_DECR;		return; }
+	if (strcmp(self->current_token->name, OP_DECR) == 0)	{ self->current_token->type = TK_OP_DECR;		return; }
 	
 	utils_error_exit("InternalError: unknown operator", self->pos, self->src, self->file_name);
 }
@@ -407,38 +411,72 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	// invalid number
 	char* numstr = self->current_token->name;
 	size_t   numlen = strlen(numstr);
+
+	// more than 1 dot in num error
 	int count = utils_char_count_in_str('.', numstr);
 	if (count > 1){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-		return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
+		return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
 	}
 
 	size_t arr_size;
 
-	if (utils_char_in_str('x', numstr)){
-		count = utils_char_count_in_str('x', numstr);
-		char invalid_chars_hex[] = { '_', 'g',  'h',  'i',  'j',  'k',  'l', 'm',  'n',  'o',  'p',  'q',  'r',  't',  'u',  'v',  'w',  'y',  'z', 
-		'A',  'B',  'C',  'D',  'E',  'F', 'G',  'H',  'I',  'J',  'K',  'L',  'M',  'N',  'O',  'P',  'Q',  'R',  'S',  'T',  'U',  'V',  'W',  'X',  'Y',  'Z',
-		};
-		arr_size = ARR_SIZE(invalid_chars_hex);
-			for (unsigned int i=0; i<arr_size; i++){
-			if (utils_char_in_str(invalid_chars_hex[i], numstr)) { if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
+	if (numstr[0] == '0') {
+
+		// for hexadecimal
+		if (utils_char_in_str('x', numstr)) {
+			count = utils_char_count_in_str('x', numstr);
+			
+			const char* valid_chars = "x0123456789abcdef";
+			for (int i = 0; i < strlen(numstr); i++) {
+				if (!utils_char_in_str(numstr[i], valid_chars))
+					return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
+			}
+
+			if (count > 1 || numstr[1] != 'x' || utils_char_in_str('.', numstr)) {
+				if (self->src[self->pos] == '\n') (self->pos)--; // TODO: remove all self.pos -- | _name_ptr replaced
+				return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
+			}
+			self->current_token->type = TK_VALUE_LONG;
+			self->current_token->number_value.l = strtol(numstr+2, NULL, 16); // +2 ignore 0x
+			return structCarbonError_new();
 		}
+		// binary
+		else if (utils_char_in_str('b', numstr)) {
+			count = utils_char_count_in_str('b', numstr);
+			
+			const char* valid_chars = "01b";
+			for (int i = 0; i < strlen(numstr); i++) {
+				if (!utils_char_in_str(numstr[i], valid_chars))
+					return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
+			}
+
+			if (count > 1 || numstr[1] != 'b' || utils_char_in_str('.', numstr)) {
+				return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
+			}
+			self->current_token->type = TK_VALUE_LONG;
+			self->current_token->number_value.l = strtol(numstr+2, NULL, 2); // +2 ignore 0b
+			return structCarbonError_new();
 		}
-		if (count > 1 || numstr[1] != 'x' || numstr[0] != '0' || utils_char_in_str('.', numstr) ){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
+		// octal
+		else {
+			const char* valid_chars = "01234567";
+			for (int i = 0; i < strlen(numstr); i++) {
+				if (!utils_char_in_str(numstr[i], valid_chars))
+					return utils_make_error("SyntaxError: invalid number (numbers start with 0 are octal)", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
+			}
+			if (utils_char_in_str('.', numstr)) {
+				return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
+			}
+			self->current_token->type = TK_VALUE_LONG;
+			self->current_token->number_value.l = strtol(numstr, NULL, 8);
+			return structCarbonError_new();
 		}
-		char hexstring[10]; // TODO: 10
-		strcpy(hexstring, numstr+2); // ignore 0x
-		self->current_token->type 				= TK_VALUE_INT;
-		self->current_token->number_value.i 	= (int)strtol(hexstring, NULL, 16);
-		return structCarbonError_new();
 	}
 
 	if(utils_char_in_str('s', numstr)){
 		count = utils_char_count_in_str('s', numstr);
 		if (count > 1 || numstr[numlen-1] != 's' || utils_char_in_str('.', numstr)){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
 		}
 		self->current_token->type 				= TK_VALUE_SHORT;
 		self->current_token->number_value.s 	= (short)atoi(numstr);
@@ -447,7 +485,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	if(utils_char_in_str('l', numstr )){
 		count = utils_char_count_in_str('l', numstr);
 		if (count > 1 || numstr[numlen-1] != 'l' || utils_char_in_str('.', numstr)){ if(self->src[self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
 		}
 		self->current_token->type 				= TK_VALUE_LONG;
 		self->current_token->number_value.l 	= atol(numstr);
@@ -456,7 +494,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	if (utils_char_in_str('f', numstr)){
 		count = utils_char_count_in_str('f', numstr);
 		if (count > 1 || numstr[numlen-1] != 'f'){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
 		}
 		self->current_token->type 				= TK_VALUE_FLOAT;
 		self->current_token->number_value.f 	= (float)atof(numstr);
@@ -465,7 +503,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	if (utils_char_in_str('d', numstr)){
 		count = utils_char_count_in_str('d', numstr);
 		if (count > 1 || numstr[numlen-1] != 'd'){ if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
 		}
 		self->current_token->type 				= TK_VALUE_DOUBLE;
 		self->current_token->number_value.d 	= strtod(numstr, NULL);
@@ -478,7 +516,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 	arr_size = ARR_SIZE(invalid_chars);
 	for (unsigned int i=0; i<arr_size; i++){
 		if (utils_char_in_str(invalid_chars[i], numstr)) { if(self->src[ self->pos ] == '\n') (self->pos)--;
-			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, strlen(self->current_token->name));
+			return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src, self->file_name, false, self->current_token->_name_ptr);
 		}
 	}
 
@@ -487,10 +525,12 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		self->current_token->number_value.d 	= strtod(numstr, NULL);
 		return structCarbonError_new();
 	} else {
-		self->current_token->type 				= TK_VALUE_INT;
-		self->current_token->number_value.i 	= atoi(numstr);
+		self->current_token->type = TK_VALUE_INT;
+		self->current_token->number_value.i = atoi(numstr);
+		
 		return structCarbonError_new();
 	}
+	// TODO: if code reach here internal error
 }
 
 // public

@@ -39,7 +39,7 @@ int main(int argc, char** argv){
 	}
 
 	// debug print tokens
-	// structTokenList_print(ast.tokens);
+	structTokenList_print(ast.tokens);
 
 	// debug print statements
 	structStatementList_print( ast.stmn_list );

@@ -204,6 +204,7 @@ bool structToken_isAssignmentOperator(struct Token* self);
 bool structToken_isOpenBracket(struct Token* self);
 bool structToken_isCloseBracket(struct Token* self);
 bool structToken_isBinaryOperator(struct Token* self);
+void structToken_addChar(struct Token* self, char c);
 
 // token list
 void structTokenList_init(struct TokenList* self, int growth_size);
@@ -228,14 +229,15 @@ struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // stat
 #define SYM_SEMI_COLLON	";"
 #define SYM_DQUOTE		"\""
 #define SYM_SQUOTE 		"'"
+// TODO: define @#$`
 
 // brackets
 #define LPARN 		 	"("
 #define RPARN 		 	")"
 #define LCUR_BRACKET 	"{"
 #define RCUR_BRACKET 	"}"
-#define RSQ_BRACKET 	"["
-#define LSQ_BRACKET 	"]"
+#define LSQ_BRACKET 	"["
+#define RSQ_BRACKET 	"]"
 #define LTRI_BRACKET	"<"
 #define RTRI_BRACKET	">"
 
@@ -307,6 +309,8 @@ struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // stat
 #define KWORD_FUNCTION 	"function"
 #define KWORD_CLASS 	"class"
 #define KWORD_IMPORT 	"import"
+// TODO: define const for statement var ini;
+// TODO: define try catch
 
 // built in func
 #define BUILTIN_PRINT 	"print"

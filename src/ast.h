@@ -12,6 +12,7 @@
 	func(STMNT_ASSIGN) 	    \
 	func(STMNT_IF)		    \
 	func(STMNT_ELSE_IF)	    \
+	func(STMNT_RETURN)	    \
 	func(STMNT_BREAK)		\
 	func(STMNT_CONTINUE) 	\
 	func(STMNT_WHILE) 	    \
@@ -80,6 +81,11 @@ struct _StatementElseIf
 	struct StatementList* stmn_list;	// can be NULL
 };
 
+struct _StatementReturn
+{
+	struct Expression* expr;
+};
+
 struct _StatementWhile
 {
 	struct Expression* expr_bool;
@@ -119,6 +125,7 @@ union _Statement
 	struct _StatementVarAssign	assign;
 	struct _StatementIf			stm_if;
 	struct _StatementElseIf		stmn_else_if;
+	struct _StatementReturn		stmn_return;
 	struct _StatementWhile		stm_while;
 	struct _StatementFor 		stm_for;
 	struct _StatementForEach 	stm_foreach;
@@ -136,6 +143,7 @@ enum structAst_StmnEndType
 struct Statement
 {
 	enum StatementType type;
+	struct Statement* parent;
 	union _Statement statement;
 
 };
@@ -192,16 +200,16 @@ struct Expression* structExpressionList_createExpression(struct ExpressionList* 
 struct ExpressionList* structExpressionList_new(struct TokenList* token_list); // static method
 
 // statement
-void structStatement_init(struct Statement* self, enum StatementType type);
+void structStatement_init(struct Statement* self, struct Statement* parent, enum StatementType type);
 void structStatement_print(struct Statement* self, int indent);
-struct Statement* structStatement_new(enum StatementType type); // static method
+struct Statement* structStatement_new(enum StatementType type, struct Statement* parent); // static method
 
 // statement list
-void structStatementList_init(struct StatementList* self, int growth_size);
+void structStatementList_init(struct StatementList* self, struct Statement* parent, int growth_size);
 void structStatementList_print(struct StatementList* self);
 void structStatementList_addStatement(struct StatementList* self, struct Statement* statement);
-struct Statement* structStatementList_createStatement(struct StatementList* self, enum StatementType type);
-struct StatementList* structStatementList_new(); // static method
+struct Statement* structStatementList_createStatement(struct StatementList* self, enum StatementType type, struct Statement* parent);
+struct StatementList* structStatementList_new(struct Statement* parent); // static method
 
 // ast
 void structAst_init(struct Ast* self, char* src, char* fiel_name);

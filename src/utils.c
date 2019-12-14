@@ -36,6 +36,29 @@ int utils_char_count_in_str(char c, const char* string){
 	}
 	return count;
 }
+void utils_print_char(char c, bool new_line) {
+	if (c == '\n')  printf("\\n");
+	else if (c == '\t') printf("\\t");
+	else if (c == '\v') printf("\\t");
+	else if (c == '\b') printf("\\b");
+	else if (c == '\f') printf("\\f");
+	else if (c == '\r') printf("\\r");
+	else if (c == '\v') printf("\\v");
+	else if (c == '\0') printf("\\0");
+	else printf("%c", c);
+	if (new_line) printf("\n");
+}
+void utils_print_str_without_esc(const char* str, bool new_line, bool print_dquote) {
+	size_t i = 0;
+	if (print_dquote)printf("\"");
+	while (true) {
+		char c = str[i++];
+		if (c == '\0') break;
+		utils_print_char(c, false);
+	} 
+	if (print_dquote)printf("\"");
+	if (new_line)printf("\n");
+}
 
 // error_len = number of ^^^^
 int utils_pos_to_line(int pos, const char* src, char* buffer, char* location_str, size_t error_len ){

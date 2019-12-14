@@ -1,3 +1,7 @@
 
-function f(list<int> x, int x ):int{}
-
+function utils_warning_print( char warn_msg, size_t pos, char src, char file_name, size_t err_len) : int {
+	list<string> location_str; list<string> buff;
+	int line_no = utils_pos_to_line(pos, src, buff, location_str, err_len);
+	printf("%s ", warn_msg);
+	printf("@%s:%i\n%s\n%s\n", file_name, line_no, buff, location_str);
+}
