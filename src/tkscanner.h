@@ -48,6 +48,10 @@ new symbol:
 	func(TK_SYM_SEMI_COLLON)\
 	func(TK_SYM_DQUOTE)		\
 	func(TK_SYM_SQUOTE)		\
+	func(TK_SYM_AT)			\
+	func(TK_SYM_HASH)		\
+	func(TK_SYM_DOLLAR)		\
+	func(TK_SYM_DILDO)		\
 	func(TK_BRACKET_LPARAN)		\
 	func(TK_BRACKET_RPARAN)		\
 	func(TK_BRACKET_LCUR)		\
@@ -108,6 +112,7 @@ new symbol:
 	func(TK_KWORD_NOT)			\
 	func(TK_KWORD_RETURN)		\
 	func(TK_KWORD_STATIC)		\
+	func(TK_KWORD_CONST)		\
 	func(TK_KWORD_FUNCTION)		\
 	func(TK_KWORD_CLASS)		\
 	func(TK_KWORD_IMPORT)		\
@@ -229,7 +234,10 @@ struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // stat
 #define SYM_SEMI_COLLON	";"
 #define SYM_DQUOTE		"\""
 #define SYM_SQUOTE 		"'"
-// TODO: define @#$`
+#define SYM_AT			"@"
+#define SYM_HASH		"#"
+#define SYM_DOLLAR		"$"
+#define SYM_DILDO		"`"
 
 // brackets
 #define LPARN 		 	"("
@@ -306,6 +314,7 @@ struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // stat
 #define KWORD_NOT 		"not"
 #define KWORD_RETURN 	"return"
 #define KWORD_STATIC 	"static"
+#define KWORD_CONST		"const"
 #define KWORD_FUNCTION 	"function"
 #define KWORD_CLASS 	"class"
 #define KWORD_IMPORT 	"import"

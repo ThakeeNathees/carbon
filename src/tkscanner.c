@@ -194,7 +194,7 @@ struct TokenList* structTokenList_new(){
 // private
 static const char C_WHITE_SPACE[] 	= { ' ', '\t', '\n', '\v', '\f', '\r' };
 static const char C_NUMBER[]		= { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' };
-static const char C_SYMBOL[]     	= { '.', ',', ':', ';', '"', '\'' };			// symbols are only one character
+static const char C_SYMBOL[]     	= { '.', ',', ':', ';', '"', '\'', '@', '#', '$', '`' };
 static const char C_BRACKET[]		= { '(', ')', '{', '}', '[', ']', /*'<', '>'*/  };
 static const char C_OPERATOR[] 		= { '+', '-', '*', '/', '%', '!', '=', '<', '>', '&', '|', '^' };
 static const char C_IDENTIFIER[]  	= { 
@@ -251,6 +251,11 @@ void structTokenScanner_checkSymbol(struct TokenScanner* self) {
 	else if (strcmp(self->current_token->name, SYM_SEMI_COLLON) == 0)	{ self->current_token->type = TK_SYM_SEMI_COLLON;	return; }
 	else if (strcmp(self->current_token->name, SYM_DQUOTE) == 0)		{ self->current_token->type = TK_SYM_DQUOTE;		return; }
 	else if (strcmp(self->current_token->name, SYM_SQUOTE) == 0)		{ self->current_token->type = TK_SYM_SQUOTE;		return; }
+
+	else if (strcmp(self->current_token->name, SYM_AT) == 0)			{ self->current_token->type = TK_SYM_AT;			return; }
+	else if (strcmp(self->current_token->name, SYM_HASH) == 0)			{ self->current_token->type = TK_SYM_HASH;			return; }
+	else if (strcmp(self->current_token->name, SYM_DOLLAR) == 0)		{ self->current_token->type = TK_SYM_DOLLAR;		return; }
+	else if (strcmp(self->current_token->name, SYM_DILDO) == 0)			{ self->current_token->type = TK_SYM_DILDO;			return; }
 
 	utils_error_exit("InternalError: unknown symbol", self->pos, self->src, self->file_name);
 }
@@ -317,7 +322,8 @@ void structTokenScanner_checkIdentifier(struct TokenScanner* self){
 	else if (strcmp( self->current_token->name, KWORD_OR )==0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_OR;		return; }
 	else if (strcmp( self->current_token->name, KWORD_NOT )==0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_NOT;		return; }
 	else if (strcmp( self->current_token->name, KWORD_RETURN )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_RETURN;	return; }
-	else if (strcmp( self->current_token->name, KWORD_STATIC )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_STATIC;	return; }
+	else if (strcmp(self->current_token->name, KWORD_STATIC) == 0) { self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_STATIC;	return; }
+	else if (strcmp( self->current_token->name, KWORD_CONST )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_CONST;	return; }
 	else if (strcmp( self->current_token->name, KWORD_FUNCTION )==0){ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_FUNCTION;	return; }
 	else if (strcmp( self->current_token->name, KWORD_CLASS )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_CLASS;		return; }
 	else if (strcmp( self->current_token->name, KWORD_IMPORT )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_IMPORT;	return; }

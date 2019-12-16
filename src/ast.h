@@ -83,13 +83,13 @@ struct _StatementElseIf
 
 struct _StatementReturn
 {
-	struct Expression* expr;
+	struct Expression* expr;			// can be NULL
 };
 
 struct _StatementWhile
 {
 	struct Expression* expr_bool;
-	struct StatementList* stmn_list; // can be NULL
+	struct StatementList* stmn_list;	// can be NULL
 };
 struct _StatementFor
 {
