@@ -176,7 +176,7 @@ struct Token* structTokenList_createToken(struct TokenList* self){
 }
 void structTokenList_print(struct TokenList* self){
 	for (size_t i=0; i< self->count; i++){
-		printf("%03i ", i ); structToken_print( self->list[i] );
+		printf("%03li ", i ); structToken_print( self->list[i] );
 	}
 }
 struct TokenList* structTokenList_new(){
