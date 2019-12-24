@@ -29,6 +29,12 @@ const char* enumNumberType_toString(enum NumberType self){
 
 /***************** <Token> *************/
 // public
+void structToken_free(struct Token* self) {
+	if (self != NULL) {
+		free(self->name);
+		free(self);
+	}
+}
 void structToken_init(struct Token* self){
 	self->_name_len 		= TOKEN_NAME_SIZE;
 	self->_name_ptr 		= 0;
@@ -150,6 +156,21 @@ void structToken_addChar(struct Token* self, char c){
 /***************** <TokenList> *************/
 // private
 //public
+void structTokenList_deleteLast(struct TokenList* self) {
+	if (self->count == 0) return;
+	else {
+		struct Token* last = self->list[self->count - 1];
+		structToken_free(last);
+		self->count--;
+	}
+}
+void structTokenList_free(struct TokenList* self) {
+	while (self->count != 0) {
+		structTokenList_deleteLast(self);
+	}
+	free(self->list);
+	free(self);
+}
 void structTokenList_init(struct TokenList* self, int growth_size){
 	self->count = 0;
 	self->growth_size = growth_size;
@@ -360,9 +381,9 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 		char next = self->src[(self->pos)+1];
 		// //
 		if (next == '/'){ 
-			self->current_token->group = TKG_COMMENT;
+			//self->current_token->group = TKG_COMMENT;
 			while(c != '\n'){
-				structToken_addChar( self->current_token, c );
+				//structToken_addChar( self->current_token, c );
 				if ( (++self->pos) >= strlen(self->src) ){ return structCarbonError_new(); } 
 				c = self->src[self->pos];
 			} 
@@ -373,11 +394,11 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 		// /**/
 		if (next == '*'){
 			structToken_addChar( self->current_token, '/' );structToken_addChar( self->current_token, '*' );
-			self->current_token->group = TKG_COMMENT;(self->pos)+=2;
+			//self->current_token->group = TKG_COMMENT;(self->pos)+=2;
 			while (true){
 				if ( (self->pos)+1 >= strlen(self->src)  ) { return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src, self->file_name, false, 1);}
 				if ( self->src[self->pos] == '*' && self->src[(self->pos)+1] == '/' ){
-					structToken_addChar( self->current_token, '*' );structToken_addChar( self->current_token, '/' );
+					//structToken_addChar( self->current_token, '*' );structToken_addChar( self->current_token, '/' );
 					(self->pos)+=2; return structCarbonError_new();
 				}
 				c = self->src[self->pos]; structToken_addChar( self->current_token, c );

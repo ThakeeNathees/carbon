@@ -7,7 +7,7 @@
 #define TOKEN_NAME_SIZE 10
 #define TOKEN_STRING_GROWTH 100
 
-/*
+/* add list
 new keyword:
 	expr scanner : illegal keyword 
 	token scanner
@@ -203,6 +203,7 @@ const char* enumTokenType_toString(enum TokenType self);
 //const char* enumNumberType_toString(enum NumberType self);
 
 // token
+void structToken_free(struct Token* self);
 void structToken_init(struct Token* self);
 void structToken_print(struct Token* self);
 bool structToken_isAssignmentOperator(struct Token* self);
@@ -212,6 +213,8 @@ bool structToken_isBinaryOperator(struct Token* self);
 void structToken_addChar(struct Token* self, char c);
 
 // token list
+void structTokenList_deleteLast(struct TokenList* self);
+void structTokenList_free(struct TokenList* self);
 void structTokenList_init(struct TokenList* self, int growth_size);
 void structTokenList_addToken(struct TokenList* self, struct Token* token);
 struct Token* structTokenList_createToken(struct TokenList* self);

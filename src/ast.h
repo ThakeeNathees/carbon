@@ -184,11 +184,13 @@ struct Ast
 const char* enumStatementType_toString(enum StatementType self);
 
 // expression
+void structExpression_free(struct Expression* self);
 void structExpression_init(struct Expression* self, struct TokenList* token_list);
 void structExpression_print(struct Expression* self, int indent, bool new_line);
 struct Expression* structExpression_new(struct TokenList* token_list); // static
 
 // expression dtype
+void structExprDtype_free(struct Expression* self);
 void structExprDtype_init(struct ExprDtype* self, struct Token* dtype);
 void structExprDtype_print(struct ExprDtype* self, int indent, bool new_line); // call with new_line true; false internal
 struct ExprDtype* structExprDtype_new(struct Token* dtype);
@@ -200,11 +202,14 @@ struct Expression* structExpressionList_createExpression(struct ExpressionList* 
 struct ExpressionList* structExpressionList_new(struct TokenList* token_list); // static method
 
 // statement
+void structStatement_free(struct Statement* self);
 void structStatement_init(struct Statement* self, struct Statement* parent, enum StatementType type);
 void structStatement_print(struct Statement* self, int indent);
 struct Statement* structStatement_new(enum StatementType type, struct Statement* parent); // static method
 
 // statement list
+void structStatementList_deleteLast(struct StatementList* self );
+void structStatementList_free(struct StatementList* self);
 void structStatementList_init(struct StatementList* self, struct Statement* parent, int growth_size);
 void structStatementList_print(struct StatementList* self);
 void structStatementList_addStatement(struct StatementList* self, struct Statement* statement);
@@ -215,5 +220,6 @@ struct StatementList* structStatementList_new(struct Statement* parent); // stat
 void structAst_init(struct Ast* self, char* src, char* fiel_name);
 struct CarbonError* structAst_scaneTokens(struct Ast* self);
 struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* statement_list, enum structAst_StmnEndType end_type);
+void structAst_deleteLastStatement(struct Ast* self);
 
 /****************************************************************/

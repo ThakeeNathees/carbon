@@ -14,6 +14,9 @@ const char* enumStatementType_toString(enum StatementType self){
 
 /***************** <Expression> *************/
 // public
+void structExpression_free(struct Expression* self) {
+	if (self != NULL) free(self);
+}
 void structExpression_init(struct Expression* self, struct TokenList* token_list){
 	self->token_list = token_list;
 	self->begin_pos  = -1;
@@ -37,6 +40,9 @@ struct Expression* structExpression_new(struct TokenList* token_list){
 /***************** </Expression> *************/
 
 /***************** <ExprDtype> *************/
+void structExprDtype_free(struct Expression* self) {
+	if (self != NULL) free(self);
+}
 void structExprDtype_init(struct ExprDtype* self, struct Token* dtype){
 	self->dtype   = dtype;
 	self->is_map  = false;
@@ -92,6 +98,65 @@ struct ExpressionList* structExpressionList_new(struct TokenList* token_list){
 
 
 /***************** <Statement> *************/
+
+void structStatement_free(struct Statement* self) {
+	if (self != NULL) {
+		
+		if (self->type == STMNT_UNKNOWN) {
+			structExpression_free(self->statement.unknown.expr);
+		}
+		else if (self->type == STMNT_IMPORT) {
+			// pass
+		}
+		else if (self->type == STMNT_VAR_INI) {
+			structExpression_free(self->statement.init.expr);
+			structExprDtype_free(self->statement.init.dtype);
+		}
+		else if (self->type == STMNT_ASSIGN) {
+			structExpression_free(self->statement.assign.idf);
+			structExpression_free(self->statement.assign.expr);
+		}
+		else if (self->type == STMNT_IF) {
+			structExpression_free(self->statement.stm_if.expr_bool);
+			structStatementList_free(self->statement.stm_if.stmn_list);
+			structStatementList_free(self->statement.stm_if.else_if_list);
+			structStatementList_free(self->statement.stm_if.stmn_list_else);
+		}
+		else if (self->type == STMNT_ELSE_IF) {
+			structExpression_free(self->statement.stmn_else_if.expr_bool);
+			structStatementList_free(self->statement.stmn_else_if.stmn_list);
+		}
+		else if (self->type == STMNT_RETURN) {
+			structExpression_free(self->statement.stmn_return.expr);
+		}
+		else if (self->type == STMNT_WHILE) {
+			structExpression_free(self->statement.stm_while.expr_bool);
+			structStatementList_free(self->statement.stm_while.stmn_list);
+		}
+		else if (self->type == STMNT_FOR) {
+			structStatement_free(self->statement.stm_for.stmn_ini);
+			structExpression_free(self->statement.stm_for.expr_bool);
+			structExpression_free(self->statement.stm_for.expr_end);
+			structStatementList_free(self->statement.stm_for.stmn_list);
+		}
+		else if (self->type == STMNT_FOREACH) {
+			structStatement_free(self->statement.stm_foreach.stmn_ini);
+			structExpression_free(self->statement.stm_foreach.expr_itter);
+			structStatementList_free(self->statement.stm_foreach.stmn_list);
+		}
+		else if (self->type == STMNT_FUNC_DEFN) {
+			structStatementList_free(self->statement.func_defn.args);
+			structExprDtype_free(self->statement.func_defn.ret_type);
+			structStatementList_free(self->statement.func_defn.stmn_list);
+		}
+		else if (self->type == STMNT_CLASS_DEFN) {
+			structStatementList_free(self->statement.class_defn.stmn_list);
+		}
+
+		else utils_error_exit("InternalError: unknown statement type for delete", 0, "", ""); // TODO: file name and src name
+		
+	}
+}
 void structStatement_init(struct Statement* self, struct Statement* parent, enum StatementType type){
 	self->type = type;
 	self->parent = parent;
@@ -245,6 +310,21 @@ struct StatementList* structStatementList_new(struct Statement* parent){
 	struct StatementList* stmn_list = (struct StatementList*)malloc( sizeof(struct StatementList) );
 	structStatementList_init(stmn_list, parent, STATEMENT_LIST_SIZE);
 	return stmn_list;
+}
+void structStatementList_deleteLast(struct StatementList* self) {
+	if (self->count == 0) return;
+	struct Statement* last = self->list[self->count - 1];
+	structStatement_free(last);
+	self->count--;
+}
+void structStatementList_free(struct StatementList* self) {
+	if (self != NULL) {
+		while (self->count != 0) {
+			structStatementList_deleteLast(self);
+		}
+		free(self->list);
+		free(self);
+	}
 }
 /***************** </StatementList> *************/
 
@@ -738,6 +818,10 @@ struct CarbonError* structAst_scaneTokens(struct Ast* self){
 	return structCarbonError_new();
 }
 
+void structAst_deleteLastStatement(struct Ast* self) {
+	structStatementList_deleteLast(self->stmn_list);
+}
+
 /*
 makeTree terminates for tk_eof, and rcur_bracket
 */
@@ -762,6 +846,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 
 		if (token->group == TKG_COMMENT); // do nothing
 		else if (token->type == TK_SYM_SEMI_COLLON); // do nothing
+		else if (token->group == TKG_PASS); // do nothing
 
 		// datatype init
 		else if (token->group == TKG_DTYPE){
