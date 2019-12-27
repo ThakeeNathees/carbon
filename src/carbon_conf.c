@@ -32,6 +32,9 @@ void structString_free(struct String* self) {
 void structString_addChar(struct String* self, char c) {
 	if (self->buff_size <= self->buff_pos + 1) {
 		char* new_buff = (char*)malloc(self->buff_size + STRING_BUFFER_SIZE);
+		for (int i = 0; i < self->buff_size; i++) {
+			new_buff[i] = self->buffer[i];
+		}
 		self->buff_size += STRING_BUFFER_SIZE;
 		free(self->buffer);
 		self->buffer = new_buff;

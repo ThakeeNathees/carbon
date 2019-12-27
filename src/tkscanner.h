@@ -191,7 +191,7 @@ struct TokenList
 
 struct TokenScanner
 {
-	char* src;
+	struct String* src;
 	char* file_name;
 	struct Token* current_token;
 	size_t pos;
@@ -222,10 +222,10 @@ void structTokenList_print(struct TokenList* self);
 struct TokenList* structTokenList_new(); // static method
 
 // token scanner
-void structTokenScanner_init(struct TokenScanner* self, char* src, char* file_name);
+void structTokenScanner_init(struct TokenScanner* self, struct String* src, char* file_name);
 void structTokenScanner_setToken(struct TokenScanner* self, struct Token* current_token);
 struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, bool* is_eof); // return true if eof
-struct TokenScanner* structTokenScanner_new(char* src, char* file_name); // static method
+struct TokenScanner* structTokenScanner_new(struct String* src, char* file_name); // static method
 
 /****************************************************************/
 

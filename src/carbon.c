@@ -1,25 +1,48 @@
 #include "ast.h"
 
+/* TODO:
+****** handle pass ******
+while (cond) PASS  { printf();   }
+^^^^^^^^^^^^^  ^^  ^^^^^^^^^^^   ^
+while     pass!={  single_expr;  ignored
+******************
+impl eof : idf, kwords, find at all place where syntax errors!
+rebuild inpl line by line interpriter using the above code
+impl try catch, throw, class.
+------------
+eval expr
+globals, locals table
+execute 
+*/
 
 
 int main(int argc, char** argv){
 
-	if (argc < 2){
+	if (argc < 2 || true){
 
-		printf("usage: <file_path>\n");
-		return 1;
+		//printf("usage: <file_path>\n");
+		//return 1;
 
-
+		// DONT COPY THIS rebuild it using this
 		struct String* src = structString_new();
-		struct Ast ast; structAst_init(&ast, src->buffer, "module");
+		struct Ast ast; structAst_init(&ast, src, "module");
 		struct CarbonError* err;
+		int stmnt_count = 0;
+		int begin_pos = 0; // for eof
+		bool is_eof = false;
 
 		while (true) {
 
-			char* buff[100];
-			printf(">>> ");
+			char buff[100];
+			if (!is_eof) printf(">>> ");
+			else printf("... ");
+
 			fgets(buff, 100, stdin);
+			if (buff[0] == '\n') continue;
 			structString_strcat(src, buff);
+
+			stmnt_count = ast.stmn_list->count;
+			begin_pos = ast.pos;
 
 			err = structAst_scaneTokens(&ast); 
 			if (err->type == ERROR_SUCCESS) {
@@ -28,31 +51,36 @@ int main(int argc, char** argv){
 				err = structAst_makeTree(&ast, ast.stmn_list, STMNEND_EOF); 
 				ast.pos = ast.tokens->count - 1;
 				if (ast.tokens->count > 0 && ast.tokens->list[ast.pos]->group == TKG_EOF) {
-					ast.tokens->list[ast.pos]->type		= TK_PASS;
-					ast.tokens->list[ast.pos]->group	= TKG_PASS;
+					structTokenList_deleteLast(ast.tokens);
+					// ast.tokens->list[ast.pos]->type		= TK_PASS;
+					// ast.tokens->list[ast.pos]->group	= TKG_PASS;
 				}
-				structTokenList_print(ast.tokens);
+				// structTokenList_print(ast.tokens);
 
 				if (err->type == ERROR_SUCCESS) {
-					printf("success...\n");
+					is_eof = false;
+					structStatement_print(ast.stmn_list->list[ast.stmn_list->count - 1], 0); // execute it
+					// pass
 				}
 				else {
 					if (err->type == ERROR_UNEXP_EOF) {
-						printf("... \n");
+						is_eof = true;
+						ast.pos = begin_pos;
 					}
 					else {
+						is_eof = false;
 						printf("%s\n", err->message.buffer);
 					}
 
-					structAst_deleteLastStatement(&ast);
+					if (stmnt_count != ast.stmn_list->count)
+						structAst_deleteLastStatement(&ast);
 
 				}
 			}
 			else {
 				printf("%s\n", err->message.buffer);
 			}
-
-			structStatementList_print(ast.stmn_list);
+			//structStatementList_print(ast.stmn_list);
 			
 		}
 
@@ -68,10 +96,13 @@ int main(int argc, char** argv){
 	// debug print src
 	printf("%s\n", text);
 
+
 	struct CarbonError* err;
 
 	// read tokens
-	struct Ast ast; structAst_init(&ast, text, argv[1]);
+	struct String* source_code = structString_new();
+	free(source_code->buffer); source_code->buffer = text;
+	struct Ast ast; structAst_init(&ast, source_code, argv[1]);
 	err = structAst_scaneTokens(&ast); if (err->type != ERROR_SUCCESS){ printf("%s\n", err->message.buffer ); exit(-1); }
 	structCarbonError_free(err);
 

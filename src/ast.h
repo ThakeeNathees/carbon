@@ -170,7 +170,7 @@ struct StatementList
 
 struct Ast
 {
-	char* src;
+	struct String* src;
 	char* file_name;
 	size_t pos;
 	struct TokenScanner* token_scanner;
@@ -217,7 +217,7 @@ struct Statement* structStatementList_createStatement(struct StatementList* self
 struct StatementList* structStatementList_new(struct Statement* parent); // static method
 
 // ast
-void structAst_init(struct Ast* self, char* src, char* fiel_name);
+void structAst_init(struct Ast* self, struct String* src, char* fiel_name);
 struct CarbonError* structAst_scaneTokens(struct Ast* self);
 struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* statement_list, enum structAst_StmnEndType end_type);
 void structAst_deleteLastStatement(struct Ast* self);
