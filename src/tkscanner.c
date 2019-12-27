@@ -75,8 +75,7 @@ void structToken_print(struct Token* self){
 void structToken_clear(struct Token* self){
 	self->_name_ptr 	= 0;
 	self->name[0] = '\0';
-	self->group 	= TKG_UNKNOWN;
-	// TODO: free name and allocate new mem
+	self->group = TKG_UNKNOWN; self->type == TK_UNKNOWN;
 }
 bool structToken_isAssignmentOperator(struct Token* self){
 	if (self->group != TKG_OPERATOR){ return false; }
@@ -557,7 +556,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		
 		return structCarbonError_new();
 	}
-	// TODO: if code reach here internal error
+	utils_error_exit("InternalError: validate number has reached an invalid position", self->current_token->pos, self->src->buffer, self->file_name);
 }
 
 // public
@@ -693,7 +692,6 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		return structCarbonError_new();
 	}
 
-	// operator TODO:
 	if ( structTokenScanner_isCharOperator(c) ){
 		structToken_addChar( self->current_token, c ); (self->pos)++;
 		self->current_token->group = TKG_OPERATOR;

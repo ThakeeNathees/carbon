@@ -31,6 +31,7 @@ int main(int argc, char** argv){
 		int begin_pos = 0; // for eof
 		bool is_eof = false;
 
+		printf("Carbon v1.0.0 (https://github.com/ThakeeNathees/Carbon)\nCopyright (c) 2019 ThakeeNathees.\nLicense GPLv3: GNU GPL version 3\n");
 		while (true) {
 
 			char buff[100];

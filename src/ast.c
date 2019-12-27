@@ -153,7 +153,7 @@ void structStatement_free(struct Statement* self) {
 			structStatementList_free(self->statement.class_defn.stmn_list);
 		}
 
-		else utils_error_exit("InternalError: unknown statement type for delete", 0, "", ""); // TODO: file name and src name
+		else utils_error_exit("InternalError: unknown statement type for delete", 0, "", "");
 		
 	}
 }
@@ -374,31 +374,45 @@ struct CarbonError* structAst_countArgs(struct Ast* self, int* count, size_t* en
 	}
 }
 
-// semicollon or other end type not included in expr, TODO: handle unexpected comma
+// semicollon or other end type not included in expr
 // after the scane position points to exprend_
 struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* expr, enum structAst_ExprEndType end_type){
 	//struct Expression* expr = structExpression_new(self->tokens);
 	expr->begin_pos = self->pos;
 	int bracket_ptr = 0; // if open bracket increase, close bracket degrease
+	int curbracket_ptr = 0, sqbracket_ptr=0;
 	while(true){
 		
 		struct Token* token = self->tokens->list[(self->pos)];
 		if (token->type == TK_BRACKET_LPARAN) bracket_ptr++;
-		else if (token->type == TK_BRACKET_RPARAN){
+		else if (token->type == TK_BRACKET_LCUR) curbracket_ptr++;
+		else if (token->type == TK_BRACKET_LSQ) sqbracket_ptr++;
+		else if (token->type == TK_BRACKET_RPARAN) {
 			bracket_ptr--;
 			if ((end_type == EXPREND_RPRAN || end_type == EXPREND_COMMA_OR_RPRAN) && bracket_ptr == -1) { expr->end_pos = self->pos - 1; break; } // open bracket already ommited
-			if (bracket_ptr < 0) return utils_make_error("SyntaxError: unexpected symbol", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, 1);
+			if (bracket_ptr < 0) return utils_make_error("SyntaxError: brackets mismatch", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+		}
+		else if (token->type == TK_BRACKET_RCUR) {
+			curbracket_ptr--;
+			if (curbracket_ptr <0) return utils_make_error("SyntaxError: brackets mismatch", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+		}
+		else if (token->type == TK_BRACKET_RSQ) {
+			sqbracket_ptr--;
+			if (sqbracket_ptr<0)return utils_make_error("SyntaxError: brackets mismatch", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 		}
 
 		if (token->group == TKG_EOF ) return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, 1);
 		else if ( (end_type !=EXPREND_SEMICOLLON) && (token->type == TK_SYM_SEMI_COLLON) ) 
 			return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 
-		if (end_type == EXPREND_SEMICOLLON && token->type == TK_SYM_SEMI_COLLON){ expr->end_pos = self->pos-1; break;}
+		if (end_type == EXPREND_SEMICOLLON && token->type == TK_SYM_SEMI_COLLON){ 
+			if (bracket_ptr != 0 || curbracket_ptr != 0 || sqbracket_ptr != 0) return utils_make_error("SyntaxError: brackets mismatch", ERROR_SYNTAX, self->tokens->list[expr->begin_pos]->pos, self->src->buffer, self->file_name, false, token->pos- self->tokens->list[expr->begin_pos]->pos);
+			expr->end_pos = self->pos-1; break;
+		}
 		else if (end_type == EXPREND_COMMA && token->type == TK_SYM_COMMA && bracket_ptr==0){ expr->end_pos = self->pos-1; break;}
 		// else if (end_type == EXPREND_RPRAN && token->type == TK_BRACKET_RPARAN && bracket_ptr == 0){ expr->end_pos = self->pos-1; break;}
-		else if (end_type == EXPREND_ASSIGN && structToken_isAssignmentOperator(token) ){ expr->end_pos = self->pos-1; break; }
-		else if (end_type == EXPREND_COMMA_OR_RPRAN && ( (token->type == TK_BRACKET_RPARAN && bracket_ptr==0) || (token->type == TK_SYM_COMMA) ) ){
+		else if (end_type == EXPREND_ASSIGN && structToken_isAssignmentOperator(token) && bracket_ptr == 0 ){ expr->end_pos = self->pos-1; break; }
+		else if (end_type == EXPREND_COMMA_OR_RPRAN &&  (token->type == TK_BRACKET_RPARAN ) || (token->type == TK_SYM_COMMA) && bracket_ptr == 0 ) {
 			expr->end_pos = self->pos-1; break;
 		}
 
@@ -414,7 +428,7 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 
 			token = self->tokens->list[++self->pos];
 			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-			if (token->group != TKG_IDENTIFIER ) return utils_make_error("SyntaxError: expected an identifier", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+			if (token->type != TK_IDENTIFIER ) return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 			if ( (self->tokens->list[self->pos+1])->type == TK_BRACKET_LPARAN ){
 				token->group = TKG_FUNCTION; token->func_is_method  = true;
 				struct CarbonError* err = structAst_countArgs(self, &(token->func_args_given), NULL); if (err->type != ERROR_SUCCESS){ return err; }
@@ -483,7 +497,6 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 					before->type == TK_SYM_COMMA || next->group == TKG_IDENTIFIER || before->type == TK_SYM_SEMI_COLLON
 					) 
 					token->op_is_pre = true;
-				// TODO: raise an error here and check unhandled logic
 			}
 		}
 
@@ -492,8 +505,8 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		if (structToken_isAssignmentOperator(token)) {
 			return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 		}
-		// illegal symbols in an expr // TODO: add \@#$ 
-		if (token->type == TK_SYM_COLLON) {
+		// illegal symbols in an expr // TODO: add '\' symbol
+		if (token->type == TK_SYM_COLLON || token->type == TK_SYM_AT || token->type == TK_SYM_HASH || token->type == TK_SYM_DOLLAR) {
 			return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 		}
 		// invalid comma -> expr = 2,2
@@ -569,10 +582,33 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 struct CarbonError* structAst_isNextStmnAssign(struct Ast* self, bool* ret, size_t* assign_op_pos){
 	struct CarbonError* err = structCarbonError_new();
 	int i = 0;
+	int pbrcket = 0, curbracket=0, sqbracket = 0;
 	while(true){
 		struct Token* token = self->tokens->list[ self->pos + i ];
+
+		// bracket mismatch
+		if (token->type == TK_BRACKET_LPARAN) pbrcket++;
+		else if (token->type == TK_BRACKET_LCUR) curbracket++;
+		else if (token->type == TK_BRACKET_LSQ) sqbracket++;
+
+		else if (token->type == TK_BRACKET_RPARAN) {
+			pbrcket--;
+			if (pbrcket < 0) return utils_make_error("SyntaxError: brackets mismatch (did you forget semicollon?)", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+		}
+		else if (token->type == TK_BRACKET_RCUR) {
+			curbracket--;
+			if (curbracket < 0) return utils_make_error("SyntaxError: brackets mismatch (did you forget semicollon?)", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+		}
+		else if (token->type == TK_BRACKET_RSQ) {
+			sqbracket--;
+			if (sqbracket< 0) return utils_make_error("SyntaxError: brackets mismatch (did you forget semicollon?)", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+		}
+
 		if (token->group == TKG_EOF ) return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, 1); 
-		if (token->type == TK_SYM_SEMI_COLLON){ *ret = false; return err; }
+		if (token->type == TK_SYM_SEMI_COLLON){ 
+			if (pbrcket!=0 || curbracket!=0 || sqbracket!=0) return utils_make_error("SyntaxError: brackets mismatch", ERROR_SYNTAX, self->tokens->list[self->pos]->pos, self->src->buffer, self->file_name, false, token->pos - self->tokens->list[self->pos]->pos);
+			*ret = false; return err; 
+		}
 		if (structToken_isAssignmentOperator(token)){ 
 			if (assign_op_pos != NULL) *assign_op_pos = token->pos;
 			*ret = true; return err;
@@ -607,6 +643,7 @@ struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** re
 
 	struct Token* token = self->tokens->list[self->pos];
 
+	if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 	if ( (token->group != TKG_DTYPE) && (token->group != TKG_IDENTIFIER) /*token may be a class name*/ ) return utils_make_error("SyntexError: expected a data type", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr); 
 	*ret =  structExprDtype_new(token);
 
@@ -714,7 +751,7 @@ struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct State
 
 	}
 	else if (end_type == VARINIEND_FUNC) {
-		if (token->type == TK_SYM_COMMA || token->type == TK_BRACKET_RPARAN) {
+		if (token->type == TK_SYM_COMMA || token->type == TK_BRACKET_RPARAN) { // TODO: END WITH '='
 
 		}
 		else { // scane expr
@@ -815,7 +852,7 @@ struct CarbonError* structAst_getStmnListBody(struct Ast* self, int indent, stru
 			else {
 				struct CarbonError* err = structAst_scaneExpr(self, expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 				struct Statement* stmn_body = structStatement_new(STMNT_UNKNOWN, parent_of_stmn_list); stmn_body->statement.unknown.expr = expr;
-				structStatementList_addStatement(*body_ptr, stmn_body); // TODO: use createstatement from list
+				structStatementList_addStatement(*body_ptr, stmn_body);
 			}
 		}
 	}
@@ -898,8 +935,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			if (is_next_assign){
 				struct Statement* stmn = structStatementList_createStatement(statement_list, STMNT_ASSIGN, parent);
 				err = structAst_getAssignStatement(self, stmn); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
-			} else {
-				// if have globals : identifier is known or undefined, if idf is func/builtin stmn is func call // TODO: 
+			} else { 
 				struct Statement* stmn = structStatementList_createStatement(statement_list, STMNT_UNKNOWN, parent);
 				stmn->statement.unknown.expr = structExpression_new(self->tokens);
 				err = structAst_scaneExpr(self, stmn->statement.unknown.expr, EXPREND_SEMICOLLON); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
@@ -1093,13 +1129,12 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			
 		}
 
-		// function defn, // TODO: func defn parent should be null or class defn
-		/*
-			if (cond){}
-			// TODO: skip the comment
-			else {} // this else is unexpected because of the above comment
-		*/
+		
 		else if (token->type == TK_KWORD_FUNCTION) {
+			
+			// TODO: check parent is null or inside a class
+			//if (parent != NULL) return utils_make_error("SyntaxError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+			
 			struct Statement* stmn = structStatementList_createStatement(statement_list, STMNT_FUNC_DEFN, parent);
 
 			token = self->tokens->list[++self->pos];
@@ -1116,7 +1151,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 
 			} else {
 				if (token->type == TK_SYM_COMMA) return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-				stmn->statement.func_defn.args = structStatementList_new(NULL); stmn->statement.func_defn.args->indent = statement_list->indent + 1; // TODO: parent of args is null
+				stmn->statement.func_defn.args = structStatementList_new(NULL); stmn->statement.func_defn.args->indent = statement_list->indent + 1;
 				bool default_arg_begined = false; // f(int x = 0, int y){} // illegal 
 				while (true) {
 					struct Statement* stmn_ini = structStatementList_createStatement(stmn->statement.func_defn.args, STMNT_VAR_INI, NULL);
@@ -1188,7 +1223,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			if (token->type != TK_SYM_SEMI_COLLON) { return utils_make_error("SyntaxError: expected symbol ';'", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr); }
 			struct Statement* stmn = structStatementList_createStatement(statement_list, STMNT_CONTINUE, parent);
 		}
-		// return // TODO: check return type here from parent
+		// return 
 		else if (token->type == TK_KWORD_RETURN) {
 			struct Statement* par = parent;
 			while (true) {
@@ -1208,7 +1243,6 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 		}
 
 		/*** Illegal tokens at the begining of an statement **********************************************/
-		// TODO: close brackets, collon, dot, binary opeartors, 
 
 		// unexpected symbols
 		else if (structToken_isCloseBracket(token) || 

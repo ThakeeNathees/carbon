@@ -7,6 +7,7 @@
 #define TOKEN_NAME_SIZE 10
 #define TOKEN_STRING_GROWTH 100
 
+
 /* add list
 new keyword:
 	expr scanner : illegal keyword 
@@ -321,8 +322,7 @@ struct TokenScanner* structTokenScanner_new(struct String* src, char* file_name)
 #define KWORD_FUNCTION 	"function"
 #define KWORD_CLASS 	"class"
 #define KWORD_IMPORT 	"import"
-// TODO: define const for statement var ini;
-// TODO: define try catch
+
 
 // built in func
 #define BUILTIN_PRINT 	"print"
