@@ -1,19 +1,5 @@
 #include "ast.h"
 
-/* TODO:
-****** handle pass ******
-while (cond) PASS  { printf();   }
-^^^^^^^^^^^^^  ^^  ^^^^^^^^^^^   ^
-while     pass!={  single_expr;  ignored
-******************
-impl eof : idf, kwords, find at all place where syntax errors!
-rebuild inpl line by line interpriter using the above code
-impl try catch, throw, class.
-------------
-eval expr
-globals, locals table
-execute 
-*/
 
 
 int main(int argc, char** argv){
@@ -23,15 +9,18 @@ int main(int argc, char** argv){
 		//printf("usage: <file_path>\n");
 		//return 1;
 
-		// DONT COPY THIS rebuild it using this
+		// clean the below peace of code and move to clinterp
 		struct String* src = structString_new();
-		struct Ast ast; structAst_init(&ast, src, "module");
+		struct Ast ast; structAst_init(&ast, src, "<stdin>");
 		struct CarbonError* err;
-		int stmnt_count = 0;
-		int begin_pos = 0; // for eof
+		size_t stmnt_count = 0, token_count=0;
+		size_t begin_pos = 0; // for eof
 		bool is_eof = false;
 
-		printf("Carbon v1.0.0 (https://github.com/ThakeeNathees/Carbon)\nCopyright (c) 2019 ThakeeNathees.\nLicense GPLv3: GNU GPL version 3\n");
+		printf("Carbon v1.0.0 (https://github.com/ThakeeNathees/Carbon)\n");
+		printf("Copyright (c) 2019 ThakeeNathees.\n");
+		printf("License GPLv3 : GNU GPL version 3\n");
+
 		while (true) {
 
 			char buff[100];
@@ -43,24 +32,26 @@ int main(int argc, char** argv){
 			structString_strcat(src, buff);
 
 			stmnt_count = ast.stmn_list->count;
+			token_count = ast.tokens->count;
 			begin_pos = ast.pos;
 
 			err = structAst_scaneTokens(&ast); 
+			ast.token_scanner->pos = strlen(ast.src->buffer); // if error at the middle set it to last
 			if (err->type == ERROR_SUCCESS) {
 				structCarbonError_free(err);
 
 				err = structAst_makeTree(&ast, ast.stmn_list, STMNEND_EOF); 
-				ast.pos = ast.tokens->count - 1;
+				ast.pos = ast.tokens->count - 1; // if error at the middle set it to last
+				
 				if (ast.tokens->count > 0 && ast.tokens->list[ast.pos]->group == TKG_EOF) {
 					structTokenList_deleteLast(ast.tokens);
-					// ast.tokens->list[ast.pos]->type		= TK_PASS;
-					// ast.tokens->list[ast.pos]->group	= TKG_PASS;
 				}
-				// structTokenList_print(ast.tokens);
+				//structTokenList_print(ast.tokens);
 
 				if (err->type == ERROR_SUCCESS) {
 					is_eof = false;
-					structStatement_print(ast.stmn_list->list[ast.stmn_list->count - 1], 0); // execute it
+					for (int i = 0; i < ast.stmn_list->count - stmnt_count; i++)
+						structStatement_print(ast.stmn_list->list[ast.stmn_list->count - (i+1)], 0); // execute it
 					// pass
 				}
 				else {
@@ -80,6 +71,7 @@ int main(int argc, char** argv){
 			}
 			else {
 				printf("%s\n", err->message.buffer);
+				ast.pos += (ast.tokens->count - token_count); // skip those error tokens
 			}
 			//structStatementList_print(ast.stmn_list);
 			

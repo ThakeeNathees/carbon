@@ -40,7 +40,7 @@ struct Expression* structExpression_new(struct TokenList* token_list){
 /***************** </Expression> *************/
 
 /***************** <ExprDtype> *************/
-void structExprDtype_free(struct Expression* self) {
+void structExprDtype_free(struct ExprDtype* self) {
 	if (self != NULL) free(self);
 }
 void structExprDtype_init(struct ExprDtype* self, struct Token* dtype){
@@ -129,6 +129,9 @@ void structStatement_free(struct Statement* self) {
 		else if (self->type == STMNT_RETURN) {
 			structExpression_free(self->statement.stmn_return.expr);
 		}
+		else if (self->type == STMNT_BREAK || self->type == STMNT_CONTINUE) {
+			// pass
+		}
 		else if (self->type == STMNT_WHILE) {
 			structExpression_free(self->statement.stm_while.expr_bool);
 			structStatementList_free(self->statement.stm_while.stmn_list);
@@ -154,6 +157,8 @@ void structStatement_free(struct Statement* self) {
 		}
 
 		else utils_error_exit("InternalError: unknown statement type for delete", 0, "", "");
+
+		free(self);
 		
 	}
 }
@@ -189,7 +194,7 @@ void structStatement_init(struct Statement* self, struct Statement* parent, enum
 
 }
 void structStatement_print(struct Statement* self, int indent){
-	// const char* indent_str = "    ";
+	
 	if (self->type == STMNT_UNKNOWN){ 
 		if (self->statement.unknown.expr != NULL)structExpression_print(self->statement.unknown.expr, indent, true);
 	}

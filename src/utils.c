@@ -100,8 +100,8 @@ struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, siz
 	char location_str[ERROR_LINE_SIZE];
 	char buff[ERROR_LINE_SIZE];  int line_no = utils_pos_to_line(pos, src, buff, location_str, error_len);
 	struct CarbonError* err = structCarbonError_new(); err->type = err_type;
-	int msg_min_size = snprintf(NULL, 0,                                 "%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff); structString_minSize(&(err->message), msg_min_size+100); // TOOD: 100 is for ^ printing
-	int msg_size = snprintf(err->message.buffer, err->message.buff_size, "%s @%s:%i\n%s\n",err_msg, file_name, line_no, buff);
+	int msg_min_size = snprintf(NULL, 0,                                 "%s \nFile: \"%s\", Line: %i\n%s\n",err_msg, file_name, line_no, buff); structString_minSize(&(err->message), msg_min_size+100); // TOOD: 100 is for ^ printing
+	int msg_size = snprintf(err->message.buffer, err->message.buff_size, "%s \nFile: \"%s\", Line: %i\n%s\n",err_msg, file_name, line_no, buff);
 	err->message.buff_pos += msg_size;
 
 	int i=0; 

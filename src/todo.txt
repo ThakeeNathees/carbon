@@ -1,4 +1,17 @@
 
+change function to func
+
+^C <-- handle
+
+! at the last of a statement make error!
+
+impl class <-- unhandled token
+
+impl exit(); builtin to exit
+
+>>> if (cond) do_something();
+now wait for else, else if, don't execute
+
 major change
 token group -> idf, token_type = variable, function, ...
 
@@ -6,5 +19,15 @@ define const, static keyword
 define try catch trhow
 
 DEFINE '\\' slash symbol
-
 FUNCTION ( varini endtype '=' add )
+
+
+## ERROR HANDLING ################
+2 idf can't be next to each other
+
+-------------------------------------------------------------------------------------------------
+
+## these lines make eof error when tokenizeing but not an issue
+>>> /*       <-- this line generate an error! ## BUG!
+>>> "
+>>> "asdf

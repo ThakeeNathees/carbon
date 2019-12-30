@@ -75,7 +75,7 @@ void structToken_print(struct Token* self){
 void structToken_clear(struct Token* self){
 	self->_name_ptr 	= 0;
 	self->name[0] = '\0';
-	self->group = TKG_UNKNOWN; self->type == TK_UNKNOWN;
+	self->group = TKG_UNKNOWN; self->type = TK_UNKNOWN;
 }
 bool structToken_isAssignmentOperator(struct Token* self){
 	if (self->group != TKG_OPERATOR){ return false; }
@@ -196,7 +196,7 @@ struct Token* structTokenList_createToken(struct TokenList* self){
 }
 void structTokenList_print(struct TokenList* self){
 	for (size_t i=0; i< self->count; i++){
-		printf("%03i ", i ); structToken_print( self->list[i] );
+		printf("%03lli ", i ); structToken_print( self->list[i] ); // TODO: x86 32bit size_t = unsigned int, 64 bit size_t = unsigned long long
 	}
 }
 struct TokenList* structTokenList_new(){
@@ -392,7 +392,7 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 
 		// /**/
 		if (next == '*'){
-			structToken_addChar( self->current_token, '/' );structToken_addChar( self->current_token, '*' );
+			// structToken_addChar( self->current_token, '/' );structToken_addChar( self->current_token, '*' );
 			//self->current_token->group = TKG_COMMENT;(self->pos)+=2;
 			while (true){
 				if ( (self->pos)+1 >= strlen(self->src->buffer)  ) { return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src->buffer, self->file_name, false, 1);}
@@ -453,7 +453,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 			count = utils_char_count_in_str('x', numstr);
 			
 			const char* valid_chars = "x0123456789abcdef";
-			for (int i = 0; i < strlen(numstr); i++) {
+			for (unsigned int i = 0; i < strlen(numstr); i++) {
 				if (!utils_char_in_str(numstr[i], valid_chars))
 					return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src->buffer, self->file_name, false, self->current_token->_name_ptr);
 			}
@@ -471,7 +471,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 			count = utils_char_count_in_str('b', numstr);
 			
 			const char* valid_chars = "01b";
-			for (int i = 0; i < strlen(numstr); i++) {
+			for (unsigned int i = 0; i < strlen(numstr); i++) {
 				if (!utils_char_in_str(numstr[i], valid_chars))
 					return utils_make_error("SyntaxError: invalid number", ERROR_SYNTAX, self->current_token->pos, self->src->buffer, self->file_name, false, self->current_token->_name_ptr);
 			}
@@ -486,7 +486,7 @@ struct CarbonError* structTokenScanner_validateNumber(struct TokenScanner* self)
 		// octal
 		else {
 			const char* valid_chars = "01234567";
-			for (int i = 0; i < strlen(numstr); i++) {
+			for (unsigned int i = 0; i < strlen(numstr); i++) {
 				if (!utils_char_in_str(numstr[i], valid_chars))
 					return utils_make_error("SyntaxError: invalid number (numbers start with 0 are octal)", ERROR_SYNTAX, self->current_token->pos, self->src->buffer, self->file_name, false, self->current_token->_name_ptr);
 			}
