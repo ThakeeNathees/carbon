@@ -1,17 +1,18 @@
 
-function f(){
-
-if (asdf);
-else if (token.type == TK_KWORD_ELSE)
-	return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token.pos, self.src, self.file_name, false, token._name_ptr);
-
-// if token == static && ast state != reading class error!
-
-else {
-	return utils_make_error("InternalError: unhandled token", ERROR_SYNTAX, token.pos, self.src, self.file_name, false, token._name_ptr);
-}
 
 
+// return true if EOF
+func structTokenScanner_skipWhiteSpaceAndComments(int s, bool is_eof){
+	while (true){
+		if ( self.pos >= strlen(self.src.buffer) ){ is_eof = true; return structCarbonError_new();}
+		
+		char c = self.src.buffer[ self.pos ];
+		list<int> err = structTokenScanner_skipComments(self); if (err.type != ERROR_SUCCESS) return err; 
+		structCarbonError_free(err);
+		if (structTokenScanner_isEof(self)) { is_eof = true; return structCarbonError_new(); }
 
-self.pos++;
+		c = self.src.buffer[ self.pos ];
+		if (!structTokenScanner_isCharWhiteSpace(c)){ is_eof = false; return structCarbonError_new();}
+		(self.pos)++;
+	}
 }

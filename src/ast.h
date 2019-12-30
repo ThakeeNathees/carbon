@@ -190,7 +190,7 @@ void structExpression_print(struct Expression* self, int indent, bool new_line);
 struct Expression* structExpression_new(struct TokenList* token_list); // static
 
 // expression dtype
-void structExprDtype_free(struct Expression* self);
+void structExprDtype_free(struct ExprDtype* self);
 void structExprDtype_init(struct ExprDtype* self, struct Token* dtype);
 void structExprDtype_print(struct ExprDtype* self, int indent, bool new_line); // call with new_line true; false internal
 struct ExprDtype* structExprDtype_new(struct Token* dtype);

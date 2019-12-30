@@ -29,13 +29,13 @@ new symbol:
 	func(TKG_OPERATOR)		\
 	func(TKG_KEYWORD)		\
 	func(TKG_DTYPE)			\
-	func(TKG_BUILTIN)		\
 	func(TKG_NUMBER)		\
 	func(TKG_STRING) 		\
-	func(TKG_FUNCTION) 		\
-	func(TKG_VARIABLE)		\
 	func(TKG_IDENTIFIER) // variable, function when tkscan, ...
 
+	//func(TKG_VARIABLE)		\
+	//func(TKG_BUILTIN)		\
+	//func(TKG_FUNCTION) 		\
 
 #define FOREACH_TOKEN_TYPE(func)\
 	func(TK_UNKNOWN)	\
@@ -43,6 +43,8 @@ new symbol:
 	func(TK_PASS)		\
 	func(TK_STRING)		\
 	func(TK_IDENTIFIER)	\
+	func(TK_VARIABLE) \
+	func(TK_FUNCTION) \
 	func(TK_SYM_DOT)		\
 	func(TK_SYM_COMMA)		\
 	func(TK_SYM_COLLON)		\
@@ -174,7 +176,11 @@ struct Token
 	int  func_args_given; // for check count == given
 	// for identifier
 	bool idf_is_field; // instance.field : comes after . operator no brecket after
-	// for minus operator
+	
+	bool idf_is_const;
+	bool is_static; // for both func and idf
+	
+					// for minus operator
 	bool op_is_single;
 	// for incr and decr operator
 	bool op_is_pre;
@@ -211,6 +217,7 @@ bool structToken_isAssignmentOperator(struct Token* self);
 bool structToken_isOpenBracket(struct Token* self);
 bool structToken_isCloseBracket(struct Token* self);
 bool structToken_isBinaryOperator(struct Token* self);
+bool structToken_isBuiltin(struct Token* self);
 void structToken_addChar(struct Token* self, char c);
 
 // token list
@@ -266,7 +273,7 @@ struct TokenScanner* structTokenScanner_new(struct String* src, char* file_name)
 #define DTYPE_LIST 		"list"
 #define DTYPE_MAP 		"map"
 #define DTYPE_STRING 	"string"
-//#define DTYPE_FUNC 	"func" function is not a type anymore
+// #define DTYPE_FUNC 	"func" function is not a type anymore
 
 // arithmetic operators
 #define OP_EQ 			"="
@@ -319,7 +326,7 @@ struct TokenScanner* structTokenScanner_new(struct String* src, char* file_name)
 #define KWORD_RETURN 	"return"
 #define KWORD_STATIC 	"static"
 #define KWORD_CONST		"const"
-#define KWORD_FUNCTION 	"function"
+#define KWORD_FUNCTION 	"func"
 #define KWORD_CLASS 	"class"
 #define KWORD_IMPORT 	"import"
 

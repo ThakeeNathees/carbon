@@ -4,7 +4,7 @@
 
 int main(int argc, char** argv){
 
-	if (argc < 2 || true){
+	if (argc < 2 ){
 
 		//printf("usage: <file_path>\n");
 		//return 1;
@@ -49,6 +49,7 @@ int main(int argc, char** argv){
 				//structTokenList_print(ast.tokens);
 
 				if (err->type == ERROR_SUCCESS) {
+					structCarbonError_free(err);
 					is_eof = false;
 					for (int i = 0; i < ast.stmn_list->count - stmnt_count; i++)
 						structStatement_print(ast.stmn_list->list[ast.stmn_list->count - (i+1)], 0); // execute it
@@ -64,12 +65,15 @@ int main(int argc, char** argv){
 						printf("%s\n", err->message.buffer);
 					}
 
+					structCarbonError_free(err);
+
 					if (stmnt_count != ast.stmn_list->count)
 						structAst_deleteLastStatement(&ast);
 
 				}
 			}
 			else {
+				structCarbonError_free(err);
 				printf("%s\n", err->message.buffer);
 				ast.pos += (ast.tokens->count - token_count); // skip those error tokens
 			}
@@ -87,7 +91,7 @@ int main(int argc, char** argv){
 	}
 
 	// debug print src
-	printf("%s\n", text);
+	//printf("%s\n", text);
 
 
 	struct CarbonError* err;
@@ -112,7 +116,7 @@ int main(int argc, char** argv){
 	}
 
 	// debug print tokens
-	structTokenList_print(ast.tokens);
+	//structTokenList_print(ast.tokens);
 
 	// debug print statements
 	structStatementList_print( ast.stmn_list );

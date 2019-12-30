@@ -12,9 +12,6 @@ impl exit(); builtin to exit
 >>> if (cond) do_something();
 now wait for else, else if, don't execute
 
-major change
-token group -> idf, token_type = variable, function, ...
-
 define const, static keyword
 define try catch trhow
 
