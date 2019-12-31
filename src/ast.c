@@ -357,6 +357,7 @@ struct CarbonError* structAst_countArgs(struct Ast* self, int* count, size_t* en
 	if (token->type == TK_BRACKET_RPARAN) { *count = 0; if(end_pos!=NULL)*end_pos = token->pos; return structCarbonError_new(); }
 
 	int i = 0, arg_count = 1, bracket_ptr = 0;
+	bool default_arg_begin = false;
 	while (true){
 		token = self->tokens->list[self->pos + i++ ];
 
@@ -371,11 +372,28 @@ struct CarbonError* structAst_countArgs(struct Ast* self, int* count, size_t* en
 			token->comma_is_valid = true;
 			if (bracket_ptr == 1) arg_count++; // open bracket for the function
 			token = self->tokens->list[self->pos + i ];
-			if (token->type == TK_BRACKET_RPARAN) return utils_make_error("SyntaxError: unexpected character", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);  // func(arg , )
+			if (token->type == TK_BRACKET_RPARAN || token->type == TK_SYM_COMMA || token->type == TK_OP_EQ) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);  // func(arg , )
 		}
 		else if (token->type == TK_SYM_SEMI_COLLON) return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 		else if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected EOF, expected ')'", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, 1);
-		else if (structToken_isAssignmentOperator(token)) return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+		else if (structToken_isAssignmentOperator(token)) {
+			if (token->type == TK_OP_EQ) {
+				struct Token* next = self->tokens->list[self->pos+i];
+				if (next->type == TK_SYM_COMMA)  return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+				default_arg_begin = true;
+				token->eq_is_valid = true;
+			}
+			else return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+		}
+		else if ((token->group == TKG_IDENTIFIER || token->group == TKG_NUMBER )) {
+			if (default_arg_begin) {
+				struct Token* next = self->tokens->list[self->pos + i];
+				struct Token* before = self->tokens->list[self->pos + i - 2];
+				if (before->type == TK_SYM_COMMA) {
+					if (next->type != TK_OP_EQ) return utils_make_error("SyntaxError: positional argument follows keyword argument", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+				}
+			}
+		}
 	}
 }
 
@@ -444,7 +462,7 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		// token = idf check if expr is function
 		if (token->group == TKG_IDENTIFIER ){ // line by line interp, already change to tkg_function
 			if ( (self->tokens->list[self->pos+1])->type == TK_BRACKET_LPARAN ){
-				token->type = TK_FUNCTION; // not method
+				if( ! structToken_isBuiltin(token) ) token->type = TK_FUNCTION; // not method
 				struct CarbonError* err = structAst_countArgs(self, &(token->func_args_given), NULL); if (err->type != ERROR_SUCCESS) return err;
 			}
 			else  token->type = TK_VARIABLE;
@@ -455,9 +473,12 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		if (structToken_isBuiltin(token)){
 			size_t call_end_pos = token->pos;
 			struct CarbonError* err = structAst_countArgs(self, &(token->func_args_given), &call_end_pos); if (err->type != ERROR_SUCCESS){ return err; }
-			if (token->func_args_given != token->func_args_count){
+			if (token->func_args_given < token->func_args_count_min || ( (token->func_args_count_max != -1)? token->func_args_given > token->func_args_count_max : false ) ){
 				char* err_msg = (char*)malloc(ERROR_LINE_SIZE);
-				snprintf(err_msg, ERROR_LINE_SIZE, "TypeError: func:%s takes %i arguments (%i given)", token->name, token->func_args_count, token->func_args_given);
+				if (token->func_args_count_max!=-1)
+					snprintf(err_msg, ERROR_LINE_SIZE, "TypeError: func:%s takes min %i, max %i arguments (%i given)", token->name, token->func_args_count_min, token->func_args_count_max, token->func_args_given);
+				else 
+					snprintf(err_msg, ERROR_LINE_SIZE, "TypeError: func:%s takes min %i, max INF arguments (%i given)", token->name, token->func_args_count_min, token->func_args_given);
 				return utils_make_error(err_msg, ERROR_TYPE, token->pos, self->src->buffer, self->file_name, true, call_end_pos - token->pos + 1);
 			}
 		}
@@ -509,7 +530,8 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 
 		// expr cant contain an assignment operator
 		if (structToken_isAssignmentOperator(token)) {
-			return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+			if (token->type == TK_OP_EQ && token->eq_is_valid); // ok
+			else return utils_make_error("SyntaxError: unexpected operator", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 		}
 		// illegal symbols in an expr // TODO: add '\' symbol
 		if (token->type == TK_SYM_COLLON || token->type == TK_SYM_AT || token->type == TK_SYM_HASH || token->type == TK_SYM_DOLLAR) {
@@ -627,7 +649,7 @@ struct CarbonError* structAst_isNextStmnAssign(struct Ast* self, bool* ret, size
 			if (pbrcket!=0 || curbracket!=0 || sqbracket!=0) return utils_make_error("SyntaxError: brackets mismatch", ERROR_SYNTAX, self->tokens->list[self->pos]->pos, self->src->buffer, self->file_name, false, token->pos - self->tokens->list[self->pos]->pos);
 			*ret = false; return err; 
 		}
-		if (structToken_isAssignmentOperator(token)){ 
+		if (structToken_isAssignmentOperator(token) && pbrcket == 0 ){ 
 			if (assign_op_pos != NULL) *assign_op_pos = token->pos;
 			*ret = true; return err;
 		}

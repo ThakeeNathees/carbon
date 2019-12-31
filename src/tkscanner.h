@@ -172,7 +172,8 @@ struct Token
 	union NumberValue 	number_value;
 	// for function type
 	bool func_is_method; // insts.method() : comes after . operator and after a '('
-	int  func_args_count;
+	int  func_args_count_min;
+	int  func_args_count_max;
 	int  func_args_given; // for check count == given
 	// for identifier
 	bool idf_is_field; // instance.field : comes after . operator no brecket after
@@ -186,6 +187,8 @@ struct Token
 	bool op_is_pre;
 	// for comma
 	bool comma_is_valid; // expr = 2,2 <-- invalid comma, when count args or scaning lists comma is valid, in expr scan if comma invalid error!
+	// for equal
+	bool eq_is_valid;
 };
 
 struct TokenList

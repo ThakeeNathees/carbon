@@ -44,7 +44,7 @@ void structToken_init(struct Token* self){
 	self->group 			= TKG_UNKNOWN;
 	self->number_value.l 	= 0;
 	//self->number_type 	= NT_INT;
-	self->func_args_count   = 0;
+	self->func_args_count_min   = 0;
 	self->func_args_given   = 0;
 	self->func_is_method    = false;
 	self->idf_is_field      = false;
@@ -53,6 +53,7 @@ void structToken_init(struct Token* self){
 	self->op_is_single		= false;
 	self->op_is_pre			= false;
 	self->comma_is_valid	= false;
+	self->eq_is_valid		= false;
 }
 void structToken_print(struct Token* self){
 	if (self->group == TKG_NUMBER) {
@@ -66,9 +67,9 @@ void structToken_print(struct Token* self){
 		else if (self->type == TK_VALUE_DOUBLE)printf("Token %-20s : %-10s | value = %f\n", enumTokenType_toString(self->type), self->name, self->number_value.d);
 		else if (self->type == TK_VALUE_LONG)  printf("Token %-20s : %-10s | value = %ld\n", enumTokenType_toString(self->type), self->name, self->number_value.l);
 	}
-	else if (self->type == TK_FUNCTION || structToken_isBuiltin(self))		printf("Token %-20s : %-10s | method=%i, args_given=%i\n", enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
+	else if (self->type == TK_FUNCTION || structToken_isBuiltin(self))	printf("Token %-20s : %-10s | method=%i, args_given=%i\n", enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
 	else if (self->type == TK_OP_MINUS || self->type == TK_OP_PLUS)		printf("Token %-20s : %-10s | single_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_single);
-	else if (self->type == TK_OP_INCR || self->type == TK_OP_DECR)		printf("Token %-20s : %-10s | pre_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_pre);
+	else if (self->type == TK_OP_INCR  || self->type == TK_OP_DECR)		printf("Token %-20s : %-10s | pre_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_pre);
 
 	else if (self->type == TK_STRING) { printf("Token %-20s : ", enumTokenType_toString(self->type)); utils_print_str_without_esc(self->name, true, true); }
 	else																	printf("Token %-20s : %s\n",								enumTokenType_toString(self->type), self->name);
@@ -115,7 +116,8 @@ bool structToken_isBuiltin(struct Token* self) {
 		self->type == TK_BUILTIN_PRINT ||
 		self->type == TK_BUILTIN_INPUT ||
 		self->type == TK_BUILTIN_MIN ||
-		self->type == TK_BUILTIN_MAX
+		self->type == TK_BUILTIN_MAX  ||
+		self->type == TK_BUILTIN_RAND
 		) return true;
 	return false;
 }
@@ -376,11 +378,11 @@ void structTokenScanner_checkIdentifier(struct TokenScanner* self){
 	else if (strcmp( self->current_token->name, DTYPE_STRING )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_STRING; return;}
 	//if (strcmp( self->current_token->name, DTYPE_FUNC )==0)	{ self->current_token->type = DTYPE; return;}
 
-	else if (strcmp(self->current_token->name, BUILTIN_PRINT) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_PRINT;	self->current_token->func_args_count = 1; return; }
-	else if (strcmp(self->current_token->name, BUILTIN_INPUT) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_INPUT;	self->current_token->func_args_count = 1; return; }
-	else if (strcmp(self->current_token->name, BUILTIN_MIN) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_MIN;		self->current_token->func_args_count = 2; return; }
-	else if (strcmp(self->current_token->name, BUILTIN_MAX) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_MAX;		self->current_token->func_args_count = 2; return; }
-	else if (strcmp(self->current_token->name, BUILTIN_RAND) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_RAND;	self->current_token->func_args_count = 1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_PRINT) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_PRINT;	self->current_token->func_args_count_min = 0; self->current_token->func_args_count_max = -1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_INPUT) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_INPUT;	self->current_token->func_args_count_min = 0; self->current_token->func_args_count_max = 1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_MIN) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_MIN;		self->current_token->func_args_count_min = 2; self->current_token->func_args_count_max = -1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_MAX) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_MAX;		self->current_token->func_args_count_min = 2; self->current_token->func_args_count_max = -1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_RAND) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_RAND;		self->current_token->func_args_count_min = 1; self->current_token->func_args_count_max = 1; return; }
 
 	else { self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_IDENTIFIER; return; } // method, field, var, function
 }
@@ -394,9 +396,7 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 		char next = self->src->buffer[(self->pos)+1];
 		// //
 		if (next == '/'){ 
-			//self->current_token->group = TKG_COMMENT;
 			while(c != '\n'){
-				//structToken_addChar( self->current_token, c );
 				if ( (++self->pos) >= strlen(self->src->buffer) ){ return structCarbonError_new(); } 
 				c = self->src->buffer[self->pos];
 			} 
@@ -406,15 +406,11 @@ struct CarbonError* structTokenScanner_skipComments(struct TokenScanner* self){
 
 		// /**/
 		if (next == '*'){
-			// structToken_addChar( self->current_token, '/' );structToken_addChar( self->current_token, '*' );
-			//self->current_token->group = TKG_COMMENT;(self->pos)+=2;
 			while (true){
 				if ( (self->pos)+1 >= strlen(self->src->buffer)  ) { return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, self->pos, self->src->buffer, self->file_name, false, 1);}
 				if ( self->src->buffer[self->pos] == '*' && self->src->buffer[(self->pos)+1] == '/' ){
-					//structToken_addChar( self->current_token, '*' );structToken_addChar( self->current_token, '/' );
 					(self->pos)+=2; return structCarbonError_new();
 				}
-				c = self->src->buffer[self->pos]; structToken_addChar( self->current_token, c );
 				(self->pos)++;
 			}
 		}

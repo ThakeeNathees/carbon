@@ -51,9 +51,8 @@ int main(int argc, char** argv){
 				if (err->type == ERROR_SUCCESS) {
 					structCarbonError_free(err);
 					is_eof = false;
-					for (int i = 0; i < ast.stmn_list->count - stmnt_count; i++)
-						structStatement_print(ast.stmn_list->list[ast.stmn_list->count - (i+1)], 0); // execute it
-					// pass
+					for (size_t i = 0; i < ast.stmn_list->count - stmnt_count; i++)
+						structStatement_print(ast.stmn_list->list[ast.stmn_list->count - (i+(size_t)1)], 0); // execute it
 				}
 				else {
 					if (err->type == ERROR_UNEXP_EOF) {
@@ -116,7 +115,7 @@ int main(int argc, char** argv){
 	}
 
 	// debug print tokens
-	//structTokenList_print(ast.tokens);
+	// structTokenList_print(ast.tokens);
 
 	// debug print statements
 	structStatementList_print( ast.stmn_list );

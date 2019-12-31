@@ -1,18 +1,2 @@
 
-
-
-// return true if EOF
-func structTokenScanner_skipWhiteSpaceAndComments(int s, bool is_eof){
-	while (true){
-		if ( self.pos >= strlen(self.src.buffer) ){ is_eof = true; return structCarbonError_new();}
-		
-		char c = self.src.buffer[ self.pos ];
-		list<int> err = structTokenScanner_skipComments(self); if (err.type != ERROR_SUCCESS) return err; 
-		structCarbonError_free(err);
-		if (structTokenScanner_isEof(self)) { is_eof = true; return structCarbonError_new(); }
-
-		c = self.src.buffer[ self.pos ];
-		if (!structTokenScanner_isCharWhiteSpace(c)){ is_eof = false; return structCarbonError_new();}
-		(self.pos)++;
-	}
-}
+f( x, 1 2, s);
