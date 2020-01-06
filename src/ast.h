@@ -114,7 +114,7 @@ struct _StatementFuncDefn
 struct _StatementClassDefn
 {
 	struct Token* idf;
-	struct Token* par;				 // can be NULL
+	struct TokenList* supers;			 // can be NULL
 	struct StatementList* stmn_list; // can be NULL
 };
 union _Statement

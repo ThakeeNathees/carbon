@@ -719,8 +719,8 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 		if (c == '<' && next == '<'){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
 		if (c == '>' && next == '>'){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
 		if (c == '>' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
-		if (c == '<' && next == '=') { structToken_addChar(self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
-		if (c == '+' && next == '+') { structToken_addChar(self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '<' && next == '='){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
+		if (c == '+' && next == '+'){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
 		if (c == '-' && next == '-'){ structToken_addChar( self->current_token, next); structTokenScanner_checkOperator(self); return structCarbonError_new(); }
 		structTokenScanner_checkOperator(self);
 		(self->pos)--;

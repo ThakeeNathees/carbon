@@ -13,7 +13,10 @@ now wait for else, else if, don't execute
 define try catch trhow
 
 DEFINE '\\' slash symbol
-FUNCTION ( varini endtype '=' add )
+
+// todo: consider it to be error!
+string s = "line1
+line2"
 
 -------------------------------------------------------------------------------------------------
 

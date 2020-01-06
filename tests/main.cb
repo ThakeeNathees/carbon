@@ -1,2 +1,10 @@
 
-f( x, 1 2, s);
+class MyClass() {
+	
+
+	static func f() : int {
+		do_nothing();
+	}
+
+}
+
