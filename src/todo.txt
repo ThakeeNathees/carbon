@@ -1,26 +1,24 @@
 
-change function to func
+impl abstract, override ( simmiler as const, static )
+abstract func f(): int;
+override func f(): int {}
+
+DEFINE '\\' slash symbol
+
+
+----------------------LOW PRIORITY----------------------
+impl exit(); builtin to exit
 
 ^C <-- handle
-
-impl class <-- unhandled token
-
-impl exit(); builtin to exit
 
 >>> if (cond) do_something();
 now wait for else, else if, don't execute
 
 define try catch trhow
 
-DEFINE '\\' slash symbol
-
-// todo: consider it to be error!
-string s = "line1
-line2"
-
--------------------------------------------------------------------------------------------------
-
 ## these lines make eof error when tokenizeing but not an issue
 >>> /*       <-- this line generate an error! ## BUG!
->>> "
->>> "asdf
+
+
+-------- REMEMBER --------------------------------	
+TK_PASS in expression => ignore

@@ -1,10 +1,2 @@
 
-class MyClass() {
-	
-
-	static func f() : int {
-		do_nothing();
-	}
-
-}
-
+if (x >> 2);

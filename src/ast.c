@@ -202,10 +202,14 @@ void structStatement_print(struct Statement* self, int indent){
 		PRINT_INDENT(indent); printf("<import> "); printf("path  : %s\n", self->statement.import.path->name );
 	}
 	else if (self->type == STMNT_VAR_INI){
-		PRINT_INDENT(indent); printf("<ini> ");
+		PRINT_INDENT(indent);
+		printf("<ini> %s%s", 
+			(self->statement.init.idf->is_static)?"<static> ":"", 
+			(self->statement.init.idf->idf_is_const)?"<const> ":""
+		);
 		structExprDtype_print(self->statement.init.dtype, 0, true);
-		printf(" %s%sidf=%s", (self->statement.init.idf->is_static)?"<static> ":"", (self->statement.init.idf->idf_is_const)?"<const> ":"", self->statement.init.idf->name);
-		if (self->statement.init.expr != NULL) { printf(" expr="); structExpression_print(self->statement.init.expr, 0, true); }
+		printf(" %s", self->statement.init.idf->name);
+		if (self->statement.init.expr != NULL) { printf(" = "); structExpression_print(self->statement.init.expr, 0, true); }
 		else printf("\n");
 		
 	}
@@ -255,14 +259,17 @@ void structStatement_print(struct Statement* self, int indent){
 
 	}
 	else if (self->type == STMNT_ELSE_IF) {
-		PRINT_INDENT(indent); printf("<else_if> "); structExpression_print(self->statement.stmn_else_if.expr_bool, 0, true);
+		PRINT_INDENT(indent); printf("<elseif> "); structExpression_print(self->statement.stmn_else_if.expr_bool, 0, true);
 		if (self->statement.stm_while.stmn_list != NULL) structStatementList_print(self->statement.stm_while.stmn_list);
 		else { PRINT_INDENT(indent+1); printf("(No StmnList)\n"); }
 	}
 	else if (self->type == STMNT_FUNC_DEFN) {
-		PRINT_INDENT(indent); printf("%s <func> %s\n", 
-						(self->statement.func_defn.idf->is_static)?"<static>":"", // static
-						self->statement.func_defn.idf->name // idf
+		PRINT_INDENT(indent); printf("%s%s%s%s %s\n", 
+					(self->statement.func_defn.idf->is_abstract) ? "<abs> " : "", // static
+					(self->statement.func_defn.idf->is_override) ? "<override> " : "", // static
+					(self->statement.func_defn.idf->is_static)?"<static> ":"", // static
+					(self->statement.func_defn.idf->func_is_method) ? "<method> " : "<func> ", // static
+					self->statement.func_defn.idf->name // idf
 			); // TODO: add abstract also
 		if (self->statement.func_defn.args != NULL) structStatementList_print(self->statement.func_defn.args);
 		if (self->statement.func_defn.ret_type != NULL) { structExprDtype_print(self->statement.func_defn.ret_type, indent + 1, true); printf("\n"); }
@@ -277,7 +284,7 @@ void structStatement_print(struct Statement* self, int indent){
 	}
 
 	else if (self->type == STMNT_CLASS_DEFN) {
-		PRINT_INDENT(indent); printf("<class defn> %s\n", self->statement.class_defn.idf->name);
+		PRINT_INDENT(indent); printf("%s<class> %s\n", (self->statement.class_defn.idf->is_abstract)?"<abs> ":"", self->statement.class_defn.idf->name);
 		if (self->statement.class_defn.supers != NULL) {
 			PRINT_INDENT(indent + 1); printf("<supers> ");
 			for (int i = 0; i < self->statement.class_defn.supers->count; i++) {
@@ -973,10 +980,12 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 		// ------------- const and static
 		struct Statement* parent = statement_list->parent;
 
-		bool is_next_const = false;  // these bools set false when used -> if true at the end of the loop = error!
-		bool is_next_static = false;
+		//bool is_next_const = false;  // these bools set false when used -> if true at the end of the loop = error!
+		//bool is_next_static = false;
 		struct Token* _const = NULL; 
 		struct Token* _static = NULL;
+		struct Token* _abstract = NULL;
+		struct Token* _override = NULL;
 
 		while (true) {
 
@@ -997,7 +1006,6 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 				else
 					return utils_make_error("SyntaxError: invalid syntax", ERROR_TYPE, next->pos, self->src->buffer, self->file_name, false, next->_name_ptr);
 
-				is_next_static = true;
 				_static = token;
 				token = self->tokens->list[++self->pos];
 			}
@@ -1007,14 +1015,52 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 				bool is_next_assignment = false;
 				err = structAst_isNextStmnAssign(self, &is_next_assignment, NULL); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 				if (!is_next_assignment) return utils_make_error("SyntaxError: invalid syntax", ERROR_TYPE, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-				is_next_const = true;
 				_const = token;
+				token = self->tokens->list[++self->pos];
+			}
+
+			else if (token->type == TK_KWORD_ABSTRACT) {
+				if ( 
+					(_abstract != NULL) ||
+					(_const != NULL)	||
+					(_static != NULL)	||
+					(_override != NULL)	
+					)
+					return utils_make_error("SyntaxError: invalid syntax", ERROR_TYPE, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+
+				struct Statement* par = parent;
+				if (par != NULL) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+				//if (par->type != STMNT_CLASS_DEFN) return utils_make_error("SyntaxError: unexpected keyword", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+
+
+				struct Token* next = self->tokens->list[self->pos + 1];
+				if (next->type != TK_KWORD_CLASS) utils_make_error("SyntaxError: invalid syntax", ERROR_TYPE, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+				_abstract = token;
+				token = self->tokens->list[++self->pos];
+			}
+
+			else if (token->type == TK_KWORD_OVERRIDE) {
+				if ( 
+					(_abstract != NULL) ||
+					(_const != NULL)	||
+					(_static != NULL)	||
+					(_override != NULL)	
+					)
+					return utils_make_error("SyntaxError: invalid syntax", ERROR_TYPE, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+
+				struct Statement* par = parent;
+				if (par == NULL) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+				if (par->type != STMNT_CLASS_DEFN) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+
+				struct Token* next = self->tokens->list[self->pos + 1];
+				if (next->type != TK_KWORD_FUNCTION) utils_make_error("SyntaxError: invalid syntax", ERROR_TYPE, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+
+				_override = token;
 				token = self->tokens->list[++self->pos];
 			}
 
 			else break;
 		}
-
 		// -------------------
 
 		if (token->group == TKG_COMMENT); // do nothing
@@ -1025,9 +1071,14 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 		else if (token->group == TKG_DTYPE){
 			struct Statement* stmn = structStatementList_createStatement(statement_list, STMNT_VAR_INI, parent);
 			err = structAst_getVarInitStatement(self, stmn, VARINIEND_NORMAL); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
-			if (is_next_const) stmn->statement.init.idf->idf_is_const = true; // statement is assignment 
-			if (is_next_static) stmn->statement.init.idf->is_static = true;
-			is_next_const = false; is_next_static = false;
+			if (_const != NULL) {
+				stmn->statement.init.idf->idf_is_const = true; // statement is assignment 
+				_const = NULL; 
+			}
+			if (_static != NULL) {
+				stmn->statement.init.idf->is_static = true;
+				_static = NULL;
+			}
 		}
 
 		// TODO: identifier may be a dtype, impl static, const
@@ -1239,13 +1290,16 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			// check parent is null -> function , class -> method
 			if (parent == NULL || parent->type == STMNT_CLASS_DEFN); // ok
 			else return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-			
+
 			struct Statement* stmn = structStatementList_createStatement(statement_list, STMNT_FUNC_DEFN, parent);
+
 
 			token = self->tokens->list[++self->pos];
 			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 			if (token->type != TK_IDENTIFIER) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 			stmn->statement.func_defn.idf = token;
+			if (parent != NULL && parent->type == STMNT_CLASS_DEFN) { stmn->statement.func_defn.idf->func_is_method = true; }
+			if (_override != NULL) { stmn->statement.func_defn.idf->is_override = true; _override = NULL; } // par = class already chacked
 
 			token = self->tokens->list[++self->pos];
 			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
@@ -1283,25 +1337,40 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 
 			token = self->tokens->list[++self->pos];
 			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-			if (!(token->type == TK_SYM_COLLON || token->type == TK_BRACKET_LCUR)) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+			if (!(token->type == TK_SYM_COLLON || token->type == TK_BRACKET_LCUR || token->type == TK_SYM_SEMI_COLLON)) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 			if (token->type == TK_SYM_COLLON) {
 				self->pos++;
 				err = structAst_scaneDtype(self, &(stmn->statement.func_defn.ret_type)); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 				token = self->tokens->list[self->pos];
 			}
 			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-			if (token->type != TK_BRACKET_LCUR) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 			
-			token = self->tokens->list[++self->pos];
-			if (token->type == TK_BRACKET_RCUR) {
-				// no func body
-			} else {
-				self->pos--; // at '{'
-				err = structAst_getStmnListBody(self, statement_list->indent + 1, &(stmn->statement.func_defn.stmn_list), true, stmn); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+			// not at '{' or ';' <- for abstract methods
+			if (token->type == TK_SYM_SEMI_COLLON) {
+				if (!parent->statement.class_defn.idf->is_abstract) 
+					return utils_make_error("SyntaxError: abstract method defined on non abstract class", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+				if (stmn->statement.func_defn.idf->is_static || stmn->statement.func_defn.idf->is_override)
+					return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+				
+				stmn->statement.func_defn.idf->is_abstract = true;
 			}
+			else {
+				if (token->type != TK_BRACKET_LCUR) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 
-			if (is_next_static) stmn->statement.func_defn.idf->is_static = true;
-			is_next_static = false;
+				token = self->tokens->list[++self->pos];
+				if (token->type == TK_BRACKET_RCUR) {
+					// no func body
+				}
+				else {
+					self->pos--; // at '{'
+					err = structAst_getStmnListBody(self, statement_list->indent + 1, &(stmn->statement.func_defn.stmn_list), true, stmn); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+				}
+
+				if (_static != NULL) {
+					stmn->statement.func_defn.idf->is_static = true;
+					_static = NULL;
+				}
+			}
 			
 		}
 
@@ -1360,6 +1429,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 			if (token->type != TK_IDENTIFIER) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 			stmn->statement.class_defn.idf = token; // class name
+			if (_abstract != NULL) { stmn->statement.class_defn.idf->is_abstract = true; _abstract = NULL; }
 			token = self->tokens->list[++self->pos];
 			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 
@@ -1382,8 +1452,10 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 					stmn->statement.class_defn.supers = supers;
 					// not at ')'
 				}
+			token = self->tokens->list[++self->pos]; 
 			}
-			token = self->tokens->list[++self->pos]; // not at '{'
+
+			// not at '{'
 			if (token->type != TK_BRACKET_LCUR) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 
 			// add body
@@ -1428,10 +1500,14 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 		}
 
 		// static const unused
-		if (is_next_const)
+		if (_const != NULL)
 			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, _const->pos, self->src->buffer, self->file_name, false, _const->_name_ptr);
-		if (is_next_static)
+		if (_static != NULL)
 			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, _static->pos, self->src->buffer, self->file_name, false, _static->_name_ptr);
+		if (_abstract != NULL)
+			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, _abstract->pos, self->src->buffer, self->file_name, false, _abstract->_name_ptr);
+		if (_override != NULL)
+			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, _override->pos, self->src->buffer, self->file_name, false, _override->_name_ptr);
 
 		
 		// if token == static && ast state != reading class error!

@@ -114,11 +114,13 @@ new symbol:
 	func(TK_KWORD_OR)			\
 	func(TK_KWORD_NOT)			\
 	func(TK_KWORD_RETURN)		\
-	func(TK_KWORD_STATIC)		\
-	func(TK_KWORD_CONST)		\
 	func(TK_KWORD_FUNCTION)		\
 	func(TK_KWORD_CLASS)		\
 	func(TK_KWORD_IMPORT)		\
+	func(TK_KWORD_STATIC)		\
+	func(TK_KWORD_CONST)		\
+	func(TK_KWORD_ABSTRACT)		\
+	func(TK_KWORD_OVERRIDE)		\
 	func(TK_BUILTIN_PRINT)	\
 	func(TK_BUILTIN_INPUT)	\
 	func(TK_BUILTIN_MIN)	\
@@ -171,7 +173,7 @@ struct Token
 	// for number type
 	union NumberValue 	number_value;
 	// for function type
-	bool func_is_method; // insts.method() : comes after . operator and after a '('
+	bool func_is_method; // insts.method() : comes after . operator and after a '(', also used for idf of func_defn statement
 	int  func_args_count_min;
 	int  func_args_count_max;
 	int  func_args_given; // for check count == given
@@ -180,6 +182,8 @@ struct Token
 	
 	bool idf_is_const;
 	bool is_static; // for both func and idf
+	bool is_abstract; // for both class and it't abstract functions
+	bool is_override;
 	
 					// for minus operator
 	bool op_is_single;
@@ -327,12 +331,14 @@ struct TokenScanner* structTokenScanner_new(struct String* src, char* file_name)
 #define KWORD_OR 		"or"
 #define KWORD_NOT 		"not"
 #define KWORD_RETURN 	"return"
-#define KWORD_STATIC 	"static"
-#define KWORD_CONST		"const"
 #define KWORD_FUNCTION 	"func"
 #define KWORD_CLASS 	"class"
 #define KWORD_IMPORT 	"import"
 
+#define KWORD_STATIC    "static"
+#define KWORD_CONST		"const"
+#define KWORD_ABSTRACT  "abstract"
+#define KWORD_OVERRIDE  "override"
 
 // built in func
 #define BUILTIN_PRINT 	"print"

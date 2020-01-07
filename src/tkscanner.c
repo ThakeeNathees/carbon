@@ -48,12 +48,15 @@ void structToken_init(struct Token* self){
 	self->func_args_given   = 0;
 	self->func_is_method    = false;
 	self->idf_is_field      = false;
-	self->idf_is_const		= false;
-	self->is_static			= false;
 	self->op_is_single		= false;
 	self->op_is_pre			= false;
 	self->comma_is_valid	= false;
 	self->eq_is_valid		= false;
+
+	self->idf_is_const		= false;
+	self->is_static			= false;
+	self->is_abstract		= false;
+	self->is_override		= false;
 }
 void structToken_print(struct Token* self){
 	if (self->group == TKG_NUMBER) {
@@ -358,11 +361,14 @@ void structTokenScanner_checkIdentifier(struct TokenScanner* self){
 	else if (strcmp( self->current_token->name, KWORD_OR )==0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_OR;		return; }
 	else if (strcmp( self->current_token->name, KWORD_NOT )==0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_NOT;		return; }
 	else if (strcmp( self->current_token->name, KWORD_RETURN )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_RETURN;	return; }
-	else if (strcmp(self->current_token->name, KWORD_STATIC) == 0) { self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_STATIC;	return; }
-	else if (strcmp( self->current_token->name, KWORD_CONST )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_CONST;	return; }
 	else if (strcmp( self->current_token->name, KWORD_FUNCTION )==0){ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_FUNCTION;	return; }
 	else if (strcmp( self->current_token->name, KWORD_CLASS )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_CLASS;		return; }
 	else if (strcmp( self->current_token->name, KWORD_IMPORT )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_IMPORT;	return; }
+
+	else if (strcmp(self->current_token->name, KWORD_STATIC) == 0) { self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_STATIC;	return; }
+	else if (strcmp(self->current_token->name, KWORD_CONST) == 0) { self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_CONST;	return; }
+	else if (strcmp(self->current_token->name, KWORD_ABSTRACT) == 0) { self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_ABSTRACT;	return; }
+	else if (strcmp( self->current_token->name, KWORD_OVERRIDE )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_OVERRIDE;	return; }
 
 	else if (strcmp( self->current_token->name, DTYPE_VOID )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_VOID;	return; }
 	else if (strcmp( self->current_token->name, DTYPE_BOOL )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_BOOL;	return; }
@@ -640,8 +646,11 @@ struct CarbonError* structTokenScanner_scaneToken(struct TokenScanner* self, boo
 
 						structToken_addChar(self->current_token, '\\'); // \ is not escaping 
 					}
-
-				} else if (c=='"'){
+				} 
+				else if (c == '\n') {
+					return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, self->pos, self->src->buffer, self->file_name, false, 1);
+				}
+				else if (c=='"') {
 					(self->pos)++;
 					return structCarbonError_new();
 				}
