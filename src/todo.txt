@@ -1,4 +1,67 @@
 
+
+TODO STACK
+-----------
+nametable
+impl generic dtype at scanning list, map, ... ** only map can contain 2 types map<T1, T2> other MyClass<T>
+scane for nametable
+
+
+
+/*****************************************/
+
+MyType m;
+       ^  syntax error 2 idf comes next to each other
+create nametable for each statement like while for func class and a global nametable
+add class name to dtype 
+
+// global nametable = {}
+class MyType {} // global nametable = { MyType:dtype,  }
+MyType m; // not idf, idf -> dtype idf -> var init
+
+
+int x = inst.someList().getInt(); // validate
+inst .somelist .getint
+^^^^					- type = obj
+^^^^^^^^^^^^^^          - type = list
+^^^^^^^^^^^^^^^^^^^^^^  - type = int
+=> expr type is int
+
+// b not defined
+class A{ B b; }
+class B{ A a; }
+
+scane all classes, functions and add to global nametable - at the beggining
+when a class found scane all function, static vars to class nametable - at the beggining of class stmn scane
+
+/*****************************************/
+
+/***************impl generic class
+
+impl dtype: 
+	list			<int> mylist;
+	BookCollection	<Book> mycol;
+
+abstract class Iterable<E>()
+{
+	func getNext() : E;
+}
+
+class MyIterable( Iterable<int> )
+{
+	override func iterBegin(){
+		i = 0;
+	}
+	override func itterHasNext() : bool {
+		return i == 10;
+	}
+	override func getNext() : int {
+		return mList[i];
+	}
+}
+************************************/
+
+
 impl abstract, override ( simmiler as const, static )
 abstract func f(): int;
 override func f(): int {}
@@ -8,6 +71,9 @@ DEFINE '\\' slash symbol
 
 ----------------------LOW PRIORITY----------------------
 impl exit(); builtin to exit
+
+tokens to free
+bracket except in expr, semicollon, kwords, 
 
 ^C <-- handle
 
@@ -22,3 +88,8 @@ define try catch trhow
 
 -------- REMEMBER --------------------------------	
 TK_PASS in expression => ignore
+
+if (expr_a and expr_b){} // if expr_a is false never calculate expr_b or it'll cause BUG!
+if ( some_null != null and some_null.some_f() ){}
+
+

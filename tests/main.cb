@@ -1,2 +1,8 @@
 
-if (x >> 2);
+class MyClass <T>
+{
+	func f():T{}
+}
+
+class test<g>{
+}

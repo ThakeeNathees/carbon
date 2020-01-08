@@ -1,4 +1,4 @@
-#include "ast.h"
+#include "ast/ast.h"
 
 
 
@@ -101,6 +101,11 @@ int main(int argc, char** argv){
 	struct Ast ast; structAst_init(&ast, source_code, argv[1]);
 	err = structAst_scaneTokens(&ast); if (err->type != ERROR_SUCCESS){ printf("%s\n", err->message.buffer ); exit(-1); }
 	structCarbonError_free(err);
+
+	err = structAst_scaneClasses(&ast); if (err->type != ERROR_SUCCESS) { printf("%s\n", err->message.buffer); exit(-1); }
+	structCarbonError_free(err);
+
+	structNameTable_print(ast.stmn_list->name_table);
 
 	// debug print tokens
 	//structTokenList_print(ast.tokens);

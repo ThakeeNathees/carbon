@@ -42,9 +42,10 @@ new symbol:
 	func(TK_EOF)		\
 	func(TK_PASS)		\
 	func(TK_STRING)		\
-	func(TK_IDENTIFIER)	\
-	func(TK_VARIABLE) \
-	func(TK_FUNCTION) \
+	func(TK_IDENTIFIER)			\
+	func(TK_VARIABLE)			\
+	func(TK_FUNCTION)			\
+	func(TK_CLASS)				\
 	func(TK_SYM_DOT)		\
 	func(TK_SYM_COMMA)		\
 	func(TK_SYM_COLLON)		\
@@ -184,8 +185,11 @@ struct Token
 	bool is_static; // for both func and idf
 	bool is_abstract; // for both class and it't abstract functions
 	bool is_override;
+
+	bool is_class_generic;
+	struct Token* generic_type;
 	
-					// for minus operator
+	// for minus operator
 	bool op_is_single;
 	// for incr and decr operator
 	bool op_is_pre;

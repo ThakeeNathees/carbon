@@ -57,6 +57,9 @@ void structToken_init(struct Token* self){
 	self->is_static			= false;
 	self->is_abstract		= false;
 	self->is_override		= false;
+
+	self->is_class_generic	= false;
+	self->generic_type		= NULL;
 }
 void structToken_print(struct Token* self){
 	if (self->group == TKG_NUMBER) {
