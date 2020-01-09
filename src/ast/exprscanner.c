@@ -52,9 +52,11 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 			if (!(before->type == TK_VARIABLE || structToken_isCloseBracket(before) || before->type == TK_KWORD_SELF)) // TODO: this logic may fails
 				return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 
+
 			token = self->tokens->list[++self->pos];
 			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-			if (token->group != TKG_IDENTIFIER) return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+			if (token->group != TKG_IDENTIFIER && token->group != TKG_BUILTIN) // if print is a method of the class
+				return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 			if ((self->tokens->list[self->pos + 1])->type == TK_BRACKET_LPARAN) {
 				token->type = TK_FUNCTION; token->func_is_method = true;
 				struct CarbonError* err = structAst_countArgs(self, &(token->func_args_given), NULL); if (err->type != ERROR_SUCCESS) { return err; }
@@ -63,9 +65,9 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		}
 
 		// token = idf check if expr is function
-		if (token->group == TKG_IDENTIFIER) { // line by line interp, already change to tkg_function
+		if (token->group == TKG_IDENTIFIER) {
 			if ((self->tokens->list[self->pos + 1])->type == TK_BRACKET_LPARAN) {
-				if (!structToken_isBuiltin(token)) token->type = TK_FUNCTION; // not method
+				token->type = TK_FUNCTION; // assumption, not method
 				struct CarbonError* err = structAst_countArgs(self, &(token->func_args_given), NULL); if (err->type != ERROR_SUCCESS) return err;
 			}
 			else  token->type = TK_VARIABLE;
@@ -73,7 +75,7 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		}
 
 		// if builtin count arg count and assert
-		if (structToken_isBuiltin(token)) {
+		if (token->group == TKG_BUILTIN) {
 			size_t call_end_pos = token->pos;
 			struct CarbonError* err = structAst_countArgs(self, &(token->func_args_given), &call_end_pos); if (err->type != ERROR_SUCCESS) { return err; }
 			if (token->func_args_given < token->func_args_count_min || ((token->func_args_count_max != -1) ? token->func_args_given > token->func_args_count_max : false)) {
@@ -146,17 +148,17 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		// illegal keywords in an expr
 		if (token->group == TKG_KEYWORD) {
 			if (
-				token->type == TK_KWORD_IF ||
-				token->type == TK_KWORD_ELSE ||
-				token->type == TK_KWORD_WHILE ||
-				token->type == TK_KWORD_FOR ||
-				token->type == TK_KWORD_FOREACH ||
-				token->type == TK_KWORD_BREAK ||
-				token->type == TK_KWORD_CONTINUE ||
-				token->type == TK_KWORD_RETURN ||
-				token->type == TK_KWORD_STATIC ||
-				token->type == TK_KWORD_FUNCTION ||
-				token->type == TK_KWORD_CLASS ||
+				token->type == TK_KWORD_IF			||
+				token->type == TK_KWORD_ELSE		||
+				token->type == TK_KWORD_WHILE		||
+				token->type == TK_KWORD_FOR			||
+				token->type == TK_KWORD_FOREACH		||
+				token->type == TK_KWORD_BREAK		||
+				token->type == TK_KWORD_CONTINUE	||
+				token->type == TK_KWORD_RETURN		||
+				token->type == TK_KWORD_STATIC		||
+				token->type == TK_KWORD_FUNCTION	||
+				token->type == TK_KWORD_CLASS		||
 				token->type == TK_KWORD_IMPORT
 				)
 				return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);

@@ -45,6 +45,7 @@ struct ExprDtype // to store dtype int, string, map<int, map<string, list<string
 
 	bool is_list;
 	bool is_map;
+	bool is_generic;
 
 	struct Token*     key; // key cant be list or map
 	struct ExprDtype* value; // value is for both list and map
@@ -186,7 +187,7 @@ struct Ast
 
 enum IdfType
 {
-	IDF_VARIABLE, IDF_CLASS_NAME, IDF_FUNCTION
+	IDF_VARIABLE, IDF_CLASS_NAME, IDF_FUNCTION, IDF_GENERIC_NAME
 };
 
 struct NameTableEntry
@@ -195,6 +196,7 @@ struct NameTableEntry
 	enum IdfType type;
 	struct Statement* stmn;
 	bool is_class_generic;
+	struct Token* generic_token;
 	// CarbonObj* value; // TODO: 
 };
 
@@ -252,6 +254,7 @@ struct ExpressionList* structExpressionList_new(struct TokenList* token_list); /
 void structStatement_free(struct Statement* self);
 void structStatement_init(struct Statement* self, struct Statement* parent, enum StatementType type);
 void structStatement_print(struct Statement* self, int indent);
+struct StatementList* structStatement_getStatementList(struct Statement* self);
 struct Statement* structStatement_new(enum StatementType type, struct Statement* parent); // static method
 
 // statement list
@@ -284,6 +287,7 @@ void structNameTable_print(struct NameTable* self);
 void structNameTable_addEntry(struct NameTable* self, struct NameTableEntry* statement);
 struct NameTableEntry* structNameTable_createEntry(struct NameTable* self, struct Token* idf, enum IdfType type, struct Statement* stmn);
 struct NameTable* structNameTable_new(); // static method
+struct NameTableEntry* structNameTable_checkEntry(struct StatementList* statement_list, struct Token* idf); // static method
 
 /****************************************************************/
 
@@ -293,7 +297,7 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 struct CarbonError* structAst_isNextStmnAssign(struct Ast* self, bool* ret, size_t* assign_op_pos);
 bool structAst_isNextElseIf(struct Ast* self);
 bool structAst_isStmnLoop(struct Statement* stmn);
-struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** ret);
+struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** ret, struct StatementList* statement_list);
 struct CarbonError* structAst_getAssignStatement(struct Ast* self, struct Statement* stmn);
-struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct Statement* stmn, enum VarIniEndType end_type); // foreach( var_ini_only; expr_itter ){}
+struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct Statement* stmn, enum VarIniEndType end_type, struct StatementList* statement_list); // foreach( var_ini_only; expr_itter ){}
 struct CarbonError* structAst_getStmnListBody(struct Ast* self, int indent, struct StatementList** body_ptr, bool cur_bracket_must, struct Statement* parent_of_stmn_list); // for func defn and try ... cur bracket is must

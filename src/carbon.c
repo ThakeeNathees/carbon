@@ -104,7 +104,6 @@ int main(int argc, char** argv){
 
 	err = structAst_scaneClasses(&ast); if (err->type != ERROR_SUCCESS) { printf("%s\n", err->message.buffer); exit(-1); }
 	structCarbonError_free(err);
-
 	structNameTable_print(ast.stmn_list->name_table);
 
 	// debug print tokens

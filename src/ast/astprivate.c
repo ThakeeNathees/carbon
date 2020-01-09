@@ -53,7 +53,6 @@ struct CarbonError* structAst_countArgs(struct Ast* self, int* count, size_t* en
 
 
 
-
 // assign_op_pos : to get the position of the operator's position
 struct CarbonError* structAst_isNextStmnAssign(struct Ast* self, bool* ret, size_t* assign_op_pos) {
 	struct CarbonError* err = structCarbonError_new();
@@ -69,15 +68,15 @@ struct CarbonError* structAst_isNextStmnAssign(struct Ast* self, bool* ret, size
 
 		else if (token->type == TK_BRACKET_RPARAN) {
 			pbrcket--;
-			if (pbrcket < 0) return utils_make_error("SyntaxError: brackets mismatch (did you forget semicollon?)", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+			if (pbrcket < 0) return utils_make_error("SyntaxError: brackets mismatch", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 		}
 		else if (token->type == TK_BRACKET_RCUR) {
 			curbracket--;
-			if (curbracket < 0) return utils_make_error("SyntaxError: brackets mismatch (did you forget semicollon?)", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+			if (curbracket < 0) return utils_make_error("SyntaxError: brackets mismatch", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 		}
 		else if (token->type == TK_BRACKET_RSQ) {
 			sqbracket--;
-			if (sqbracket < 0) return utils_make_error("SyntaxError: brackets mismatch (did you forget semicollon?)", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
+			if (sqbracket < 0) return utils_make_error("SyntaxError: brackets mismatch", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 		}
 
 		if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, 1);
@@ -116,26 +115,27 @@ bool structAst_isStmnLoop(struct Statement* stmn) { // static method
 }
 
 
-struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** ret) {
-
+struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** ret, struct StatementList* statement_list) {
 	struct Token* token = self->tokens->list[self->pos];
+	structNameTable_checkEntry(statement_list, token);
 
 	if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-	if ((token->group != TKG_DTYPE) && (token->type != TK_IDENTIFIER)) {
-		/*token may be a class name or generic type*/ // TODO: check if dtype is registered in name table
+	if ((token->group != TKG_DTYPE) && token->type != TK_CLASS && token->type != TK_GENERIC_TYPE ) { // func f() : T {} // here T is identifier TODO: set token type to generic
+		if (token->type == TK_IDENTIFIER) return utils_make_error("NameError: undefined identifier", ERROR_NAME, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 		return utils_make_error("SyntexError: expected a data type", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 	}
 	*ret = structExprDtype_new(token);
 
 	// for map<dtype, dtype> list<dtype> 
-	if (token->type == TK_DT_LIST) {
-		(*ret)->is_list = true;
+	if (token->type == TK_DT_LIST || ( token->type == TK_CLASS && token->is_class_generic )) {
+		if (token->type == TK_DT_LIST) (*ret)->is_list = true;
+		else if (token->type == TK_CLASS) (*ret)->is_generic = true;
 		token = self->tokens->list[++self->pos]; if (token->type == TK_OP_LT) { token->type = TK_BRACKET_LTRI; token->group = TKG_BRACKET; }
 		if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 		if (token->type != TK_BRACKET_LTRI) return utils_make_error("SyntaxError: expected bracket '<'", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 		token->group = TKG_BRACKET; token->type = TK_BRACKET_LTRI;
 		++self->pos;
-		struct CarbonError* err = structAst_scaneDtype(self, &((*ret)->value)); if (err->type != ERROR_SUCCESS) return err;
+		struct CarbonError* err = structAst_scaneDtype(self, &((*ret)->value), statement_list); if (err->type != ERROR_SUCCESS) return err;
 		token = self->tokens->list[self->pos]; if (token->type == TK_OP_GT) token->type = TK_BRACKET_RTRI;
 
 		if (token->type == TK_OP_RSHIFT && (self->tokens->list[self->pos + 1])->group == TKG_PASS) {
@@ -167,7 +167,7 @@ struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** re
 		if (token->type != TK_SYM_COMMA) return utils_make_error("SyntaxError: exprcted symbol ','", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 		token = self->tokens->list[++self->pos];
 
-		struct CarbonError* err = structAst_scaneDtype(self, &((*ret)->value)); if (err->type != ERROR_SUCCESS) return err;
+		struct CarbonError* err = structAst_scaneDtype(self, &((*ret)->value), statement_list); if (err->type != ERROR_SUCCESS) return err;
 		token = self->tokens->list[self->pos]; if (token->type == TK_OP_GT) token->type = TK_BRACKET_RTRI;
 		if (token->type == TK_OP_RSHIFT && (self->tokens->list[self->pos + 1])->group == TKG_PASS) {
 			token->name[1] = '\0'; // now token is '>'
@@ -200,8 +200,8 @@ struct CarbonError* structAst_getAssignStatement(struct Ast* self, struct Statem
 
 
 // after end pos = semicollon or other end type
-struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct Statement* stmn, enum VarIniEndType end_type) { // foreach( var_ini_only; expr_itter ){}
-	struct CarbonError* err = structAst_scaneDtype(self, &(stmn->statement.init.dtype)); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct Statement* stmn, enum VarIniEndType end_type, struct StatementList* statement_list) { // foreach( var_ini_only; expr_itter ){}
+	struct CarbonError* err = structAst_scaneDtype(self, &(stmn->statement.init.dtype), statement_list); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 	struct Token* token = self->tokens->list[self->pos];
 	if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 	if (token->group != TKG_IDENTIFIER) { return utils_make_error("SyntaxError: expected an identifier", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr); }

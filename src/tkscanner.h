@@ -31,11 +31,12 @@ new symbol:
 	func(TKG_DTYPE)			\
 	func(TKG_NUMBER)		\
 	func(TKG_STRING) 		\
-	func(TKG_IDENTIFIER) // variable, function when tkscan, ...
+	func(TKG_BUILTIN) 		\
+	func(TKG_IDENTIFIER) // variable_name, class_name(tk_class) function_name when tkscan, ...
 
-	//func(TKG_VARIABLE)		\
-	//func(TKG_BUILTIN)		\
-	//func(TKG_FUNCTION) 		\
+	// func(TKG_VARIABLE)	\
+	// func(TKG_BUILTIN)	\
+	// func(TKG_FUNCTION) 	\
 
 #define FOREACH_TOKEN_TYPE(func)\
 	func(TK_UNKNOWN)	\
@@ -117,6 +118,7 @@ new symbol:
 	func(TK_KWORD_RETURN)		\
 	func(TK_KWORD_FUNCTION)		\
 	func(TK_KWORD_CLASS)		\
+	func(TK_GENERIC_TYPE)		\
 	func(TK_KWORD_IMPORT)		\
 	func(TK_KWORD_STATIC)		\
 	func(TK_KWORD_CONST)		\
@@ -228,7 +230,7 @@ bool structToken_isAssignmentOperator(struct Token* self);
 bool structToken_isOpenBracket(struct Token* self);
 bool structToken_isCloseBracket(struct Token* self);
 bool structToken_isBinaryOperator(struct Token* self);
-bool structToken_isBuiltin(struct Token* self);
+//bool structToken_isBuiltin(struct Token* self);
 void structToken_addChar(struct Token* self, char c);
 
 // token list

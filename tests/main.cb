@@ -1,8 +1,8 @@
 
 class MyClass <T>
 {
-	func f():T{}
+	func f(): T {}
+	T t = 2;
 }
 
-class test<g>{
-}
+MyClass <MyClass<int>> c;

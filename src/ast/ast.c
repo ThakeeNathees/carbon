@@ -46,7 +46,12 @@ struct CarbonError* structAst_scaneClasses(struct Ast* self) {
 			if (idf->type != TK_IDENTIFIER) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, idf->pos, self->src->buffer, self->file_name, false, idf->_name_ptr);
 			struct NameTableEntry* entry = structNameTable_createEntry(self->stmn_list->name_table, idf, IDF_CLASS_NAME, NULL);
 			struct Token* next = self->tokens->list[i + 2];
-			if (next->type == TK_OP_LT || next->type == TK_BRACKET_LTRI) { entry->is_class_generic = true; }
+			if (next->type == TK_OP_LT || next->type == TK_BRACKET_LTRI) { 
+				entry->is_class_generic = true; 
+				struct Token* idf = self->tokens->list[i + 3];
+				if (idf->type != TK_IDENTIFIER) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, idf->pos, self->src->buffer, self->file_name, false, idf->_name_ptr);
+				entry->generic_token = self->tokens->list[i + 3];
+			}
 		}
 	}
 	return structCarbonError_new();
@@ -73,6 +78,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			return structCarbonError_new();
 		}
 
+		structNameTable_checkEntry(statement_list, token);
 		/******************************************************************/
 
 		// ------------- const and static
@@ -98,7 +104,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 				if (next->type == TK_EOF) return utils_make_error("EofError: unexpected EOF", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, 1);
 				if (next->type == TK_KWORD_FUNCTION); // ok
 				else if (next->group == TKG_DTYPE);  // ok
-				else if (next->group == TKG_IDENTIFIER && !structToken_isBuiltin(next)) {
+				else if (next->group == TKG_IDENTIFIER) {
 					// can't decide but handled below, at the end of loop
 				}
 				else
@@ -167,9 +173,9 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 
 
 		// datatype init
-		else if (token->group == TKG_DTYPE){
+		else if (token->group == TKG_DTYPE || token->type == TK_GENERIC_TYPE || ( token->type == TK_CLASS && self->tokens->list[self->pos+1]->type != TK_SYM_DOT ) ){ // MyClass.staticMehtod(), MyClass instance;
 			struct Statement* stmn = structStatementList_createStatement(statement_list, STMNT_VAR_INI, parent);
-			err = structAst_getVarInitStatement(self, stmn, VARINIEND_NORMAL); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+			err = structAst_getVarInitStatement(self, stmn, VARINIEND_NORMAL, statement_list); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 			if (_const != NULL) {
 				stmn->statement.init.idf->idf_is_const = true; // statement is assignment 
 				_const = NULL; 
@@ -180,10 +186,8 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			}
 		}
 
-		// TODO: identifier may be a dtype, impl static, const
-
 		// identifier
-		else if (token->group == TKG_IDENTIFIER || token->type == TK_KWORD_SELF){ // could be variable, function, 
+		else if (token->group == TKG_IDENTIFIER || token->type == TK_KWORD_SELF || token->group == TKG_BUILTIN){ // could be variable, function, 
 			// assignment statement
 			bool is_next_assign; err = structAst_isNextStmnAssign(self, &is_next_assign, NULL); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 			if (is_next_assign){
@@ -271,7 +275,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 				// no stmn_ini
 			} else {
 				struct Statement* stmn_ini = structStatement_new(STMNT_VAR_INI, NULL);
-				err = structAst_getVarInitStatement(self, stmn_ini, VARINIEND_NORMAL); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+				err = structAst_getVarInitStatement(self, stmn_ini, VARINIEND_NORMAL, statement_list); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 				stmn->statement.stm_for.stmn_ini = stmn_ini;
 			}
 
@@ -313,7 +317,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			}
 			else {
 				struct Statement* stmn_ini = structStatement_new(STMNT_VAR_INI, NULL);
-				err = structAst_getVarInitStatement(self, stmn_ini, VARINIEND_FOREACH); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+				err = structAst_getVarInitStatement(self, stmn_ini, VARINIEND_FOREACH, statement_list); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 				stmn->statement.stm_foreach.stmn_ini = stmn_ini;
 			}
 
@@ -411,7 +415,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 				bool default_arg_begined = false; // f(int x = 0, int y){} // illegal 
 				while (true) {
 					struct Statement* stmn_ini = structStatementList_createStatement(stmn->statement.func_defn.args, STMNT_VAR_INI, NULL);
-					err = structAst_getVarInitStatement(self, stmn_ini, VARINIEND_FUNC);  if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+					err = structAst_getVarInitStatement(self, stmn_ini, VARINIEND_FUNC, statement_list);  if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 					if (stmn_ini->statement.init.expr != NULL) default_arg_begined = true;
 					else if (default_arg_begined) return utils_make_error("SyntaxError: non default argument comes before default arguments", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr );
 					token = self->tokens->list[self->pos]; 
@@ -437,7 +441,7 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			if (!(token->type == TK_SYM_COLLON || token->type == TK_BRACKET_LCUR || token->type == TK_SYM_SEMI_COLLON)) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 			if (token->type == TK_SYM_COLLON) {
 				self->pos++;
-				err = structAst_scaneDtype(self, &(stmn->statement.func_defn.ret_type)); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+				err = structAst_scaneDtype(self, &(stmn->statement.func_defn.ret_type), statement_list); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
 				token = self->tokens->list[self->pos];
 			}
 			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
@@ -531,17 +535,18 @@ struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* s
 			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 
 			// if open tribracket has generic type
-			if (token->type == TK_OP_LT) {
+			if (token->type == TK_OP_LT || token->type == TK_BRACKET_LTRI) {
 				token->type = TK_BRACKET_LTRI;
 				token = self->tokens->list[++self->pos];
 				if (token->type != TK_IDENTIFIER)
 					return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 				
+				// structNameTable_createEntry(stmn->statement.class_defn.stmn_list->name_table, token, IDF_GENERIC_NAME, stmn);
 				stmn->statement.class_defn.idf->is_class_generic = true;
 				stmn->statement.class_defn.idf->generic_type = token;
 
 				token = self->tokens->list[++self->pos];
-				if (token->type != TK_OP_GT)
+				if (token->type != TK_OP_GT && token->type != TK_BRACKET_RTRI)
 					return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 				token->type = TK_BRACKET_RTRI;
 				token = self->tokens->list[++self->pos];

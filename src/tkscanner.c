@@ -73,7 +73,7 @@ void structToken_print(struct Token* self){
 		else if (self->type == TK_VALUE_DOUBLE)printf("Token %-20s : %-10s | value = %f\n", enumTokenType_toString(self->type), self->name, self->number_value.d);
 		else if (self->type == TK_VALUE_LONG)  printf("Token %-20s : %-10s | value = %ld\n", enumTokenType_toString(self->type), self->name, self->number_value.l);
 	}
-	else if (self->type == TK_FUNCTION || structToken_isBuiltin(self))	printf("Token %-20s : %-10s | method=%i, args_given=%i\n", enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
+	else if (self->type == TK_FUNCTION || self->group == TKG_BUILTIN)	printf("Token %-20s : %-10s | method=%i, args_given=%i\n", enumTokenType_toString(self->type), self->name, self->func_is_method, self->func_args_given);
 	else if (self->type == TK_OP_MINUS || self->type == TK_OP_PLUS)		printf("Token %-20s : %-10s | single_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_single);
 	else if (self->type == TK_OP_INCR  || self->type == TK_OP_DECR)		printf("Token %-20s : %-10s | pre_op=%i\n", enumTokenType_toString(self->type), self->name, self->op_is_pre);
 
@@ -116,17 +116,17 @@ bool structToken_isCloseBracket(struct Token* self) {
 	return false;
 }
 
-bool structToken_isBuiltin(struct Token* self) {
-	if (self->group != TKG_IDENTIFIER) return false;
-	if (
-		self->type == TK_BUILTIN_PRINT ||
-		self->type == TK_BUILTIN_INPUT ||
-		self->type == TK_BUILTIN_MIN ||
-		self->type == TK_BUILTIN_MAX  ||
-		self->type == TK_BUILTIN_RAND
-		) return true;
-	return false;
-}
+//bool structToken_isBuiltin(struct Token* self) {
+//	if (self->group != TKG_IDENTIFIER) return false;
+//	if (
+//		self->type == TK_BUILTIN_PRINT ||
+//		self->type == TK_BUILTIN_INPUT ||
+//		self->type == TK_BUILTIN_MIN ||
+//		self->type == TK_BUILTIN_MAX  ||
+//		self->type == TK_BUILTIN_RAND
+//		) return true;
+//	return false;
+//}
 
 // value <op> value -> binary operator, plus and minus are not binary operator
 bool structToken_isBinaryOperator(struct Token* self) {
@@ -387,11 +387,11 @@ void structTokenScanner_checkIdentifier(struct TokenScanner* self){
 	else if (strcmp( self->current_token->name, DTYPE_STRING )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_STRING; return;}
 	//if (strcmp( self->current_token->name, DTYPE_FUNC )==0)	{ self->current_token->type = DTYPE; return;}
 
-	else if (strcmp(self->current_token->name, BUILTIN_PRINT) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_PRINT;	self->current_token->func_args_count_min = 0; self->current_token->func_args_count_max = -1; return; }
-	else if (strcmp(self->current_token->name, BUILTIN_INPUT) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_INPUT;	self->current_token->func_args_count_min = 0; self->current_token->func_args_count_max = 1; return; }
-	else if (strcmp(self->current_token->name, BUILTIN_MIN) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_MIN;		self->current_token->func_args_count_min = 2; self->current_token->func_args_count_max = -1; return; }
-	else if (strcmp(self->current_token->name, BUILTIN_MAX) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_MAX;		self->current_token->func_args_count_min = 2; self->current_token->func_args_count_max = -1; return; }
-	else if (strcmp(self->current_token->name, BUILTIN_RAND) == 0)	{ self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_BUILTIN_RAND;		self->current_token->func_args_count_min = 1; self->current_token->func_args_count_max = 1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_PRINT) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_PRINT;	self->current_token->func_args_count_min = 0; self->current_token->func_args_count_max = -1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_INPUT) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_INPUT;	self->current_token->func_args_count_min = 0; self->current_token->func_args_count_max = 1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_MIN) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_MIN;		self->current_token->func_args_count_min = 2; self->current_token->func_args_count_max = -1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_MAX) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_MAX;		self->current_token->func_args_count_min = 2; self->current_token->func_args_count_max = -1; return; }
+	else if (strcmp(self->current_token->name, BUILTIN_RAND) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_RAND;		self->current_token->func_args_count_min = 1; self->current_token->func_args_count_max = 1; return; }
 
 	else { self->current_token->group = TKG_IDENTIFIER; self->current_token->type = TK_IDENTIFIER; return; } // method, field, var, function
 }

@@ -46,11 +46,12 @@ void structExprDtype_init(struct ExprDtype* self, struct Token* dtype) {
 	self->dtype = dtype;
 	self->is_map = false;
 	self->is_list = false;
+	self->is_generic = false;
 }
 void structExprDtype_print(struct ExprDtype* self, int indent) { // no new line after the print
 	//if (print_type) { PRINT_INDENT(indent); printf("<type> %s", self->dtype->name); } else
 	PRINT_INDENT(indent); printf("%s", self->dtype->name);
-	if (self->is_list) {
+	if (self->is_list || self->is_generic) {
 		printf("<"); structExprDtype_print(self->value, 0); printf(">");
 
 	}
@@ -303,6 +304,29 @@ void structStatement_print(struct Statement* self, int indent) {
 		else { PRINT_INDENT(indent + 1); printf("(No Class Body)\n"); }
 	}
 }
+struct StatementList* structStatement_getStatementList(struct Statement* self) {
+	if (self == NULL) return NULL;
+	if (
+		self->type == STMNT_UNKNOWN ||
+		self->type == STMNT_IMPORT ||
+		self->type == STMNT_VAR_INI ||
+		self->type == STMNT_ASSIGN ||
+		self->type == STMNT_RETURN ||
+		self->type == STMNT_BREAK ||
+		self->type == STMNT_CONTINUE
+		)
+		return NULL;
+
+	else if (self->type == STMNT_IF)		 return self->statement.stm_if.stmn_list;
+	else if (self->type == STMNT_ELSE_IF)	 return self->statement.stmn_else_if.stmn_list;
+	else if (self->type == STMNT_WHILE)		 return self->statement.stm_while.stmn_list;
+	else if (self->type == STMNT_FOR)		 return self->statement.stm_for.stmn_list;
+	else if (self->type == STMNT_FOREACH)	 return self->statement.stm_foreach.stmn_list;
+	else if (self->type == STMNT_FUNC_DEFN)	 return self->statement.func_defn.stmn_list;
+	else if (self->type == STMNT_CLASS_DEFN) return self->statement.class_defn.stmn_list;
+
+	return NULL;
+}
 struct Statement* structStatement_new(enum StatementType type, struct Statement* parent) {
 	struct Statement* new_stmn = (struct Statement*)malloc(sizeof(struct Statement));
 	structStatement_init(new_stmn, parent, type);
@@ -382,6 +406,7 @@ void structNameTableEntry_init(struct NameTableEntry* self, struct Token* idf, e
 	self->type = type;
 	self->stmn = stmn; // can be NULL 
 	self->is_class_generic = false;
+	self->generic_token = NULL;
 }
 void structNameTableEntry_print(struct NameTableEntry* self) {
 	// do nothing
@@ -433,6 +458,43 @@ struct NameTable* structNameTable_new() {
 	struct NameTable* new_table = (struct NameTable*)malloc(sizeof(struct NameTable));
 	structNameTable_init(new_table, NAMETABLE_LIST_SIZE);
 	return new_table;
+}
+
+struct NameTableEntry* structNameTable_checkEntry(struct StatementList* statement_list, struct Token* idf) {
+	if (idf->type == TK_IDENTIFIER) {
+		while (statement_list != NULL) {
+			struct NameTable* table = statement_list->name_table;
+			
+			// generic type
+			if (statement_list->parent != NULL && statement_list->parent->type == STMNT_CLASS_DEFN && statement_list->parent->statement.class_defn.idf->is_class_generic) {
+				if (strcmp(idf->name, statement_list->parent->statement.class_defn.idf->generic_type->name) == 0) {
+					int debug = 2;
+					idf->type = TK_GENERIC_TYPE;
+					return NULL;
+				}
+			}
+
+			// check entry
+			for (size_t i = 0; i < table->count; i++) {
+				struct NameTableEntry* entry = table->entries[i];
+
+				if (strcmp(entry->idf->name, idf->name) == 0) {
+					// TODO: for functions, and variables
+					// TODO: check parent statement's name table recursively
+					if (entry->type == IDF_CLASS_NAME) {
+						idf->type = TK_CLASS;
+						idf->is_class_generic = entry->is_class_generic;
+					}
+					// if (entry->type == IDF_FUNCTION)  idf->type = TK_FUNCTION;
+					// if (entry->type == IDF_VARIABLE) check const
+					return table->entries[i];
+				}
+			}
+			if (statement_list->parent == NULL) statement_list = NULL;
+			else statement_list = structStatement_getStatementList(statement_list->parent->parent);
+		}
+	}
+	return NULL;
 }
 
 /***************** </NameTable> *************/
