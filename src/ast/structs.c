@@ -336,9 +336,6 @@ struct Statement* structStatement_new(enum StatementType type, struct Statement*
 
 
 
-
-
-
 /***************** <StatementList> *************/
 void structStatementList_init(struct StatementList* self, struct Statement* parent, int growth_size) {
 	self->parent = parent;
@@ -395,7 +392,6 @@ void structStatementList_free(struct StatementList* self) {
 
 
 
-
 /***************** <NameTableEntry> *************/
 
 void structNameTableEntry_free(struct NameTableEntry* self) {
@@ -417,8 +413,6 @@ struct NameTableEntry* structNameTableEntry_new(struct Token* idf, enum IdfType 
 }
 
 /***************** </NameTableEntry> *************/
-
-
 
 
 /***************** <NameTable> *************/

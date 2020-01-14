@@ -2,7 +2,7 @@
 
 TODO STACK
 -----------
-nametable
+add function name to name table
 impl generic dtype at scanning list, map, ... ** only map can contain 2 types map<T1, T2> other MyClass<T>
 scane for nametable
 
