@@ -58,8 +58,6 @@ void structToken_init(struct Token* self){
 	self->is_abstract		= false;
 	self->is_override		= false;
 
-	self->is_class_generic	= false;
-	self->generic_type		= NULL;
 }
 void structToken_print(struct Token* self){
 	if (self->group == TKG_NUMBER) {
@@ -350,6 +348,7 @@ void structTokenScanner_checkIdentifier(struct TokenScanner* self){
 	if (self->current_token->group != TKG_IDENTIFIER) utils_error_exit("InternalError: expected token group identifier", self->pos, self->src->buffer, self->file_name);
 
 	if (strcmp( self->current_token->name, KWORD_NULL) == 0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_NULL;		return; }
+	else if (strcmp(self->current_token->name, KWORD_VAR) == 0)		{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_VAR;		return; }
 	else if (strcmp( self->current_token->name, KWORD_SELF )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_SELF;		return; }
 	else if (strcmp( self->current_token->name, KWORD_TRUE )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_TRUE;		return; }
 	else if (strcmp( self->current_token->name, KWORD_FALSE )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_FALSE;		return; }
@@ -373,19 +372,19 @@ void structTokenScanner_checkIdentifier(struct TokenScanner* self){
 	else if (strcmp(self->current_token->name, KWORD_ABSTRACT) == 0) { self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_ABSTRACT;	return; }
 	else if (strcmp( self->current_token->name, KWORD_OVERRIDE )==0)	{ self->current_token->group = TKG_KEYWORD; self->current_token->type = TK_KWORD_OVERRIDE;	return; }
 
-	else if (strcmp( self->current_token->name, DTYPE_VOID )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_VOID;	return; }
-	else if (strcmp( self->current_token->name, DTYPE_BOOL )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_BOOL;	return; }
-	else if (strcmp( self->current_token->name, DTYPE_CAHR )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_CHAR;	return; }
-	else if (strcmp( self->current_token->name, DTYPE_SHORT )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_SHORT;	return; }
-	else if (strcmp( self->current_token->name, DTYPE_INT )==0)		{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_INT;	return; }
-	else if (strcmp( self->current_token->name, DTYPE_LONG )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_LONG;	return; }
-	else if (strcmp( self->current_token->name, DTYPE_FLOAT )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_FLOAT;	return; }
-	else if (strcmp( self->current_token->name, DTYPE_DOUBLE )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_DOUBLE; return; }
-	else if (strcmp( self->current_token->name, DTYPE_LIST )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_LIST;	return; }
-	else if (strcmp( self->current_token->name, DTYPE_MAP )==0)		{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_MAP;	return; }
-	//if (strcmp( self->current_token->name, DTYPE_ARRAY )==0)	{ self->current_token->type = DTYPE; return;}
-	else if (strcmp( self->current_token->name, DTYPE_STRING )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_STRING; return;}
-	//if (strcmp( self->current_token->name, DTYPE_FUNC )==0)	{ self->current_token->type = DTYPE; return;}
+	//  else if (strcmp( self->current_token->name, DTYPE_VOID )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_VOID;	return; }
+	//  else if (strcmp( self->current_token->name, DTYPE_BOOL )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_BOOL;	return; }
+	//  else if (strcmp( self->current_token->name, DTYPE_CAHR )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_CHAR;	return; }
+	//  else if (strcmp( self->current_token->name, DTYPE_SHORT )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_SHORT;	return; }
+	//  else if (strcmp( self->current_token->name, DTYPE_INT )==0)		{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_INT;	return; }
+	//  else if (strcmp( self->current_token->name, DTYPE_LONG )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_LONG;	return; }
+	//  else if (strcmp( self->current_token->name, DTYPE_FLOAT )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_FLOAT;	return; }
+	//  else if (strcmp( self->current_token->name, DTYPE_DOUBLE )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_DOUBLE; return; }
+	//  else if (strcmp( self->current_token->name, DTYPE_LIST )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_LIST;	return; }
+	//  else if (strcmp( self->current_token->name, DTYPE_MAP )==0)		{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_MAP;	return; }
+	//  //if (strcmp( self->current_token->name, DTYPE_ARRAY )==0)	{ self->current_token->type = DTYPE; return;}
+	//  else if (strcmp( self->current_token->name, DTYPE_STRING )==0)	{ self->current_token->group = TKG_DTYPE; self->current_token->type = TK_DT_STRING; return;}
+	//  //if (strcmp( self->current_token->name, DTYPE_FUNC )==0)	{ self->current_token->type = DTYPE; return;}
 
 	else if (strcmp(self->current_token->name, BUILTIN_PRINT) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_PRINT;	self->current_token->func_args_count_min = 0; self->current_token->func_args_count_max = -1; return; }
 	else if (strcmp(self->current_token->name, BUILTIN_INPUT) == 0)	{ self->current_token->group = TKG_BUILTIN; self->current_token->type = TK_BUILTIN_INPUT;	self->current_token->func_args_count_min = 0; self->current_token->func_args_count_max = 1; return; }

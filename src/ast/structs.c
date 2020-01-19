@@ -39,31 +39,31 @@ struct Expression* structExpression_new(struct TokenList* token_list) {
 
 
 /***************** <ExprDtype> *************/
-void structExprDtype_free(struct ExprDtype* self) {
-	if (self != NULL) free(self);
-}
-void structExprDtype_init(struct ExprDtype* self, struct Token* dtype) {
-	self->dtype = dtype;
-	self->is_map = false;
-	self->is_list = false;
-	self->is_generic = false;
-}
-void structExprDtype_print(struct ExprDtype* self, int indent) { // no new line after the print
-	//if (print_type) { PRINT_INDENT(indent); printf("<type> %s", self->dtype->name); } else
-	PRINT_INDENT(indent); printf("%s", self->dtype->name);
-	if (self->is_list || self->is_generic) {
-		printf("<"); structExprDtype_print(self->value, 0); printf(">");
-
-	}
-	else if (self->is_map) {
-		printf("<key:%s, value:", self->key->name); structExprDtype_print(self->value, 0); printf(">");
-	}
-}
-struct ExprDtype* structExprDtype_new(struct Token* dtype) {
-	struct ExprDtype* new_dtype = (struct ExprDtype*)malloc(sizeof(struct ExprDtype));
-	structExprDtype_init(new_dtype, dtype);
-	return new_dtype;
-}
+// void structExprDtype_free(struct ExprDtype* self) {
+// 	if (self != NULL) free(self);
+// }
+// void structExprDtype_init(struct ExprDtype* self, struct Token* dtype) {
+// 	self->dtype = dtype;
+// 	self->is_map = false;
+// 	self->is_list = false;
+// 	self->is_generic = false;
+// }
+// void structExprDtype_print(struct ExprDtype* self, int indent) { // no new line after the print
+// 	//if (print_type) { PRINT_INDENT(indent); printf("<type> %s", self->dtype->name); } else
+// 	PRINT_INDENT(indent); printf("%s", self->dtype->name);
+// 	if (self->is_list || self->is_generic) {
+// 		printf("<"); structExprDtype_print(self->value, 0); printf(">");
+// 
+// 	}
+// 	else if (self->is_map) {
+// 		printf("<key:%s, value:", self->key->name); structExprDtype_print(self->value, 0); printf(">");
+// 	}
+// }
+// struct ExprDtype* structExprDtype_new(struct Token* dtype) {
+// 	struct ExprDtype* new_dtype = (struct ExprDtype*)malloc(sizeof(struct ExprDtype));
+// 	structExprDtype_init(new_dtype, dtype);
+// 	return new_dtype;
+// }
 /***************** </ExprDtype> *************/
 
 
@@ -115,7 +115,7 @@ void structStatement_free(struct Statement* self) {
 		}
 		else if (self->type == STMNT_VAR_INI) {
 			structExpression_free(self->statement.init.expr);
-			structExprDtype_free(self->statement.init.dtype);
+			//structExprDtype_free(self->statement.init.dtype);
 		}
 		else if (self->type == STMNT_ASSIGN) {
 			structExpression_free(self->statement.assign.idf);
@@ -154,7 +154,7 @@ void structStatement_free(struct Statement* self) {
 		}
 		else if (self->type == STMNT_FUNC_DEFN) {
 			structStatementList_free(self->statement.func_defn.args);
-			structExprDtype_free(self->statement.func_defn.ret_type);
+			//structExprDtype_free(self->statement.func_defn.ret_type);
 			structStatementList_free(self->statement.func_defn.stmn_list);
 		}
 		else if (self->type == STMNT_CLASS_DEFN) {
@@ -189,7 +189,7 @@ void structStatement_init(struct Statement* self, struct Statement* parent, enum
 	self->statement.stm_foreach.stmn_list = NULL;
 
 	self->statement.func_defn.args = NULL;
-	self->statement.func_defn.ret_type = NULL;
+	//self->statement.func_defn.ret_type = NULL;
 	self->statement.func_defn.stmn_list = NULL;
 
 	self->statement.class_defn.supers = NULL;
@@ -208,11 +208,11 @@ void structStatement_print(struct Statement* self, int indent) {
 	}
 	else if (self->type == STMNT_VAR_INI) {
 		PRINT_INDENT(indent);
-		printf("<ini> %s%s",
+		printf("<var> %s%s",
 			(self->statement.init.idf->is_static) ? "<static> " : "",
 			(self->statement.init.idf->idf_is_const) ? "<const> " : ""
 		);
-		structExprDtype_print(self->statement.init.dtype, 0);
+		// structExprDtype_print(self->statement.init.dtype, 0);
 		printf(" %s", self->statement.init.idf->name);
 		if (self->statement.init.expr != NULL) { printf(" = "); structExpression_print(self->statement.init.expr, 0, true); }
 		else printf("\n");
@@ -277,8 +277,6 @@ void structStatement_print(struct Statement* self, int indent) {
 			self->statement.func_defn.idf->name // idf
 		); // TODO: add abstract also
 		if (self->statement.func_defn.args != NULL) structStatementList_print(self->statement.func_defn.args);
-		if (self->statement.func_defn.ret_type != NULL) { PRINT_INDENT(indent + 1); printf("<ret> "); structExprDtype_print(self->statement.func_defn.ret_type, 0); printf("\n"); }
-		else { PRINT_INDENT(indent + 1); printf("(Return Type Void)\n"); }
 		if (self->statement.func_defn.stmn_list != NULL) structStatementList_print(self->statement.func_defn.stmn_list);
 		else { PRINT_INDENT(indent + 1); printf("(No Func Body)\n"); }
 	}
@@ -289,10 +287,9 @@ void structStatement_print(struct Statement* self, int indent) {
 	}
 
 	else if (self->type == STMNT_CLASS_DEFN) {
-		PRINT_INDENT(indent); printf("%s<class> %s <%s>\n",
+		PRINT_INDENT(indent); printf("%s<class> %s\n",
 			(self->statement.class_defn.idf->is_abstract) ? "<abs> " : "",
-			self->statement.class_defn.idf->name,
-			(self->statement.class_defn.idf->is_class_generic) ? self->statement.class_defn.idf->generic_type->name : ""
+			self->statement.class_defn.idf->name
 		);
 		if (self->statement.class_defn.supers != NULL) {
 			PRINT_INDENT(indent + 1); printf("<supers> ");
@@ -344,7 +341,6 @@ void structStatementList_init(struct StatementList* self, struct Statement* pare
 	self->size = self->growth_size;
 	self->list = (struct Statement**)malloc(sizeof(struct Statement) * self->growth_size);
 	self->indent = 0;
-	self->name_table = structNameTable_new();
 }
 void structStatementList_addStatement(struct StatementList* self, struct Statement* statement) {
 	if (self->count >= self->size) {
@@ -389,116 +385,5 @@ void structStatementList_free(struct StatementList* self) {
 	}
 }
 /***************** </StatementList> *************/
-
-
-
-/***************** <NameTableEntry> *************/
-
-void structNameTableEntry_free(struct NameTableEntry* self) {
-	free(self);
-}
-void structNameTableEntry_init(struct NameTableEntry* self, struct Token* idf, enum IdfType type, struct Statement* stmn) {
-	self->idf = idf; 
-	self->type = type;
-	self->stmn = stmn; // can be NULL 
-	self->is_class_generic = false;
-	self->generic_token = NULL;
-}
-void structNameTableEntry_print(struct NameTableEntry* self) {
-	// do nothing
-}
-struct NameTableEntry* structNameTableEntry_new(struct Token* idf, enum IdfType type, struct Statement* stmn) {
-	struct NameTableEntry* ret = (struct NameTableEntry*)malloc(sizeof(struct NameTableEntry));
-	structNameTableEntry_init(ret, idf, type, stmn);
-}
-
-/***************** </NameTableEntry> *************/
-
-
-/***************** <NameTable> *************/
-
-void structNameTable_free(struct NameTable* self) {
-
-}
-void structNameTable_init(struct NameTable* self, int growth_size) {
-	self->growth_size = growth_size;
-	self->count = 0;
-	self->size = growth_size;
-	self->entries = (struct NameTableEntry**)malloc( (sizeof(struct NameTableEntry))*self->growth_size );
-}
-void structNameTable_print(struct NameTable* self){
-	for (size_t i = 0; i < self->count; i++) {
-		printf("%s : %i\n", self->entries[i]->idf->name, self->entries[i]->type);
-	}
-}
-void structNameTable_addEntry(struct NameTable* self, struct NameTableEntry* entry) {
-	if (self->count >= self->size) {
-		struct NameTableEntry** new_entries = (struct NameTableEntry**)malloc(sizeof(struct NameTableEntry) * (self->size + self->growth_size));
-		self->size += self->growth_size;
-		for (size_t i = 0; i < self->count; i++) {
-			new_entries[i] = self->entries[i];
-		}
-		free(self->entries);
-		self->entries = new_entries;
-	}
-	self->entries[(self->count)++] = entry;
-}
-struct NameTableEntry* structNameTable_createEntry(struct NameTable* self, struct Token* idf, enum IdfType type, struct Statement* stmn) {
-	struct NameTableEntry* new_entry = structNameTableEntry_new(idf, type, stmn);
-	structNameTable_addEntry(self, new_entry);
-	return new_entry;
-}
-struct NameTable* structNameTable_new() {
-	struct NameTable* new_table = (struct NameTable*)malloc(sizeof(struct NameTable));
-	structNameTable_init(new_table, NAMETABLE_LIST_SIZE);
-	return new_table;
-}
-
-struct NameTableEntry* structNameTable_checkEntry(struct StatementList* statement_list, struct Token* idf) {
-	if (idf->type == TK_IDENTIFIER) {
-		while (statement_list != NULL) {
-			struct NameTable* table = statement_list->name_table;
-			
-			// generic type
-			if (statement_list->parent != NULL && statement_list->parent->type == STMNT_CLASS_DEFN && statement_list->parent->statement.class_defn.idf->is_class_generic) {
-				if (strcmp(idf->name, statement_list->parent->statement.class_defn.idf->generic_type->name) == 0) {
-					int debug = 2;
-					idf->type = TK_GENERIC_TYPE;
-					return NULL;
-				}
-			}
-
-			// check entry
-			for (size_t i = 0; i < table->count; i++) {
-				struct NameTableEntry* entry = table->entries[i];
-
-				if (strcmp(entry->idf->name, idf->name) == 0) {
-					// TODO: for functions, and variables
-					// TODO: check parent statement's name table recursively
-					if (entry->type == IDF_CLASS_NAME) {
-						idf->type = TK_CLASS;
-						idf->is_class_generic = entry->is_class_generic;
-					}
-					// if (entry->type == IDF_FUNCTION)  idf->type = TK_FUNCTION;
-					// if (entry->type == IDF_VARIABLE) check const
-					return table->entries[i];
-				}
-			}
-			if (statement_list->parent == NULL) statement_list = NULL;
-			else statement_list = structStatement_getStatementList(statement_list->parent->parent);
-		}
-	}
-	return NULL;
-}
-
-/***************** </NameTable> *************/
-
-
-
-
-
-
-
-
 
 

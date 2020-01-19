@@ -1,8 +1,2 @@
 
-class MyClass <T>
-{
-	func f(): T {}
-	T t = 2;
-}
-
-MyClass <MyClass<int>> c;
+print("hello world!");

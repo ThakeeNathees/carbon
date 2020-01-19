@@ -6,7 +6,6 @@
 
 #define EXPRESSION_LIST_SIZE 10
 #define STATEMENT_LIST_SIZE  50
-#define NAMETABLE_LIST_SIZE  50
 
 // statement unknowns are: 3; "some str"; func_call(); method.call();
 #define FOREACH_STATEMENT_TYPE(func) \
@@ -38,18 +37,19 @@ struct Expression
 	size_t begin_pos;
 	size_t end_pos;
 };
-
-struct ExprDtype // to store dtype int, string, map<int, map<string, list<string>>>
-{
-	struct Token* dtype;
-
-	bool is_list;
-	bool is_map;
-	bool is_generic;
-
-	struct Token*     key; // key cant be list or map
-	struct ExprDtype* value; // value is for both list and map
-};
+   
+//// only var is allowed from now
+// struct ExprDtype // to store dtype int, string, map<int, map<string, list<string>>>
+// {
+// 	struct Token* dtype;
+// 
+// 	bool is_list;
+// 	bool is_map;
+// 	bool is_generic;
+// 
+// 	struct Token*     key; // key cant be list or map
+// 	struct ExprDtype* value; // value is for both list and map
+// };
 
 /*********************************************/
 struct _StatementImport
@@ -58,7 +58,7 @@ struct _StatementImport
 };
 struct _StatementVarInit
 {
-	struct ExprDtype* dtype;
+	// struct ExprDtype* dtype; // var kword
 	struct Token* idf;
 	struct Expression* expr; // can be NULL
 };
@@ -113,7 +113,7 @@ struct _StatementFuncDefn
 {
 	struct Token* idf;
 	struct StatementList* args;      // can be NULL, null=0 args, statement list of stmn_ini,
-	struct ExprDtype* ret_type;      // can be NULL = void
+	// struct ExprDtype* ret_type; no more
 	struct StatementList* stmn_list; // can be NULL
 };
 struct _StatementClassDefn
@@ -163,7 +163,6 @@ struct ExpressionList
 };
 struct StatementList
 {
-	struct NameTable* name_table;
 	struct Statement** list;
 	struct Statement* parent;
 	size_t count;
@@ -188,25 +187,6 @@ struct Ast
 enum IdfType
 {
 	IDF_VARIABLE, IDF_CLASS_NAME, IDF_FUNCTION, IDF_GENERIC_NAME
-};
-
-struct NameTableEntry
-{
-	struct Token* idf;
-	enum IdfType type;
-	struct Statement* stmn;
-	bool is_class_generic;
-	struct Token* generic_token;
-	// CarbonObj* value; // TODO: 
-};
-
-struct NameTable
-{
-	struct NameTableEntry** entries;
-	size_t count; // table entry count
-	size_t size;
-	size_t growth_size;
-
 };
 
 // ast private
@@ -238,11 +218,11 @@ void structExpression_init(struct Expression* self, struct TokenList* token_list
 void structExpression_print(struct Expression* self, int indent, bool new_line);
 struct Expression* structExpression_new(struct TokenList* token_list); // static
 
-// expression dtype
-void structExprDtype_free(struct ExprDtype* self);
-void structExprDtype_init(struct ExprDtype* self, struct Token* dtype);
-void structExprDtype_print(struct ExprDtype* self, int indent); // call with new_line true; false internal
-struct ExprDtype* structExprDtype_new(struct Token* dtype);
+// // expression dtype
+// void structExprDtype_free(struct ExprDtype* self);
+// void structExprDtype_init(struct ExprDtype* self, struct Token* dtype);
+// void structExprDtype_print(struct ExprDtype* self, int indent); // call with new_line true; false internal
+// struct ExprDtype* structExprDtype_new(struct Token* dtype);
 
 // expression list
 void structExpressionList_init(struct ExpressionList* self, int growth_size, struct TokenList* token_list);
@@ -273,22 +253,6 @@ struct CarbonError* structAst_scaneClasses(struct Ast* self);
 struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* statement_list, enum structAst_StmnEndType end_type);
 void structAst_deleteLastStatement(struct Ast* self);
 
-
-// name table entry
-void structNameTableEntry_free(struct NameTableEntry* self);
-void structNameTableEntry_init(struct NameTableEntry* self, struct Token* idf, enum IdfType type, struct Statement* stmn ); // for class scane stmn = NULL
-void structNameTableEntry_print(struct NameTableEntry* self);
-struct NameTableEntry* structNameTableEntry_new(struct Token* idf, enum IdfType type, struct Statement* stmn); // static method
-
-// name table
-void structNameTable_free(struct NameTable* self);
-void structNameTable_init(struct NameTable* self, int growth_size);
-void structNameTable_print(struct NameTable* self);
-void structNameTable_addEntry(struct NameTable* self, struct NameTableEntry* statement);
-struct NameTableEntry* structNameTable_createEntry(struct NameTable* self, struct Token* idf, enum IdfType type, struct Statement* stmn);
-struct NameTable* structNameTable_new(); // static method
-struct NameTableEntry* structNameTable_checkEntry(struct StatementList* statement_list, struct Token* idf); // static method
-
 /****************************************************************/
 
 // ast private
@@ -297,7 +261,7 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 struct CarbonError* structAst_isNextStmnAssign(struct Ast* self, bool* ret, size_t* assign_op_pos);
 bool structAst_isNextElseIf(struct Ast* self);
 bool structAst_isStmnLoop(struct Statement* stmn);
-struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** ret, struct StatementList* statement_list);
+//struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** ret, struct StatementList* statement_list);
 struct CarbonError* structAst_getAssignStatement(struct Ast* self, struct Statement* stmn);
 struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct Statement* stmn, enum VarIniEndType end_type, struct StatementList* statement_list); // foreach( var_ini_only; expr_itter ){}
 struct CarbonError* structAst_getStmnListBody(struct Ast* self, int indent, struct StatementList** body_ptr, bool cur_bracket_must, struct Statement* parent_of_stmn_list); // for func defn and try ... cur bracket is must

@@ -28,15 +28,16 @@ new symbol:
 	func(TKG_BRACKET) 		\
 	func(TKG_OPERATOR)		\
 	func(TKG_KEYWORD)		\
-	func(TKG_DTYPE)			\
 	func(TKG_NUMBER)		\
 	func(TKG_STRING) 		\
 	func(TKG_BUILTIN) 		\
 	func(TKG_IDENTIFIER) // variable_name, class_name(tk_class) function_name when tkscan, ...
 
+	// func(TKG_DTYPE)		\ tkg_var
 	// func(TKG_VARIABLE)	\
 	// func(TKG_BUILTIN)	\
 	// func(TKG_FUNCTION) 	\
+	func(TKG_VAR)			\ var is tkg_kword
 
 #define FOREACH_TOKEN_TYPE(func)\
 	func(TK_UNKNOWN)	\
@@ -65,17 +66,6 @@ new symbol:
 	func(TK_BRACKET_LSQ)		\
 	func(TK_BRACKET_RTRI)		\
 	func(TK_BRACKET_LTRI)		\
-	func(TK_DT_VOID)		\
-	func(TK_DT_BOOL)		\
-	func(TK_DT_CHAR)		\
-	func(TK_DT_SHORT)		\
-	func(TK_DT_INT)			\
-	func(TK_DT_LONG)		\
-	func(TK_DT_FLOAT)		\
-	func(TK_DT_DOUBLE)		\
-	func(TK_DT_LIST)		\
-	func(TK_DT_MAP)			\
-	func(TK_DT_STRING)		\
 	func(TK_OP_EQ)		\
 	func(TK_OP_PLUS)	\
 	func(TK_OP_PLUSEQ)	\
@@ -102,6 +92,7 @@ new symbol:
 	func(TK_OP_INCR)	\
 	func(TK_OP_DECR)	\
 	func(TK_KWORD_NULL)			\
+	func(TK_KWORD_VAR)			\
 	func(TK_KWORD_SELF)			\
 	func(TK_KWORD_TRUE)			\
 	func(TK_KWORD_FALSE)		\
@@ -118,7 +109,6 @@ new symbol:
 	func(TK_KWORD_RETURN)		\
 	func(TK_KWORD_FUNCTION)		\
 	func(TK_KWORD_CLASS)		\
-	func(TK_GENERIC_TYPE)		\
 	func(TK_KWORD_IMPORT)		\
 	func(TK_KWORD_STATIC)		\
 	func(TK_KWORD_CONST)		\
@@ -135,6 +125,22 @@ new symbol:
 	func(TK_VALUE_LONG)			\
 	func(TK_VALUE_FLOAT)		\
 	func(TK_VALUE_DOUBLE)
+
+/* deleted
+func(TK_DT_VOID)		\
+func(TK_DT_BOOL)		\
+func(TK_DT_CHAR)		\
+func(TK_DT_SHORT)		\
+func(TK_DT_INT)			\
+func(TK_DT_LONG)		\
+func(TK_DT_FLOAT)		\
+func(TK_DT_DOUBLE)		\
+func(TK_DT_LIST)		\
+func(TK_DT_MAP)			\
+func(TK_DT_STRING)		\
+
+func(TK_GENERIC_TYPE)		\
+*/
 
 
 /**************** CLASSES **********************/
@@ -187,9 +193,6 @@ struct Token
 	bool is_static; // for both func and idf
 	bool is_abstract; // for both class and it't abstract functions
 	bool is_override;
-
-	bool is_class_generic;
-	struct Token* generic_type;
 	
 	// for minus operator
 	bool op_is_single;
@@ -323,6 +326,7 @@ struct TokenScanner* structTokenScanner_new(struct String* src, char* file_name)
 
 // keywords
 #define KWORD_NULL 		"null"
+#define KWORD_VAR       "var"
 #define KWORD_SELF 		"self"
 #define KWORD_TRUE 		"true"
 #define KWORD_FALSE		"false"

@@ -115,77 +115,6 @@ bool structAst_isStmnLoop(struct Statement* stmn) { // static method
 }
 
 
-struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** ret, struct StatementList* statement_list) {
-	struct Token* token = self->tokens->list[self->pos];
-	structNameTable_checkEntry(statement_list, token);
-
-	if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-	if ((token->group != TKG_DTYPE) && token->type != TK_CLASS && token->type != TK_GENERIC_TYPE ) { // func f() : T {} // here T is identifier TODO: set token type to generic
-		if (token->type == TK_IDENTIFIER) return utils_make_error("NameError: undefined identifier", ERROR_NAME, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		return utils_make_error("SyntexError: expected a data type", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-	}
-	*ret = structExprDtype_new(token);
-
-	// for map<dtype, dtype> list<dtype> 
-	if (token->type == TK_DT_LIST || ( token->type == TK_CLASS && token->is_class_generic )) {
-		if (token->type == TK_DT_LIST) (*ret)->is_list = true;
-		else if (token->type == TK_CLASS) (*ret)->is_generic = true;
-		token = self->tokens->list[++self->pos]; if (token->type == TK_OP_LT) { token->type = TK_BRACKET_LTRI; token->group = TKG_BRACKET; }
-		if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		if (token->type != TK_BRACKET_LTRI) return utils_make_error("SyntaxError: expected bracket '<'", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		token->group = TKG_BRACKET; token->type = TK_BRACKET_LTRI;
-		++self->pos;
-		struct CarbonError* err = structAst_scaneDtype(self, &((*ret)->value), statement_list); if (err->type != ERROR_SUCCESS) return err;
-		token = self->tokens->list[self->pos]; if (token->type == TK_OP_GT) token->type = TK_BRACKET_RTRI;
-
-		if (token->type == TK_OP_RSHIFT && (self->tokens->list[self->pos + 1])->group == TKG_PASS) {
-			token->name[1] = '\0'; // now token is '>'
-			token->group = TKG_BRACKET; token->type = TK_BRACKET_RTRI;
-			struct Token* tk_pass = self->tokens->list[self->pos + 1];
-			structToken_addChar(tk_pass, '>'); tk_pass->group = TKG_BRACKET; self->tokens->list[self->pos + 1]->type = TK_BRACKET_RTRI;
-		}
-		else if (token->type != TK_BRACKET_RTRI) {
-			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-			return utils_make_error("SyntexError: exprcted bracket '>'", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		}
-		token->group = TKG_BRACKET; token->type = TK_BRACKET_RTRI;
-	}
-	else if (token->type == TK_DT_MAP) {
-		(*ret)->is_map = true;
-		token = self->tokens->list[++self->pos]; if (token->type == TK_OP_LT) { token->type = TK_BRACKET_LTRI; token->group = TKG_BRACKET; }
-		if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		if (token->type != TK_BRACKET_LTRI) return utils_make_error("SyntaxError: expected bracket '<'", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		token->group = TKG_BRACKET; token->type = TK_BRACKET_RTRI;
-		token = self->tokens->list[++self->pos];
-		if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		if (token->group != TKG_DTYPE) return utils_make_error("SyntaxError: expected a data type", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		if (token->type == TK_DT_LIST) return utils_make_error("TypeError: list objects can't be a key", ERROR_TYPE, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		if (token->type == TK_DT_MAP) return utils_make_error("TypeError: map objects can't be a key", ERROR_TYPE, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		(*ret)->key = token;
-		token = self->tokens->list[++self->pos];
-		if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		if (token->type != TK_SYM_COMMA) return utils_make_error("SyntaxError: exprcted symbol ','", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		token = self->tokens->list[++self->pos];
-
-		struct CarbonError* err = structAst_scaneDtype(self, &((*ret)->value), statement_list); if (err->type != ERROR_SUCCESS) return err;
-		token = self->tokens->list[self->pos]; if (token->type == TK_OP_GT) token->type = TK_BRACKET_RTRI;
-		if (token->type == TK_OP_RSHIFT && (self->tokens->list[self->pos + 1])->group == TKG_PASS) {
-			token->name[1] = '\0'; // now token is '>'
-			struct Token* tk_pass = self->tokens->list[self->pos + 1];
-			structToken_addChar(tk_pass, '>'); tk_pass->group = TKG_BRACKET; self->tokens->list[self->pos + 1]->type = TK_BRACKET_RTRI;
-		}
-		else if (token->type != TK_BRACKET_RTRI) {
-			if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-			return utils_make_error("SyntaxError: exprcted bracket '>'", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-		}
-		token->group = TKG_BRACKET; token->type = TK_BRACKET_RTRI;
-	}
-
-	++self->pos;
-	return structCarbonError_new(); //return ret;
-}
-
-
 struct CarbonError* structAst_getAssignStatement(struct Ast* self, struct Statement* stmn) {
 	stmn->statement.assign.idf = structExpression_new(self->tokens);
 	struct CarbonError* err = structAst_scaneExpr(self, stmn->statement.assign.idf, EXPREND_ASSIGN);  if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
@@ -201,8 +130,11 @@ struct CarbonError* structAst_getAssignStatement(struct Ast* self, struct Statem
 
 // after end pos = semicollon or other end type
 struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct Statement* stmn, enum VarIniEndType end_type, struct StatementList* statement_list) { // foreach( var_ini_only; expr_itter ){}
-	struct CarbonError* err = structAst_scaneDtype(self, &(stmn->statement.init.dtype), statement_list); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+	// struct CarbonError* err = structAst_scaneDtype(self, &(stmn->statement.init.dtype), statement_list); if (err->type != ERROR_SUCCESS) return err; structCarbonError_free(err);
+	struct CarbonError* err;
 	struct Token* token = self->tokens->list[self->pos];
+	if (token->type != TK_KWORD_VAR) return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+	token = self->tokens->list[++self->pos];
 	if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 	if (token->group != TKG_IDENTIFIER) { return utils_make_error("SyntaxError: expected an identifier", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr); }
 	stmn->statement.init.idf = token;
@@ -223,7 +155,6 @@ struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct State
 	else if (end_type == VARINIEND_FOREACH) {
 		if (token->group == TKG_EOF) return utils_make_error("EofError: unexpected eof", ERROR_UNEXP_EOF, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 		if (token->type != TK_SYM_COLLON)  return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
-
 	}
 	else if (end_type == VARINIEND_FUNC) {
 		if (token->type == TK_SYM_COMMA || token->type == TK_BRACKET_RPARAN) { // TODO: END WITH '='
@@ -241,7 +172,6 @@ struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct State
 		//if (!(token->type == TK_SYM_COMMA || token->type == TK_BRACKET_RPARAN)) 
 		//	return utils_make_error("SyntaxError: expected symbol ',' or ')'", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 	}
-
 
 	return structCarbonError_new();
 }

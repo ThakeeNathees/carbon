@@ -146,8 +146,9 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 		if (token->type == TK_SYM_COMMA && !token->comma_is_valid)
 			return utils_make_error("SyntaxError: unexpected symbol", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, 1);
 		// illegal keywords in an expr
-		if (token->group == TKG_KEYWORD) {
+		if (token->group == TKG_KEYWORD) { // self keyword is allowed
 			if (
+				token->type == TK_KWORD_VAR			||	
 				token->type == TK_KWORD_IF			||
 				token->type == TK_KWORD_ELSE		||
 				token->type == TK_KWORD_WHILE		||
@@ -163,8 +164,8 @@ struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* exp
 				)
 				return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 		}
-		if (token->group == TKG_DTYPE)
-			return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
+		// if (token->group == TKG_DTYPE)
+		// 	return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token->pos, self->src->buffer, self->file_name, false, token->_name_ptr);
 
 		// after close bracket illegal tokens
 		if (token->type == TK_BRACKET_RPARAN) {
