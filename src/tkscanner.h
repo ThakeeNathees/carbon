@@ -37,7 +37,7 @@ new symbol:
 	// func(TKG_VARIABLE)	\
 	// func(TKG_BUILTIN)	\
 	// func(TKG_FUNCTION) 	\
-	func(TKG_VAR)			\ var is tkg_kword
+	// func(TKG_VAR)		\ var is tkg_kword
 
 #define FOREACH_TOKEN_TYPE(func)\
 	func(TK_UNKNOWN)	\

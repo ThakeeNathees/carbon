@@ -61,7 +61,7 @@ void utils_print_str_without_esc(const char* str, bool new_line, bool print_dquo
 }
 
 // error_len = number of ^^^^
-int utils_pos_to_line(int pos, const char* src, char* buffer, char* location_str, size_t error_len ){
+int utils_pos_to_line(size_t pos, const char* src, char* buffer, char* location_str, size_t error_len ){
 
 	int line_no = 1; int loc_ptr = 0;
 	int line_begin_pos = 0;
@@ -98,7 +98,7 @@ void utils_error_exit(const char* err_msg, size_t pos, const char* src, const ch
 
 struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, size_t pos, const char* src, const char* file_name, bool free_msg, size_t error_len){
 	char location_str[ERROR_LINE_SIZE];
-	char buff[ERROR_LINE_SIZE];  int line_no = utils_pos_to_line(pos, src, buff, location_str, error_len);
+	char buff[ERROR_LINE_SIZE];  size_t line_no = utils_pos_to_line(pos, src, buff, location_str, error_len);
 	struct CarbonError* err = structCarbonError_new(); err->type = err_type;
 	int msg_min_size = snprintf(NULL, 0,                                 "%s \nFile: \"%s\", Line: %i\n%s\n",err_msg, file_name, line_no, buff); structString_minSize(&(err->message), msg_min_size+100); // TOOD: 100 is for ^ printing
 	int msg_size = snprintf(err->message.buffer, err->message.buff_size, "%s \nFile: \"%s\", Line: %i\n%s\n",err_msg, file_name, line_no, buff);
@@ -117,7 +117,7 @@ struct CarbonError* utils_make_error(char* err_msg, enum ErrorType err_type, siz
 
 void utils_warning_print(const char* warn_msg, size_t pos, const char* src, const char* file_name, size_t err_len) {
 	char location_str[ERROR_LINE_SIZE]; char buff[ERROR_LINE_SIZE];
-	int line_no = utils_pos_to_line(pos, src, buff, location_str, err_len);
+	size_t line_no = utils_pos_to_line(pos, src, buff, location_str, err_len);
 	printf("%s ", warn_msg);
 	printf("@%s:%i\n%s\n%s\n", file_name, line_no, buff, location_str);
 }

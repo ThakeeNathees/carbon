@@ -93,8 +93,9 @@ struct CarbonError* structCarbonError_new(); // static method
 	carbon_conf.h
 	|
 	utils.h 
-	|
-	tkscanner.h
+	+--------------------+
+	|                    |
+	tkscanner.h  name_table.h
 	|
 	ast.h
 	|

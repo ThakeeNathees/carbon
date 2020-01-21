@@ -11,7 +11,7 @@ int utils_read_file(char** text_p, const char* file_path);
 // string util
 bool utils_char_in_str(char c, const char* string);
 int  utils_char_count_in_str(char c, const char* string);
-int  utils_pos_to_line(int pos, const char* src, char* buffer, char* location_str, size_t error_len); // used by escape the warning 
+int  utils_pos_to_line(size_t pos, const char* src, char* buffer, char* location_str, size_t error_len); // used by escape the warning 
 void utils_print_char(char c, bool new_line); // prints '\n' as "\\n"
 void utils_print_str_without_esc(const char* str, bool new_line, bool print_dquote);
 

@@ -3,8 +3,8 @@ obj_out = ./_obj/Linux/
 
 all: carbon
 
-carbon: main.o tkscanner.o utils.o ast.o structs.o carbon_conf.o  exprscanner.o astprivate.o
-	gcc -o $(bin_out)carbon $(obj_out)main.o $(obj_out)tkscanner.o $(obj_out)utils.o $(obj_out)ast/ast.o $(obj_out)carbon_conf.o $(obj_out)ast/structs.o $(obj_out)ast/exprscanner.o $(obj_out)ast/astprivate.o
+carbon: main.o tkscanner.o utils.o ast.o structs.o carbon_conf.o  exprscanner.o astprivate.o name_table.o
+	gcc -o $(bin_out)carbon $(obj_out)main.o $(obj_out)tkscanner.o $(obj_out)utils.o $(obj_out)ast/ast.o $(obj_out)carbon_conf.o $(obj_out)ast/structs.o $(obj_out)ast/exprscanner.o $(obj_out)ast/astprivate.o $(obj_out)name_table.o
 
 main.o : ./src/carbon.c
 	gcc -c ./src/carbon.c -o $(obj_out)main.o 
@@ -29,6 +29,9 @@ exprscanner.o: ./src/ast/exprscanner.c ./src/ast/ast.h
 
 astprivate.o: ./src/ast/astprivate.c ./src/ast/ast.h
 	gcc -c ./src/ast/astprivate.c -o $(obj_out)ast/astprivate.o
+
+name_table.o: ./src/name_table.c ./src/name_table.h
+	gcc -c ./src/name_table.c -o $(obj_out)name_table.o
 
 test: ./tests/file_read.c ./tests/infix.c
 	gcc ./tests/file_read.c -o $(bin_out)file_read.so
