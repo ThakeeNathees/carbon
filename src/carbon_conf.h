@@ -69,6 +69,8 @@ const char* enumErrorType_toString(enum ErrorType self );
 void structString_init(struct String* self);
 void structString_minSize(struct String* self, int min_size); // min size to sprinf
 void structString_free(struct String* self);
+void structString_addChar(struct String* self, char c);
+void structString_strcat(struct String* self, const char* src);
 struct String* structString_new(); // static method
 
 // carbon error
@@ -91,8 +93,9 @@ struct CarbonError* structCarbonError_new(); // static method
 	carbon_conf.h
 	|
 	utils.h 
-	|
-	tkscanner.h
+	+--------------------+
+	|                    |
+	tkscanner.h  name_table.h
 	|
 	ast.h
 	|

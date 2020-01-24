@@ -1,17 +1,2 @@
 
-function f(){
-
-if (asdf);
-else if (token.type == TK_KWORD_ELSE)
-	return utils_make_error("SyntaxError: invalid syntax", ERROR_SYNTAX, token.pos, self.src, self.file_name, false, token._name_ptr);
-
-
-else {
-	return utils_make_error("InternalError: unhandled token", ERROR_SYNTAX, token.pos, self.src, self.file_name, false, token._name_ptr);
-}
-
-
-// if token == static && ast state != reading class error!
-
-self.pos++;
-}
+print("hello world!");

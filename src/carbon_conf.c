@@ -29,6 +29,32 @@ void structString_free(struct String* self) {
 	free(self);
 }
 
+void structString_addChar(struct String* self, char c) {
+	if (self->buff_size <= self->buff_pos + 1) {
+		char* new_buff = (char*)malloc(self->buff_size + STRING_BUFFER_SIZE);
+		for (int i = 0; i < self->buff_size; i++) {
+			new_buff[i] = self->buffer[i];
+		}
+		self->buff_size += STRING_BUFFER_SIZE;
+		free(self->buffer);
+		self->buffer = new_buff;
+	}
+	self->buffer[self->buff_pos++] = c;
+	self->buffer[self->buff_pos] = '\0';
+}
+
+void structString_strcat(struct String* self, const char* src) {
+	size_t i = 0;
+	char c = src[i++];
+	while (c != '\0' && c != '\n') {
+		structString_addChar(self, c);
+		c = src[i++];
+	}
+	structString_addChar(self, c);
+
+}
+
+
 struct String* structString_new(){
 	struct String* new_str = (struct String*)malloc(sizeof(struct String));
 	structString_init(new_str);

@@ -1,5 +1,8 @@
 // https://en.wikipedia.org/wiki/Shunting-yard_algorithm
-#include "tkscanner.h"
+#include "../tkscanner.h"
+
+#define INDENT_STR "    "
+#define PRINT_INDENT(indent) for (int i = 0; i < indent; i++) printf("%s", INDENT_STR)
 
 #define EXPRESSION_LIST_SIZE 10
 #define STATEMENT_LIST_SIZE  50
@@ -8,7 +11,7 @@
 #define FOREACH_STATEMENT_TYPE(func) \
 	func(STMNT_UNKNOWN)	    \
 	func(STMNT_IMPORT)	    \
-	func(STMNT_VAR_INI)    \
+	func(STMNT_VAR_INI)     \
 	func(STMNT_ASSIGN) 	    \
 	func(STMNT_IF)		    \
 	func(STMNT_ELSE_IF)	    \
@@ -34,17 +37,19 @@ struct Expression
 	size_t begin_pos;
 	size_t end_pos;
 };
-
-struct ExprDtype // to store dtype int, string, map<int, map<string, list<string>>>
-{
-	struct Token* dtype;
-
-	bool is_list;
-	bool is_map;
-
-	struct Token*     key; // key cant be list or map
-	struct ExprDtype* value; // value is for both list and map
-};
+   
+//// only var is allowed from now
+// struct ExprDtype // to store dtype int, string, map<int, map<string, list<string>>>
+// {
+// 	struct Token* dtype;
+// 
+// 	bool is_list;
+// 	bool is_map;
+// 	bool is_generic;
+// 
+// 	struct Token*     key; // key cant be list or map
+// 	struct ExprDtype* value; // value is for both list and map
+// };
 
 /*********************************************/
 struct _StatementImport
@@ -53,7 +58,7 @@ struct _StatementImport
 };
 struct _StatementVarInit
 {
-	struct ExprDtype* dtype;
+	// struct ExprDtype* dtype; // var kword
 	struct Token* idf;
 	struct Expression* expr; // can be NULL
 };
@@ -108,13 +113,13 @@ struct _StatementFuncDefn
 {
 	struct Token* idf;
 	struct StatementList* args;      // can be NULL, null=0 args, statement list of stmn_ini,
-	struct ExprDtype* ret_type;      // can be NULL = void
+	// struct ExprDtype* ret_type; no more
 	struct StatementList* stmn_list; // can be NULL
 };
 struct _StatementClassDefn
 {
 	struct Token* idf;
-	struct Token* par;				 // can be NULL
+	struct TokenList* supers;			 // can be NULL
 	struct StatementList* stmn_list; // can be NULL
 };
 union _Statement
@@ -170,7 +175,7 @@ struct StatementList
 
 struct Ast
 {
-	char* src;
+	struct String* src;
 	char* file_name;
 	size_t pos;
 	struct TokenScanner* token_scanner;
@@ -179,19 +184,45 @@ struct Ast
 };
 
 
+enum IdfType
+{
+	IDF_VARIABLE, IDF_CLASS_NAME, IDF_FUNCTION, IDF_GENERIC_NAME
+};
+
+// ast private
+enum structAst_ExprEndType
+{
+	EXPREND_SEMICOLLON,
+	EXPREND_COMMA, // ',' function
+	EXPREND_RPRAN, // ')'
+	EXPREND_COMMA_OR_RPRAN, // for func args
+	EXPREND_ASSIGN, // for assignment statement
+};
+
+enum VarIniEndType
+{
+	VARINIEND_NORMAL,  // semicollon, can contain =
+	VARINIEND_FOREACH, // '=' not allowed <dtype> <idf> :
+	VARINIEND_FUNC,    // '=' not allowed for now (TODO:), end ')' or ','
+};
+
+
+
 
 /****************** PUBLIC API ************************************/
 const char* enumStatementType_toString(enum StatementType self);
 
 // expression
+void structExpression_free(struct Expression* self);
 void structExpression_init(struct Expression* self, struct TokenList* token_list);
 void structExpression_print(struct Expression* self, int indent, bool new_line);
 struct Expression* structExpression_new(struct TokenList* token_list); // static
 
-// expression dtype
-void structExprDtype_init(struct ExprDtype* self, struct Token* dtype);
-void structExprDtype_print(struct ExprDtype* self, int indent, bool new_line); // call with new_line true; false internal
-struct ExprDtype* structExprDtype_new(struct Token* dtype);
+// // expression dtype
+// void structExprDtype_free(struct ExprDtype* self);
+// void structExprDtype_init(struct ExprDtype* self, struct Token* dtype);
+// void structExprDtype_print(struct ExprDtype* self, int indent); // call with new_line true; false internal
+// struct ExprDtype* structExprDtype_new(struct Token* dtype);
 
 // expression list
 void structExpressionList_init(struct ExpressionList* self, int growth_size, struct TokenList* token_list);
@@ -200,11 +231,15 @@ struct Expression* structExpressionList_createExpression(struct ExpressionList* 
 struct ExpressionList* structExpressionList_new(struct TokenList* token_list); // static method
 
 // statement
+void structStatement_free(struct Statement* self);
 void structStatement_init(struct Statement* self, struct Statement* parent, enum StatementType type);
 void structStatement_print(struct Statement* self, int indent);
+struct StatementList* structStatement_getStatementList(struct Statement* self);
 struct Statement* structStatement_new(enum StatementType type, struct Statement* parent); // static method
 
 // statement list
+void structStatementList_deleteLast(struct StatementList* self );
+void structStatementList_free(struct StatementList* self);
 void structStatementList_init(struct StatementList* self, struct Statement* parent, int growth_size);
 void structStatementList_print(struct StatementList* self);
 void structStatementList_addStatement(struct StatementList* self, struct Statement* statement);
@@ -212,8 +247,21 @@ struct Statement* structStatementList_createStatement(struct StatementList* self
 struct StatementList* structStatementList_new(struct Statement* parent); // static method
 
 // ast
-void structAst_init(struct Ast* self, char* src, char* fiel_name);
+void structAst_init(struct Ast* self, struct String* src, char* fiel_name);
 struct CarbonError* structAst_scaneTokens(struct Ast* self);
+struct CarbonError* structAst_scaneClasses(struct Ast* self);
 struct CarbonError* structAst_makeTree(struct Ast* self, struct StatementList* statement_list, enum structAst_StmnEndType end_type);
+void structAst_deleteLastStatement(struct Ast* self);
 
 /****************************************************************/
+
+// ast private
+struct CarbonError* structAst_countArgs(struct Ast* self, int* count, size_t* end_pos);
+struct CarbonError* structAst_scaneExpr(struct Ast* self, struct Expression* expr, enum structAst_ExprEndType end_type);
+struct CarbonError* structAst_isNextStmnAssign(struct Ast* self, bool* ret, size_t* assign_op_pos);
+bool structAst_isNextElseIf(struct Ast* self);
+bool structAst_isStmnLoop(struct Statement* stmn);
+//struct CarbonError* structAst_scaneDtype(struct Ast* self, struct ExprDtype** ret, struct StatementList* statement_list);
+struct CarbonError* structAst_getAssignStatement(struct Ast* self, struct Statement* stmn);
+struct CarbonError* structAst_getVarInitStatement(struct Ast* self, struct Statement* stmn, enum VarIniEndType end_type, struct StatementList* statement_list); // foreach( var_ini_only; expr_itter ){}
+struct CarbonError* structAst_getStmnListBody(struct Ast* self, int indent, struct StatementList** body_ptr, bool cur_bracket_must, struct Statement* parent_of_stmn_list); // for func defn and try ... cur bracket is must
