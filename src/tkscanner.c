@@ -194,7 +194,7 @@ void structTokenList_init(struct TokenList* self, int growth_size){
 	self->count = 0;
 	self->growth_size = growth_size;
 	self->size  = self->growth_size;
-	self->list  = (struct Token**)malloc( sizeof(struct Token) * self->growth_size );
+	self->list  = (struct Token**)malloc( sizeof(struct Token) * self->size );
 }
 void structTokenList_addToken(struct TokenList* self, struct Token* token){
 	if (self->count >= self->size){
