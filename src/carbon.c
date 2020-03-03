@@ -76,7 +76,7 @@ int main(int argc, char** argv){
 				printf("%s\n", err->message.buffer);
 				ast.pos += (ast.tokens->count - token_count); // skip those error tokens
 			}
-			//structStatementList_print(ast.stmn_list);
+			structStatementList_print(ast.stmn_list);
 			
 		}
 
