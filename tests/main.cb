@@ -1,8 +1,0 @@
-
-
-class C
-{
-	func f(){
-		const var x = C.new();
-	}
-}
