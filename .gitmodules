@@ -1,0 +1,3 @@
+[submodule "src/core/var.h"]
+	path = src/core/var.h
+	url = https://github.com/ThakeeNathees/var.h.git
