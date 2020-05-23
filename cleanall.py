@@ -15,6 +15,7 @@ REMOVE_DIRS = [
     'release',
     
     'bin/',
+    'core/bin',
     'thirdparty/bin/'
 ]
 

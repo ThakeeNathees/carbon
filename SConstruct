@@ -12,7 +12,7 @@ opts.Add(EnumVariable('platform', "Compilation platform", '', ['', 'windows', 'x
 opts.Add(BoolVariable('use_llvm', "Use the LLVM / Clang compiler", False))
 opts.Add(BoolVariable('vsproj', "make a visual studio project", False))
 opts.Add(PathVariable('target_path', 'The path to the output library.', 'bin/', PathVariable.PathAccept))
-opts.Add(PathVariable('target_name', 'The library/application name.', 'Carbon', PathVariable.PathAccept))
+opts.Add(PathVariable('target_name', 'The library/application name.', 'carbon', PathVariable.PathAccept))
 opts.Add(EnumVariable('bits', 'output program bits', '64', ['32', '64']))
 
 # Updates the environment with the option variables.
@@ -108,7 +108,7 @@ env.Append(CPPPATH=[]) # include files
 env.Append(LIBPATH=[]) # static lib dir
 
 Export('env')
-#SConscript('thirdparty/SConstruct')
+SConscript('core/SConstruct')
 
 for header in env.includes:
     env.Prepend(CPPPATH=[header])
