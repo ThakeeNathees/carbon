@@ -23,19 +23,34 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "crash_handler_x11.h"
+#ifndef CORE_H
+#define CORE_H
 
-int _main(int argc, char** argv);
+#include "var.h/_var.h"
 
-int main(int argc, char** argv)
-{
+#ifndef STR
+	#define STR(m_) #m_
+#endif
+#ifndef STRINGIFY
+	#define STRINGIFY(m_) STR(m_)
+#endif
+#define NOEFFECT(m_) m_
 
-	CrashHandler crash_handler;
-	crash_handler.initialize();
+#define STRCAT2(m_1, m_2) m_1##m_2
+#define STRCAT3(m_1, m_2, m_3) m_1##m_2##m_3
+#define STRCAT4(m_1, m_2, m_3, m_4) m_1##m_2##m_3##m_4
 
-	_main(argc, argv);
+// for windows dll define CARBON_DLL, CARBON_DLL_EXPORT
+#if defined(CARBON_DLL)
+	#if defined(CARBON_DLL_EXPORT)
+		#define CARBON_API __declspec(dllexport)
+	#else
+		#define CARBON_API __declspec(dllimport)
+	#endif
+#else
+	#define CARBON_API
+#endif
 
-	return 0;
-}
 
 
+#endif // CORE_H

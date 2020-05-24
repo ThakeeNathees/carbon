@@ -4,8 +4,7 @@ Import('env')
 
 # project includes
 env.add_include_dir('var.h')
-#env.add_include_dir('glm')
-#env.add_include_dir('stb_image')
+env.add_include_dir('.')
 
 # core env
 env_core = env.Clone()
@@ -16,7 +15,10 @@ env_core.Append(LIBS=[])       # static libs
 env.core_source = []           # source files
 
 # collect obj files
-env.core_source += ['var.h/var.cpp']
+env.core_source += [
+    'var.h/var.cpp',
+    'tokenizer.cpp'
+]
 #SConscript('glfw/SConstruct')
 #SConscript('glad/SConstruct')
 #SConscript('ImGui/SConstruct')
