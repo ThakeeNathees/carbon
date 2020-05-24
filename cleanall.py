@@ -8,6 +8,8 @@ usage:
 > python cleanall.py true    <-- include project files
 '''
 
+NAME = 'cleanall.py'
+
 REMOVE_DIRS = [
 
     'x64/',
@@ -16,6 +18,7 @@ REMOVE_DIRS = [
     
     'bin/',
     'core/bin',
+    'os/bin',
     'thirdparty/bin/'
 ]
 
@@ -42,13 +45,13 @@ if len(sys.argv) == 2 and sys.argv[1] == 'true':
     REMOVE_DIRS += VS_DIRS
     REMOVE_FILES += VS_FILES + ['.sconsign.dblite']
 
-def main():
+def cleanall():
     os.system('scons -c')
-    print('\ncleanall.py: cleaning all files ...')
+    print('\n%s: cleaning all files ...' % NAME)
     for _dir in REMOVE_DIRS:
         try:
             shutil.rmtree(_dir)
-            print('Removed: %s' % _dir)
+            print('%s: Removed - %s' % (NAME, _dir))
         except:
             pass
     for path, dirs, files in os.walk('.'):
@@ -56,8 +59,8 @@ def main():
             for suffix in REMOVE_FILES:
                 if file.endswith(suffix):
                     os.remove(os.path.join(path, file))
-                    print('Removed: %s' % os.path.join(path, file))
-    print('cleanall.py: done cleaning targets.')
+                    print('%s: Removed - %s' % (NAME, os.path.join(path, file)))
+    print(NAME + ': done cleaning targets.')
 
 if __name__ == '__main__':
-    main()
+    cleanall()

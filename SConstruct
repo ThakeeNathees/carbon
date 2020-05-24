@@ -44,6 +44,12 @@ def add_include_dir(_path):
     env.Append(CPPPATH=[path])
 env.add_include_dir = add_include_dir
 
+def add_lib(name, path=None):
+    if path:
+        env.Append(LIBPATH=[path])
+    env.Append(LIBS=[name])
+env.add_lib = add_lib
+
 # output name suffix, dir
 def get_suffix(platform, target, bits):
     return '.%s.%s.%s' % (platform, target, bits)
@@ -103,12 +109,16 @@ elif env['platform'] == "windows":
 
 # includes and libs
 env.includes = []
-env.sources  = ['main.cpp'] # cpp files
+env.sources  = [       # cpp files
+    'main/main_%s.cpp' % env['platform'],
+    'main/main.cpp'
+]
 env.Append(CPPPATH=[]) # include files
 env.Append(LIBPATH=[]) # static lib dir
 
 Export('env')
 SConscript('core/SConstruct')
+SConscript('os/SConstruct')
 
 for header in env.includes:
     env.Prepend(CPPPATH=[header])

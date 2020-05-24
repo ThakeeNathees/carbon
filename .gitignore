@@ -1,7 +1,8 @@
 
 # own files
 *.dblite
-.bin/
+*/bin/
+x64/
 .vs/
 Carbon.sln
 Carbon.vcxproj

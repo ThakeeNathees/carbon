@@ -1,0 +1,33 @@
+#!python
+import os, subprocess
+Import('env')
+
+# project includes
+#env.add_include_dir('include')
+
+# os env
+env_os = env.Clone()
+env_os.Append(CPPDEFINES=[])    # predefined macros
+env_os.Append(LIBPATH=[])       # static lib dir
+env_os.Append(LIBS=[])          # static libs
+
+# source files
+Export('env_os')
+env_os.source = [
+]
+
+if env_os['platform'] == "osx":
+    #SConscript('osx/SConstruct')
+    pass # TODO:
+elif env_os['platform'] in ('x11', 'linux'):
+    #SConscript('x11/SConstruct')
+    pass
+elif env_os['platform'] == "windows":
+    SConscript('windows/SConstruct')
+    pass
+
+# make library
+lib = env_os.StaticLibrary(
+        'bin/' + 'os' + env_os['out_suffix'],
+        env_os.source)
+env.Prepend(LIBS=[lib])
