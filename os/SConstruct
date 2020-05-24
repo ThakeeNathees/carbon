@@ -20,7 +20,7 @@ if env_os['platform'] == "osx":
     #SConscript('osx/SConstruct')
     pass # TODO:
 elif env_os['platform'] in ('x11', 'linux'):
-    #SConscript('x11/SConstruct')
+    SConscript('x11/SConstruct')
     pass
 elif env_os['platform'] == "windows":
     SConscript('windows/SConstruct')

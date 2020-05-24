@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 #define PRINT(x) std::cout << (x) << std::endl
 
 int _main(int argc, char** argv)

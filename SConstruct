@@ -23,6 +23,12 @@ if env['use_llvm']:
     env['CC'] = 'clang'
     env['CXX'] = 'clang++'
 
+# debug macro for all platforms
+if env['target'] == 'debug':
+    env.Append(CPPDEFINES=['_DEBUG'])
+else:
+    env.Append(CPPDEFINES=['NDEBUG'])
+
 # find platform
 if env['platform'] == 'linux':
     env['platform'] = 'x11'
@@ -100,11 +106,9 @@ elif env['platform'] == "windows":
     ])
 
     if env['target'] == 'debug':
-        env.Append(CPPDEFINES=['_DEBUG'])
         env.Append(CCFLAGS=['-EHsc', '-MDd', '-ZI'])
         env.Append(LINKFLAGS=['-DEBUG'])
     else:
-        env.Append(CPPDEFINES=['NDEBUG'])
         env.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
 
 # includes and libs

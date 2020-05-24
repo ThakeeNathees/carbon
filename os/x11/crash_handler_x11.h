@@ -1,5 +1,5 @@
 /*************************************************************************/
-/*  crash_handler_windows.h                                              */
+/*  crash_handler_x11.h                                                  */
 /*************************************************************************/
 /*                       This file is part of:                           */
 /*                           GODOT ENGINE                                */
@@ -28,20 +28,23 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#ifndef CRASH_HANDLER_WINDOWS_H
-#define CRASH_HANDLER_WINDOWS_H
+#ifndef CRASH_HANDLER_X11_H
+#define CRASH_HANDLER_X11_H
 
-#include <windows.h>
+// env.Append(LIBS=['dl'])
 
-// #pragma comment(lib, "psapi.lib")
-// #pragma comment(lib, "dbghelp.lib")
+class CrashHandler {
 
-// FIXME: _MSC_VER should be MSVC here, but its 
-//        not defined might be built system bug
-// Crash handler exception only enabled with MSVC
-#if defined(_DEBUG) && defined(_MSC_VER)
-#define CRASH_HANDLER_EXCEPTION 1
-extern DWORD CrashHandlerException(EXCEPTION_POINTERS* ep);
-#endif
+	bool disabled;
 
-#endif // CRASH_HANDLER_WINDOWS_H
+public:
+	void initialize();
+
+	void disable();
+	bool is_disabled() const { return disabled; };
+
+	CrashHandler();
+	~CrashHandler();
+};
+
+#endif // CRASH_HANDLER_X11_H
