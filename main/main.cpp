@@ -31,10 +31,11 @@
 
 int _main(int argc, char** argv)
 {
-    Tokenizer tk;
 
-    PRINT("It's goint to crash");
-    char* invalid_ptr = NULL;
-    *invalid_ptr = 0xff;
+	Tokenizer tk;
+
+	PRINT("It's goint to crash");
+	char* invalid_ptr = NULL;
+	*invalid_ptr = 0xff;
 	return 0;
 }
