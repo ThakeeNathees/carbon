@@ -28,6 +28,7 @@
 
 #define UNDEF_VAR_DEFINES
 #include "var.h/_var.h"
+using namespace varh;
 
 // https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
 #ifdef _MSC_VER // Microsoft compilers
@@ -74,12 +75,12 @@
 #endif
 
 #ifdef _DEBUG
-#define DEBUG_PRINT(...)                                                               \
-do {                                                                                   \
-	if (GET_ARG_COUNT(__VA_ARGS__) == 0)                                               \
-		printf("DEBUG_PRINT: (%s:%i)\n", __FILE__, __LINE__);                          \
-	else                                                                               \
-		printf("DEBUG_PRINT: %s (%s:%i)\n", ARG_1(__VA_ARGS__), __FILE__, __LINE__);   \
+#define DEBUG_PRINT(...)                                                                                       \
+do {                                                                                                           \
+	if (GET_ARG_COUNT(__VA_ARGS__) == 0)                                                                       \
+		printf("DEBUG_PRINT: at %s (%s:%i)\n", __FUNCTION__, __FILE__, __LINE__);                              \
+	else                                                                                                       \
+		printf("DEBUG_PRINT: \"%s\" at %s (%s:%i)\n", ARG_1(__VA_ARGS__), __FUNCTION__, __FILE__, __LINE__);   \
 } while (false)
 #else
 #define DEBUG_PRINT

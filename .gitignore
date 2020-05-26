@@ -5,6 +5,7 @@ bin/
 */bin/
 x64/
 .vs/
+.vscode/
 Carbon.sln
 Carbon.vcxproj
 Carbon.vcxproj.filters

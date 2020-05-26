@@ -17,7 +17,7 @@ env.core_source = []           # source files
 # collect obj files
 env.core_source += [
     'var.h/var.cpp',
-    'tokenizer.cpp'
+    Glob('*.cpp'),
 ]
 #SConscript('glfw/SConstruct')
 #SConscript('glad/SConstruct')

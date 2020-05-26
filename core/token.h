@@ -26,6 +26,8 @@
 #ifndef TOKENS_H
 #define TOKENS_H
 
+#include "core.h"
+
 #define FOREACH_TOKEN_TYPE(func) \
 	func(TK_UNKNOWN),    \
 	func(TK_EOF),        \
@@ -94,12 +96,23 @@
 	func(TK_VALUE_STRING),    \
 	func(TK_VALUE_INT),       \
 	func(TK_VALUE_FLOAT),     \
-	func(TK_BUILTIN_PRINT),      \
-	func(TK_BUILTIN_INPUT),      \
-	func(TK_BUILTIN_MIN),        \
-	func(TK_BUILTIN_MAX),        \
-	func(TK_BUILTIN_RAND),       \
 	func(_TK_MAX_)
 
+enum class Token {
+	FOREACH_TOKEN_TYPE(NOEFFECT)
+};
+
+struct TokenData
+{
+	Token type = Token::TK_UNKNOWN;
+	String identifier; // for identifier
+	var constant; // for constants
+
+	// TODO: builtin function ref
+	int line = 0, col = 0;
+
+	static const char* get_token_name(Token p_tk);
+
+};
 
 #endif // TOKENS_H

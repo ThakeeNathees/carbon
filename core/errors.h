@@ -23,29 +23,11 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef TOKENIZER_H
-#define TOKENIZER_H
+#ifndef ERRORS_H
+#define ERRORS_H
 
-#include "token.h"
+#include "core.h"
 
-class Tokenizer
-{
-private:
-	String surce_code;
-	Array tokens;
-	int tk_ptr = 0; // token index in tokens
 
-public:
 
-	Tokenizer() {
-		//DEBUG_PRINT("TESTING");
-		//Array a = Array();
-		//a.append("testing");
-		//tokens.append(Token::TK_EOF);
-		//tokens[0].as_enum<Token>();
-	}
-	
-
-};
-
-#endif // TOKENIZER_H
+#endif // ERRORS_H

@@ -9,8 +9,7 @@ env_os.add_lib('dl')
 # windows env
 env_os.Append(CPPDEFINES=[]) # predefined macros
 sources = [                  # source files
-    #'crash_handler_x11.cpp',
-    Glob('*.cpp')
+    Glob('*.cpp'),
 ]
 
 # compie list

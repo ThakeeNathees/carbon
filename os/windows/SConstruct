@@ -10,7 +10,7 @@ env_os.add_lib('dbghelp')
 # windows env
 env_os.Append(CPPDEFINES=[]) # predefined macros
 sources = [                  # source files
-    'crash_handler_windows.cpp',
+    Glob('*.cpp'),
 ]
 
 # compie list

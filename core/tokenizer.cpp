@@ -29,7 +29,6 @@ static const char* token_names[] = {
 	FOREACH_TOKEN_TYPE(STR)
 };
 
-String Tokenizer::get_token_name(Tokenizer::Token p_tk) {
+const char* TokenData::get_token_name(Token p_tk) {
 	return token_names[(int)p_tk];
 }
-

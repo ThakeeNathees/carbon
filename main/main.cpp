@@ -31,8 +31,15 @@
 
 int _main(int argc, char** argv)
 {
-
-	Tokenizer tk;
+	{
+		var s = Array();
+		{
+			//Tokenizer tk;
+			s = "testing asdf";
+		}
+		//s = Dictionary();
+		s = Dictionary();
+	}
 
 	PRINT("It's goint to crash");
 	char* invalid_ptr = NULL;

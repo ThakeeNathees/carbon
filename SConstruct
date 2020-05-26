@@ -73,6 +73,7 @@ env["out_suffix"]  = get_suffix(
 
 # Check our platform specifics
 if env['platform'] == "osx":
+    env.Append(CXXFLAGS=['-std=c++17'])
     if env['target'] == 'debug':
         env.Append(CCFLAGS=['-g', '-O2', '-arch', 'x86_64'])
         env.Append(LINKFLAGS=['-arch', 'x86_64'])
@@ -82,14 +83,14 @@ if env['platform'] == "osx":
 
 elif env['platform'] == 'x11':
     env.Append(LIBS=['GL', 'GLU', 'dl', 'X11', 'pthread']) 
+    env.Append(CXXFLAGS=['-std=c++17'])
     if env['target'] == 'debug':
         env.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
-        env.Append(CXXFLAGS=['-std=c++17'])
     else:
         env.Append(CCFLAGS=['-fPIC', '-g', '-O3'])
-        env.Append(CXXFLAGS=['-std=c++17'])
 
 elif env['platform'] == "windows":
+    env.Append(CXXFLAGS=['/std:c++17'])
     # This makes sure to keep the session environment variables on windows,
     # that way you can run scons in a vs 2017 prompt and it will find all the required tools
     env.Append(ENV=os.environ)
