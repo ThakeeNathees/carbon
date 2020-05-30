@@ -50,6 +50,18 @@ def add_include_dir(_path):
     cbenv.Append(CPPPATH=[path])
 cbenv.add_include_dir = add_include_dir
 
+cbenv.ide_sources = [] # sources for ide (vsproj)
+# add source for vsproj
+def add_ide_sources(src):
+    if type(src) == str:
+        _path = os.path.join(Dir('.').abspath, src)
+        cbenv.ide_sources.append(_path)
+    else: ## Glob
+        for _src in src:
+            _path = os.path.join(Dir('.').abspath, str(_src))
+            cbenv.ide_sources.append(_path)
+cbenv.add_ide_sources = add_ide_sources
+
 def add_lib(name, path=None):
     if path:
         cbenv.Append(LIBPATH=[path])
@@ -169,7 +181,6 @@ def msvc_build_commandline(commands):
     ]
     return " ^& ".join(common_build_prefix + [commands])
 
-
 if cbenv['vsproj']:
     cbenv["MSVSBUILDCOM"] = msvc_build_commandline(
         "scons --directory=\"$(ProjectDir.TrimEnd('\\'))\" platform=windows target=$(Configuration) bits=!bits!"
@@ -182,7 +193,7 @@ if cbenv['vsproj']:
     )
     targets, variants = get_vsproj_context()
     cbenv.MSVSProject(target = cbenv['target_name'] + cbenv['MSVSPROJECTSUFFIX'],
-        srcs = cbenv.sources,
+        srcs = cbenv.ide_sources,
         incs = msvs_collect_header(),
         variant = variants,
         runfile = targets,

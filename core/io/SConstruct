@@ -1,5 +1,5 @@
 #!python
 import os
-Import('cbenv')
+Import('env_core')
 
-cbenv.core_source += [ Glob('*.cpp') ]
+env_core.sources += [ Glob('*.cpp') ]
