@@ -130,6 +130,8 @@ cbenv.sources  = [       # cpp files
     'main/main_%s.cpp' % cbenv['platform'],
     'main/main.cpp'
 ]
+for src in cbenv.sources:
+    add_ide_sources(src)
 cbenv.Append(CPPPATH=[]) # include files
 cbenv.Append(LIBPATH=[]) # static lib dir
 

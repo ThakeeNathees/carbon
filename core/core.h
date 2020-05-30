@@ -86,6 +86,8 @@ do {                                                                            
 #define DEBUG_PRINT
 #endif
 
+#define VSNPRINTF_BUFF_SIZE 8192
+
 #define newptr(T1, ...) std::make_shared<T1>(__VA_ARGS__);
 #define newptr2(T1, T2, ...) std::make_shared<T1, T2>(__VA_ARGS__);
 template<typename T>

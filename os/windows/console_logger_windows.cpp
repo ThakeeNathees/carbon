@@ -23,25 +23,97 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
+#include "core.h"
 #include "io/console_logger.h"
+#include <Windows.h>
 
 namespace carbon {
 
 
 class ConsoleLoggerWindows :public ConsoleLogger
 {
-protected:
-	virtual void log_impl(const char* p_msg) {}
-	virtual void log_info_impl(const char* p_msg) {}
-	virtual void log_warning_impl(const char* p_msg) {}
-	virtual void log_error_impl(const char* p_msg) {}
+private:
+	static HANDLE h_console;
 
-	virtual void logf_impl(const char* p_fmt, va_list p_list) {}
-	virtual void logf_info_impl(const char* p_fmt, va_list p_list) {}
-	virtual void logf_warning_impl(const char* p_fmt, va_list p_list) {}
-	virtual void logf_error_impl(const char* p_fmt, va_list p_list) {}
+protected:
+	virtual void log_impl(const char* p_msg) {
+		log(p_msg, false);
+	}
+	virtual void log_info_impl(const char* p_msg) {
+		log(p_msg, false, ConsoleColor::D_WHITE);
+	}
+	virtual void log_warning_impl(const char* p_msg) {
+		log(p_msg, true, ConsoleColor::D_YELLOW);
+	}
+	virtual void log_error_impl(const char* p_msg) {
+		log(p_msg, true, ConsoleColor::L_RED);
+	}
+
+	virtual void logf_impl(const char* p_fmt, va_list p_list) {
+		logf(p_fmt, p_list, false);
+	}
+	virtual void logf_info_impl(const char* p_fmt, va_list p_list) {
+		logf(p_fmt, p_list, false, ConsoleColor::D_WHITE);
+	}
+	virtual void logf_warning_impl(const char* p_fmt, va_list p_list) {
+		logf(p_fmt, p_list, true, ConsoleColor::D_YELLOW);
+	}
+	virtual void logf_error_impl(const char* p_fmt, va_list p_list) {
+		logf(p_fmt, p_list, true, ConsoleColor::L_RED);
+	}
+
+public:
+	enum class ConsoleColor {
+		BLACK = 0,
+		L_BLUE = 1,
+		L_GREEN = 2,
+		L_SKYBLUE = 3,
+		L_RED = 4,
+		L_PINK = 5,
+		L_YELLOW = 6,
+		L_WHITE = 7,
+		L_GRAY = 8,
+
+		D_BLUE = 9,
+		D_GREEN = 10,
+		D_SKYBLUE = 11,
+		D_RED = 12,
+		D_PINK = 13,
+		D_YELLOW = 14,
+		D_WHITE = 15,
+	};
+	static void _set_console_color(ConsoleColor p_forground, ConsoleColor p_background = ConsoleColor::BLACK) {
+			SetConsoleTextAttribute(h_console, (int)p_background << 4 | (int)p_forground);
+	}
+	static void log(const char* p_message, bool p_err, 
+			ConsoleColor p_forground = ConsoleColor::L_WHITE, ConsoleColor p_background = ConsoleColor::BLACK) {
+		_set_console_color(p_forground, p_background);
+		if (p_err) {
+			fprintf(stderr, p_message);
+		} else {
+			fprintf(stdout, p_message);
+		}
+		_set_console_color(ConsoleColor::D_WHITE);
+	}
+
+	static void logf(const char* p_fmt, va_list p_args, bool p_err,
+			ConsoleColor p_forground = ConsoleColor::L_WHITE, ConsoleColor p_background = ConsoleColor::BLACK) {
+		static const unsigned int BUFFER_SIZE = VSNPRINTF_BUFF_SIZE;
+		char buf[BUFFER_SIZE + 1]; // +1 for the terminating character
+		int len = vsnprintf(buf, BUFFER_SIZE, p_fmt, p_args);
+		
+		if (len <= 0) return;
+		if ((unsigned int)len >= BUFFER_SIZE) len = BUFFER_SIZE; // Output is too big, will be truncated
+		buf[len] = 0;
+
+		_set_console_color(p_forground, p_background);
+		if (p_err) fprintf(stderr, "%s", buf);
+		else fprintf(stdout, "%s", buf);
+		_set_console_color(ConsoleColor::D_WHITE);
+	}
 };
 
+HANDLE ConsoleLoggerWindows::h_console = GetStdHandle(STD_OUTPUT_HANDLE);
 Ptr<ConsoleLogger> ConsoleLogger::singleton = newptr(ConsoleLoggerWindows);
 
 }

@@ -48,30 +48,35 @@ protected:
 public:
 	enum class LogLevel 
 	{
-		VERBOSE,
-		INFO,
-		WARNING,
-		ERROR,
+		VERBOSE = 0,
+		INFO = 1,
+		WARNING = 2,
+		ERROR = 3,
 	};
 	static void set_level(LogLevel p_level) { level = p_level; }
-	static LogLevel set_level() { return level; }
+	static LogLevel get_level() { return level; }
+	static bool is_level(LogLevel p_level) {
+		return (int)p_level >= (int)level;
+	}
 	
-	static void log(const char* p_msg) { singleton->log_impl(p_msg); }
-	static void log_info(const char* p_msg) { singleton->log_info_impl(p_msg); }
-	static void log_warning(const char* p_msg) { singleton->log_warning_impl(p_msg); }
-	static void log_error(const char* p_msg) { singleton->log_error_impl(p_msg); }
+	static void log(const char* p_msg) { if (!is_level(LogLevel::VERBOSE)) return; singleton->log_impl(p_msg); } // for verbose
+	static void log_info(const char* p_msg) { if (!is_level(LogLevel::INFO)) return; singleton->log_info_impl(p_msg); }
+	static void log_warning(const char* p_msg) { if (!is_level(LogLevel::WARNING)) return; singleton->log_warning_impl(p_msg); }
+	static void log_error(const char* p_msg) { if (!is_level(LogLevel::ERROR)) return; singleton->log_error_impl(p_msg); }
 
-#define LOG_METHODS(func)                               \
-static void func(const char* p_fmt, ...) {              \
+
+#define LOG_METHODS(m_func, m_level)                    \
+static void m_func(const char* p_fmt, ...) {            \
+	if (!is_level(LogLevel::m_level)) return;           \
 	va_list args;                                       \
 	va_start(args, p_fmt);                              \
-	singleton->STRCAT2(func, _impl) (p_fmt, args);      \
+	singleton->STRCAT2(m_func, _impl) (p_fmt, args);    \
 	va_end(args);                                       \
 }
-	LOG_METHODS(logf)
-	LOG_METHODS(logf_info)
-	LOG_METHODS(logf_warning)
-	LOG_METHODS(logf_error)
+	LOG_METHODS(logf, VERBOSE)
+	LOG_METHODS(logf_info, INFO)
+	LOG_METHODS(logf_warning, WARNING)
+	LOG_METHODS(logf_error, ERROR)
 
 private:
 	static LogLevel level;
