@@ -1,12 +1,12 @@
 #!python
 import os, subprocess
-Import('env')
+Import('cbenv')
 
 # project includes
 #env.add_include_dir('include')
 
 # os env
-env_os = env.Clone()
+env_os = cbenv.Clone()
 env_os.Append(CPPDEFINES=[])    # predefined macros
 env_os.Append(LIBPATH=[])       # static lib dir
 env_os.Append(LIBS=[])          # static libs
@@ -30,4 +30,4 @@ elif env_os['platform'] == "windows":
 lib = env_os.StaticLibrary(
         'bin/' + 'os' + env_os['out_suffix'],
         env_os.source)
-env.Prepend(LIBS=[lib])
+cbenv.Prepend(LIBS=[lib])

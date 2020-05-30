@@ -27,92 +27,163 @@
 #define TOKENS_H
 
 #include "core.h"
+#include "builtin_functions.h"
 
-#define FOREACH_TOKEN_TYPE(func) \
-	func(TK_UNKNOWN),    \
-	func(TK_EOF),        \
-	func(TK_IDENTIFIER),        \
-	func(TK_SYM_DOT),           \
-	func(TK_SYM_COMMA),         \
-	func(TK_SYM_COLLON),        \
-	func(TK_SYM_SEMI_COLLON),   \
-	func(TK_SYM_DQUOTE),        \
-	func(TK_SYM_SQUOTE),        \
-	func(TK_SYM_AT),            \
-	func(TK_SYM_HASH),          \
-	func(TK_SYM_DOLLAR),        \
-	func(TK_SYM_DILDO),         \
-	func(TK_BRACKET_LPARAN),        \
-	func(TK_BRACKET_RPARAN),        \
-	func(TK_BRACKET_LCUR),          \
-	func(TK_BRACKET_RCUR),          \
-	func(TK_BRACKET_RSQ),           \
-	func(TK_BRACKET_LSQ),           \
-	func(TK_BRACKET_RTRI),          \
-	func(TK_BRACKET_LTRI),          \
-	func(TK_OP_EQ),        \
-	func(TK_OP_PLUS),      \
-	func(TK_OP_PLUSEQ),    \
-	func(TK_OP_MINUS),     \
-	func(TK_OP_MINUSEQ),   \
-	func(TK_OP_MUL),       \
-	func(TK_OP_MULEQ),     \
-	func(TK_OP_DIV),       \
-	func(TK_OP_DIVEQ),     \
-	func(TK_OP_MOD),       \
-	func(TK_OP_NOT),       \
-	func(TK_OP_POW),       \
-	func(TK_OP_EQEQ),      \
-	func(TK_OP_NOTEQ),     \
-	func(TK_OP_GT),        \
-	func(TK_OP_LT),        \
-	func(TK_OP_GTEQ),      \
-	func(TK_OP_LTEQ),      \
-	func(TK_OP_LSHIFT),    \
-	func(TK_OP_RSHIFT),    \
-	func(TK_OP_OR),        \
-	func(TK_OP_AND),       \
-	func(TK_OP_XOR),       \
-	func(TK_OP_INCR),      \
-	func(TK_OP_DECR),      \
-	func(TK_KWORD_NULL),         \
-	func(TK_KWORD_VAR),          \
-	func(TK_KWORD_TRUE),         \
-	func(TK_KWORD_FALSE),        \
-	func(TK_KWORD_IF),           \
-	func(TK_KWORD_ELSE),         \
-	func(TK_KWORD_WHILE),        \
-	func(TK_KWORD_FOR),          \
-	func(TK_KWORD_FOREACH),      \
-	func(TK_KWORD_BREAK),        \
-	func(TK_KWORD_CONTINUE),     \
-	func(TK_KWORD_AND),          \
-	func(TK_KWORD_OR),           \
-	func(TK_KWORD_NOT),          \
-	func(TK_KWORD_RETURN),       \
-	func(TK_KWORD_FUNC),         \
-	func(TK_KWORD_STRUCT),       \
-	func(TK_KWORD_IMPORT),       \
-	func(TK_VALUE_STRING),    \
-	func(TK_VALUE_INT),       \
-	func(TK_VALUE_FLOAT),     \
-	func(_TK_MAX_)
+namespace carbon {
 
 enum class Token {
-	FOREACH_TOKEN_TYPE(NOEFFECT)
+	UNKNOWN,
+	_EOF, // EOF already a macro in <stdio.h>
+	IDENTIFIER,
+	SYM_DOT,
+	SYM_COMMA,
+	SYM_COLLON,
+	SYM_SEMI_COLLON,
+	SYM_DQUOTE,
+	SYM_SQUOTE,
+	SYM_AT,
+	SYM_HASH,
+	SYM_DOLLAR,
+	BRACKET_LPARAN,
+	BRACKET_RPARAN,
+	BRACKET_LCUR,
+	BRACKET_RCUR,
+	BRACKET_RSQ,
+	BRACKET_LSQ,
+	BRACKET_RTRI,
+	BRACKET_LTRI,
+	OP_EQ,
+	OP_PLUS,
+	OP_PLUSEQ,
+	OP_MINUS,
+	OP_MINUSEQ,
+	OP_MUL,
+	OP_MULEQ,
+	OP_DIV,
+	OP_DIVEQ,
+	OP_MOD,
+	OP_NOT,
+	OP_POW,
+	OP_EQEQ,
+	OP_NOTEQ,
+	OP_GT,
+	OP_LT,
+	OP_GTEQ,
+	OP_LTEQ,
+	OP_LSHIFT,
+	OP_RSHIFT,
+	OP_OR,
+	OP_AND,
+	OP_XOR,
+	OP_INCR,
+	OP_DECR,
+	KWORD_NULL,
+	KWORD_VAR,
+	KWORD_TRUE,
+	KWORD_FALSE,
+	KWORD_IF,
+	KWORD_ELSE,
+	KWORD_WHILE,
+	KWORD_FOR,
+	KWORD_FOREACH,
+	KWORD_BREAK,
+	KWORD_CONTINUE,
+	KWORD_AND,
+	KWORD_OR,
+	KWORD_NOT,
+	KWORD_RETURN,
+	KWORD_FUNC,
+	KWORD_STRUCT,
+	KWORD_IMPORT,
+	VALUE_STRING,
+	VALUE_INT,
+	VALUE_FLOAT,
+	_TK_MAX_,
 };
 
 struct TokenData
 {
-	Token type = Token::TK_UNKNOWN;
+	Token type = Token::UNKNOWN;
 	String identifier; // for identifier
-	var constant; // for constants
-
-	// TODO: builtin function ref
+	var constant;      // for constant int, float, string values
+	BuiltinFunctions::Function builtin_func;
 	int line = 0, col = 0;
 
-	static const char* get_token_name(Token p_tk);
+	static const char* get_token_name(Token p_tk) {
+		static const char* token_names[] = {
+			"UNKNOWN",
+			"EOF",
+			"IDENTIFIER",
+			"SYM_DOT",
+			"SYM_COMMA",
+			"SYM_COLLON",
+			"SYM_SEMI_COLLON",
+			"SYM_DQUOTE",
+			"SYM_SQUOTE",
+			"SYM_AT",
+			"SYM_HASH",
+			"SYM_DOLLAR",
+			"BRACKET_LPARAN",
+			"BRACKET_RPARAN",
+			"BRACKET_LCUR",
+			"BRACKET_RCUR",
+			"BRACKET_RSQ",
+			"BRACKET_LSQ",
+			"BRACKET_RTRI",
+			"BRACKET_LTRI",
+			"OP_EQ",
+			"OP_PLUS",
+			"OP_PLUSEQ",
+			"OP_MINUS",
+			"OP_MINUSEQ",
+			"OP_MUL",
+			"OP_MULEQ",
+			"OP_DIV",
+			"OP_DIVEQ",
+			"OP_MOD",
+			"OP_NOT",
+			"OP_POW",
+			"OP_EQEQ",
+			"OP_NOTEQ",
+			"OP_GT",
+			"OP_LT",
+			"OP_GTEQ",
+			"OP_LTEQ",
+			"OP_LSHIFT",
+			"OP_RSHIFT",
+			"OP_OR",
+			"OP_AND",
+			"OP_XOR",
+			"OP_INCR",
+			"OP_DECR",
+			"KWORD_NULL",
+			"KWORD_VAR",
+			"KWORD_TRUE",
+			"KWORD_FALSE",
+			"KWORD_IF",
+			"KWORD_ELSE",
+			"KWORD_WHILE",
+			"KWORD_FOR",
+			"KWORD_FOREACH",
+			"KWORD_BREAK",
+			"KWORD_CONTINUE",
+			"KWORD_AND",
+			"KWORD_OR",
+			"KWORD_NOT",
+			"KWORD_RETURN",
+			"KWORD_FUNC",
+			"KWORD_STRUCT",
+			"KWORD_IMPORT",
+			"VALUE_STRING",
+			"VALUE_INT",
+			"VALUE_FLOAT",
+			"_TK_MAX_",
+		};
+		return token_names[(int)p_tk];
+	}
 
 };
+
+}
 
 #endif // TOKENS_H

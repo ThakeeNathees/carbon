@@ -29,12 +29,39 @@
 
 #include "tokenizer.h"
 
+void logv(const char* fmt, va_list list, bool err) {
+
+	const unsigned int BUFFER_SIZE = 1024;
+	char buf[BUFFER_SIZE + 1]; // +1 for the terminating character
+	int len = vsnprintf(buf, BUFFER_SIZE, fmt, list);
+	if (len <= 0)
+		return;
+	if ((unsigned int)len >= BUFFER_SIZE)
+		len = BUFFER_SIZE; // Output is too big, will be truncated
+	buf[len] = 0;
+	if (err)
+		fprintf(stderr, "%s", buf);
+	else
+		fprintf(stdout, "%s", buf);
+
+}
+
+void logf(const char* fmt, ...) {
+	va_list argp;
+
+	va_start(argp, fmt);
+
+	logv(fmt, argp, false);
+
+	va_end(argp);
+}
+
 int _main(int argc, char** argv)
 {
 	{
 		var s = Array();
 		{
-			//Tokenizer tk;
+			carbon::Tokenizer tk;
 			s = "testing asdf";
 		}
 		//s = Dictionary();

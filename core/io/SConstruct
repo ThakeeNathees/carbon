@@ -1,0 +1,5 @@
+#!python
+import os
+Import('cbenv')
+
+cbenv.core_source += [ Glob('*.cpp') ]

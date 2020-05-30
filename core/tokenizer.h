@@ -28,24 +28,23 @@
 
 #include "token.h"
 
+namespace carbon {
+
 class Tokenizer
 {
 private:
-	String surce_code;
+	String source;
 	Array tokens;
+	int cur_line = 1, cur_col = 1;
 	int tk_ptr = 0; // token index in tokens
 
 public:
 
-	Tokenizer() {
-		//DEBUG_PRINT("TESTING");
-		//Array a = Array();
-		//a.append("testing");
-		//tokens.append(Token::TK_EOF);
-		//tokens[0].as_enum<Token>();
-	}
-	
+	Tokenizer() { }
+	void set_source(const String& p_source);	
 
 };
+
+}
 
 #endif // TOKENIZER_H

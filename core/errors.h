@@ -28,6 +28,9 @@
 
 #include "core.h"
 
+namespace carbon {
 
+
+}
 
 #endif // ERRORS_H

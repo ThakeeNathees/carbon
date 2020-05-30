@@ -23,18 +23,19 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "tokenizer.h"
+#include "builtin_functions.h"
 
 namespace carbon {
 
-void Tokenizer::set_source(const String& p_source) {
-	source = p_source;
-	cur_line = cur_col = 1;
-	tk_ptr = 0;
-	tokens.clear();
-
-	// TODO:
-
+const char* BuiltinFunctions::get_func_name(BuiltinFunctions::Function p_func) {
+	static const char* func_names[] = {
+		"print",
+		"input",
+		"min",
+		"max",
+		"_FUNC_MAX_",
+	};
+	return func_names[(int)p_func];
 }
 
 }

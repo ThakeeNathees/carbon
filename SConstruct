@@ -4,7 +4,7 @@ import os, subprocess, sys
 opts = Variables([], ARGUMENTS)
 
 # Gets the standard flags CC, CCX, etc.
-env = DefaultEnvironment()
+cbenv = DefaultEnvironment()
 
 # Define our options
 opts.Add(EnumVariable('target', "Compilation target", 'debug', ['debug', 'release']))
@@ -16,29 +16,29 @@ opts.Add(PathVariable('target_name', 'The library/application name.', 'carbon', 
 opts.Add(EnumVariable('bits', 'output program bits', '64', ['32', '64']))
 
 # Updates the environment with the option variables.
-opts.Update(env)
+opts.Update(cbenv)
 
 # Process some arguments
-if env['use_llvm']:
-    env['CC'] = 'clang'
-    env['CXX'] = 'clang++'
+if cbenv['use_llvm']:
+    cbenv['CC'] = 'clang'
+    cbenv['CXX'] = 'clang++'
 
 # debug macro for all platforms
-if env['target'] == 'debug':
-    env.Append(CPPDEFINES=['_DEBUG'])
+if cbenv['target'] == 'debug':
+    cbenv.Append(CPPDEFINES=['_DEBUG'])
 else:
-    env.Append(CPPDEFINES=['NDEBUG'])
+    cbenv.Append(CPPDEFINES=['NDEBUG'])
 
 # find platform
-if env['platform'] == 'linux':
-    env['platform'] = 'x11'
-if env['platform'] == '':
+if cbenv['platform'] == 'linux':
+    cbenv['platform'] = 'x11'
+if cbenv['platform'] == '':
     if sys.platform == 'win32':
-        env['platform'] = 'windows'
+        cbenv['platform'] = 'windows'
     elif sys.platform in ('linux', 'linux2'):
-        env['platform'] = 'x11'
+        cbenv['platform'] = 'x11'
     elif sys.platform == 'darwin':
-        env['platform'] = 'osx'
+        cbenv['platform'] = 'osx'
     else:
         print("platform(%s) not supported." % sys.platform)
         quit()
@@ -47,21 +47,21 @@ if env['platform'] == '':
 def add_include_dir(_path):
     dir  = Dir('.').abspath
     path = os.path.join(dir, _path)
-    env.Append(CPPPATH=[path])
-env.add_include_dir = add_include_dir
+    cbenv.Append(CPPPATH=[path])
+cbenv.add_include_dir = add_include_dir
 
 def add_lib(name, path=None):
     if path:
-        env.Append(LIBPATH=[path])
-    env.Append(LIBS=[name])
-env.add_lib = add_lib
+        cbenv.Append(LIBPATH=[path])
+    cbenv.Append(LIBS=[name])
+cbenv.add_lib = add_lib
 
 # output name suffix, dir
 def get_suffix(platform, target, bits):
     return '.%s.%s.%s' % (platform, target, bits)
 
-env["out_suffix"]  = get_suffix(
-    env['platform'], env['target'], env['bits'])
+cbenv["out_suffix"]  = get_suffix(
+    cbenv['platform'], cbenv['target'], cbenv['bits'])
 
 # For the reference:
 # - CCFLAGS are compilation flags shared between C and C++
@@ -72,66 +72,66 @@ env["out_suffix"]  = get_suffix(
 # - LINKFLAGS are for linking flags
 
 # Check our platform specifics
-if env['platform'] == "osx":
-    env.Append(CXXFLAGS=['-std=c++17'])
-    if env['target'] == 'debug':
-        env.Append(CCFLAGS=['-g', '-O2', '-arch', 'x86_64'])
-        env.Append(LINKFLAGS=['-arch', 'x86_64'])
+if cbenv['platform'] == "osx":
+    cbenv.Append(CXXFLAGS=['-std=c++17'])
+    if cbenv['target'] == 'debug':
+        cbenv.Append(CCFLAGS=['-g', '-O2', '-arch', 'x86_64'])
+        cbenv.Append(LINKFLAGS=['-arch', 'x86_64'])
     else:
-        env.Append(CCFLAGS=['-g', '-O3', '-arch', 'x86_64'])
-        env.Append(LINKFLAGS=['-arch', 'x86_64'])
+        cbenv.Append(CCFLAGS=['-g', '-O3', '-arch', 'x86_64'])
+        cbenv.Append(LINKFLAGS=['-arch', 'x86_64'])
 
-elif env['platform'] == 'x11':
-    env.Append(LIBS=['GL', 'GLU', 'dl', 'X11', 'pthread']) 
-    env.Append(CXXFLAGS=['-std=c++17'])
-    if env['target'] == 'debug':
-        env.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
+elif cbenv['platform'] == 'x11':
+    cbenv.Append(LIBS=['GL', 'GLU', 'dl', 'X11', 'pthread']) 
+    cbenv.Append(CXXFLAGS=['-std=c++17'])
+    if cbenv['target'] == 'debug':
+        cbenv.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
     else:
-        env.Append(CCFLAGS=['-fPIC', '-g', '-O3'])
+        cbenv.Append(CCFLAGS=['-fPIC', '-g', '-O3'])
 
-elif env['platform'] == "windows":
-    env.Append(CXXFLAGS=['/std:c++17'])
+elif cbenv['platform'] == "windows":
+    cbenv.Append(CXXFLAGS=['/std:c++17'])
     # This makes sure to keep the session environment variables on windows,
     # that way you can run scons in a vs 2017 prompt and it will find all the required tools
-    env.Append(ENV=os.environ)
+    cbenv.Append(ENV=os.environ)
 
-    env.Append(CPPDEFINES=['WIN32', '_WIN32', '_WINDOWS', '_CRT_SECURE_NO_WARNINGS'])
-    env.Append(CCFLAGS=['-W3', '-GR'])
-    env.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
+    cbenv.Append(CPPDEFINES=['WIN32', '_WIN32', '_WINDOWS', '_CRT_SECURE_NO_WARNINGS'])
+    cbenv.Append(CCFLAGS=['-W3', '-GR'])
+    cbenv.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
 
-    env.Append(LIBS=[
+    cbenv.Append(LIBS=[
         #'opengl32.lib',
         #'user32.lib',
         #'gdi32.lib',
         #'shell32.lib',
     ])
 
-    if env['target'] == 'debug':
-        env.Append(CCFLAGS=['-EHsc', '-MDd', '-ZI'])
-        env.Append(LINKFLAGS=['-DEBUG'])
+    if cbenv['target'] == 'debug':
+        cbenv.Append(CCFLAGS=['-EHsc', '-MDd', '-ZI'])
+        cbenv.Append(LINKFLAGS=['-DEBUG'])
     else:
-        env.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
+        cbenv.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
 
 # includes and libs
-env.includes = []
-env.sources  = [       # cpp files
-    'main/main_%s.cpp' % env['platform'],
+cbenv.includes = []
+cbenv.sources  = [       # cpp files
+    'main/main_%s.cpp' % cbenv['platform'],
     'main/main.cpp'
 ]
-env.Append(CPPPATH=[]) # include files
-env.Append(LIBPATH=[]) # static lib dir
+cbenv.Append(CPPPATH=[]) # include files
+cbenv.Append(LIBPATH=[]) # static lib dir
 
-Export('env')
+Export('cbenv')
 SConscript('core/SConstruct')
 SConscript('os/SConstruct')
 
-for header in env.includes:
-    env.Prepend(CPPPATH=[header])
+for header in cbenv.includes:
+    cbenv.Prepend(CPPPATH=[header])
 
 
-target = env.Program(target=os.path.join(
-    env['target_path'], env['target_name'] + env['out_suffix']),
-    source=env.sources,
+target = cbenv.Program(target=os.path.join(
+    cbenv['target_path'], cbenv['target_name'] + cbenv['out_suffix']),
+    source=cbenv.sources,
 )
 
 # visual studio targets
@@ -142,8 +142,8 @@ def get_vsproj_context():
         for bits in '32', '64':
             vsproj_targets.append(
                 os.path.join(
-                    env['target_path'],
-                    env['target_name'] + env["out_suffix"]
+                    cbenv['target_path'],
+                    cbenv['target_name'] + cbenv["out_suffix"]
                     + '.exe'
                 )
             )
@@ -154,7 +154,7 @@ def get_vsproj_context():
 
 def msvs_collect_header():
     ret = []
-    for _dir in env['CPPPATH']:
+    for _dir in cbenv['CPPPATH']:
         _dir = str(_dir)
         for file in os.listdir(_dir):
             if os.path.isfile(os.path.join(_dir, file)) and (file.endswith('.h') or file.endswith('.hpp')):
@@ -170,19 +170,19 @@ def msvc_build_commandline(commands):
     return " ^& ".join(common_build_prefix + [commands])
 
 
-if env['vsproj']:
-    env["MSVSBUILDCOM"] = msvc_build_commandline(
+if cbenv['vsproj']:
+    cbenv["MSVSBUILDCOM"] = msvc_build_commandline(
         "scons --directory=\"$(ProjectDir.TrimEnd('\\'))\" platform=windows target=$(Configuration) bits=!bits!"
     )
-    env["MSVSREBUILDCOM"] = msvc_build_commandline(
+    cbenv["MSVSREBUILDCOM"] = msvc_build_commandline(
         "scons --directory=\"$(ProjectDir.TrimEnd('\\'))\" platform=windows target=$(Configuration) bits=!bits! vsproj=yes"
     )
-    env["MSVSCLEANCOM"] = msvc_build_commandline(
+    cbenv["MSVSCLEANCOM"] = msvc_build_commandline(
         "scons --directory=\"$(ProjectDir.TrimEnd('\\'))\" --clean platform=windows bits=!bits! target=$(Configuration)"
     )
     targets, variants = get_vsproj_context()
-    env.MSVSProject(target = env['target_name'] + env['MSVSPROJECTSUFFIX'],
-        srcs = env.sources,
+    cbenv.MSVSProject(target = cbenv['target_name'] + cbenv['MSVSPROJECTSUFFIX'],
+        srcs = cbenv.sources,
         incs = msvs_collect_header(),
         variant = variants,
         runfile = targets,
@@ -191,4 +191,4 @@ if env['vsproj']:
 
 
 # Generates help for the -h scons option.
-Help(opts.GenerateHelpText(env))
+Help(opts.GenerateHelpText(cbenv))

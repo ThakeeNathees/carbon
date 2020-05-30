@@ -1,31 +1,29 @@
 #!python
 import os
-Import('env')
+Import('cbenv')
 
 # project includes
-env.add_include_dir('var.h')
-env.add_include_dir('.')
+cbenv.add_include_dir('var.h')
+cbenv.add_include_dir('.')
 
 # core env
-env_core = env.Clone()
+env_core = cbenv.Clone()
 env_core.Append(CPPDEFINES=[]) # predefined macros
 env_core.Append(CPPPATH=[])    # include files
 env_core.Append(LIBPATH=[])    # static lib dir
 env_core.Append(LIBS=[])       # static libs
-env.core_source = []           # source files
+cbenv.core_source = []           # source files
 
 # collect obj files
-env.core_source += [
+cbenv.core_source += [
     'var.h/var.cpp',
     Glob('*.cpp'),
 ]
-#SConscript('glfw/SConstruct')
-#SConscript('glad/SConstruct')
-#SConscript('ImGui/SConstruct')
+SConscript('io/SConstruct')
 
 # make library
 lib = env_core.StaticLibrary(
         'bin/' + 'core' + env_core['out_suffix'], 
-        env.core_source
+        cbenv.core_source
     )
-env.Prepend(LIBS=[lib])
+cbenv.Prepend(LIBS=[lib])

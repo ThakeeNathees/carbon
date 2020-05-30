@@ -23,18 +23,25 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "tokenizer.h"
+#include "io/console_logger.h"
 
 namespace carbon {
 
-void Tokenizer::set_source(const String& p_source) {
-	source = p_source;
-	cur_line = cur_col = 1;
-	tk_ptr = 0;
-	tokens.clear();
 
-	// TODO:
+class ConsoleLoggerWindows :public ConsoleLogger
+{
+protected:
+	virtual void log_impl(const char* p_msg) {}
+	virtual void log_info_impl(const char* p_msg) {}
+	virtual void log_warning_impl(const char* p_msg) {}
+	virtual void log_error_impl(const char* p_msg) {}
 
-}
+	virtual void logf_impl(const char* p_fmt, va_list p_list) {}
+	virtual void logf_info_impl(const char* p_fmt, va_list p_list) {}
+	virtual void logf_warning_impl(const char* p_fmt, va_list p_list) {}
+	virtual void logf_error_impl(const char* p_fmt, va_list p_list) {}
+};
+
+Ptr<ConsoleLogger> ConsoleLogger::singleton = newptr(ConsoleLoggerWindows);
 
 }

@@ -23,18 +23,10 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "tokenizer.h"
+#include "console_logger.h"
 
 namespace carbon {
 
-void Tokenizer::set_source(const String& p_source) {
-	source = p_source;
-	cur_line = cur_col = 1;
-	tk_ptr = 0;
-	tokens.clear();
-
-	// TODO:
-
-}
+// Ptr<ConsoleLogger> ConsoleLogger::singleton;
 
 }

@@ -23,18 +23,29 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "tokenizer.h"
+#ifndef BUILTIN_FUNCTIONS_H
+#define BUILTIN_FUNCTIONS_H
+
+#include "core.h"
 
 namespace carbon {
 
-void Tokenizer::set_source(const String& p_source) {
-	source = p_source;
-	cur_line = cur_col = 1;
-	tk_ptr = 0;
-	tokens.clear();
+class BuiltinFunctions {
+private:
 
-	// TODO:
+public:
+	enum class Function {
+		PRINT,
+		INPUT,
+
+		MATH_MIN,
+		MATH_MAX,
+
+		_FUNC_MAX_,
+	};
+	static const char* get_func_name(Function p_func);
+};
 
 }
 
-}
+#endif // BUILTIN_FUNCTIONS_H
