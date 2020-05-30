@@ -9,11 +9,11 @@ env_os.add_lib('dbghelp')
 
 # windows env
 env_os.Append(CPPDEFINES=[]) # predefined macros
-sources = [                  # source files
+env_os.sources += [          # source files
     Glob('*.cpp'),
 ]
 
-# compie list
-for file in sources:
-    obj = env_os.Object(file)
-    env_os.source.append(obj)
+## this will compile to obj file and append
+## for file in sources:
+##     obj = env_os.Object(file)
+##     env_os.sources.append(obj)

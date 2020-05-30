@@ -12,18 +12,22 @@ env_core.Append(CPPDEFINES=[]) # predefined macros
 env_core.Append(CPPPATH=[])    # include files
 env_core.Append(LIBPATH=[])    # static lib dir
 env_core.Append(LIBS=[])       # static libs
-cbenv.core_source = []           # source files
+env_core.sources = []         # source files
 
 # collect obj files
-cbenv.core_source += [
+env_core.sources += [
     'var.h/var.cpp',
     Glob('*.cpp'),
 ]
+Export('env_core')
 SConscript('io/SConstruct')
+
+for src in env_core.sources:
+    cbenv.add_ide_sources(src)
 
 # make library
 lib = env_core.StaticLibrary(
         'bin/' + 'core' + env_core['out_suffix'], 
-        cbenv.core_source
+        env_core.sources
     )
 cbenv.Prepend(LIBS=[lib])
