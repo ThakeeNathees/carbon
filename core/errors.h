@@ -30,6 +30,7 @@
 
 namespace carbon {
 
+// define error macros
 
 }
 

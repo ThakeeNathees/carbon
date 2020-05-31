@@ -27,48 +27,20 @@
 #include <string>
 #define PRINT(x) std::cout << (x) << std::endl
 
+
 #include "tokenizer.h"
-
-void logv(const char* fmt, va_list list, bool err) {
-
-	const unsigned int BUFFER_SIZE = 1024;
-	char buf[BUFFER_SIZE + 1]; // +1 for the terminating character
-	int len = vsnprintf(buf, BUFFER_SIZE, fmt, list);
-	if (len <= 0)
-		return;
-	if ((unsigned int)len >= BUFFER_SIZE)
-		len = BUFFER_SIZE; // Output is too big, will be truncated
-	buf[len] = 0;
-	if (err)
-		fprintf(stderr, "%s", buf);
-	else
-		fprintf(stdout, "%s", buf);
-
-}
-
-void logf(const char* fmt, ...) {
-	va_list argp;
-
-	va_start(argp, fmt);
-
-	logv(fmt, argp, false);
-
-	va_end(argp);
-}
+#include "io/console_logger.h"
+using namespace carbon;
 
 int _main(int argc, char** argv)
 {
-	{
-		var s = Array();
-		{
-			carbon::Tokenizer tk;
-			s = "testing asdf";
-		}
-		//s = Dictionary();
-		s = Dictionary();
-	}
-
-	PRINT("It's goint to crash");
+	Tokenizer tk;
+	tk.set_source(
+		"var x = 1;\n\\ "
+	);
+	
+	ConsoleLogger::logf_error("Error: %s\n", "Debug break ...");
+	DEBUG_BREAK();
 	char* invalid_ptr = NULL;
 	*invalid_ptr = 0xff;
 	return 0;
