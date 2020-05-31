@@ -35,11 +35,14 @@ private:
 
 public:
 	enum class Function {
+		UNKNOWN,
+
 		PRINT,
 		INPUT,
 
 		MATH_MIN,
 		MATH_MAX,
+		MATH_POW,
 
 		_FUNC_MAX_,
 	};

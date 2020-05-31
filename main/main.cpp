@@ -35,10 +35,13 @@ using namespace carbon;
 int _main(int argc, char** argv)
 {
 	Tokenizer tk;
-	tk.set_source("& ? |= ! != + /* asdf asdfasdf*/ ");
+	tk.set_source(
+		"var x = 1;\n\\ "
+	);
+	
 	ConsoleLogger::logf_error("Error: %s\n", "Debug break ...");
 	DEBUG_BREAK();
-	//char* invalid_ptr = NULL;
-	//*invalid_ptr = 0xff;
+	char* invalid_ptr = NULL;
+	*invalid_ptr = 0xff;
 	return 0;
 }

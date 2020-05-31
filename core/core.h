@@ -68,6 +68,8 @@ using namespace varh;
 #define NOEFFECT(m_) m_
 #define PLACE_HOLDER_MACRO
 
+// TODO: refector debug print and error handle
+
 #ifdef _MSC_VER
 #	define DEBUG_BREAK() __debugbreak()
 #else
@@ -83,7 +85,16 @@ do {                                                                            
 		printf("DEBUG_PRINT: \"%s\" at %s (%s:%i)\n", ARG_1(__VA_ARGS__), __FUNCTION__, __FILE__, __LINE__);   \
 } while (false)
 #else
-#define DEBUG_PRINT
+#define DEBUG_PRINT(...)
+#endif
+
+#if defined(_DEBUG)
+#define ASSERT(m_cond)                                                                                   \
+	if (!(m_cond))                                                                                       \
+		printf("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond));  \
+		DEBUG_BREAK()
+#else
+#define ASSERT(...)
 #endif
 
 #define VSNPRINTF_BUFF_SIZE 8192

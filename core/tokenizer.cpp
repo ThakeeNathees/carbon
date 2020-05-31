@@ -41,13 +41,77 @@ namespace carbon {
 	cur_line++;       \
 }
 
-void Tokenizer::_eat_token(Token p_tk, int char_size) {
+#define IS_NUM(c)     \
+( ('0' <= c && c <= '9') )
+
+#define IS_TEXT(c)    \
+( (c == '_') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') )
+
+struct KeywordName { const char* name; Token tk; };
+static KeywordName _keyword_name_list[] = {
+	{ "null", Token::KWORD_NULL	         },
+	{ "var", Token::KWORD_VAR		     },
+	{ "true", Token::KWORD_TRUE	         },
+	{ "false", Token::KWORD_FALSE	     },
+	{ "if", Token::KWORD_IF		         },
+	{ "else", Token::KWORD_ELSE	         },
+	{ "while", Token::KWORD_WHILE	     },
+	{ "for", Token::KWORD_FOR		     },
+	{ "foreach", Token::KWORD_FOREACH	 },
+	{ "break", Token::KWORD_BREAK	     },
+	{ "continue", Token::KWORD_CONTINUE  },
+	{ "and", Token::KWORD_AND		     },
+	{ "or", Token::KWORD_OR		         },
+	{ "not", Token::KWORD_NOT		     },
+	{ "return", Token::KWORD_RETURN	     },
+	{ "func", Token::KWORD_FUNC	         },
+	{ "struct", Token::KWORD_STRUCT	     },
+	{ "import", Token::KWORD_IMPORT	     },
+};
+
+struct BuiltinFuncName { const char* name; BuiltinFunctions::Function func; };
+static BuiltinFuncName _builtin_func_list[] = {
+	// { "", BuiltinFunctions::Function::UNKNOWN  },
+	{ "print", BuiltinFunctions::Function::PRINT  },
+	{ "input", BuiltinFunctions::Function::INPUT  },
+	{ "min", BuiltinFunctions::Function::MATH_MIN },
+	{ "max", BuiltinFunctions::Function::MATH_MAX },
+	{ "pow", BuiltinFunctions::Function::MATH_POW },
+};
+
+void Tokenizer::_set_error(const String& p_msg) {
+	has_error = true;
+	error_msg = p_msg;
+	err_line = cur_line;
+	err_col = cur_col;
+}
+
+void Tokenizer::_eat_escape(String& p_str) {
+	char c = GET_CHAR(0);
+	ASSERT(c == '\\');
+	c = GET_CHAR(1);
+	switch (c) {
+		case 0:
+			_set_error("Unexpected EOF.");
+			break;
+		case '\\': p_str += '\\'; EAT_CHAR(2); break;
+		case '\'': p_str += '\''; EAT_CHAR(2); break;
+		case 't':  p_str += '\t'; EAT_CHAR(2); break;
+		case 'n':  p_str += '\n'; EAT_CHAR(2); break;
+		case '"':  p_str += '"';  EAT_CHAR(2); break;
+		case 'r':  p_str += '\r'; EAT_CHAR(2); break;
+		case '\n': EAT_CHAR(1); EAT_LINE(); break;
+		default: p_str += c;
+	}
+}
+
+void Tokenizer::_eat_token(Token p_tk, int p_eat_size) {
 	TokenData tk;
 	tk.type = p_tk;
 	tk.line = cur_line;
 	tk.col = cur_col;
 	tokens.push_back(tk);
-	EAT_CHAR(char_size);
+	EAT_CHAR(p_eat_size);
 }
 
 void Tokenizer::_eat_eof() {
@@ -59,6 +123,56 @@ void Tokenizer::_eat_eof() {
 	EAT_CHAR(1);
 }
 
+void Tokenizer::_eat_const_value(const var& p_value, int p_eat_size) {
+	TokenData tk;
+	tk.line = cur_line;
+	tk.col = cur_col;
+	tk.constant = p_value;
+
+	switch (p_value.get_type()) {
+		case var::STRING:
+			tk.type = Token::VALUE_STRING;
+			break;
+		case var::INT:
+			tk.type = Token::VALUE_INT;
+			break;
+		case var::FLOAT:
+			tk.type = Token::VALUE_FLOAT;
+			break;
+		default:
+			DEBUG_BREAK(); // TODO:
+			break;
+	}
+
+	tokens.push_back(tk);
+	EAT_CHAR(p_eat_size);
+}
+
+void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
+	TokenData tk;
+	tk.col = cur_col;
+	tk.line = cur_line;
+
+	for (const KeywordName& kw : _keyword_name_list) {
+		if (kw.name == p_idf) {
+			tk.type = kw.tk;
+			break;
+		}
+	}
+	if (tk.type == Token::UNKNOWN) {
+		for (const BuiltinFuncName& bf : _builtin_func_list) {
+			if (bf.name == p_idf) {
+				tk.type = Token::IDENTIFIER;
+				tk.builtin_func = bf.func;
+			}
+		}
+	}
+
+	tk.type = Token::IDENTIFIER;
+	tk.identifier = p_idf;
+	tokens.push_back(tk);
+	EAT_CHAR(p_eat_size);
+}
 
 void Tokenizer::set_source(const String& p_source) {
 	source = p_source;
@@ -67,7 +181,9 @@ void Tokenizer::set_source(const String& p_source) {
 	tokens.clear();
 
 	while (char_ptr < source.size()) {
-		if (has_error) return;
+
+		if (has_error)
+			break;
 
 		switch (GET_CHAR(0)) {
 			case 0:
@@ -78,7 +194,7 @@ void Tokenizer::set_source(const String& p_source) {
 				EAT_CHAR(1);
 				break;
 			case '\n':
-				EAT_LINE(1);
+				EAT_LINE();
 				break;
 			case '/':
 			{
@@ -100,9 +216,7 @@ void Tokenizer::set_source(const String& p_source) {
 						if (GET_CHAR(0) == '*' && GET_CHAR(1) == '/') {
 							EAT_CHAR(2);
 						} else if (GET_CHAR(0) == 0) {
-							// EAT_CHAR(1); // can't eat it's error!
-							has_error = true;
-							error_msg = "Unexpected EOF.";
+							_set_error("Unexpected EOF.");
 						} else if (GET_CHAR(0) == '\n') {
 							EAT_LINE();
 						} else {
@@ -156,6 +270,9 @@ void Tokenizer::set_source(const String& p_source) {
 				break;
 			}
 			// case '/': { } // already hadled
+			case '\\':
+				_set_error("Invalid character '\\'");
+				break;
 			case '%': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_MOD_EQ, 2);
 				else _eat_token(Token::OP_MOD);
@@ -203,15 +320,89 @@ void Tokenizer::set_source(const String& p_source) {
 				break;
 			}
 
-			// identifier
+			// double quote string value single quote not supported yet
+			case '"': {
+				EAT_CHAR(1);
+				String str;
+				while (GET_CHAR(0) != '"') {
+					if (GET_CHAR(0) == '\\') {
+						_eat_escape(str);
+					} else if (GET_CHAR(0) == 0) {
+						_set_error("Unexpected EOF.");
+						break;
+					} else if(GET_CHAR(0) == '\n'){
+						_set_error("Unexpected end of line");
+						break;
+					} else {
+						str += GET_CHAR(0);
+						EAT_CHAR(1);
+					}
+				}
+				EAT_CHAR(1);
+				_eat_const_value(str);
+				break;
+			}
+			case '\'':
+				_set_error("Invalid character '\\''.");
+				break;
+			default: {
+				
+				// NOTE: 1.2.3 => float=1.2 float=.3 is this okey?
+				// TODO: hex/binary/octal numbers
 
+				// float value begins with '.'
+				if (GET_CHAR(0) == '.' && IS_NUM(GET_CHAR(1)) ) {
+					String float_str = '.';
+					EAT_CHAR(1);
+					while (IS_NUM(GET_CHAR(0))) {
+						float_str += GET_CHAR(0);
+						EAT_CHAR(1);
+					}
+					double float_val = float_str.to_double();
+					_eat_const_value(float_val);
+					break;
+				}
+				// integer/float value
+				if (IS_NUM(GET_CHAR(0))) {
+					String num = GET_CHAR(0);
+					EAT_CHAR(1);
+					bool is_float = false;
+					while (IS_NUM(GET_CHAR(0)) || GET_CHAR(0) == '.' ) {
+						if (GET_CHAR(0) == '.' && is_float)
+							break;
+						if (GET_CHAR(0) == '.')
+							is_float = true;
+						num += GET_CHAR(0);
+						EAT_CHAR(1);
+					}
+					if (is_float)
+						_eat_const_value(num.to_double());
+					else
+						_eat_const_value(num.to_int());
+					break;
+				}
+				// identifier
+				if (IS_TEXT(GET_CHAR(0))) {
+					String identifier = GET_CHAR(0);
+					EAT_CHAR(1);
+					while (IS_TEXT(GET_CHAR(0)) || IS_NUM(GET_CHAR(0))) {
+						identifier += GET_CHAR(0);
+						EAT_CHAR(1);
+					}
+					_eat_identifier(identifier);
+					break;
+				}
 
+				DEBUG_BREAK(); // TODO:
 
+			} // default case
 
+		} // switch
+	} // while
 
-		}
+	if (has_error)
+		return;
 
-	}
 	_eat_eof();
 
 }
