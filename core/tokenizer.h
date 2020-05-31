@@ -26,6 +26,7 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
+#include "core.h"
 #include "builtin_functions.h"
 
 namespace carbon {
@@ -92,9 +93,10 @@ enum class Token {
 	KWORD_OR,
 	KWORD_NOT,
 	KWORD_RETURN,
-	KWORD_FUNC,
-	KWORD_STRUCT,
 	KWORD_IMPORT,
+	KWORD_STRUCT,
+	KWORD_ENUM,
+	KWORD_FUNC,
 	VALUE_STRING,
 	VALUE_INT,
 	VALUE_FLOAT,

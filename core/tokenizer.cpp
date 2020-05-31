@@ -64,9 +64,10 @@ static KeywordName _keyword_name_list[] = {
 	{ "or", Token::KWORD_OR		         },
 	{ "not", Token::KWORD_NOT		     },
 	{ "return", Token::KWORD_RETURN	     },
-	{ "func", Token::KWORD_FUNC	         },
-	{ "struct", Token::KWORD_STRUCT	     },
 	{ "import", Token::KWORD_IMPORT	     },
+	{ "struct", Token::KWORD_STRUCT	     },
+	{ "enum", Token::KWORD_ENUM	         },
+	{ "func", Token::KWORD_FUNC	         },
 };
 
 struct BuiltinFuncName { const char* name; BuiltinFunctions::Function func; };
