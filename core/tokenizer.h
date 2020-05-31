@@ -34,9 +34,16 @@ class Tokenizer
 {
 private:
 	String source;
-	Array tokens;
+	std::vector<TokenData> tokens;
 	int cur_line = 1, cur_col = 1;
-	int tk_ptr = 0; // token index in tokens
+	int char_ptr = 0;
+
+	// err must be cur_line, cur_col
+	bool has_error = false;
+	String error_msg;
+
+	void _eat_token(Token p_tk, int char_size=1);
+	void _eat_eof();
 
 public:
 

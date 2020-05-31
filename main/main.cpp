@@ -34,8 +34,11 @@ using namespace carbon;
 
 int _main(int argc, char** argv)
 {
-	ConsoleLogger::logf_error("Error: %s\n", "It's goint to crash...");
-	char* invalid_ptr = NULL;
-	*invalid_ptr = 0xff;
+	Tokenizer tk;
+	tk.set_source("& ? |= ! != + /* asdf asdfasdf*/ ");
+	ConsoleLogger::logf_error("Error: %s\n", "Debug break ...");
+	DEBUG_BREAK();
+	//char* invalid_ptr = NULL;
+	//*invalid_ptr = 0xff;
 	return 0;
 }
