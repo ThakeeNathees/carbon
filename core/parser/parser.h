@@ -53,6 +53,7 @@ public:
 			CONTROL_FLOW,
 		};
 		Type type;
+		int line, col;
 	};
 
 	struct StructNode;
@@ -173,6 +174,8 @@ public:
 			OP_DIVEQ,
 			OP_MOD,
 			OP_MOD_EQ,
+			OP_INCR,
+			OP_DECR,
 			OP_NOT,
 			OP_NOTEQ,
 			OP_LT,
@@ -201,8 +204,8 @@ public:
 	struct ControlFlowNode : Node {
 		enum class CfType {
 			IF,
-			FOR,
-			FOREACH,
+			FOR,      // for ( var i = 0; i < 10; i++ ) { }
+			FOR_EACH, // for ( var i : a_list ) { }
 			WHILE,
 			BREAK,
 			CONTINUE,
@@ -211,11 +214,36 @@ public:
 		CfType cf_type;
 		std::vector<Ptr<Node>> args;
 		Ptr<BlockNode> body;
-		Ptr<BlockNode> body_else;
+		Ptr<BlockNode> body_else; // for cf if node
 		ControlFlowNode() {
 			type = Type::CONTROL_FLOW;
 		}
 	};
+
+private:
+
+	Error err;
+
+	String file_path;
+	String source;
+
+	Ptr<FileNode> file_node;
+	Ptr<Tokenizer> tokenizer = newptr(Tokenizer);
+
+	Error::Type _set_error(Error::Type p_type, const String& p_msg, int line = -1);
+
+	Error::Type _parse_struct();
+	Error::Type _parse_enum();
+	Error::Type _parse_func();
+	Error::Type _parse_var(Ptr<Node> p_struct = nullptr);
+
+	Error::Type _parse_expression(Ptr<Node>& p_expr);
+	Error::Type _reduce_expression(Ptr<Node>& p_expr);
+	Error::Type _parse_and_reduce_expression(Ptr<Node>& p_expr);
+
+public:
+	const Error& parse(String p_source, String p_file_path);
+
 };
 
 

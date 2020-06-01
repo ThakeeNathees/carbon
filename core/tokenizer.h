@@ -34,6 +34,7 @@ namespace carbon {
 enum class Token {
 	UNKNOWN,
 	_EOF, // EOF already a macro in <stdio.h>
+	
 	SYM_DOT,
 	SYM_COMMA,
 	SYM_COLLON,
@@ -48,6 +49,7 @@ enum class Token {
 	BRACKET_RCUR,
 	BRACKET_RSQ,
 	BRACKET_LSQ,
+
 	OP_EQ,
 	OP_EQEQ,
 	OP_PLUS,
@@ -60,6 +62,8 @@ enum class Token {
 	OP_DIVEQ,
 	OP_MOD,
 	OP_MOD_EQ,
+	OP_INCR,
+	OP_DECR,
 	OP_NOT,
 	OP_NOTEQ,
 	OP_LT,
@@ -77,26 +81,28 @@ enum class Token {
 	OP_AND_EQ,
 	OP_XOR,
 	OP_XOR_EQ,
+
 	IDENTIFIER,
-	KWORD_NULL,
+
+	KWORD_IMPORT,
+	KWORD_STRUCT,
+	KWORD_ENUM,
+	KWORD_FUNC,
 	KWORD_VAR,
+	KWORD_NULL,
 	KWORD_TRUE,
 	KWORD_FALSE,
 	KWORD_IF,
 	KWORD_ELSE,
 	KWORD_WHILE,
 	KWORD_FOR,
-	KWORD_FOREACH,
 	KWORD_BREAK,
 	KWORD_CONTINUE,
 	KWORD_AND,
 	KWORD_OR,
 	KWORD_NOT,
 	KWORD_RETURN,
-	KWORD_IMPORT,
-	KWORD_STRUCT,
-	KWORD_ENUM,
-	KWORD_FUNC,
+
 	VALUE_STRING,
 	VALUE_INT,
 	VALUE_FLOAT,
@@ -120,12 +126,11 @@ private:
 	std::vector<TokenData> tokens;
 	int cur_line = 1, cur_col = 1;
 	int char_ptr = 0;
+	int token_ptr = 0; // for next()
 
 	// error data
-	bool has_error = false;
-	int err_line=0, err_col = 0;
-	String error_msg;
-	void _set_error(const String& p_msg);
+	Error err;
+	void _set_error(Error::Type p_type, const String& p_msg = "");
 
 	void _eat_escape(String& p_str);
 	void _eat_token(Token p_tk, int p_eat_size=1);
@@ -136,7 +141,20 @@ private:
 public:
 
 	Tokenizer() { }
-	void set_source(const String& p_source);
+	const Error& tokenize(const String& p_source);
+
+	const TokenData& next(int p_offset = 0) { 
+		// TODO: check arr index
+		token_ptr += p_offset;
+		return tokens[token_ptr++];
+	}
+	const TokenData& peek(int p_offset = 0) const {
+		// TODO: check arr index
+		return tokens[token_ptr+p_offset];
+	}
+
+	int get_line() const { return cur_line; }
+	int get_coline() const { return cur_col; }
 
 };
 

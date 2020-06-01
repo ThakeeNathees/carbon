@@ -26,11 +26,23 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
-#include "core.h"
-
 namespace carbon {
 
-// define error macros
+struct Error {
+	enum Type {
+		OK,
+
+		SYNTAX_ERROR,
+		UNEXPECTED_EOF,
+
+		FILE_NOT_FOUND,
+		NULL_POINTER,
+		INVALID_INDEX,
+	};
+	Type type = OK;
+	String msg;
+	int line = -1, col = -1;
+};
 
 }
 

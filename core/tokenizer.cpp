@@ -49,25 +49,24 @@ namespace carbon {
 
 struct KeywordName { const char* name; Token tk; };
 static KeywordName _keyword_name_list[] = {
-	{ "null", Token::KWORD_NULL	         },
+	{ "import", Token::KWORD_IMPORT	     },
+	{ "struct", Token::KWORD_STRUCT	     },
+	{ "enum", Token::KWORD_ENUM	         },
+	{ "func", Token::KWORD_FUNC	         },
 	{ "var", Token::KWORD_VAR		     },
+	{ "null", Token::KWORD_NULL	         },
 	{ "true", Token::KWORD_TRUE	         },
 	{ "false", Token::KWORD_FALSE	     },
 	{ "if", Token::KWORD_IF		         },
 	{ "else", Token::KWORD_ELSE	         },
 	{ "while", Token::KWORD_WHILE	     },
 	{ "for", Token::KWORD_FOR		     },
-	{ "foreach", Token::KWORD_FOREACH	 },
 	{ "break", Token::KWORD_BREAK	     },
 	{ "continue", Token::KWORD_CONTINUE  },
 	{ "and", Token::KWORD_AND		     },
 	{ "or", Token::KWORD_OR		         },
 	{ "not", Token::KWORD_NOT		     },
 	{ "return", Token::KWORD_RETURN	     },
-	{ "import", Token::KWORD_IMPORT	     },
-	{ "struct", Token::KWORD_STRUCT	     },
-	{ "enum", Token::KWORD_ENUM	         },
-	{ "func", Token::KWORD_FUNC	         },
 };
 
 struct BuiltinFuncName { const char* name; BuiltinFunctions::Function func; };
@@ -80,11 +79,12 @@ static BuiltinFuncName _builtin_func_list[] = {
 	{ "pow", BuiltinFunctions::Function::MATH_POW },
 };
 
-void Tokenizer::_set_error(const String& p_msg) {
-	has_error = true;
-	error_msg = p_msg;
-	err_line = cur_line;
-	err_col = cur_col;
+void Tokenizer::_set_error(Error::Type p_type,const String& p_msg) {
+	if (err.type != Error::OK) return;
+	err.type = p_type;
+	err.msg = p_msg;
+	err.line = cur_line;
+	err.col = cur_col;
 }
 
 void Tokenizer::_eat_escape(String& p_str) {
@@ -93,7 +93,7 @@ void Tokenizer::_eat_escape(String& p_str) {
 	c = GET_CHAR(1);
 	switch (c) {
 		case 0:
-			_set_error("Unexpected EOF.");
+			_set_error(Error::UNEXPECTED_EOF);
 			break;
 		case '\\': p_str += '\\'; EAT_CHAR(2); break;
 		case '\'': p_str += '\''; EAT_CHAR(2); break;
@@ -175,7 +175,8 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 	EAT_CHAR(p_eat_size);
 }
 
-void Tokenizer::set_source(const String& p_source) {
+const Error& Tokenizer::tokenize(const String& p_source) {
+
 	source = p_source;
 	cur_line = cur_col = 1;
 	char_ptr = 0;
@@ -183,8 +184,8 @@ void Tokenizer::set_source(const String& p_source) {
 
 	while (char_ptr < source.size()) {
 
-		if (has_error)
-			break;
+		if (err.type != Error::OK)
+			return err;
 
 		switch (GET_CHAR(0)) {
 			case 0:
@@ -217,7 +218,7 @@ void Tokenizer::set_source(const String& p_source) {
 						if (GET_CHAR(0) == '*' && GET_CHAR(1) == '/') {
 							EAT_CHAR(2);
 						} else if (GET_CHAR(0) == 0) {
-							_set_error("Unexpected EOF.");
+							_set_error(Error::UNEXPECTED_EOF);
 						} else if (GET_CHAR(0) == '\n') {
 							EAT_LINE();
 						} else {
@@ -272,7 +273,7 @@ void Tokenizer::set_source(const String& p_source) {
 			}
 			// case '/': { } // already hadled
 			case '\\':
-				_set_error("Invalid character '\\'");
+				_set_error(Error::SYNTAX_ERROR, "Invalid character '\\'");
 				break;
 			case '%': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_MOD_EQ, 2);
@@ -329,10 +330,10 @@ void Tokenizer::set_source(const String& p_source) {
 					if (GET_CHAR(0) == '\\') {
 						_eat_escape(str);
 					} else if (GET_CHAR(0) == 0) {
-						_set_error("Unexpected EOF.");
+						_set_error(Error::UNEXPECTED_EOF);
 						break;
 					} else if(GET_CHAR(0) == '\n'){
-						_set_error("Unexpected end of line");
+						_set_error(Error::UNEXPECTED_EOF);
 						break;
 					} else {
 						str += GET_CHAR(0);
@@ -344,7 +345,7 @@ void Tokenizer::set_source(const String& p_source) {
 				break;
 			}
 			case '\'':
-				_set_error("Invalid character '\\''.");
+				_set_error(Error::SYNTAX_ERROR, "Invalid character '\\''.");
 				break;
 			default: {
 				
@@ -401,11 +402,9 @@ void Tokenizer::set_source(const String& p_source) {
 		} // switch
 	} // while
 
-	if (has_error)
-		return;
-
 	_eat_eof();
 
+	return err;
 }
 
 }

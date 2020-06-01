@@ -21,6 +21,7 @@ env_core.sources += [
 ]
 Export('env_core')
 SConscript('io/SConstruct')
+SConscript('parser/SConstruct')
 
 for src in env_core.sources:
     cbenv.add_ide_sources(src)

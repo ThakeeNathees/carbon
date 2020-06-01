@@ -30,6 +30,8 @@
 #include "var.h/_var.h"
 using namespace varh;
 
+#include "errors.h"
+
 // https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
 #ifdef _MSC_VER // Microsoft compilers
 
