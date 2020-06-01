@@ -27,8 +27,7 @@
 
 namespace carbon {
 
-Error::Type Parser::_parse_expression(Ptr<Node>& p_expr) {}
-Error::Type Parser::_reduce_expression(Ptr<Node>& p_expr) {}
-Error::Type Parser::_parse_and_reduce_expression(Ptr<Node>& p_expr) {}
+Error::Type Parser::_parse_expression(Ptr<Node>& p_expr) { return Error::OK; }   // TODO:
+Error::Type Parser::_reduce_expression(Ptr<Node>& p_expr) { return Error::OK; }	 // TODO:
 
 }

@@ -35,7 +35,7 @@ using namespace carbon;
 int _main(int argc, char** argv)
 {
 	Tokenizer tk;
-	tk.set_source(
+	tk.tokenize(
 		"var x = 1;\n\\ "
 	);
 	

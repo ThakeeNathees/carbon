@@ -101,8 +101,10 @@ do {                                                                            
 
 #define VSNPRINTF_BUFF_SIZE 8192
 
-#define newptr(T1, ...) std::make_shared<T1>(__VA_ARGS__);
-#define newptr2(T1, T2, ...) std::make_shared<T1, T2>(__VA_ARGS__);
+#define newptr(T1, ...)       std::make_shared<T1>(__VA_ARGS__)
+#define newptr2(T1, T2, ...)  std::make_shared<T1, T2>(__VA_ARGS__)
+#define ptr_cast(T, m_ptr)    std::static_pointer_cast<T>(m_ptr)
+
 template<typename T>
 using Ptr = std::shared_ptr<T>;
 

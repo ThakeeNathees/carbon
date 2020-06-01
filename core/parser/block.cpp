@@ -2,10 +2,10 @@
 // MIT License
 //------------------------------------------------------------------------------
 // 
-// Copyright (c), 2020 Thakee Nathees
+// Copyright (c) 2020 Thakee Nathees
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"),, to deal
+// of this software and associated documentation files (the "Software"), to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
@@ -23,28 +23,12 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef ERRORS_H
-#define ERRORS_H
+#include "parser.h"
 
 namespace carbon {
 
-struct Error {
-	enum Type {
-		OK = 0,
-
-		SYNTAX_ERROR,
-		UNEXPECTED_EOF,
-		ALREADY_DEFINED,
-
-		FILE_NOT_FOUND,
-		NULL_POINTER,
-		INVALID_INDEX,
-	};
-	Type type = OK;
-	String msg;
-	int line = -1, col = -1;
-};
-
+Error::Type Parser::_parse_block(Ptr<BlockNode>& p_block, const Ptr<Node>& p_parent) {
+		return Error::OK; // TODO:
 }
 
-#endif // ERRORS_H
+}

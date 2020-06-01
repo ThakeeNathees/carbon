@@ -39,6 +39,8 @@ public:
 	struct Node
 	{
 		enum class Type {
+			UNKNOWN,
+
 			FILE,
 			STRUCT,
 			ENUM,
@@ -54,6 +56,7 @@ public:
 		};
 		Type type;
 		int line, col;
+		Ptr<Node> parern_node;
 	};
 
 	struct StructNode;
@@ -68,7 +71,7 @@ public:
 	struct OperatorNode;
 	struct ControlFlowNode;
 
-	struct FileNode : Node {
+	struct FileNode : public Node {
 		String path;
 		std::vector<Ptr<FileNode>> imports;
 		std::vector<Ptr<VarNode>> static_vars;
@@ -82,7 +85,7 @@ public:
 
 	};
 
-	struct StructNode : Node {
+	struct StructNode : public Node {
 		String name;
 		std::vector<Ptr<VarNode>> members;
 		StructNode() {
@@ -90,7 +93,7 @@ public:
 		}
 	};
 
-	struct EnumNode : Node {
+	struct EnumNode : public Node {
 		String name;
 		std::map<String, int> values;
 		EnumNode() {
@@ -98,14 +101,14 @@ public:
 		}
 	};
 
-	struct BuiltinFunctionNode : Node {
+	struct BuiltinFunctionNode : public Node {
 		BuiltinFunctions::Function func;
 		BuiltinFunctionNode() {
 			type = Type::BUILTIN_FUNCTION;
 		}
 	};
 
-	struct FunctionNode : Node {
+	struct FunctionNode : public Node {
 		String name;
 		std::vector<String> args;
 		Ptr<BlockNode> body;
@@ -114,8 +117,7 @@ public:
 		}
 	};
 
-	struct BlockNode : Node {
-		Ptr<BlockNode> outer_block;
+	struct BlockNode : public Node {
 		std::vector<Ptr<Node>> statements;
 		std::vector<Ptr<VarNode>> local_vars;
 		BlockNode() {
@@ -123,14 +125,14 @@ public:
 		}
 	};
 
-	struct IdentifierNode : Node {
+	struct IdentifierNode : public Node {
 		String name;
 		IdentifierNode() {
 			type = Type::IDENTIFIER;
 		}
 	};
 
-	struct VarNode : Node {
+	struct VarNode : public Node {
 		String name;
 		Ptr<Node> assignment;
 		VarNode() {
@@ -138,14 +140,14 @@ public:
 		}
 	};
 
-	struct ArrayNode : Node {
+	struct ArrayNode : public Node {
 		std::vector<Ptr<Node>> elements;
 		ArrayNode() {
 			type = Type::ARRAY;
 		}
 	};
 
-	struct DictionaryNode : Node {
+	struct DictionaryNode : public Node {
 		struct Pair {
 			Ptr<Node> key;
 			Ptr<Node> value;
@@ -156,7 +158,7 @@ public:
 		}
 	};
 
-	struct OperatorNode : Node {
+	struct OperatorNode : public Node {
 		enum class OpType {
 			OP_CALL_FUNC,
 			OP_INDEX,
@@ -201,7 +203,7 @@ public:
 		}
 	};
 
-	struct ControlFlowNode : Node {
+	struct ControlFlowNode : public Node {
 		enum class CfType {
 			IF,
 			FOR,      // for ( var i = 0; i < 10; i++ ) { }
@@ -230,16 +232,33 @@ private:
 	Ptr<FileNode> file_node;
 	Ptr<Tokenizer> tokenizer = newptr(Tokenizer);
 
+	struct IdentifierLocation {
+		bool found = false;
+		int line = 0, col = 0;
+		String file_path;
+		Node::Type type = Node::Type::UNKNOWN;
+		IdentifierLocation() {}
+		IdentifierLocation(const Ptr<Node>& p_node, const String& p_file_path) {
+			found = true;
+			file_path = p_file_path;
+			line = p_node->line;
+			col = p_node->col;
+			type = p_node->type;
+		}
+	};
+
 	Error::Type _set_error(Error::Type p_type, const String& p_msg, int line = -1);
+	Error::Type _set_unexp_token_err(const String& p_exp = "");
+	IdentifierLocation _find_identifier_location(const String& p_name, const Ptr<Node> p_node) const;
 
 	Error::Type _parse_struct();
 	Error::Type _parse_enum();
+	Error::Type _parse_var(Ptr<Node> p_node = nullptr);
 	Error::Type _parse_func();
-	Error::Type _parse_var(Ptr<Node> p_struct = nullptr);
 
+	Error::Type _parse_block(Ptr<BlockNode>& p_block, const Ptr<Node>& p_parent);
 	Error::Type _parse_expression(Ptr<Node>& p_expr);
 	Error::Type _reduce_expression(Ptr<Node>& p_expr);
-	Error::Type _parse_and_reduce_expression(Ptr<Node>& p_expr);
 
 public:
 	const Error& parse(String p_source, String p_file_path);
