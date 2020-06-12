@@ -23,27 +23,62 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include <iostream>
-#include <string>
-#define PRINT(x) std::cout << (x) << std::endl
 
+#include "file.h"
 
-#include "parser/parser.h"
-#include "io/console_logger.h"
-using namespace carbon;
+namespace carbon {
 
-int _main(int argc, char** argv)
-{
-	Tokenizer tk;
-	Parser p;
-	p.parse(
-		"var x=1+2.3;", "file/path"
-	);
-	
-	
-	ConsoleLogger::logf_error("Error: %s\n", "Debug break ...");
-	DEBUG_BREAK();
-	char* invalid_ptr = NULL;
-	*invalid_ptr = 0xff;
-	return 0;
+void File::close() {
+	if (_file.is_open()) {
+		_file.close();
+	}
 }
+
+Error File::open(const String& p_path, ModeFlag p_mode) {
+
+	Error ret;
+
+	path = p_path;
+	mode = p_mode;
+
+	int mode = 0;
+	if (p_mode & READ) {
+		mode |= std::ios::in;
+	}
+	if (p_mode & WRITE) {
+		mode |= std::ios::out;
+	}
+	if (p_mode & APPEND) {
+		mode |= std::ios::app;
+	}
+	if (p_mode & BINARY) {
+		mode |= std::ios::binary;
+	}
+
+	_file.open(path, mode);
+	if (!_file.is_open()) {
+		ret.type = Error::CANT_OPEN_FILE;
+		ret.msg = String::format("can't open \"%s\"", path);
+		return ret;
+	}
+
+	return ret;
+}
+
+size_t File::size() {
+	std::streampos begin, end;
+	_file.seekg(0, std::ios::beg);
+	begin = _file.tellg();
+	_file.seekg(0, std::ios::end);
+	end = _file.tellg();
+	return end - begin;
+}
+
+File::File() {}
+
+File::~File() {
+	close();
+}
+
+}
+

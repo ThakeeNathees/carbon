@@ -150,7 +150,9 @@ void Tokenizer::_eat_const_value(const var& p_value, int p_eat_size) {
 }
 
 void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
+	
 	TokenData tk;
+	tk.type = Token::IDENTIFIER;
 	tk.col = cur_col;
 	tk.line = cur_line;
 
@@ -160,17 +162,20 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 			break;
 		}
 	}
-	if (tk.type == Token::UNKNOWN) {
+
+	if (tk.type == Token::IDENTIFIER) {
 		for (const BuiltinFuncName& bf : _builtin_func_list) {
 			if (bf.name == p_idf) {
-				tk.type = Token::IDENTIFIER;
+				tk.type = Token::BUILTIN_FUNC;
 				tk.builtin_func = bf.func;
+				break;
 			}
 		}
 	}
 
-	tk.type = Token::IDENTIFIER;
-	tk.identifier = p_idf;
+	if (tk.type == Token::IDENTIFIER) {
+		tk.identifier = p_idf;
+	}
 	tokens.push_back(tk);
 	EAT_CHAR(p_eat_size);
 }

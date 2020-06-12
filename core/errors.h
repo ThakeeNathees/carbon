@@ -36,9 +36,12 @@ struct Error {
 		UNEXPECTED_EOF,
 		ALREADY_DEFINED,
 
-		FILE_NOT_FOUND,
 		NULL_POINTER,
 		INVALID_INDEX,
+
+		CANT_OPEN_FILE,
+		IO_INVALID_OPERATORN,
+
 	};
 	Type type = OK;
 	String msg;

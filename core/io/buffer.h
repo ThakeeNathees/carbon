@@ -23,27 +23,42 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include <iostream>
-#include <string>
-#define PRINT(x) std::cout << (x) << std::endl
+#ifndef BUFFER_H
+#define BUFFER_H
 
+#include "core.h"
 
-#include "parser/parser.h"
-#include "io/console_logger.h"
-using namespace carbon;
+namespace carbon {
 
-int _main(int argc, char** argv)
-{
-	Tokenizer tk;
-	Parser p;
-	p.parse(
-		"var x=1+2.3;", "file/path"
-	);
-	
-	
-	ConsoleLogger::logf_error("Error: %s\n", "Debug break ...");
-	DEBUG_BREAK();
-	char* invalid_ptr = NULL;
-	*invalid_ptr = 0xff;
-	return 0;
+class Buffer : Object {
+private:
+	Ptr<char[]> _buffer;
+
+public:
+	// Object overrides
+	virtual bool get(const String& p_name, var& r_val) const override { return false; }
+	virtual bool set(const String& p_name, const var& p_val) override { return false; }
+	virtual bool has(const String& p_name) const override { return false; }
+
+	virtual void copy(Object* r_ret, bool p_deep) const override { /* TODO: */ }
+	String get_class_name() const { return "Buffer"; }
+
+	// Buffer methods
+	void alloc(size_t p_size) {
+		_buffer = Ptr<char[]>(new char[p_size]);
+	}
+
+	char& operator[](size_t p_size) {
+		// TODO: error handle
+		static char c = 0;
+		return c;
+	}
+
+	Buffer() {}
+	Buffer(size_t p_size) { alloc(p_size); }
+
+};
+
 }
+
+#endif // BUFFER_H

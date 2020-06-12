@@ -30,6 +30,25 @@
 #include "var.h/_var.h"
 using namespace varh;
 
+#include <assert.h>
+#include <cstring>
+#include <iostream>
+#include <ostream>
+#include <sstream>
+#include <fstream>
+#include <memory>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string>
+#include <type_traits>
+#include <typeinfo>
+#include <new>
+
+#define _USE_MATH_DEFINES
+#include <map>
+#include <math.h>
+#include <vector>
+
 #include "errors.h"
 
 // https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
@@ -91,10 +110,14 @@ do {                                                                            
 #endif
 
 #if defined(_DEBUG)
-#define ASSERT(m_cond)                                                                                   \
-	if (!(m_cond))                                                                                       \
-		printf("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond));  \
-		DEBUG_BREAK()
+#define ASSERT(m_cond)                                                                                       \
+	do {                                                                                                     \
+		if (!(m_cond)) {                                                                                     \
+			printf("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond));  \
+			DEBUG_BREAK();                                                                                   \
+		}                                                                                                    \
+	} while (false)
+
 #else
 #define ASSERT(...)
 #endif
@@ -107,6 +130,8 @@ do {                                                                            
 
 template<typename T>
 using Ptr = std::shared_ptr<T>;
+
+typedef unsigned char byte;
 
 
 // for windows dll define CARBON_DLL, CARBON_DLL_EXPORT

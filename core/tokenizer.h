@@ -83,6 +83,7 @@ enum class Token {
 	OP_XOR_EQ,
 
 	IDENTIFIER,
+	BUILTIN_FUNC, // also identifier
 
 	KWORD_IMPORT,
 	KWORD_STRUCT,

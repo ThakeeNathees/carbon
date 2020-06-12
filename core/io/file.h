@@ -23,27 +23,39 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include <iostream>
-#include <string>
-#define PRINT(x) std::cout << (x) << std::endl
+#ifndef FILE_H
+#define FILE_H
+
+#include "core.h"
+
+namespace carbon {
 
 
-#include "parser/parser.h"
-#include "io/console_logger.h"
-using namespace carbon;
+class File {
+public:
 
-int _main(int argc, char** argv)
-{
-	Tokenizer tk;
-	Parser p;
-	p.parse(
-		"var x=1+2.3;", "file/path"
-	);
-	
-	
-	ConsoleLogger::logf_error("Error: %s\n", "Debug break ...");
-	DEBUG_BREAK();
-	char* invalid_ptr = NULL;
-	*invalid_ptr = 0xff;
-	return 0;
+	enum ModeFlag {
+		READ   = 1 << 0,
+		WRITE  = 1 << 1,
+		APPEND = 1 << 2,
+		BINARY = 1 << 3,
+	};
+
+private:
+	std::fstream _file;
+
+	String path;
+	ModeFlag mode;
+
+public:
+	File();
+	~File();
+
+	Error open(const String& p_path, ModeFlag p_mode = READ);
+	size_t size();
+	void close();
+};
 }
+
+#endif // FILE_H
+

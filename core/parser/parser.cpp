@@ -119,7 +119,12 @@ const Error& Parser::parse(String p_source, String p_file_path) {
 	source = p_source;
 	file_path = p_file_path;
 	file_node = newptr(FileNode);
-	tokenizer->tokenize(source);
+	const Error& tok_err = tokenizer->tokenize(source);
+
+	if (tok_err.type != Error::OK) {
+		_set_error(Error::SYNTAX_ERROR, tok_err.msg, tok_err.line);
+		return err;
+	}
 
 	while (true) {
 	
@@ -257,6 +262,8 @@ Error::Type Parser::_parse_enum() {
 }
 
 Error::Type Parser::_parse_var(Ptr<Node> p_node) {
+
+	// TODO: how about var x, y; -> peek(-1) == kword_var or sym_comma
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_VAR);
 	ASSERT(p_node == nullptr || p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::STRUCT);
 

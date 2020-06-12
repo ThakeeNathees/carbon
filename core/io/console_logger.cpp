@@ -28,6 +28,5 @@
 namespace carbon {
 
 ConsoleLogger::LogLevel ConsoleLogger::level = ConsoleLogger::LogLevel::VERBOSE;
-// Ptr<ConsoleLogger> ConsoleLogger::singleton;
 
 }
