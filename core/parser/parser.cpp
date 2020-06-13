@@ -136,7 +136,8 @@ void Parser::parse(String p_source, String p_file_path) {
 			case Token::KWORD_VAR:
 				_parse_var();
 				break;
-			case Token::SYM_SEMI_COLLON: // ignore
+			// Ignore.
+			case Token::SYM_SEMI_COLLON: 
 				break;
 			default:
 				_throw_unexp_token();

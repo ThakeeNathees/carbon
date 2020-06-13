@@ -30,16 +30,19 @@
 
 #include "parser/parser.h"
 #include "io/console_logger.h"
+#include "io/file.h"
 using namespace carbon;
 
 int _main(int argc, char** argv)
 {
-	Tokenizer tk;
-	Parser p;
-	p.parse(
-		"var x=1+2.3;", "file/path"
-	);
+	String path = "bin/main.cb";
+
+	File file;
+	file.open(path);
+	String source = file.read();
 	
+	Parser p;
+	p.parse(source, path);
 	
 	ConsoleLogger::logf_error("Error: %s\n", "Debug break ...");
 	DEBUG_BREAK();

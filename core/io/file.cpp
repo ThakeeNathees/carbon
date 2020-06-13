@@ -34,10 +34,10 @@ void File::close() {
 	}
 }
 
-void File::open(const String& p_path, ModeFlag p_mode) {
+void File::open(const String& p_path, int p_mode) {
 
-	path = p_path;
-	mode = p_mode;
+	_path = p_path;
+	_mode = p_mode;
 
 	int mode = 0;
 	if (p_mode & READ) {
@@ -53,9 +53,9 @@ void File::open(const String& p_path, ModeFlag p_mode) {
 		mode |= std::ios::binary;
 	}
 
-	_file.open(path, mode);
+	_file.open(_path, mode);
 	if (!_file.is_open()) {
-		throw Error(Error::CANT_OPEN_FILE, String::format("can't open \"%s\"", path));
+		throw Error(Error::CANT_OPEN_FILE, String::format("can't open \"%s\"", _path));
 	}
 }
 
@@ -66,6 +66,45 @@ size_t File::size() {
 	_file.seekg(0, std::ios::end);
 	end = _file.tellg();
 	return end - begin;
+}
+
+String File::read_text() {
+	if (!is_open()) throw Error(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
+
+	std::stringstream sstream;
+	std::string line;
+	while (std::getline(_file, line)) {
+		sstream << line << '\n';
+	}
+	return sstream.str();
+}
+
+Ptr<Buffer> File::read_bytes() {
+	if (!is_open()) throw Error(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
+
+	size_t file_size = size();
+	Ptr<Buffer> buff = newptr(Buffer, file_size);
+	_file.seekg(0, std::ios::beg);
+	_file.read(buff->ptr(), file_size);
+	return buff;
+}
+
+Array File::get_lines() {
+	if (!is_open()) throw Error(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
+	Array arr;
+	std::string line;
+	while (std::getline(_file, line)) {
+		arr.append(String(line));
+	}
+	return arr;
+}
+
+var File::read() {
+	if (_mode & BINARY) {
+		return read_bytes();
+	} else {
+		return read_text();
+	}
 }
 
 File::File() {}

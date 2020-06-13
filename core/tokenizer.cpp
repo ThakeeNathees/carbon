@@ -28,7 +28,7 @@
 namespace carbon {
 
 #define GET_CHAR(m_off) \
-( (char_ptr + m_off >= source.size())? 0: source[char_ptr+m_off] )
+( (char_ptr + m_off >= source.size())? '\0': source[char_ptr+m_off] )
 
 #define EAT_CHAR(m_num)      \
 {	char_ptr += m_num;       \
@@ -361,7 +361,7 @@ const void Tokenizer::tokenize(const String& p_source) {
 						float_str += GET_CHAR(0);
 						EAT_CHAR(1);
 					}
-					double float_val = float_str.to_double();
+					double float_val = float_str.to_float();
 					_eat_const_value(float_val);
 					break;
 				}
@@ -379,7 +379,7 @@ const void Tokenizer::tokenize(const String& p_source) {
 						EAT_CHAR(1);
 					}
 					if (is_float)
-						_eat_const_value(num.to_double());
+						_eat_const_value(num.to_float());
 					else
 						_eat_const_value(num.to_int());
 					break;
