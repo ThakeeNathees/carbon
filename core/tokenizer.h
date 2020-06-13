@@ -129,10 +129,6 @@ private:
 	int char_ptr = 0;
 	int token_ptr = 0; // for next()
 
-	// error data
-	Error err;
-	void _set_error(Error::Type p_type, const String& p_msg = "");
-
 	void _eat_escape(String& p_str);
 	void _eat_token(Token p_tk, int p_eat_size=1);
 	void _eat_eof();
@@ -142,7 +138,7 @@ private:
 public:
 
 	Tokenizer() { }
-	const Error& tokenize(const String& p_source);
+	const void tokenize(const String& p_source);
 
 	const TokenData& next(int p_offset = 0) { 
 		// TODO: check arr index

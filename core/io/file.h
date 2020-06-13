@@ -51,7 +51,7 @@ public:
 	File();
 	~File();
 
-	Error open(const String& p_path, ModeFlag p_mode = READ);
+	void open(const String& p_path, ModeFlag p_mode = READ);
 	size_t size();
 	void close();
 };

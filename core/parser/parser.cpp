@@ -31,30 +31,24 @@ namespace carbon {
 	do {                                                                                                                                  \
 		IdentifierLocation loc = _find_identifier_location(m_identifier, m_node);                                                         \
 		if (loc.found) {                                                                                                                  \
-			return _set_error(Error::ALREADY_DEFINED, String::format("Identifier %s already defined at %s:%i", loc.file_path, loc.line)); \
+			_throw(Error::ALREADY_DEFINED, String::format("Identifier %s already defined at %s:%i", loc.file_path, loc.line));            \
 		}                                                                                                                                 \
 	} while (false)
 
-Error::Type Parser::_set_error(Error::Type p_type, const String& p_msg, int p_line) {
-	if (err.type != Error::OK) return err.type;
-	err.type = p_type;
-	err.msg = p_msg;
-
+void Parser::_throw(Error::Type p_type, const String& p_msg, int p_line) {
+    /*TODO: msg += __LINE__, __FUNCTION__*/
 	if (p_line > 0) {
-		err.line = p_line;
+		throw Error(p_type, p_msg, Vect2i(p_line, 0));
 	} else {
-		err.line = tokenizer->get_line();
+		throw Error(p_type, p_msg, Vect2i(tokenizer->get_line(), 0));
 	}
-
-	return err.type;
 }
 
-Error::Type Parser::_set_unexp_token_err(const String& p_exp) {
+void Parser::_throw_unexp_token(const String& p_exp) {
 	if (p_exp != String()) {
-		return _set_error(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\"). expected \"%s\"", "<tk_name>", p_exp));
-	}
-	else {
-		return _set_error(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\").", "<tk_name>"));
+		_throw(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\"). expected \"%s\"", "<tk_name>", p_exp));
+	} else {
+		_throw(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\").", "<tk_name>"));
 	}
 }
 
@@ -114,48 +108,38 @@ Parser::IdentifierLocation Parser::_find_identifier_location(const String& p_nam
 	return IdentifierLocation();
 }
 
-const Error& Parser::parse(String p_source, String p_file_path) {
+void Parser::parse(String p_source, String p_file_path) {
 
 	source = p_source;
 	file_path = p_file_path;
 	file_node = newptr(FileNode);
-	const Error& tok_err = tokenizer->tokenize(source);
-
-	if (tok_err.type != Error::OK) {
-		_set_error(Error::SYNTAX_ERROR, tok_err.msg, tok_err.line);
-		return err;
-	}
+	tokenizer->tokenize(source); // this will throw
 
 	while (true) {
 	
 		const TokenData& token = tokenizer->next();
 		switch (token.type) {
 			case  Token::_EOF:
-				return err; // no more parsing
+				return;
 			case Token::KWORD_IMPORT:
 				// TODO:
 				break;
 			case Token::KWORD_STRUCT:
-				if (_parse_struct() != Error::OK)
-					return err;
+				_parse_struct();
 				break;
 			case Token::KWORD_ENUM:
-				if (_parse_enum() != Error::OK)
-					return err;
+				_parse_enum();
 				break;
 			case Token::KWORD_FUNC:
-				if (_parse_func() != Error::OK)
-					return err;
+				_parse_func();
 				break;
 			case Token::KWORD_VAR:
-				if (_parse_var() != Error::OK)
-					return err;
+				_parse_var();
 				break;
 			case Token::SYM_SEMI_COLLON: // ignore
 				break;
 			default:
-				_set_unexp_token_err();
-				return err;
+				_throw_unexp_token();
 		}
 
 	} // while true
@@ -163,71 +147,69 @@ const Error& Parser::parse(String p_source, String p_file_path) {
 }
 
 
-Error::Type Parser::_parse_struct() {
+void Parser::_parse_struct() {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_STRUCT);
 	Ptr<StructNode> struct_node = newptr(StructNode);
 
 	const TokenData& struct_name = tokenizer->next();
 	if (struct_name.type != Token::IDENTIFIER) {
-		return _set_unexp_token_err("<identifier>");
+		_throw_unexp_token("<identifier>");
 	}
 	struct_node->name = struct_name.identifier;
 
 	if (tokenizer->next().type != Token::BRACKET_LCUR) {
-		return _set_unexp_token_err("{");
+		_throw_unexp_token("{");
 	}
 	
 	while (true) {
 		const TokenData& token = tokenizer->next();
 		switch (token.type) {
 			case Token::_EOF:
-				return _set_error(Error::UNEXPECTED_EOF, "Unexpected end of file.");
+				_throw(Error::UNEXPECTED_EOF, "Unexpected end of file.");
 
 			case Token::BRACKET_RCUR:
 				file_node->structs.push_back(struct_node);
-				return err.type;
+				return;
 
 			case Token::SYM_SEMI_COLLON: // ignore
 				break;
 
 			case Token::KWORD_VAR:
-				if (_parse_var(struct_node) != Error::OK) {
-					return err.type;
-				}
+				_parse_var(struct_node);
 				break;
 
 			default:
-				return _set_unexp_token_err("var");
+				_throw_unexp_token("var");
 
 		}
 	}
 
 }
 
-Error::Type Parser::_parse_enum() { 
+void Parser::_parse_enum() { 
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_ENUM);
 	Ptr<EnumNode> enum_node = newptr(EnumNode);
 	int cur_value = -1;
 
 	const TokenData& enum_name = tokenizer->next();
 	if (enum_name.type != Token::IDENTIFIER) {
-		return _set_unexp_token_err("<identifier>");
+		_throw_unexp_token("<identifier>");
 	}
 	enum_node->name = enum_name.identifier;
 
 	if (tokenizer->next().type != Token::BRACKET_LCUR) {
-		return _set_unexp_token_err("{");
+		_throw_unexp_token("{");
 	}
 
 	while (true) {
 		const TokenData& token = tokenizer->next();
 		switch (token.type) {
 			case Token::_EOF:
-				return _set_error(Error::UNEXPECTED_EOF, "Unexpected end of file.");
+				_throw(Error::UNEXPECTED_EOF, "Unexpected end of file.");
 
 			case Token::BRACKET_RCUR:
 				file_node->enums.push_back(enum_node);
-				return err.type;
+				return;
 
 			case Token::SYM_SEMI_COLLON: // ignore
 				break;
@@ -241,7 +223,7 @@ Error::Type Parser::_parse_enum() {
 				if (tk->type == Token::OP_EQ) {
 					tk = &tokenizer->next();
 					if (tk->type != Token::VALUE_INT) {
-						_set_unexp_token_err("<integer constant>");
+						_throw_unexp_token("<integer constant>");
 					}
 					ASSERT(tk->constant.get_type() == var::INT);
 					cur_value = tk->constant;
@@ -250,18 +232,18 @@ Error::Type Parser::_parse_enum() {
 
 				tk = &tokenizer->next();
 				if (tk->type != Token::SYM_COMMA) {
-					_set_unexp_token_err(",");
+					_throw_unexp_token(",");
 				}
 				break;
 			}
 
 			default:
-				return _set_unexp_token_err("<identifier>");
+				_throw_unexp_token("<identifier>");
 		}
 	}
 }
 
-Error::Type Parser::_parse_var(Ptr<Node> p_node) {
+void Parser::_parse_var(Ptr<Node> p_node) {
 
 	// TODO: how about var x, y; -> peek(-1) == kword_var or sym_comma
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_VAR);
@@ -269,7 +251,7 @@ Error::Type Parser::_parse_var(Ptr<Node> p_node) {
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER) {
-		_set_unexp_token_err("<identifier>");
+		_throw_unexp_token("<identifier>");
 	}
 
 	// check identifier when reducing
@@ -279,16 +261,15 @@ Error::Type Parser::_parse_var(Ptr<Node> p_node) {
 	tk = &tokenizer->next();                                      \
 	if (tk->type == Token::OP_EQ) {                               \
 		Ptr<Node> expr = newptr(Node);                            \
-		if (_parse_expression(expr) != Error::OK) {               \
-			return err.type;                                      \
-		}                                                         \
+		_parse_expression(expr);                                  \
+		                                                          \
 		if (tokenizer->peek(-1).type != Token::SYM_SEMI_COLLON) { \
-			_set_unexp_token_err(";");                            \
+			_throw_unexp_token(";");                              \
 		}                                                         \
 		var_node->assignment = expr;                              \
 	}                                                             \
 	else if (tokenizer->next().type != Token::SYM_SEMI_COLLON) {  \
-		_set_unexp_token_err(";");                                \
+		_throw_unexp_token(";");                                  \
 	}
 
 
@@ -300,12 +281,12 @@ Error::Type Parser::_parse_var(Ptr<Node> p_node) {
 			case Node::Type::STRUCT: {
 				PARSE_EXPR_VAR();
 				ptr_cast(StructNode, p_node)->members.push_back(var_node);
-				return err.type;
+				return;
 			}
 			case Node::Type::BLOCK: {
 				PARSE_EXPR_VAR();
 				ptr_cast(BlockNode, p_node)->local_vars.push_back(var_node);
-				return err.type;
+				return;
 			}
 			default:
 				ASSERT(false); // TODO: parser bug
@@ -314,38 +295,33 @@ Error::Type Parser::_parse_var(Ptr<Node> p_node) {
 	} else { // class var
 		PARSE_EXPR_VAR();
 		file_node->static_vars.push_back(var_node);
-		return err.type;
+		return;
 	}
-
-	return err.type;
 }
 
 // TODO: newptr to new_node<T> which sets the node's line, col
 
-Error::Type Parser::_parse_func() {
+void Parser::_parse_func() {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_FUNC);
 	Ptr<FunctionNode> func_node = newptr(FunctionNode);
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER) {
-		return _set_unexp_token_err("<identifier>");
+		_throw_unexp_token("<identifier>");
 	}
 	func_node->name = tk->identifier;
 
 	if (tokenizer->next().type != Token::BRACKET_LCUR) {
-		return _set_unexp_token_err("{");
+		_throw_unexp_token("{");
 	}
 
 	Ptr<BlockNode> body = newptr(BlockNode);
-	if (_parse_block(body, func_node) != Error::OK) {
-		return err.type;
-	}
+	_parse_block(body, func_node);
 	if (tokenizer->peek(-1).type != Token::BRACKET_RCUR) {
-		_set_unexp_token_err("}");
+		_throw_unexp_token("}");
 	}
 	func_node->body = body;
 	file_node->functions.push_back(func_node);
-	return err.type;
 }
 
 }

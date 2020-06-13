@@ -26,26 +26,46 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
+#include "var.h/_var.h"
+using namespace varh;
+
 namespace carbon {
 
-struct Error {
+class Error : public std::exception {
+public:
 	enum Type {
 		OK = 0,
 
+		// Compiletime errors.
 		SYNTAX_ERROR,
 		UNEXPECTED_EOF,
 		ALREADY_DEFINED,
 
+		// Runtime errors.
 		NULL_POINTER,
 		INVALID_INDEX,
+		INVALID_CASTING,
+		NOT_IMPLEMENTED,
+		ZERO_DIVISION,
 
 		CANT_OPEN_FILE,
 		IO_INVALID_OPERATORN,
 
 	};
+
+	const char* what() const noexcept override { return msg.c_str(); }
+	Type get_type() const { return type; }
+	Vect2i get_pos() const { return pos; }
+
+	Error() {}
+	Error(Type p_type) { type = p_type; }
+	Error(Type p_type, const String& p_msg) { type = p_type; msg = p_msg; }
+	Error(Type p_type, const String& p_msg, const Vect2i p_pos) { type = p_type; msg = p_msg; pos = p_pos; }
+
+private:
 	Type type = OK;
 	String msg;
-	int line = -1, col = -1;
+	Vect2i pos = Vect2i(-1, -1);
 };
 
 }

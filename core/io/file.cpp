@@ -34,9 +34,7 @@ void File::close() {
 	}
 }
 
-Error File::open(const String& p_path, ModeFlag p_mode) {
-
-	Error ret;
+void File::open(const String& p_path, ModeFlag p_mode) {
 
 	path = p_path;
 	mode = p_mode;
@@ -57,12 +55,8 @@ Error File::open(const String& p_path, ModeFlag p_mode) {
 
 	_file.open(path, mode);
 	if (!_file.is_open()) {
-		ret.type = Error::CANT_OPEN_FILE;
-		ret.msg = String::format("can't open \"%s\"", path);
-		return ret;
+		throw Error(Error::CANT_OPEN_FILE, String::format("can't open \"%s\"", path));
 	}
-
-	return ret;
 }
 
 size_t File::size() {

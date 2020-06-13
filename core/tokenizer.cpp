@@ -47,6 +47,13 @@ namespace carbon {
 #define IS_TEXT(c)    \
 ( (c == '_') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') )
 
+
+#define ERROR(m_type, m_msg)                                \
+do {                                                        \
+    /*TODO: msg += __LINE__, __FUNCTION__*/                 \
+	throw Error(m_type, m_msg, Vect2i(cur_line, cur_col));  \
+} while (false)
+
 struct KeywordName { const char* name; Token tk; };
 static KeywordName _keyword_name_list[] = {
 	{ "import", Token::KWORD_IMPORT	     },
@@ -79,21 +86,13 @@ static BuiltinFuncName _builtin_func_list[] = {
 	{ "pow", BuiltinFunctions::Function::MATH_POW },
 };
 
-void Tokenizer::_set_error(Error::Type p_type,const String& p_msg) {
-	if (err.type != Error::OK) return;
-	err.type = p_type;
-	err.msg = p_msg;
-	err.line = cur_line;
-	err.col = cur_col;
-}
-
 void Tokenizer::_eat_escape(String& p_str) {
 	char c = GET_CHAR(0);
 	ASSERT(c == '\\');
 	c = GET_CHAR(1);
 	switch (c) {
 		case 0:
-			_set_error(Error::UNEXPECTED_EOF);
+			ERROR(Error::UNEXPECTED_EOF, "");
 			break;
 		case '\\': p_str += '\\'; EAT_CHAR(2); break;
 		case '\'': p_str += '\''; EAT_CHAR(2); break;
@@ -180,7 +179,7 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 	EAT_CHAR(p_eat_size);
 }
 
-const Error& Tokenizer::tokenize(const String& p_source) {
+const void Tokenizer::tokenize(const String& p_source) {
 
 	source = p_source;
 	cur_line = cur_col = 1;
@@ -188,9 +187,6 @@ const Error& Tokenizer::tokenize(const String& p_source) {
 	tokens.clear();
 
 	while (char_ptr < source.size()) {
-
-		if (err.type != Error::OK)
-			return err;
 
 		switch (GET_CHAR(0)) {
 			case 0:
@@ -223,7 +219,7 @@ const Error& Tokenizer::tokenize(const String& p_source) {
 						if (GET_CHAR(0) == '*' && GET_CHAR(1) == '/') {
 							EAT_CHAR(2);
 						} else if (GET_CHAR(0) == 0) {
-							_set_error(Error::UNEXPECTED_EOF);
+							ERROR(Error::UNEXPECTED_EOF, "");
 						} else if (GET_CHAR(0) == '\n') {
 							EAT_LINE();
 						} else {
@@ -278,7 +274,7 @@ const Error& Tokenizer::tokenize(const String& p_source) {
 			}
 			// case '/': { } // already hadled
 			case '\\':
-				_set_error(Error::SYNTAX_ERROR, "Invalid character '\\'");
+				ERROR(Error::SYNTAX_ERROR, "Invalid character '\\'");
 				break;
 			case '%': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_MOD_EQ, 2);
@@ -335,10 +331,10 @@ const Error& Tokenizer::tokenize(const String& p_source) {
 					if (GET_CHAR(0) == '\\') {
 						_eat_escape(str);
 					} else if (GET_CHAR(0) == 0) {
-						_set_error(Error::UNEXPECTED_EOF);
+						ERROR(Error::UNEXPECTED_EOF, "");
 						break;
 					} else if(GET_CHAR(0) == '\n'){
-						_set_error(Error::UNEXPECTED_EOF);
+						ERROR(Error::UNEXPECTED_EOF, "");
 						break;
 					} else {
 						str += GET_CHAR(0);
@@ -350,7 +346,7 @@ const Error& Tokenizer::tokenize(const String& p_source) {
 				break;
 			}
 			case '\'':
-				_set_error(Error::SYNTAX_ERROR, "Invalid character '\\''.");
+				ERROR(Error::SYNTAX_ERROR, "Invalid character '\\''.");
 				break;
 			default: {
 				
@@ -408,8 +404,6 @@ const Error& Tokenizer::tokenize(const String& p_source) {
 	} // while
 
 	_eat_eof();
-
-	return err;
 }
 
 }

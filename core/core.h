@@ -49,7 +49,7 @@ using namespace varh;
 #include <math.h>
 #include <vector>
 
-#include "errors.h"
+#include "error.h"
 
 // https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
 #ifdef _MSC_VER // Microsoft compilers

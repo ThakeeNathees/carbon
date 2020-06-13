@@ -27,8 +27,7 @@
 
 namespace carbon {
 
-Error::Type Parser::_parse_block(Ptr<BlockNode>& p_block, const Ptr<Node>& p_parent) {
-		return Error::OK; // TODO:
+void Parser::_parse_block(Ptr<BlockNode>& p_block, const Ptr<Node>& p_parent) {
 }
 
 }

@@ -247,21 +247,21 @@ private:
 		}
 	};
 
-	Error::Type _set_error(Error::Type p_type, const String& p_msg, int line = -1);
-	Error::Type _set_unexp_token_err(const String& p_exp = "");
+	void _throw(Error::Type p_type, const String& p_msg, int line = -1);
+	void _throw_unexp_token(const String& p_exp = "");
 	IdentifierLocation _find_identifier_location(const String& p_name, const Ptr<Node> p_node) const;
 
-	Error::Type _parse_struct();
-	Error::Type _parse_enum();
-	Error::Type _parse_var(Ptr<Node> p_node = nullptr);
-	Error::Type _parse_func();
+	void _parse_struct();
+	void _parse_enum();
+	void _parse_var(Ptr<Node> p_node = nullptr);
+	void _parse_func();
 
-	Error::Type _parse_block(Ptr<BlockNode>& p_block, const Ptr<Node>& p_parent);
-	Error::Type _parse_expression(Ptr<Node>& p_expr);
-	Error::Type _reduce_expression(Ptr<Node>& p_expr);
+	void _parse_block(Ptr<BlockNode>& p_block, const Ptr<Node>& p_parent);
+	void _parse_expression(Ptr<Node>& p_expr);
+	void _reduce_expression(Ptr<Node>& p_expr);
 
 public:
-	const Error& parse(String p_source, String p_file_path);
+	void parse(String p_source, String p_file_path);
 
 };
 
