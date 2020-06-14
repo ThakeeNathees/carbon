@@ -39,7 +39,7 @@ public:
 	virtual bool get(const String& p_name, var& r_val)       const override { return false; }
 	virtual bool set(const String& p_name, const var& p_val)       override { return false; }
 	virtual bool has(const String& p_name)                   const override { return false; }
-	virtual Ptr<Object> copy(bool p_deep)                    const          { return ptr_cast(Object, newptr(File)); }
+	virtual ptr<Object> copy(bool p_deep)                    const          { return ptrcast<Object>(newptr<File>()); }
 	virtual String get_class_name()                          const          { return "File"; }
 
 	enum {
@@ -64,7 +64,7 @@ public:
 	size_t size();
 
 	String read_text();
-	Ptr<Buffer> read_bytes();
+	ptr<Buffer> read_bytes();
 	Array get_lines();
 
 	String get_path() const { return _path; }

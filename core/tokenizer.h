@@ -64,29 +64,32 @@ enum class Token {
 	OP_MOD_EQ,
 	OP_INCR,
 	OP_DECR,
-	OP_NOT,
-	OP_NOTEQ,
 	OP_LT,
 	OP_LTEQ,
 	OP_GT,
 	OP_GTEQ,
-	OP_BIT_NOT,
-	OP_LSHIFT,
-	OP_LSHIFT_EQ,
-	OP_RSHIFT,
-	OP_RSHIFT_EQ,
-	OP_OR,
-	OP_OR_EQ,
 	OP_AND,
-	OP_AND_EQ,
-	OP_XOR,
-	OP_XOR_EQ,
+	OP_OR,
+	OP_NOT,
+	OP_NOTEQ,
+
+	OP_BIT_NOT,
+	OP_BIT_LSHIFT,
+	OP_BIT_LSHIFT_EQ,
+	OP_BIT_RSHIFT,
+	OP_BIT_RSHIFT_EQ,
+	OP_BIT_OR,
+	OP_BIT_OR_EQ,
+	OP_BIT_AND,
+	OP_BIT_AND_EQ,
+	OP_BIT_XOR,
+	OP_BIT_XOR_EQ,
 
 	IDENTIFIER,
 	BUILTIN_FUNC, // also identifier
 
 	KWORD_IMPORT,
-	KWORD_STRUCT,
+	KWORD_CLASS,
 	KWORD_ENUM,
 	KWORD_FUNC,
 	KWORD_VAR,
@@ -97,11 +100,12 @@ enum class Token {
 	KWORD_ELSE,
 	KWORD_WHILE,
 	KWORD_FOR,
+	KWORD_SWITCH,
 	KWORD_BREAK,
 	KWORD_CONTINUE,
-	KWORD_AND,
-	KWORD_OR,
-	KWORD_NOT,
+	KWORD_STATIC,
+	KWORD_THIS,
+	KWORD_SUPER,
 	KWORD_RETURN,
 
 	VALUE_STRING,
@@ -113,10 +117,15 @@ enum class Token {
 struct TokenData
 {
 	Token type = Token::UNKNOWN;
-	String identifier; // for identifier
-	var constant;      // for constant int, float, string values
-	BuiltinFunctions::Function builtin_func = BuiltinFunctions::Function::UNKNOWN;
 	int line = 0, col = 0;
+	
+	// Constant int, float, string values.
+	var constant;
+
+	// Identifiers.
+	String identifier;
+	BuiltinFunctions::Function builtin_func = BuiltinFunctions::Function::UNKNOWN;
+	var::Type biltin_type = var::Type::_NULL;
 };
 
 
@@ -124,7 +133,7 @@ class Tokenizer
 {
 private:
 	String source;
-	std::vector<TokenData> tokens;
+	stdvec<TokenData> tokens;
 	int cur_line = 1, cur_col = 1;
 	int char_ptr = 0;
 	int token_ptr = 0; // for next()

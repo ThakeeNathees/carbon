@@ -56,34 +56,35 @@ do {                                                        \
 
 struct KeywordName { const char* name; Token tk; };
 static KeywordName _keyword_name_list[] = {
-	{ "import", Token::KWORD_IMPORT	     },
-	{ "struct", Token::KWORD_STRUCT	     },
-	{ "enum", Token::KWORD_ENUM	         },
-	{ "func", Token::KWORD_FUNC	         },
-	{ "var", Token::KWORD_VAR		     },
-	{ "null", Token::KWORD_NULL	         },
-	{ "true", Token::KWORD_TRUE	         },
-	{ "false", Token::KWORD_FALSE	     },
-	{ "if", Token::KWORD_IF		         },
-	{ "else", Token::KWORD_ELSE	         },
-	{ "while", Token::KWORD_WHILE	     },
-	{ "for", Token::KWORD_FOR		     },
-	{ "break", Token::KWORD_BREAK	     },
-	{ "continue", Token::KWORD_CONTINUE  },
-	{ "and", Token::KWORD_AND		     },
-	{ "or", Token::KWORD_OR		         },
-	{ "not", Token::KWORD_NOT		     },
-	{ "return", Token::KWORD_RETURN	     },
+	{ "import",   Token::KWORD_IMPORT	     },
+	{ "class",    Token::KWORD_CLASS	     },
+	{ "enum",     Token::KWORD_ENUM	         },
+	{ "func",     Token::KWORD_FUNC	         },
+	{ "var",      Token::KWORD_VAR		     },
+	{ "null",     Token::KWORD_NULL	         },
+	{ "true",     Token::KWORD_TRUE	         },
+	{ "false",    Token::KWORD_FALSE	     },
+	{ "if",       Token::KWORD_IF		     },
+	{ "else",     Token::KWORD_ELSE	         },
+	{ "while",    Token::KWORD_WHILE	     },
+	{ "for",      Token::KWORD_FOR		     },
+	{ "switch",   Token::KWORD_SWITCH		 },
+	{ "break",    Token::KWORD_BREAK	     },
+	{ "continue", Token::KWORD_CONTINUE      },
+	{ "static",   Token::KWORD_STATIC        },
+	{ "this",     Token::KWORD_THIS          },
+	{ "super",    Token::KWORD_SUPER         },
+	{ "return",   Token::KWORD_RETURN	     },
 };
 
 struct BuiltinFuncName { const char* name; BuiltinFunctions::Function func; };
 static BuiltinFuncName _builtin_func_list[] = {
 	// { "", BuiltinFunctions::Function::UNKNOWN  },
-	{ "print", BuiltinFunctions::Function::PRINT  },
-	{ "input", BuiltinFunctions::Function::INPUT  },
-	{ "min", BuiltinFunctions::Function::MATH_MIN },
-	{ "max", BuiltinFunctions::Function::MATH_MAX },
-	{ "pow", BuiltinFunctions::Function::MATH_POW },
+	{ "print", BuiltinFunctions::Function::PRINT    },
+	{ "input", BuiltinFunctions::Function::INPUT    },
+	{ "min",   BuiltinFunctions::Function::MATH_MIN },
+	{ "max",   BuiltinFunctions::Function::MATH_MAX },
+	{ "pow",   BuiltinFunctions::Function::MATH_POW },
 };
 
 void Tokenizer::_eat_escape(String& p_str) {
@@ -281,16 +282,11 @@ const void Tokenizer::tokenize(const String& p_source) {
 				else _eat_token(Token::OP_MOD);
 				break;
 			}
-			case '!': {
-				if (GET_CHAR(1) == '=') _eat_token(Token::OP_NOTEQ, 2);
-				else _eat_token(Token::OP_NOT);
-				break;
-			}
 			case '<': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_LTEQ, 2);
 				else if (GET_CHAR(1) == '<') {
-					if (GET_CHAR(2) == '=') _eat_token(Token::OP_LSHIFT_EQ, 3);
-					else _eat_token(Token::OP_LSHIFT, 2);
+					if (GET_CHAR(2) == '=') _eat_token(Token::OP_BIT_LSHIFT_EQ, 3);
+					else _eat_token(Token::OP_BIT_LSHIFT, 2);
 				}
 				else _eat_token(Token::OP_LT);
 				break;
@@ -298,28 +294,41 @@ const void Tokenizer::tokenize(const String& p_source) {
 			case '>': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_GTEQ, 2);
 				else if (GET_CHAR(1) == '>') {
-					if (GET_CHAR(2) == '=') _eat_token(Token::OP_RSHIFT_EQ, 3);
-					else _eat_token(Token::OP_RSHIFT, 2);
+					if (GET_CHAR(2) == '=') _eat_token(Token::OP_BIT_RSHIFT_EQ, 3);
+					else _eat_token(Token::OP_BIT_RSHIFT, 2);
 				}
 				else _eat_token(Token::OP_GT);
+				break;
+			}
+			case '&&': {
+				_eat_token(Token::OP_AND);
+				break;
+			}
+			case '||': {
+				_eat_token(Token::OP_OR);
+				break;
+			}
+			case '!': {
+				if (GET_CHAR(1) == '=') _eat_token(Token::OP_NOTEQ, 2);
+				else _eat_token(Token::OP_NOT);
 				break;
 			}
 			case '~':
 				_eat_token(Token::OP_BIT_NOT);
 				break;
 			case '|': {
-				if (GET_CHAR(1) == '=') _eat_token(Token::OP_OR_EQ, 2);
-				else _eat_token(Token::OP_OR);
+				if (GET_CHAR(1) == '=') _eat_token(Token::OP_BIT_OR_EQ, 2);
+				else _eat_token(Token::OP_BIT_OR);
 				break;
 			}
 			case '&': {
-				if (GET_CHAR(1) == '=') _eat_token(Token::OP_AND_EQ, 2);
-				else _eat_token(Token::OP_AND);
+				if (GET_CHAR(1) == '=') _eat_token(Token::OP_BIT_AND_EQ, 2);
+				else _eat_token(Token::OP_BIT_AND);
 				break;
 			}
 			case '^': {
-				if (GET_CHAR(1) == '=') _eat_token(Token::OP_XOR_EQ, 2);
-				else _eat_token(Token::OP_XOR);
+				if (GET_CHAR(1) == '=') _eat_token(Token::OP_BIT_XOR_EQ, 2);
+				else _eat_token(Token::OP_BIT_XOR);
 				break;
 			}
 

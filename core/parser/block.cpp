@@ -27,7 +27,9 @@
 
 namespace carbon {
 
-void Parser::_parse_block(Ptr<BlockNode>& p_block, const Ptr<Node>& p_parent) {
+ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent) {
+	ptr<BlockNode> block_node = newptr<BlockNode>();
+	return block_node;
 }
 
 }

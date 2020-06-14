@@ -33,7 +33,7 @@ namespace carbon {
 class ConsoleLogger
 {
 private:
-	static Ptr<ConsoleLogger> singleton;
+	static ptr<ConsoleLogger> singleton;
 protected:
 	virtual void log_impl(const char* p_msg) = 0;
 	virtual void log_info_impl(const char* p_msg) = 0;

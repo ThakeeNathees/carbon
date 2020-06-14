@@ -114,6 +114,6 @@ public:
 };
 
 HANDLE ConsoleLoggerWindows::h_console = GetStdHandle(STD_OUTPUT_HANDLE);
-Ptr<ConsoleLogger> ConsoleLogger::singleton = newptr(ConsoleLoggerWindows);
+ptr<ConsoleLogger> ConsoleLogger::singleton = newptr<ConsoleLoggerWindows>();
 
 }

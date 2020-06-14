@@ -79,13 +79,13 @@ String File::read_text() {
 	return sstream.str();
 }
 
-Ptr<Buffer> File::read_bytes() {
+ptr<Buffer> File::read_bytes() {
 	if (!is_open()) throw Error(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
 
 	size_t file_size = size();
-	Ptr<Buffer> buff = newptr(Buffer, file_size);
+	ptr<Buffer> buff = newptr<Buffer>(file_size);
 	_file.seekg(0, std::ios::beg);
-	_file.read(buff->ptr(), file_size);
+	_file.read(buff->get(), file_size);
 	return buff;
 }
 

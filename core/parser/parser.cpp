@@ -52,12 +52,13 @@ void Parser::_throw_unexp_token(const String& p_exp) {
 	}
 }
 
-Parser::IdentifierLocation Parser::_find_identifier_location(const String& p_name, const Ptr<Node> p_node) const {
-	ASSERT(p_node == nullptr || p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::STRUCT);
+// TODO: refector after class
+Parser::IdentifierLocation Parser::_find_identifier_location(const String& p_name, const ptr<Node> p_node) const {
+	ASSERT(p_node == nullptr || p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::CLASS);
 
-	// if struct scope no need to check outer scope
-	if (p_node && p_node->type == Node::Type::STRUCT) {
-		for (const Ptr<VarNode>& lv : ptr_cast(StructNode, p_node)->members) {
+	// if class scope no need to check outer scope
+	if (p_node && p_node->type == Node::Type::CLASS) {
+		for (const ptr<VarNode>& lv : ptrcast<ClassNode>(p_node)->members) {
 			if (lv->name == p_name) {
 				return IdentifierLocation(p_node, file_path);
 			}
@@ -65,39 +66,39 @@ Parser::IdentifierLocation Parser::_find_identifier_location(const String& p_nam
 		return IdentifierLocation();
 	}
 
-	Ptr<Node> outer_node = p_node;
+	ptr<Node> outer_node = p_node;
 	while (outer_node) {
 		switch (outer_node->type) {
 
 			case Node::Type::BLOCK: {
-				for (const Ptr<VarNode>& local_var : ptr_cast(BlockNode, outer_node)->local_vars) {
+				for (const ptr<VarNode>& local_var : ptrcast<BlockNode>(outer_node)->local_vars) {
 					if (local_var->name == p_name) {
 						return IdentifierLocation(outer_node, file_path);
 					}
 				}
 			}
 			case Node::Type::FUNCTION: {
-				for (const String& arg : ptr_cast(FunctionNode, outer_node)->args) {
+				for (const String& arg : ptrcast<FunctionNode>(outer_node)->args) {
 					if (arg == p_name) {
 						return IdentifierLocation(outer_node, file_path);
 					}
 				}
 			}
 		}
-		outer_node = outer_node->parern_node;
+		outer_node = outer_node->parernt_node;
 	}
 
-	for (const Ptr<StructNode>& struct_node : file_node->structs) {
+	for (const ptr<ClassNode>& struct_node : file_node->classes) {
 		if (struct_node->name == p_name) {
 			return IdentifierLocation(struct_node, file_path);
 		}
 	}
-	for (const Ptr<EnumNode>& enum_node : file_node->enums) {
+	for (const ptr<EnumNode>& enum_node : file_node->enums) {
 		if (enum_node->name == p_name) {
 			return IdentifierLocation(enum_node, file_path);
 		}
 	}
-	for (const Ptr<FunctionNode>& func_node : file_node->functions) {
+	for (const ptr<FunctionNode>& func_node : file_node->functions) {
 		if (func_node->name == p_name) {
 			return IdentifierLocation(func_node, file_path);
 		}
@@ -112,7 +113,7 @@ void Parser::parse(String p_source, String p_file_path) {
 
 	source = p_source;
 	file_path = p_file_path;
-	file_node = newptr(FileNode);
+	file_node = newptr<FileNode>();
 	tokenizer->tokenize(source); // this will throw
 
 	while (true) {
@@ -121,23 +122,33 @@ void Parser::parse(String p_source, String p_file_path) {
 		switch (token.type) {
 			case  Token::_EOF:
 				return;
-			case Token::KWORD_IMPORT:
+			case Token::KWORD_IMPORT: {
 				// TODO:
 				break;
-			case Token::KWORD_STRUCT:
-				_parse_struct();
+			}
+			case Token::KWORD_CLASS: {
+				_parse_class();
 				break;
-			case Token::KWORD_ENUM:
+			}
+			case Token::KWORD_ENUM: {
 				_parse_enum();
 				break;
-			case Token::KWORD_FUNC:
-				_parse_func();
+			}
+			case Token::KWORD_FUNC: {
+				ptr<FunctionNode> func = _parse_func(file_node, true);
+				file_node->functions.push_back(func);
 				break;
-			case Token::KWORD_VAR:
-				_parse_var();
+			}
+			case Token::KWORD_VAR: {
+				stdvec<ptr<VarNode>> vars = _parse_var(file_node, true);
+				for (ptr<VarNode>& _var : vars) {
+					file_node->file_vars.push_back(_var);
+				}
 				break;
+			}
 			// Ignore.
 			case Token::SYM_SEMI_COLLON: 
+			case Token::VALUE_STRING:
 				break;
 			default:
 				_throw_unexp_token();
@@ -148,17 +159,32 @@ void Parser::parse(String p_source, String p_file_path) {
 }
 
 
-void Parser::_parse_struct() {
-	ASSERT(tokenizer->peek(-1).type == Token::KWORD_STRUCT);
-	Ptr<StructNode> struct_node = newptr(StructNode);
+ptr<Parser::ClassNode> Parser::_parse_class() {
+	ASSERT(tokenizer->peek(-1).type == Token::KWORD_CLASS);
+	ptr<ClassNode> class_node = newptr<ClassNode>();
 
-	const TokenData& struct_name = tokenizer->next();
-	if (struct_name.type != Token::IDENTIFIER) {
+	const TokenData* tk = &tokenizer->next();
+
+	if (tk->type != Token::IDENTIFIER) {
 		_throw_unexp_token("<identifier>");
 	}
-	struct_node->name = struct_name.identifier;
+	// TODO: check identifier predefined.
+	class_node->name = tk->identifier;
 
-	if (tokenizer->next().type != Token::BRACKET_LCUR) {
+	tk = &tokenizer->next();
+
+	if (tk->type == Token::SYM_COLLON) {
+		const TokenData& base = tokenizer->next();
+		if (base.type != Token::IDENTIFIER) {
+			_throw_unexp_token("<identifier>");
+		}
+		// TODO: check identifier predefined.
+		class_node->base = base.identifier;
+
+		tk = &tokenizer->next();
+	}
+
+	if (tk->type != Token::BRACKET_LCUR) {
 		_throw_unexp_token("{");
 	}
 	
@@ -169,27 +195,56 @@ void Parser::_parse_struct() {
 				_throw(Error::UNEXPECTED_EOF, "Unexpected end of file.");
 
 			case Token::BRACKET_RCUR:
-				file_node->structs.push_back(struct_node);
-				return;
+				return class_node;
 
 			case Token::SYM_SEMI_COLLON: // ignore
 				break;
 
-			case Token::KWORD_VAR:
-				_parse_var(struct_node);
+			case Token::KWORD_ENUM:
+				_parse_enum(class_node);
 				break;
 
-			default:
-				_throw_unexp_token("var");
+			case Token::KWORD_STATIC:
+				if (tokenizer->peek().type != Token::KWORD_FUNC && tokenizer->peek().type != Token::KWORD_VAR) {
+					_throw_unexp_token("func or var");
+				}
+				break;
 
+			case Token::KWORD_FUNC: {
+				bool _static = tokenizer->peek(-2).type == Token::KWORD_STATIC;
+				ptr<FunctionNode> func = _parse_func(class_node, _static);
+				if (_static) {
+					class_node->static_functions.push_back(func);
+				} else {
+					class_node->functions.push_back(func);
+				}
+				break;
+			}
+
+			case Token::KWORD_VAR: {
+				bool _static = tokenizer->peek(-2).type == Token::KWORD_STATIC;
+				stdvec<ptr<VarNode>> vars = _parse_var(class_node, _static);
+				for (ptr<VarNode>& _var : vars) {
+					if (_static) {
+						class_node->static_members.push_back(_var);
+					} else {
+						class_node->members.push_back(_var);
+					}
+				}
+				break;
+			}
+
+			default:
+				_throw_unexp_token();
 		}
 	}
 
 }
 
-void Parser::_parse_enum() { 
+ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_ENUM);
-	Ptr<EnumNode> enum_node = newptr(EnumNode);
+
+	ptr<EnumNode> enum_node = newptr<EnumNode>();
 	int cur_value = -1;
 
 	const TokenData& enum_name = tokenizer->next();
@@ -209,8 +264,7 @@ void Parser::_parse_enum() {
 				_throw(Error::UNEXPECTED_EOF, "Unexpected end of file.");
 
 			case Token::BRACKET_RCUR:
-				file_node->enums.push_back(enum_node);
-				return;
+				return enum_node;
 
 			case Token::SYM_SEMI_COLLON: // ignore
 				break;
@@ -244,85 +298,93 @@ void Parser::_parse_enum() {
 	}
 }
 
-void Parser::_parse_var(Ptr<Node> p_node) {
-
-	// TODO: how about var x, y; -> peek(-1) == kword_var or sym_comma
+stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node, bool p_static) {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_VAR);
-	ASSERT(p_node == nullptr || p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::STRUCT);
-
-	const TokenData* tk = &tokenizer->next();
-	if (tk->type != Token::IDENTIFIER) {
-		_throw_unexp_token("<identifier>");
-	}
+	ASSERT(p_node != nullptr);
+	ASSERT(p_node->type == Node::Type::FILE || p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::CLASS);
 
 	// check identifier when reducing
 	// IF_IDF_ALREADY_FOUND_RET_ERR(tk->identifier, p_node);
 
-#define PARSE_EXPR_VAR()                                          \
-	tk = &tokenizer->next();                                      \
-	if (tk->type == Token::OP_EQ) {                               \
-		Ptr<Node> expr = newptr(Node);                            \
-		_parse_expression(expr);                                  \
-		                                                          \
-		if (tokenizer->peek(-1).type != Token::SYM_SEMI_COLLON) { \
-			_throw_unexp_token(";");                              \
-		}                                                         \
-		var_node->assignment = expr;                              \
-	}                                                             \
-	else if (tokenizer->next().type != Token::SYM_SEMI_COLLON) {  \
-		_throw_unexp_token(";");                                  \
+#define PARSE_EXPR_VAR()                                              \
+	while (true) {                                                    \
+	                                                                  \
+		tk = &tokenizer->next();                                      \
+		if (tk->type != Token::IDENTIFIER) {                          \
+			_throw_unexp_token("<identifier>");                       \
+		}                                                             \
+		ptr<VarNode> var_node = newptr<VarNode>();                    \
+		var_node->name = tk->identifier;                              \
+	                                                                  \
+		tk = &tokenizer->next();                                      \
+		if (tk->type == Token::OP_EQ) {                               \
+			ptr<Node> expr = _parse_expression(p_node, p_static);     \
+			var_node->assignment = expr;                              \
+	                                                                  \
+			tk = &tokenizer->next();                                  \
+			if (tk->type == Token::SYM_COMMA) {                       \
+			} else if (tk->type == Token::SYM_SEMI_COLLON) {          \
+				break;                                                \
+			} else {                                                  \
+				_throw_unexp_token();                                 \
+			}                                                         \
+		} else if (tk->type == Token::SYM_COMMA) {                    \
+		} else if (tk->type == Token::SYM_SEMI_COLLON) {              \
+			break;                                                    \
+		} else {                                                      \
+			_throw_unexp_token();                                     \
+		}                                                             \
+		vars.push_back(var_node);                                     \
 	}
 
+	const TokenData* tk;
+	stdvec<ptr<VarNode>> vars;
 
-	Ptr<VarNode> var_node = newptr(VarNode);
-	var_node->name = tk->identifier;
-
-	if (p_node) {
-		switch (p_node->type) {
-			case Node::Type::STRUCT: {
-				PARSE_EXPR_VAR();
-				ptr_cast(StructNode, p_node)->members.push_back(var_node);
-				return;
-			}
-			case Node::Type::BLOCK: {
-				PARSE_EXPR_VAR();
-				ptr_cast(BlockNode, p_node)->local_vars.push_back(var_node);
-				return;
-			}
-			default:
-				ASSERT(false); // TODO: parser bug
-				break;
+	switch (p_node->type) {
+		case Node::Type::CLASS: {
+			PARSE_EXPR_VAR();
+			break;
 		}
-	} else { // class var
-		PARSE_EXPR_VAR();
-		file_node->static_vars.push_back(var_node);
-		return;
+		case Node::Type::BLOCK: {
+			ASSERT(!p_static);
+			PARSE_EXPR_VAR();
+			break;
+		}
+		case Node::Type::FILE: {
+			ASSERT(!p_static);
+			PARSE_EXPR_VAR();
+		}
 	}
+
+	return vars;
 }
 
 // TODO: newptr to new_node<T> which sets the node's line, col
 
-void Parser::_parse_func() {
+ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent, bool p_static) {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_FUNC);
-	Ptr<FunctionNode> func_node = newptr(FunctionNode);
+	ptr<FunctionNode> func_node = newptr<FunctionNode>();
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER) {
 		_throw_unexp_token("<identifier>");
 	}
+
 	func_node->name = tk->identifier;
+	func_node->is_static = p_static;
+
+	// TODO: arguments
 
 	if (tokenizer->next().type != Token::BRACKET_LCUR) {
 		_throw_unexp_token("{");
 	}
 
-	Ptr<BlockNode> body = newptr(BlockNode);
-	_parse_block(body, func_node);
+	ptr<BlockNode> body = _parse_block(func_node);
 	if (tokenizer->peek(-1).type != Token::BRACKET_RCUR) {
 		_throw_unexp_token("}");
 	}
 	func_node->body = body;
-	file_node->functions.push_back(func_node);
+	return func_node;
 }
 
 }

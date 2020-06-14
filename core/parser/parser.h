@@ -42,30 +42,34 @@ public:
 			UNKNOWN,
 
 			FILE,
-			STRUCT,
+			CLASS,
 			ENUM,
 			BUILTIN_FUNCTION,
 			FUNCTION,
 			BLOCK,
 			IDENTIFIER,
 			VAR,
+			CONST_VALUE,
 			ARRAY,
 			DICTIONARY,
+			THIS,
+			SUPER,
 			OPERATOR,
 			CONTROL_FLOW,
 		};
 		Type type;
 		int line, col;
-		Ptr<Node> parern_node;
+		ptr<Node> parernt_node;
 	};
 
-	struct StructNode;
+	struct ClassNode;
 	struct EnumNode;
 	struct BuiltinFunctionNode;
 	struct FunctionNode;
 	struct BlockNode;
 	struct IdentifierNode;
 	struct VarNode;
+	struct ConstValueNode;
 	struct ArrayNode;
 	struct DictionaryNode;
 	struct OperatorNode;
@@ -73,11 +77,11 @@ public:
 
 	struct FileNode : public Node {
 		String path;
-		std::vector<Ptr<FileNode>> imports;
-		std::vector<Ptr<VarNode>> static_vars;
-		std::vector<Ptr<StructNode>> structs;
-		std::vector<Ptr<EnumNode>> enums;
-		std::vector<Ptr<FunctionNode>> functions;
+		stdvec<ptr<FileNode>> imports;
+		stdvec<ptr<VarNode>> file_vars;
+		stdvec<ptr<ClassNode>> classes;
+		stdvec<ptr<EnumNode>> enums;
+		stdvec<ptr<FunctionNode>> functions;
 
 		FileNode() {
 			type = Type::FILE;
@@ -85,11 +89,16 @@ public:
 
 	};
 
-	struct StructNode : public Node {
+	struct ClassNode : public Node {
 		String name;
-		std::vector<Ptr<VarNode>> members;
-		StructNode() {
-			type = Type::STRUCT;
+		String base;
+		stdvec<ptr<EnumNode>> enums;
+		stdvec<ptr<FunctionNode>> functions;
+		stdvec<ptr<FunctionNode>> static_functions;
+		stdvec<ptr<VarNode>> members;
+		stdvec<ptr<VarNode>> static_members;
+		ClassNode() {
+			type = Type::CLASS;
 		}
 	};
 
@@ -110,16 +119,17 @@ public:
 
 	struct FunctionNode : public Node {
 		String name;
-		std::vector<String> args;
-		Ptr<BlockNode> body;
+		bool is_static = true; // All functions are static by default.
+		stdvec<String> args;
+		ptr<BlockNode> body;
 		FunctionNode() {
 			type = Type::FUNCTION;
 		}
 	};
 
 	struct BlockNode : public Node {
-		std::vector<Ptr<Node>> statements;
-		std::vector<Ptr<VarNode>> local_vars;
+		stdvec<ptr<Node>> statements;
+		stdvec<ptr<VarNode>> local_vars;
 		BlockNode() {
 			type = Type::BLOCK;
 		}
@@ -134,14 +144,29 @@ public:
 
 	struct VarNode : public Node {
 		String name;
-		Ptr<Node> assignment;
+		// all variables are static by default.
+		// but static variables are only allows inside class
+		// not inside any scope.
+		bool is_static = true; 
+		ptr<Node> assignment;
 		VarNode() {
 			type = Type::VAR;
 		}
 	};
 
+	struct ConstValueNode : public Node {
+		var value;
+		ConstValueNode() {
+			type = Type::CONST_VALUE;
+		}
+		ConstValueNode(const var& p_value) {
+			type = Type::CONST_VALUE;
+			value = p_value;
+		}
+	};
+
 	struct ArrayNode : public Node {
-		std::vector<Ptr<Node>> elements;
+		stdvec<ptr<Node>> elements;
 		ArrayNode() {
 			type = Type::ARRAY;
 		}
@@ -149,14 +174,28 @@ public:
 
 	struct DictionaryNode : public Node {
 		struct Pair {
-			Ptr<Node> key;
-			Ptr<Node> value;
+			ptr<Node> key;
+			ptr<Node> value;
 		};
-		std::vector<Pair> elements;
+		stdvec<Pair> elements;
 		DictionaryNode() {
 			type = Type::DICTIONARY;
 		}
 	};
+
+	struct ThisNode : public Node {
+		ThisNode() {
+			type = Node::Type::THIS;
+		}
+	};
+
+	struct SuperNode : public Node {
+		SuperNode() {
+			type = Node::Type::SUPER;
+		}
+	};
+
+
 
 	struct OperatorNode : public Node {
 		enum class OpType {
@@ -178,26 +217,29 @@ public:
 			OP_MOD_EQ,
 			OP_INCR,
 			OP_DECR,
-			OP_NOT,
-			OP_NOTEQ,
 			OP_LT,
 			OP_LTEQ,
 			OP_GT,
 			OP_GTEQ,
-			OP_BIT_NOT,
-			OP_LSHIFT,
-			OP_LSHIFT_EQ,
-			OP_RSHIFT,
-			OP_RSHIFT_EQ,
-			OP_OR,
-			OP_OR_EQ,
 			OP_AND,
-			OP_AND_EQ,
-			OP_XOR,
-			OP_XOR_EQ,
+			OP_OR,
+			OP_NOT,
+			OP_NOTEQ,
+
+			OP_BIT_NOT,
+			OP_BIT_LSHIFT,
+			OP_BIT_LSHIFT_EQ,
+			OP_BIT_RSHIFT,
+			OP_BIT_RSHIFT_EQ,
+			OP_BIT_OR,
+			OP_BIT_OR_EQ,
+			OP_BIT_AND,
+			OP_BIT_AND_EQ,
+			OP_BIT_XOR,
+			OP_BIT_XOR_EQ,
 		};
 		OpType op_type;
-		std::vector<Ptr<Node>> args;
+		stdvec<ptr<Node>> args;
 		OperatorNode() {
 			type = Type::OPERATOR;
 		}
@@ -214,9 +256,9 @@ public:
 			RETURN,
 		};
 		CfType cf_type;
-		std::vector<Ptr<Node>> args;
-		Ptr<BlockNode> body;
-		Ptr<BlockNode> body_else; // for cf if node
+		stdvec<ptr<Node>> args;
+		ptr<BlockNode> body;
+		ptr<BlockNode> body_else; // for cf if node
 		ControlFlowNode() {
 			type = Type::CONTROL_FLOW;
 		}
@@ -229,8 +271,8 @@ private:
 	String file_path;
 	String source;
 
-	Ptr<FileNode> file_node;
-	Ptr<Tokenizer> tokenizer = newptr(Tokenizer);
+	ptr<FileNode> file_node;
+	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
 
 	struct IdentifierLocation {
 		bool found = false;
@@ -238,7 +280,7 @@ private:
 		String file_path;
 		Node::Type type = Node::Type::UNKNOWN;
 		IdentifierLocation() {}
-		IdentifierLocation(const Ptr<Node>& p_node, const String& p_file_path) {
+		IdentifierLocation(const ptr<Node>& p_node, const String& p_file_path) {
 			found = true;
 			file_path = p_file_path;
 			line = p_node->line;
@@ -249,16 +291,16 @@ private:
 
 	void _throw(Error::Type p_type, const String& p_msg, int line = -1);
 	void _throw_unexp_token(const String& p_exp = "");
-	IdentifierLocation _find_identifier_location(const String& p_name, const Ptr<Node> p_node) const;
+	IdentifierLocation _find_identifier_location(const String& p_name, const ptr<Node> p_node) const;
 
-	void _parse_struct();
-	void _parse_enum();
-	void _parse_var(Ptr<Node> p_node = nullptr);
-	void _parse_func();
+	ptr<ClassNode> _parse_class();
+	ptr<EnumNode> _parse_enum(ptr<Node> p_parent = nullptr);
+	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent, bool p_static);
+	ptr<FunctionNode> _parse_func(ptr<Node> p_parent, bool p_static);
 
-	void _parse_block(Ptr<BlockNode>& p_block, const Ptr<Node>& p_parent);
-	void _parse_expression(Ptr<Node>& p_expr);
-	void _reduce_expression(Ptr<Node>& p_expr);
+	ptr<BlockNode> _parse_block(const ptr<Node>& p_parent);
+	ptr<Node> _parse_expression(const ptr<Node>& p_parent, bool p_static);
+	void _reduce_expression(ptr<Node>& p_expr);
 
 public:
 	void parse(String p_source, String p_file_path);
