@@ -31,24 +31,19 @@
 namespace carbon {
 
 class Buffer : public Object {
-private:
-	ptr<char[]> buffer;
-	size_t _size = 0;
-
 public:
-	// Object overrides.
-	virtual bool get(const String& p_name, var& r_val)       const override { return false; }
-	virtual bool set(const String& p_name, const var& p_val) override { return false; }
-	virtual bool has(const String& p_name)                   const override { return false; }
-	virtual ptr<Object> copy(bool p_deep) const override { return ptrcast<Object>(newptr<Buffer>()); /* TODO: */ }
-	virtual String get_class_name()       const override { return "Buffer"; }
+	Buffer() {}
+	Buffer(size_t p_size) { alloc(p_size); }
 
-	// Buffer methods.
+	// Object override.
+	virtual String get_class_name() const override { return "Buffer"; }
+
+	// Methods.
 	void alloc(size_t p_size) {
 		buffer = ptr<char[]>(new char[p_size]);
 		_size = p_size;
 	}
-	char* get() { return buffer.get(); }
+	char* front() { return buffer.get(); }
 	size_t size() const { return _size; }
 
 	char& operator[](size_t p_index) {
@@ -60,9 +55,12 @@ public:
 		return buffer.get()[p_index];
 	}
 
-	Buffer() {}
-	Buffer(size_t p_size) { alloc(p_size); }
+protected:
 
+private:
+	// Members.
+	ptr<char[]> buffer;
+	size_t _size = 0;
 };
 
 }

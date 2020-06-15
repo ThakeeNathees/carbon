@@ -1,3 +1,4 @@
+
 //------------------------------------------------------------------------------
 // MIT License
 //------------------------------------------------------------------------------
@@ -23,37 +24,38 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BUILTIN_FUNCTIONS_H
-#define BUILTIN_FUNCTIONS_H
+#ifndef BUILTIN_CLASSES_H
+#define BUILTIN_CLASSES_H
 
 #include "core.h"
 
 namespace carbon {
 
-class BuiltinFunctions {
+class BuiltinClasses {
 public:
-	enum class Function {
-		UNKNOWN,
+	enum class Class {
+		// var.h classes
+		_NULL,
+		BOOL,
+		INT,
+		FLOAT,
 
-		PRINT,
-		INPUT,
+		STRING,
+		VECT2F,
+		VECT2I,
+		VECT3F,
+		VECT3I,
+		ARRAY,
+		MAP,
+		OBJECT,
 
-		MATH_MIN,
-		MATH_MAX,
-		MATH_POW,
-
-		_FUNC_MAX_,
+		// other classes
+		BUFFER,
+		FILE,
 	};
-
-	// Methods.
-	static const char* get_func_name(Function p_func);
-
-protected:
-
-private:
 
 };
 
 }
 
-#endif // BUILTIN_FUNCTIONS_H
+#endif // BUILTIN_CLASSES_H

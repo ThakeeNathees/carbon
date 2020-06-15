@@ -29,15 +29,15 @@
 namespace carbon {
 
 void File::close() {
-	if (_file.is_open()) {
-		_file.close();
+	if (file.is_open()) {
+		file.close();
 	}
 }
 
 void File::open(const String& p_path, int p_mode) {
 
-	_path = p_path;
-	_mode = p_mode;
+	path = p_path;
+	mode = p_mode;
 
 	int mode = 0;
 	if (p_mode & READ) {
@@ -53,18 +53,18 @@ void File::open(const String& p_path, int p_mode) {
 		mode |= std::ios::binary;
 	}
 
-	_file.open(_path, mode);
-	if (!_file.is_open()) {
-		throw Error(Error::CANT_OPEN_FILE, String::format("can't open \"%s\"", _path));
+	file.open(path, mode);
+	if (!file.is_open()) {
+		throw Error(Error::CANT_OPEN_FILE, String::format("can't open \"%s\"", path));
 	}
 }
 
 size_t File::size() {
 	std::streampos begin, end;
-	_file.seekg(0, std::ios::beg);
-	begin = _file.tellg();
-	_file.seekg(0, std::ios::end);
-	end = _file.tellg();
+	file.seekg(0, std::ios::beg);
+	begin = file.tellg();
+	file.seekg(0, std::ios::end);
+	end = file.tellg();
 	return end - begin;
 }
 
@@ -73,7 +73,7 @@ String File::read_text() {
 
 	std::stringstream sstream;
 	std::string line;
-	while (std::getline(_file, line)) {
+	while (std::getline(file, line)) {
 		sstream << line << '\n';
 	}
 	return sstream.str();
@@ -84,8 +84,8 @@ ptr<Buffer> File::read_bytes() {
 
 	size_t file_size = size();
 	ptr<Buffer> buff = newptr<Buffer>(file_size);
-	_file.seekg(0, std::ios::beg);
-	_file.read(buff->get(), file_size);
+	file.seekg(0, std::ios::beg);
+	file.read(buff->front(), file_size);
 	return buff;
 }
 
@@ -93,14 +93,14 @@ Array File::get_lines() {
 	if (!is_open()) throw Error(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
 	Array arr;
 	std::string line;
-	while (std::getline(_file, line)) {
+	while (std::getline(file, line)) {
 		arr.append(String(line));
 	}
 	return arr;
 }
 
 var File::read() {
-	if (_mode & BINARY) {
+	if (mode & BINARY) {
 		return read_bytes();
 	} else {
 		return read_text();

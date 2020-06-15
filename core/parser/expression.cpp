@@ -61,23 +61,23 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 
 			tk = &tokenizer->next();
 			if (tk->type != Token::BRACKET_RPARAN) {
-				_throw_unexp_token(")");
+				THROW_UNEXP_TOKEN(")");
 			}
 
-		} else if (tk->type == Token::KWORD_THIS){
+		} else if (tk->type == Token::KWORD_THIS) {
 			if (p_static) {
-				_throw(Error::SYNTAX_ERROR, "Invalid use of \"self\" in static scope.");
+				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Invalid use of \"self\" in static scope.", -1);
 			}
-			expr = newptr<ThisNode>();
+			expr = new_node<ThisNode>();
 
 		} else if (tk->type == Token::KWORD_SUPER) {
 			if (p_static) {
-				_throw(Error::SYNTAX_ERROR, "Invalid use of \"super\" in static scope.");
+				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Invalid use of \"super\" in static scope.", -1);
 			}
-			expr = newptr<SuperNode>();
+			expr = new_node<SuperNode>();
 
 		} else if (tk->type == Token::VALUE_FLOAT || tk->type == Token::VALUE_INT || tk->type == Token::VALUE_STRING) {
-			expr = newptr<ConstValueNode>(tk->constant);
+			expr = new_node<ConstValueNode>(tk->constant);
 
 		} else if (tk->type == Token::OP_PLUS || tk->type == Token::OP_MINUS || tk->type == Token::OP_NOT || tk->type == Token::OP_BIT_NOT) {
 			switch (tk->type) {
@@ -95,15 +95,36 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 					break;
 			}
 			continue;
-		} else if (tk->type == Token::IDENTIFIER && tokenizer->peek().type == Token::BRACKET_LPARAN) {
-			// TODO: function call
+		} else if ((tk->type == Token::IDENTIFIER || tk->type == Token::BUILTIN_FUNC || tk->type == Token::BUILTIN_CLASS)
+			&& tokenizer->peek().type == Token::BRACKET_LPARAN) {
+			ptr<OperatorNode> call = new_node<OperatorNode>(OperatorNode::OpType::OP_CALL);
+
+			if (tk->type == Token::BUILTIN_CLASS) {
+				if (tk->builtin_class == BuiltinClasses::Class::_NULL) {
+					throw Error(Error::SYNTAX_ERROR, "Invalid call.");
+				}
+				call->args.push_back(new_node<BuiltinClassNode>(tk->builtin_class));
+			} else if (tk->type == Token::BUILTIN_FUNC) {
+				call->args.push_back(new_node<BuiltinFunctionNode>(tk->builtin_func));
+			} else {
+				call->args.push_back(new_node<IdentifierNode>(tk->identifier));
+			}
+
+			tk = &tokenizer->next();
+			ASSERT(tk->type == Token::BRACKET_LPARAN);
+
+			_parse_arguments(call->args, p_parent, p_static);
+			
+			tk = &tokenizer->next();
+			expr = call;
+
 		} else if (tk->type == Token::IDENTIFIER) {
 			// TODO: just identifier
 		} else if (tk->type == Token::BRACKET_LCUR) {
 			// TODO: Array
 			// no literal for dictionary, todo rename dictionary to map
 		} else {
-			_throw_unexp_token();
+			THROW_UNEXP_TOKEN("");
 		}
 
 		// TODO: parse indexing.
@@ -117,6 +138,12 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 
 
 }
+
+void Parser::_parse_arguments(stdvec<ptr<Node>>& p_args, const ptr<Node>& p_parent, bool p_static) {
+	// TODO:
+}
+
+
 void Parser::_reduce_expression(ptr<Node>& p_expr) {
 }
 

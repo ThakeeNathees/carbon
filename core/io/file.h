@@ -31,17 +31,8 @@
 
 namespace carbon {
 
-
 class File : public Object {
 public:
-
-	// Object methods.
-	virtual bool get(const String& p_name, var& r_val)       const override { return false; }
-	virtual bool set(const String& p_name, const var& p_val)       override { return false; }
-	virtual bool has(const String& p_name)                   const override { return false; }
-	virtual ptr<Object> copy(bool p_deep)                    const          { return ptrcast<Object>(newptr<File>()); }
-	virtual String get_class_name()                          const          { return "File"; }
-
 	enum {
 		READ   = 1 << 0,
 		WRITE  = 1 << 1,
@@ -49,29 +40,32 @@ public:
 		BINARY = 1 << 3,
 	};
 
-private:
-	std::fstream _file;
-	String       _path;
-	int          _mode;
+	// Object overrides.
+	virtual String get_class_name() const override { return "File"; }
 
-public:
 	File();
 	~File();
 
-	bool is_open() const { return _file.is_open(); }
+	// Methods.
+	bool is_open() const { return file.is_open(); }
 	void open(const String& p_path, int p_mode = READ);
 	void close();
 	size_t size();
+	String get_path() const { return path; }
+	int get_mode() const { return mode; }
 
 	String read_text();
 	ptr<Buffer> read_bytes();
 	Array get_lines();
-
-	String get_path() const { return _path; }
-	int get_mode() const { return _mode; }
-
-	// carbon api.
 	var read();
+
+
+protected:
+
+private:
+	std::fstream file;
+	String path;
+	int mode;
 
 };
 }

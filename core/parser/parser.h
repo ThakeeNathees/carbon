@@ -30,30 +30,50 @@
 
 namespace carbon {
 
-class Parser 
-{
-private:
+#define THROW_PARSER_ERR(m_err_type, m_msg, m_line)                                                                                       \
+	if (m_line > 0) {                                                                                                                     \
+		throw Error(m_err_type, String(m_msg), Vect2i(m_line, 0));                                                                        \
+	} else {                                                                                                                              \
+		throw Error(m_err_type, String(m_msg), Vect2i(tokenizer->get_line(), 0));                                                         \
+	}
 
+#define THROW_UNEXP_TOKEN(m_tk)                                                                                                           \
+	if (m_tk != "") {                                                                                                                     \
+		THROW_PARSER_ERR(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\"). expected \"%s\"", "<tk_name>", m_tk), -1);        \
+	} else {                                                                                                                              \
+		THROW_PARSER_ERR(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\").", "<tk_name>"), -1);                              \
+	}
+
+#define THROW_IF_ALREADY_FOUND(m_identifier, m_node)                                                                                      \
+	do {                                                                                                                                  \
+		IdentifierLocation loc = _find_identifier_location(m_identifier, m_node);                                                         \
+		if (loc.found) {                                                                                                                  \
+			THROW_PARSER_ERR(Error::ALREADY_DEFINED, String::format("Identifier %s already defined at %s:%i", loc.file_path, loc.line));  \
+		}                                                                                                                                 \
+	} while (false)
+
+
+class Parser {
 public:
 	
-	struct Node
-	{
+	struct Node {
 		enum class Type {
 			UNKNOWN,
 
 			FILE,
 			CLASS,
 			ENUM,
-			BUILTIN_FUNCTION,
 			FUNCTION,
 			BLOCK,
 			IDENTIFIER,
 			VAR,
 			CONST_VALUE,
 			ARRAY,
-			DICTIONARY,
+			MAP,
 			THIS,
 			SUPER,
+			BUILTIN_FUNCTION,
+			BUILTIN_CLASS,
 			OPERATOR,
 			CONTROL_FLOW,
 		};
@@ -65,13 +85,14 @@ public:
 	struct ClassNode;
 	struct EnumNode;
 	struct BuiltinFunctionNode;
+	struct BuiltinClassNode;
 	struct FunctionNode;
 	struct BlockNode;
 	struct IdentifierNode;
 	struct VarNode;
 	struct ConstValueNode;
 	struct ArrayNode;
-	struct DictionaryNode;
+	struct MapNode;
 	struct OperatorNode;
 	struct ControlFlowNode;
 
@@ -110,13 +131,6 @@ public:
 		}
 	};
 
-	struct BuiltinFunctionNode : public Node {
-		BuiltinFunctions::Function func;
-		BuiltinFunctionNode() {
-			type = Type::BUILTIN_FUNCTION;
-		}
-	};
-
 	struct FunctionNode : public Node {
 		String name;
 		bool is_static = true; // All functions are static by default.
@@ -140,6 +154,11 @@ public:
 		IdentifierNode() {
 			type = Type::IDENTIFIER;
 		}
+		IdentifierNode(const String& p_name) {
+			type = Type::IDENTIFIER;
+			name = p_name;
+		}
+
 	};
 
 	struct VarNode : public Node {
@@ -172,14 +191,14 @@ public:
 		}
 	};
 
-	struct DictionaryNode : public Node {
+	struct MapNode : public Node {
 		struct Pair {
 			ptr<Node> key;
 			ptr<Node> value;
 		};
 		stdvec<Pair> elements;
-		DictionaryNode() {
-			type = Type::DICTIONARY;
+		MapNode() {
+			type = Type::MAP;
 		}
 	};
 
@@ -195,11 +214,33 @@ public:
 		}
 	};
 
+	struct BuiltinFunctionNode : public Node {
+		BuiltinFunctions::Function func;
+		BuiltinFunctionNode() {
+			type = Type::BUILTIN_FUNCTION;
+		}
+		BuiltinFunctionNode(BuiltinFunctions::Function p_func) {
+			type = Type::BUILTIN_FUNCTION;
+			func = p_func;
+		}
+	};
+
+	struct BuiltinClassNode : public Node {
+		BuiltinClasses::Class cls;
+		BuiltinClassNode() {
+			type = Type::BUILTIN_CLASS;
+		}
+		BuiltinClassNode(BuiltinClasses::Class p_cls) {
+			type = Type::BUILTIN_CLASS;
+			cls = p_cls;
+		}
+	};
+
 
 
 	struct OperatorNode : public Node {
 		enum class OpType {
-			OP_CALL_FUNC,
+			OP_CALL,
 			OP_INDEX,
 			OP_INDEX_NAMED,
 			
@@ -243,6 +284,10 @@ public:
 		OperatorNode() {
 			type = Type::OPERATOR;
 		}
+		OperatorNode(OpType p_type) {
+			type = Type::OPERATOR;
+			op_type = p_type;
+		}
 	};
 
 	struct ControlFlowNode : public Node {
@@ -264,16 +309,12 @@ public:
 		}
 	};
 
+	// Methods.
+	void parse(String p_source, String p_file_path);
+
+protected:
+
 private:
-
-	Error err;
-
-	String file_path;
-	String source;
-
-	ptr<FileNode> file_node;
-	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
-
 	struct IdentifierLocation {
 		bool found = false;
 		int line = 0, col = 0;
@@ -289,21 +330,35 @@ private:
 		}
 	};
 
-	void _throw(Error::Type p_type, const String& p_msg, int line = -1);
-	void _throw_unexp_token(const String& p_exp = "");
+	// Methods.
+	//void _throw(Error::Type p_type, const String& p_msg, int line = -1);
+	//void _throw_unexp_token(const String& p_exp = "");
+
+	template<typename T=Node, typename... Targs>
+	ptr<T> new_node(Targs... p_args) {
+		ptr<T> ret = newptr<T>(p_args...);
+		ret->line = tokenizer->get_line();
+		ret->col = tokenizer->get_col();
+		return ret;
+	}
+
 	IdentifierLocation _find_identifier_location(const String& p_name, const ptr<Node> p_node) const;
 
 	ptr<ClassNode> _parse_class();
 	ptr<EnumNode> _parse_enum(ptr<Node> p_parent = nullptr);
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent, bool p_static);
 	ptr<FunctionNode> _parse_func(ptr<Node> p_parent, bool p_static);
-
 	ptr<BlockNode> _parse_block(const ptr<Node>& p_parent);
 	ptr<Node> _parse_expression(const ptr<Node>& p_parent, bool p_static);
+	void _parse_arguments(stdvec<ptr<Node>>& p_args, const ptr<Node>& p_parent, bool p_static);
 	void _reduce_expression(ptr<Node>& p_expr);
 
-public:
-	void parse(String p_source, String p_file_path);
+	// Members.
+	String file_path;
+	String source;
+	ptr<FileNode> file_node;
+	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
+
 
 };
 

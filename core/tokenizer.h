@@ -28,6 +28,7 @@
 
 #include "core.h"
 #include "builtin_functions.h"
+#include "builtin_classes.h"
 
 namespace carbon {
 
@@ -87,6 +88,7 @@ enum class Token {
 
 	IDENTIFIER,
 	BUILTIN_FUNC, // also identifier
+	BUILTIN_CLASS,
 
 	KWORD_IMPORT,
 	KWORD_CLASS,
@@ -114,8 +116,7 @@ enum class Token {
 	_TK_MAX_,
 };
 
-struct TokenData
-{
+struct TokenData {
 	Token type = Token::UNKNOWN;
 	int line = 0, col = 0;
 	
@@ -125,42 +126,45 @@ struct TokenData
 	// Identifiers.
 	String identifier;
 	BuiltinFunctions::Function builtin_func = BuiltinFunctions::Function::UNKNOWN;
+	BuiltinClasses::Class builtin_class = BuiltinClasses::Class::_NULL;
 	var::Type biltin_type = var::Type::_NULL;
 };
 
 
-class Tokenizer
-{
+class Tokenizer {
+public:
+	// Methods.
+	const void tokenize(const String& p_source);
+
+	const TokenData& next(int p_offset = 0) { 
+		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }
+		token_ptr += p_offset;
+		return tokens[token_ptr++];
+	}
+	const TokenData& peek(int p_offset = 0) const {
+		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }
+		return tokens[token_ptr+p_offset];
+	}
+
+	int get_line() const { return cur_line; }
+	int get_col() const { return cur_col; }
+
+protected:
+
 private:
+	// Methods.
+	void _eat_escape(String& p_str);
+	void _eat_token(Token p_tk, int p_eat_size = 1);
+	void _eat_eof();
+	void _eat_const_value(const var& p_value, int p_eat_size = 0);
+	void _eat_identifier(const String& p_idf, int p_eat_size = 0);
+
+	// Members.
 	String source;
 	stdvec<TokenData> tokens;
 	int cur_line = 1, cur_col = 1;
 	int char_ptr = 0;
 	int token_ptr = 0; // for next()
-
-	void _eat_escape(String& p_str);
-	void _eat_token(Token p_tk, int p_eat_size=1);
-	void _eat_eof();
-	void _eat_const_value(const var& p_value, int p_eat_size=0);
-	void _eat_identifier(const String& p_idf, int p_eat_size=0);
-
-public:
-
-	Tokenizer() { }
-	const void tokenize(const String& p_source);
-
-	const TokenData& next(int p_offset = 0) { 
-		// TODO: check arr index
-		token_ptr += p_offset;
-		return tokens[token_ptr++];
-	}
-	const TokenData& peek(int p_offset = 0) const {
-		// TODO: check arr index
-		return tokens[token_ptr+p_offset];
-	}
-
-	int get_line() const { return cur_line; }
-	int get_coline() const { return cur_col; }
 
 };
 
