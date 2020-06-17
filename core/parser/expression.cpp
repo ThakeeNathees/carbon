@@ -95,18 +95,15 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 					break;
 			}
 			continue;
-		} else if ((tk->type == Token::IDENTIFIER || tk->type == Token::BUILTIN_FUNC || tk->type == Token::BUILTIN_CLASS)
-			&& tokenizer->peek().type == Token::BRACKET_LPARAN) {
+		} else if ((tk->type == Token::IDENTIFIER || tk->type == Token::BUILTIN_FUNC) && tokenizer->peek().type == Token::BRACKET_LPARAN) {
 			ptr<OperatorNode> call = new_node<OperatorNode>(OperatorNode::OpType::OP_CALL);
 
-			if (tk->type == Token::BUILTIN_CLASS) {
-				if (tk->builtin_class == BuiltinClasses::Class::_NULL) {
-					throw Error(Error::SYNTAX_ERROR, "Invalid call.");
-				}
-				call->args.push_back(new_node<BuiltinClassNode>(tk->builtin_class));
-			} else if (tk->type == Token::BUILTIN_FUNC) {
+			if (tk->type == Token::BUILTIN_FUNC) {
 				call->args.push_back(new_node<BuiltinFunctionNode>(tk->builtin_func));
 			} else {
+				// Identifier node could be builtin class like File(), another static method, ...
+				// will know when reducing.
+				call->args.push_back(new_node<Node>()); // UNKNOWN on may/may-not be self
 				call->args.push_back(new_node<IdentifierNode>(tk->identifier));
 			}
 
@@ -119,15 +116,75 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 			expr = call;
 
 		} else if (tk->type == Token::IDENTIFIER) {
-			// TODO: just identifier
+			expr = new_node<IdentifierNode>(tk->identifier);
+
 		} else if (tk->type == Token::BRACKET_LCUR) {
-			// TODO: Array
-			// no literal for dictionary, todo rename dictionary to map
+			// No literal for dictionary.
+			ptr<ArrayNode> arr = new_node<ArrayNode>();
+			bool done = false;
+			while (!done) {
+				tk = &tokenizer->next();
+				bool comma_valid = false;
+				switch (tk->type) {
+					case Token::_EOF:
+						THROW_UNEXP_TOKEN("");
+					case Token::SYM_COMMA:
+						if (!comma_valid) {
+							THROW_UNEXP_TOKEN("");
+						}
+						comma_valid = false;
+					case Token::BRACKET_RCUR:
+						done = true;
+						break;
+					default:
+						ptr<Node> subexpr = _parse_expression(p_parent, p_static);
+						arr->elements.push_back(subexpr);
+						comma_valid = true;
+				}
+			}
+			expr = arr;
 		} else {
 			THROW_UNEXP_TOKEN("");
 		}
 
-		// TODO: parse indexing.
+		tk = &tokenizer->peek(); // if next not valid, position doesn't increase
+
+		// -- PARSE INDEXING -------------------------------------------------------
+
+		while (true) {
+
+			// .named_index
+			if (tk->type == Token::SYM_DOT) {
+				tk = &tokenizer->next(1);
+
+				if (tk->type != Token::IDENTIFIER && tk->type != Token::BUILTIN_FUNC) {
+					THROW_UNEXP_TOKEN("");
+				}
+
+				// call
+				if (tokenizer->peek().type == Token::BRACKET_LPARAN) {
+					ptr<OperatorNode> call = new_node<OperatorNode>(OperatorNode::OpType::OP_CALL);
+					
+					call->args.push_back(expr);
+					call->args.push_back(new_node<IdentifierNode>(tk->identifier));
+					tk = &tokenizer->next(1);
+					_parse_arguments(call->args, p_parent, p_static);
+
+					expr = call;
+
+				// Just indexing.
+				} else {
+
+				}
+
+
+			// [mapped_index]
+			} else if (tk->type == Token::BRACKET_LSQ) {
+				tk = &tokenizer->next(1);
+
+			}
+
+		}
 
 		// TODO: parse operator
 

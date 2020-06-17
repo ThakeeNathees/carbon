@@ -87,25 +87,25 @@ static BuiltinFuncName _builtin_func_list[] = {
 	{ "pow",   BuiltinFunctions::Function::MATH_POW },
 };
 
-struct BuiltinClassName { const char* name; BuiltinClasses::Class cls; };
-static BuiltinClassName _builtin_class_list[]{
-	{ "null",   BuiltinClasses::Class::_NULL   },
-	{ "bool",   BuiltinClasses::Class::BOOL	   },
-	{ "int",    BuiltinClasses::Class::INT	   },
-	{ "float",  BuiltinClasses::Class::FLOAT   },
-	
-	{ "String", BuiltinClasses::Class::STRING  },
-	{ "Vect2f", BuiltinClasses::Class::VECT2F  },
-	{ "Vect2i", BuiltinClasses::Class::VECT2I  },
-	{ "Vect3f", BuiltinClasses::Class::VECT3F  },
-	{ "Vect3i", BuiltinClasses::Class::VECT3I  },
-	{ "Array",  BuiltinClasses::Class::ARRAY   },
-	{ "Map",    BuiltinClasses::Class::MAP	   },
-	{ "Object", BuiltinClasses::Class::OBJECT  },
-
-	{ "Buffer", BuiltinClasses::Class::BUFFER  },
-	{ "File",   BuiltinClasses::Class::FILE	   },
-};
+//struct BuiltinClassName { const char* name; BuiltinClasses::Class cls; };
+//static BuiltinClassName _builtin_class_list[]{
+//	{ "null",   BuiltinClasses::Class::_NULL   },
+//	{ "bool",   BuiltinClasses::Class::BOOL	   },
+//	{ "int",    BuiltinClasses::Class::INT	   },
+//	{ "float",  BuiltinClasses::Class::FLOAT   },
+//	
+//	{ "String", BuiltinClasses::Class::STRING  },
+//	{ "Vect2f", BuiltinClasses::Class::VECT2F  },
+//	{ "Vect2i", BuiltinClasses::Class::VECT2I  },
+//	{ "Vect3f", BuiltinClasses::Class::VECT3F  },
+//	{ "Vect3i", BuiltinClasses::Class::VECT3I  },
+//	{ "Array",  BuiltinClasses::Class::ARRAY   },
+//	{ "Map",    BuiltinClasses::Class::MAP	   },
+//	{ "Object", BuiltinClasses::Class::OBJECT  },
+//
+//	{ "Buffer", BuiltinClasses::Class::BUFFER  },
+//	{ "File",   BuiltinClasses::Class::FILE	   },
+//};
 
 void Tokenizer::_eat_escape(String& p_str) {
 	char c = GET_CHAR(0);
@@ -173,6 +173,7 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 	
 	TokenData tk;
 	tk.type = Token::IDENTIFIER;
+	tk.identifier = p_idf; // method name may be builtin func
 	tk.col = cur_col;
 	tk.line = cur_line;
 
@@ -193,19 +194,16 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 		}
 	}
 
-	if (tk.type == Token::IDENTIFIER) {
-		for (const BuiltinClassName& bc : _builtin_class_list) {
-			if (bc.name == p_idf) {
-				tk.type = Token::BUILTIN_CLASS;
-				tk.builtin_class = bc.cls;
-				break;
-			}
-		}
-	}
+	//if (tk.type == Token::IDENTIFIER) {
+	//	for (const BuiltinClassName& bc : _builtin_class_list) {
+	//		if (bc.name == p_idf) {
+	//			tk.type = Token::BUILTIN_CLASS;
+	//			tk.builtin_class = bc.cls;
+	//			break;
+	//		}
+	//	}
+	//}
 
-	if (tk.type == Token::IDENTIFIER) {
-		tk.identifier = p_idf;
-	}
 	tokens.push_back(tk);
 	EAT_CHAR(p_eat_size);
 }

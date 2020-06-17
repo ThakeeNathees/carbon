@@ -2,4 +2,7 @@
 import os
 Import('env_core')
 
+Import('cbenv')
+cbenv.add_include_dir('.')
+
 env_core.sources += [ Glob('*.cpp') ]

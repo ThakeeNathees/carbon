@@ -242,7 +242,7 @@ public:
 		enum class OpType {
 			OP_CALL,
 			OP_INDEX,
-			OP_INDEX_NAMED,
+			OP_INDEX_MAPPED,
 			
 			OP_EQ,
 			OP_EQEQ,

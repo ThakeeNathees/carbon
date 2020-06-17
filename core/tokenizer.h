@@ -88,7 +88,6 @@ enum class Token {
 
 	IDENTIFIER,
 	BUILTIN_FUNC, // also identifier
-	BUILTIN_CLASS,
 
 	KWORD_IMPORT,
 	KWORD_CLASS,
