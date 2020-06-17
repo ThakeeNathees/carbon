@@ -36,10 +36,8 @@
 // #pragma comment(lib, "psapi.lib")
 // #pragma comment(lib, "dbghelp.lib")
 
-// FIXME: _MSC_VER should be MSVC here, but its 
-//        not defined might be built system bug
 // Crash handler exception only enabled with MSVC
-#if defined(_DEBUG) && defined(_MSC_VER)
+#if (defined(_DEBUG) || defined(DEBUG_BUILD)) && defined(_MSC_VER)
 #define CRASH_HANDLER_EXCEPTION 1
 extern DWORD CrashHandlerException(EXCEPTION_POINTERS* ep);
 #endif

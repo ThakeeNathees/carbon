@@ -48,8 +48,12 @@ public:
 		NOT_IMPLEMENTED,
 		ZERO_DIVISION,
 
+		IO_ERROR,
 		CANT_OPEN_FILE,
 		IO_INVALID_OPERATORN,
+
+		// for debugging
+		INTERNAL_BUG,
 
 	};
 

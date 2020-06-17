@@ -31,22 +31,74 @@
 #include "parser/parser.h"
 #include "io/console_logger.h"
 #include "io/file.h"
+#include "io/dl_loader.h"
 using namespace carbon;
 
-int _main(int argc, char** argv)
-{
-	String path = "bin/main.cb";
+void dl_test();
+void parser_test();
+void crash_handler_test();
 
+int _main(int argc, char** argv) {
+	
+	//dl_test();
+	//parser_test();
+	//crash_handler_test();
+	
+	return 0;
+}
+
+// --------	TESTS -----------------------------------
+
+void parser_test() {
+	String path = "bin/main.cb";
 	File file;
 	file.open(path);
 	String source = file.read();
-	
+
 	Parser p;
 	p.parse(source, path);
-	
+}
+
+void dl_test() {
+	// dl loader test
+	// the source:
+	// /*** use extern "C" ***/
+	// #include<stdio.h>
+	// 
+	// extern "C" {
+	// 
+	// 	__declspec(dllexport) int r0_func_a0() {
+	// 		printf("called : r0_func_a0\n");
+	// 		return 0;
+	// 	}
+	// 	__declspec(dllexport) int ra1_func_a1(int ret) {
+	// 		printf("called : ra1_func_a1 with: %i\n", ret);
+	// 		return ret;
+	// 	}
+	// 
+	// 	__declspec(dllexport) int r0_func_a3(int a1, float a2, const char* a3) {
+	// 		printf("called : ra1_func_a1 with: %i, %f, %s\n", a1, a2, a3);
+	// 		return 0;
+	// 	}
+	// 
+	// }
+	// /**********************/
+
+	DlLoader lib("bin/mylib.dll");
+	var i = 42, f = 3.14, s = "hello";
+	int ret;
+	ret = lib.dl_call("r0_func_a0");
+	PRINT(ret);
+	ret = lib.dl_call("ra1_func_a1", i);
+	PRINT(ret);
+	ret = lib.dl_call("r0_func_a3", i, f, s);
+	PRINT(ret);
+}
+
+void crash_handler_test() {
+	// crash handler test
 	ConsoleLogger::logf_error("Error: %s\n", "Debug break ...");
 	DEBUG_BREAK();
 	char* invalid_ptr = NULL;
 	*invalid_ptr = 0xff;
-	return 0;
 }
