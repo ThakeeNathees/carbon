@@ -30,6 +30,27 @@
 #include "var.h/_var.h"
 using namespace varh;
 
+#include <assert.h>
+#include <cstring>
+#include <iostream>
+#include <ostream>
+#include <sstream>
+#include <fstream>
+#include <memory>
+#include <stdarg.h>
+#include <stdio.h>
+#include <string>
+#include <type_traits>
+#include <typeinfo>
+#include <new>
+
+#define _USE_MATH_DEFINES
+#include <map>
+#include <math.h>
+#include <vector>
+
+#include "error.h"
+
 // https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
 #ifdef _MSC_VER // Microsoft compilers
 
@@ -89,20 +110,41 @@ do {                                                                            
 #endif
 
 #if defined(_DEBUG)
-#define ASSERT(m_cond)                                                                                   \
-	if (!(m_cond))                                                                                       \
-		printf("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond));  \
-		DEBUG_BREAK()
+#define ASSERT(m_cond)                                                                                       \
+	do {                                                                                                     \
+		if (!(m_cond)) {                                                                                     \
+			printf("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond));  \
+			DEBUG_BREAK();                                                                                   \
+		}                                                                                                    \
+	} while (false)
+
 #else
 #define ASSERT(...)
 #endif
 
 #define VSNPRINTF_BUFF_SIZE 8192
 
-#define newptr(T1, ...) std::make_shared<T1>(__VA_ARGS__);
-#define newptr2(T1, T2, ...) std::make_shared<T1, T2>(__VA_ARGS__);
+// Definition in var.h ------------------------------
+// template<typename T, typename... Targs>
+// inline ptr<T> newptr(Targs... p_args) {
+// 	return std::make_shared<T>(p_args...);
+// }
+// --------------------------------------------------
+
+// Definition in var.h ------------------------------
+// template<typename T1, typename T2>
+// inline ptr<T1> ptrcast(T2 p_ptr) {
+// 	return std::static_pointer_cast<T1>(p_ptr);
+// }
+// --------------------------------------------------
+
 template<typename T>
-using Ptr = std::shared_ptr<T>;
+using ptr = std::shared_ptr<T>;
+
+template<typename T>
+using stdvec = std::vector<T>;
+
+typedef unsigned char byte;
 
 
 // for windows dll define CARBON_DLL, CARBON_DLL_EXPORT

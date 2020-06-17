@@ -23,37 +23,46 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BUILTIN_FUNCTIONS_H
-#define BUILTIN_FUNCTIONS_H
+#ifndef BUFFER_H
+#define BUFFER_H
 
 #include "core.h"
 
 namespace carbon {
 
-class BuiltinFunctions {
+class Buffer : public Object {
 public:
-	enum class Function {
-		UNKNOWN,
+	Buffer() {}
+	Buffer(size_t p_size) { alloc(p_size); }
 
-		PRINT,
-		INPUT,
-
-		MATH_MIN,
-		MATH_MAX,
-		MATH_POW,
-
-		_FUNC_MAX_,
-	};
+	// Object override.
+	virtual String get_class_name() const override { return "Buffer"; }
 
 	// Methods.
-	static const char* get_func_name(Function p_func);
+	void alloc(size_t p_size) {
+		buffer = ptr<char[]>(new char[p_size]);
+		_size = p_size;
+	}
+	char* front() { return buffer.get(); }
+	size_t size() const { return _size; }
+
+	char& operator[](size_t p_index) {
+		if (p_index >= _size) throw Error(Error::INVALID_INDEX, "");
+		return buffer.get()[p_index];
+	}
+	const char& operator[](size_t p_index) const {
+		if (p_index >= _size) throw Error(Error::INVALID_INDEX, "");
+		return buffer.get()[p_index];
+	}
 
 protected:
 
 private:
-
+	// Members.
+	ptr<char[]> buffer;
+	size_t _size = 0;
 };
 
 }
 
-#endif // BUILTIN_FUNCTIONS_H
+#endif // BUFFER_H

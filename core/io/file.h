@@ -23,37 +23,52 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BUILTIN_FUNCTIONS_H
-#define BUILTIN_FUNCTIONS_H
+#ifndef FILE_H
+#define FILE_H
 
 #include "core.h"
+#include "buffer.h"
 
 namespace carbon {
 
-class BuiltinFunctions {
+class File : public Object {
 public:
-	enum class Function {
-		UNKNOWN,
-
-		PRINT,
-		INPUT,
-
-		MATH_MIN,
-		MATH_MAX,
-		MATH_POW,
-
-		_FUNC_MAX_,
+	enum {
+		READ   = 1 << 0,
+		WRITE  = 1 << 1,
+		APPEND = 1 << 2,
+		BINARY = 1 << 3,
 	};
 
+	// Object overrides.
+	virtual String get_class_name() const override { return "File"; }
+
+	File();
+	~File();
+
 	// Methods.
-	static const char* get_func_name(Function p_func);
+	bool is_open() const { return file.is_open(); }
+	void open(const String& p_path, int p_mode = READ);
+	void close();
+	size_t size();
+	String get_path() const { return path; }
+	int get_mode() const { return mode; }
+
+	String read_text();
+	ptr<Buffer> read_bytes();
+	Array get_lines();
+	var read();
+
 
 protected:
 
 private:
+	std::fstream file;
+	String path;
+	int mode;
 
 };
-
 }
 
-#endif // BUILTIN_FUNCTIONS_H
+#endif // FILE_H
+

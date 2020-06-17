@@ -4,7 +4,7 @@ import shutil
 
 USAGE_STRING = '''\
 Usage:
-$ python build.py command [...]
+$ python tool.py command [...]
 
 clean - clean the generated files
     --all, -a       if all, clean all generated (includes project) files

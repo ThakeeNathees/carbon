@@ -23,37 +23,13 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BUILTIN_FUNCTIONS_H
-#define BUILTIN_FUNCTIONS_H
-
-#include "core.h"
+#include "parser.h"
 
 namespace carbon {
 
-class BuiltinFunctions {
-public:
-	enum class Function {
-		UNKNOWN,
-
-		PRINT,
-		INPUT,
-
-		MATH_MIN,
-		MATH_MAX,
-		MATH_POW,
-
-		_FUNC_MAX_,
-	};
-
-	// Methods.
-	static const char* get_func_name(Function p_func);
-
-protected:
-
-private:
-
-};
-
+ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent) {
+	ptr<BlockNode> block_node = newptr<BlockNode>();
+	return block_node;
 }
 
-#endif // BUILTIN_FUNCTIONS_H
+}

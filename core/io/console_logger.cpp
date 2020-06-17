@@ -28,6 +28,6 @@
 namespace carbon {
 
 ConsoleLogger::LogLevel ConsoleLogger::level = ConsoleLogger::LogLevel::VERBOSE;
-// Ptr<ConsoleLogger> ConsoleLogger::singleton;
+// singleton declaration is in <platform>/console_logger_<platform>.cpp
 
 }

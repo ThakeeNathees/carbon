@@ -28,7 +28,7 @@
 namespace carbon {
 
 #define GET_CHAR(m_off) \
-( (char_ptr + m_off >= source.size())? 0: source[char_ptr+m_off] )
+( (char_ptr + m_off >= source.size())? '\0': source[char_ptr+m_off] )
 
 #define EAT_CHAR(m_num)      \
 {	char_ptr += m_num;       \
@@ -47,44 +47,65 @@ namespace carbon {
 #define IS_TEXT(c)    \
 ( (c == '_') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') )
 
+
+#define ERROR(m_type, m_msg)                                \
+do {                                                        \
+    /*TODO: msg += __LINE__, __FUNCTION__*/                 \
+	throw Error(m_type, m_msg, Vect2i(cur_line, cur_col));  \
+} while (false)
+
 struct KeywordName { const char* name; Token tk; };
 static KeywordName _keyword_name_list[] = {
-	{ "null", Token::KWORD_NULL	         },
-	{ "var", Token::KWORD_VAR		     },
-	{ "true", Token::KWORD_TRUE	         },
-	{ "false", Token::KWORD_FALSE	     },
-	{ "if", Token::KWORD_IF		         },
-	{ "else", Token::KWORD_ELSE	         },
-	{ "while", Token::KWORD_WHILE	     },
-	{ "for", Token::KWORD_FOR		     },
-	{ "foreach", Token::KWORD_FOREACH	 },
-	{ "break", Token::KWORD_BREAK	     },
-	{ "continue", Token::KWORD_CONTINUE  },
-	{ "and", Token::KWORD_AND		     },
-	{ "or", Token::KWORD_OR		         },
-	{ "not", Token::KWORD_NOT		     },
-	{ "return", Token::KWORD_RETURN	     },
-	{ "func", Token::KWORD_FUNC	         },
-	{ "struct", Token::KWORD_STRUCT	     },
-	{ "import", Token::KWORD_IMPORT	     },
+	{ "import",   Token::KWORD_IMPORT	     },
+	{ "class",    Token::KWORD_CLASS	     },
+	{ "enum",     Token::KWORD_ENUM	         },
+	{ "func",     Token::KWORD_FUNC	         },
+	{ "var",      Token::KWORD_VAR		     },
+	{ "null",     Token::KWORD_NULL	         },
+	{ "true",     Token::KWORD_TRUE	         },
+	{ "false",    Token::KWORD_FALSE	     },
+	{ "if",       Token::KWORD_IF		     },
+	{ "else",     Token::KWORD_ELSE	         },
+	{ "while",    Token::KWORD_WHILE	     },
+	{ "for",      Token::KWORD_FOR		     },
+	{ "switch",   Token::KWORD_SWITCH		 },
+	{ "break",    Token::KWORD_BREAK	     },
+	{ "continue", Token::KWORD_CONTINUE      },
+	{ "static",   Token::KWORD_STATIC        },
+	{ "this",     Token::KWORD_THIS          },
+	{ "super",    Token::KWORD_SUPER         },
+	{ "return",   Token::KWORD_RETURN	     },
 };
 
 struct BuiltinFuncName { const char* name; BuiltinFunctions::Function func; };
 static BuiltinFuncName _builtin_func_list[] = {
 	// { "", BuiltinFunctions::Function::UNKNOWN  },
-	{ "print", BuiltinFunctions::Function::PRINT  },
-	{ "input", BuiltinFunctions::Function::INPUT  },
-	{ "min", BuiltinFunctions::Function::MATH_MIN },
-	{ "max", BuiltinFunctions::Function::MATH_MAX },
-	{ "pow", BuiltinFunctions::Function::MATH_POW },
+	{ "print", BuiltinFunctions::Function::PRINT    },
+	{ "input", BuiltinFunctions::Function::INPUT    },
+	{ "min",   BuiltinFunctions::Function::MATH_MIN },
+	{ "max",   BuiltinFunctions::Function::MATH_MAX },
+	{ "pow",   BuiltinFunctions::Function::MATH_POW },
 };
 
-void Tokenizer::_set_error(const String& p_msg) {
-	has_error = true;
-	error_msg = p_msg;
-	err_line = cur_line;
-	err_col = cur_col;
-}
+//struct BuiltinClassName { const char* name; BuiltinClasses::Class cls; };
+//static BuiltinClassName _builtin_class_list[]{
+//	{ "null",   BuiltinClasses::Class::_NULL   },
+//	{ "bool",   BuiltinClasses::Class::BOOL	   },
+//	{ "int",    BuiltinClasses::Class::INT	   },
+//	{ "float",  BuiltinClasses::Class::FLOAT   },
+//	
+//	{ "String", BuiltinClasses::Class::STRING  },
+//	{ "Vect2f", BuiltinClasses::Class::VECT2F  },
+//	{ "Vect2i", BuiltinClasses::Class::VECT2I  },
+//	{ "Vect3f", BuiltinClasses::Class::VECT3F  },
+//	{ "Vect3i", BuiltinClasses::Class::VECT3I  },
+//	{ "Array",  BuiltinClasses::Class::ARRAY   },
+//	{ "Map",    BuiltinClasses::Class::MAP	   },
+//	{ "Object", BuiltinClasses::Class::OBJECT  },
+//
+//	{ "Buffer", BuiltinClasses::Class::BUFFER  },
+//	{ "File",   BuiltinClasses::Class::FILE	   },
+//};
 
 void Tokenizer::_eat_escape(String& p_str) {
 	char c = GET_CHAR(0);
@@ -92,7 +113,7 @@ void Tokenizer::_eat_escape(String& p_str) {
 	c = GET_CHAR(1);
 	switch (c) {
 		case 0:
-			_set_error("Unexpected EOF.");
+			ERROR(Error::UNEXPECTED_EOF, "");
 			break;
 		case '\\': p_str += '\\'; EAT_CHAR(2); break;
 		case '\'': p_str += '\''; EAT_CHAR(2); break;
@@ -149,7 +170,10 @@ void Tokenizer::_eat_const_value(const var& p_value, int p_eat_size) {
 }
 
 void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
+	
 	TokenData tk;
+	tk.type = Token::IDENTIFIER;
+	tk.identifier = p_idf; // method name may be builtin func
 	tk.col = cur_col;
 	tk.line = cur_line;
 
@@ -159,31 +183,39 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 			break;
 		}
 	}
-	if (tk.type == Token::UNKNOWN) {
+
+	if (tk.type == Token::IDENTIFIER) {
 		for (const BuiltinFuncName& bf : _builtin_func_list) {
 			if (bf.name == p_idf) {
-				tk.type = Token::IDENTIFIER;
+				tk.type = Token::BUILTIN_FUNC;
 				tk.builtin_func = bf.func;
+				break;
 			}
 		}
 	}
 
-	tk.type = Token::IDENTIFIER;
-	tk.identifier = p_idf;
+	//if (tk.type == Token::IDENTIFIER) {
+	//	for (const BuiltinClassName& bc : _builtin_class_list) {
+	//		if (bc.name == p_idf) {
+	//			tk.type = Token::BUILTIN_CLASS;
+	//			tk.builtin_class = bc.cls;
+	//			break;
+	//		}
+	//	}
+	//}
+
 	tokens.push_back(tk);
 	EAT_CHAR(p_eat_size);
 }
 
-void Tokenizer::set_source(const String& p_source) {
+const void Tokenizer::tokenize(const String& p_source) {
+
 	source = p_source;
 	cur_line = cur_col = 1;
 	char_ptr = 0;
 	tokens.clear();
 
 	while (char_ptr < source.size()) {
-
-		if (has_error)
-			break;
 
 		switch (GET_CHAR(0)) {
 			case 0:
@@ -216,7 +248,7 @@ void Tokenizer::set_source(const String& p_source) {
 						if (GET_CHAR(0) == '*' && GET_CHAR(1) == '/') {
 							EAT_CHAR(2);
 						} else if (GET_CHAR(0) == 0) {
-							_set_error("Unexpected EOF.");
+							ERROR(Error::UNEXPECTED_EOF, "");
 						} else if (GET_CHAR(0) == '\n') {
 							EAT_LINE();
 						} else {
@@ -271,23 +303,18 @@ void Tokenizer::set_source(const String& p_source) {
 			}
 			// case '/': { } // already hadled
 			case '\\':
-				_set_error("Invalid character '\\'");
+				ERROR(Error::SYNTAX_ERROR, "Invalid character '\\'");
 				break;
 			case '%': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_MOD_EQ, 2);
 				else _eat_token(Token::OP_MOD);
 				break;
 			}
-			case '!': {
-				if (GET_CHAR(1) == '=') _eat_token(Token::OP_NOTEQ, 2);
-				else _eat_token(Token::OP_NOT);
-				break;
-			}
 			case '<': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_LTEQ, 2);
 				else if (GET_CHAR(1) == '<') {
-					if (GET_CHAR(2) == '=') _eat_token(Token::OP_LSHIFT_EQ, 3);
-					else _eat_token(Token::OP_LSHIFT, 2);
+					if (GET_CHAR(2) == '=') _eat_token(Token::OP_BIT_LSHIFT_EQ, 3);
+					else _eat_token(Token::OP_BIT_LSHIFT, 2);
 				}
 				else _eat_token(Token::OP_LT);
 				break;
@@ -295,28 +322,41 @@ void Tokenizer::set_source(const String& p_source) {
 			case '>': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_GTEQ, 2);
 				else if (GET_CHAR(1) == '>') {
-					if (GET_CHAR(2) == '=') _eat_token(Token::OP_RSHIFT_EQ, 3);
-					else _eat_token(Token::OP_RSHIFT, 2);
+					if (GET_CHAR(2) == '=') _eat_token(Token::OP_BIT_RSHIFT_EQ, 3);
+					else _eat_token(Token::OP_BIT_RSHIFT, 2);
 				}
 				else _eat_token(Token::OP_GT);
+				break;
+			}
+			case '&&': {
+				_eat_token(Token::OP_AND);
+				break;
+			}
+			case '||': {
+				_eat_token(Token::OP_OR);
+				break;
+			}
+			case '!': {
+				if (GET_CHAR(1) == '=') _eat_token(Token::OP_NOTEQ, 2);
+				else _eat_token(Token::OP_NOT);
 				break;
 			}
 			case '~':
 				_eat_token(Token::OP_BIT_NOT);
 				break;
 			case '|': {
-				if (GET_CHAR(1) == '=') _eat_token(Token::OP_OR_EQ, 2);
-				else _eat_token(Token::OP_OR);
+				if (GET_CHAR(1) == '=') _eat_token(Token::OP_BIT_OR_EQ, 2);
+				else _eat_token(Token::OP_BIT_OR);
 				break;
 			}
 			case '&': {
-				if (GET_CHAR(1) == '=') _eat_token(Token::OP_AND_EQ, 2);
-				else _eat_token(Token::OP_AND);
+				if (GET_CHAR(1) == '=') _eat_token(Token::OP_BIT_AND_EQ, 2);
+				else _eat_token(Token::OP_BIT_AND);
 				break;
 			}
 			case '^': {
-				if (GET_CHAR(1) == '=') _eat_token(Token::OP_XOR_EQ, 2);
-				else _eat_token(Token::OP_XOR);
+				if (GET_CHAR(1) == '=') _eat_token(Token::OP_BIT_XOR_EQ, 2);
+				else _eat_token(Token::OP_BIT_XOR);
 				break;
 			}
 
@@ -328,10 +368,10 @@ void Tokenizer::set_source(const String& p_source) {
 					if (GET_CHAR(0) == '\\') {
 						_eat_escape(str);
 					} else if (GET_CHAR(0) == 0) {
-						_set_error("Unexpected EOF.");
+						ERROR(Error::UNEXPECTED_EOF, "");
 						break;
 					} else if(GET_CHAR(0) == '\n'){
-						_set_error("Unexpected end of line");
+						ERROR(Error::UNEXPECTED_EOF, "");
 						break;
 					} else {
 						str += GET_CHAR(0);
@@ -343,7 +383,7 @@ void Tokenizer::set_source(const String& p_source) {
 				break;
 			}
 			case '\'':
-				_set_error("Invalid character '\\''.");
+				ERROR(Error::SYNTAX_ERROR, "Invalid character '\\''.");
 				break;
 			default: {
 				
@@ -358,7 +398,7 @@ void Tokenizer::set_source(const String& p_source) {
 						float_str += GET_CHAR(0);
 						EAT_CHAR(1);
 					}
-					double float_val = float_str.to_double();
+					double float_val = float_str.to_float();
 					_eat_const_value(float_val);
 					break;
 				}
@@ -376,7 +416,7 @@ void Tokenizer::set_source(const String& p_source) {
 						EAT_CHAR(1);
 					}
 					if (is_float)
-						_eat_const_value(num.to_double());
+						_eat_const_value(num.to_float());
 					else
 						_eat_const_value(num.to_int());
 					break;
@@ -400,11 +440,7 @@ void Tokenizer::set_source(const String& p_source) {
 		} // switch
 	} // while
 
-	if (has_error)
-		return;
-
 	_eat_eof();
-
 }
 
 }

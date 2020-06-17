@@ -26,13 +26,16 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
+#include "core.h"
 #include "builtin_functions.h"
+#include "builtin_classes.h"
 
 namespace carbon {
 
 enum class Token {
 	UNKNOWN,
 	_EOF, // EOF already a macro in <stdio.h>
+	
 	SYM_DOT,
 	SYM_COMMA,
 	SYM_COLLON,
@@ -47,6 +50,7 @@ enum class Token {
 	BRACKET_RCUR,
 	BRACKET_RSQ,
 	BRACKET_LSQ,
+
 	OP_EQ,
 	OP_EQEQ,
 	OP_PLUS,
@@ -59,82 +63,107 @@ enum class Token {
 	OP_DIVEQ,
 	OP_MOD,
 	OP_MOD_EQ,
-	OP_NOT,
-	OP_NOTEQ,
+	OP_INCR,
+	OP_DECR,
 	OP_LT,
 	OP_LTEQ,
 	OP_GT,
 	OP_GTEQ,
-	OP_BIT_NOT,
-	OP_LSHIFT,
-	OP_LSHIFT_EQ,
-	OP_RSHIFT,
-	OP_RSHIFT_EQ,
-	OP_OR,
-	OP_OR_EQ,
 	OP_AND,
-	OP_AND_EQ,
-	OP_XOR,
-	OP_XOR_EQ,
+	OP_OR,
+	OP_NOT,
+	OP_NOTEQ,
+
+	OP_BIT_NOT,
+	OP_BIT_LSHIFT,
+	OP_BIT_LSHIFT_EQ,
+	OP_BIT_RSHIFT,
+	OP_BIT_RSHIFT_EQ,
+	OP_BIT_OR,
+	OP_BIT_OR_EQ,
+	OP_BIT_AND,
+	OP_BIT_AND_EQ,
+	OP_BIT_XOR,
+	OP_BIT_XOR_EQ,
+
 	IDENTIFIER,
-	KWORD_NULL,
+	BUILTIN_FUNC, // also identifier
+
+	KWORD_IMPORT,
+	KWORD_CLASS,
+	KWORD_ENUM,
+	KWORD_FUNC,
 	KWORD_VAR,
+	KWORD_NULL,
 	KWORD_TRUE,
 	KWORD_FALSE,
 	KWORD_IF,
 	KWORD_ELSE,
 	KWORD_WHILE,
 	KWORD_FOR,
-	KWORD_FOREACH,
+	KWORD_SWITCH,
 	KWORD_BREAK,
 	KWORD_CONTINUE,
-	KWORD_AND,
-	KWORD_OR,
-	KWORD_NOT,
+	KWORD_STATIC,
+	KWORD_THIS,
+	KWORD_SUPER,
 	KWORD_RETURN,
-	KWORD_FUNC,
-	KWORD_STRUCT,
-	KWORD_IMPORT,
+
 	VALUE_STRING,
 	VALUE_INT,
 	VALUE_FLOAT,
 	_TK_MAX_,
 };
 
-struct TokenData
-{
+struct TokenData {
 	Token type = Token::UNKNOWN;
-	String identifier; // for identifier
-	var constant;      // for constant int, float, string values
-	BuiltinFunctions::Function builtin_func = BuiltinFunctions::Function::UNKNOWN;
 	int line = 0, col = 0;
+	
+	// Constant int, float, string values.
+	var constant;
+
+	// Identifiers.
+	String identifier;
+	BuiltinFunctions::Function builtin_func = BuiltinFunctions::Function::UNKNOWN;
+	BuiltinClasses::Class builtin_class = BuiltinClasses::Class::_NULL;
+	var::Type biltin_type = var::Type::_NULL;
 };
 
 
-class Tokenizer
-{
+class Tokenizer {
+public:
+	// Methods.
+	const void tokenize(const String& p_source);
+
+	const TokenData& next(int p_offset = 0) { 
+		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }
+		token_ptr += p_offset;
+		return tokens[token_ptr++];
+	}
+	const TokenData& peek(int p_offset = 0) const {
+		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }
+		return tokens[token_ptr+p_offset];
+	}
+
+	int get_line() const { return cur_line; }
+	int get_col() const { return cur_col; }
+
+protected:
+
 private:
+	// Methods.
+	void _eat_escape(String& p_str);
+	void _eat_token(Token p_tk, int p_eat_size = 1);
+	void _eat_eof();
+	void _eat_const_value(const var& p_value, int p_eat_size = 0);
+	void _eat_identifier(const String& p_idf, int p_eat_size = 0);
+
+	// Members.
 	String source;
-	std::vector<TokenData> tokens;
+	stdvec<TokenData> tokens;
 	int cur_line = 1, cur_col = 1;
 	int char_ptr = 0;
-
-	// error data
-	bool has_error = false;
-	int err_line=0, err_col = 0;
-	String error_msg;
-	void _set_error(const String& p_msg);
-
-	void _eat_escape(String& p_str);
-	void _eat_token(Token p_tk, int p_eat_size=1);
-	void _eat_eof();
-	void _eat_const_value(const var& p_value, int p_eat_size=0);
-	void _eat_identifier(const String& p_idf, int p_eat_size=0);
-
-public:
-
-	Tokenizer() { }
-	void set_source(const String& p_source);
+	int token_ptr = 0; // for next()
 
 };
 

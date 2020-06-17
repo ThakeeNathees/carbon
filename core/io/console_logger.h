@@ -30,21 +30,7 @@
 
 namespace carbon {
 
-class ConsoleLogger
-{
-private:
-	static Ptr<ConsoleLogger> singleton;
-protected:
-	virtual void log_impl(const char* p_msg) = 0;
-	virtual void log_info_impl(const char* p_msg) = 0;
-	virtual void log_warning_impl(const char* p_msg) = 0;
-	virtual void log_error_impl(const char* p_msg) = 0;
-
-	virtual void logf_impl(const char* p_fmt, va_list p_list) = 0;
-	virtual void logf_info_impl(const char* p_fmt, va_list p_list) = 0;
-	virtual void logf_warning_impl(const char* p_fmt, va_list p_list) = 0;
-	virtual void logf_error_impl(const char* p_fmt, va_list p_list) = 0;
-
+class ConsoleLogger {
 public:
 	enum class LogLevel 
 	{
@@ -78,7 +64,19 @@ static void m_func(const char* p_fmt, ...) {            \
 	LOG_METHODS(logf_warning, WARNING)
 	LOG_METHODS(logf_error, ERROR)
 
+protected:
+	virtual void log_impl(const char* p_msg) = 0;
+	virtual void log_info_impl(const char* p_msg) = 0;
+	virtual void log_warning_impl(const char* p_msg) = 0;
+	virtual void log_error_impl(const char* p_msg) = 0;
+
+	virtual void logf_impl(const char* p_fmt, va_list p_list) = 0;
+	virtual void logf_info_impl(const char* p_fmt, va_list p_list) = 0;
+	virtual void logf_warning_impl(const char* p_fmt, va_list p_list) = 0;
+	virtual void logf_error_impl(const char* p_fmt, va_list p_list) = 0;
+
 private:
+	static ptr<ConsoleLogger> singleton;
 	static LogLevel level;
 };
 

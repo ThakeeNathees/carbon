@@ -2,10 +2,10 @@
 // MIT License
 //------------------------------------------------------------------------------
 // 
-// Copyright (c) 2020 Thakee Nathees
+// Copyright (c), 2020 Thakee Nathees
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
+// of this software and associated documentation files (the "Software"),, to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
@@ -23,37 +23,51 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BUILTIN_FUNCTIONS_H
-#define BUILTIN_FUNCTIONS_H
+#ifndef ERRORS_H
+#define ERRORS_H
 
-#include "core.h"
+#include "var.h/_var.h"
+using namespace varh;
 
 namespace carbon {
 
-class BuiltinFunctions {
+class Error : public std::exception {
 public:
-	enum class Function {
-		UNKNOWN,
+	enum Type {
+		OK = 0,
 
-		PRINT,
-		INPUT,
+		// Compiletime errors.
+		SYNTAX_ERROR,
+		UNEXPECTED_EOF,
+		ALREADY_DEFINED,
 
-		MATH_MIN,
-		MATH_MAX,
-		MATH_POW,
+		// Runtime errors.
+		NULL_POINTER,
+		INVALID_INDEX,
+		INVALID_CASTING,
+		NOT_IMPLEMENTED,
+		ZERO_DIVISION,
 
-		_FUNC_MAX_,
+		CANT_OPEN_FILE,
+		IO_INVALID_OPERATORN,
+
 	};
 
-	// Methods.
-	static const char* get_func_name(Function p_func);
+	const char* what() const noexcept override { return msg.c_str(); }
+	Type get_type() const { return type; }
+	Vect2i get_pos() const { return pos; }
 
-protected:
+	Error() {}
+	Error(Type p_type) { type = p_type; }
+	Error(Type p_type, const String& p_msg) { type = p_type; msg = p_msg; }
+	Error(Type p_type, const String& p_msg, const Vect2i p_pos) { type = p_type; msg = p_msg; pos = p_pos; }
 
 private:
-
+	Type type = OK;
+	String msg;
+	Vect2i pos = Vect2i(-1, -1);
 };
 
 }
 
-#endif // BUILTIN_FUNCTIONS_H
+#endif // ERRORS_H
