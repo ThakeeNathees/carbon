@@ -1,0 +1,5 @@
+#!python
+import os
+Import('env_core')
+
+env_core.sources += [ Glob('*.cpp') ]
