@@ -89,15 +89,29 @@ using namespace varh;
 #define NOEFFECT(m_) m_
 #define PLACE_HOLDER_MACRO
 
-// TODO: refector debug print and error handle
-
-#ifdef _MSC_VER
-#	define DEBUG_BREAK() __debugbreak()
+// platform macros
+#ifdef _WIN32
+#	define PLATFORM_WINDOWS
+#elif defined(__APPLE__) || defined(__MACH__)
+#	define PLATFORM_APPLE
+#elif defined(__linux__)
+#	define PLATFORM_LINUX
 #else
-#	define DEBUG_BREAK() __builtin_trap()
+#	error "PLATFORM NOT SUPPORTED."
 #endif
 
-#ifdef _DEBUG
+#ifdef DEBUG_BUILD
+#	ifdef _MSC_VER
+#		define DEBUG_BREAK() __debugbreak()
+#	else
+#		define DEBUG_BREAK() __builtin_trap()
+#	endif
+#else 
+#	define DEBUG_BREAK()
+#endif
+
+
+#ifdef DEBUG_BUILD
 #define DEBUG_PRINT(...)                                                                                       \
 do {                                                                                                           \
 	if (GET_ARG_COUNT(__VA_ARGS__) == 0)                                                                       \
@@ -109,7 +123,7 @@ do {                                                                            
 #define DEBUG_PRINT(...)
 #endif
 
-#if defined(_DEBUG)
+#if defined(DEBUG_BUILD)
 #define ASSERT(m_cond)                                                                                       \
 	do {                                                                                                     \
 		if (!(m_cond)) {                                                                                     \

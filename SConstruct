@@ -25,9 +25,9 @@ if cbenv['use_llvm']:
 
 # debug macro for all platforms
 if cbenv['target'] == 'debug':
-    cbenv.Append(CPPDEFINES=['_DEBUG'])
+    cbenv.Append(CPPDEFINES=['DEBUG_BUILD'])
 else:
-    cbenv.Append(CPPDEFINES=['NDEBUG'])
+    cbenv.Append(CPPDEFINES=['RELEASE_BUILD'])
 
 # find platform
 if cbenv['platform'] == 'linux':
@@ -136,8 +136,10 @@ cbenv.Append(CPPPATH=[]) # include files
 cbenv.Append(LIBPATH=[]) # static lib dir
 
 Export('cbenv')
+SConscript('thirdparty/SConstruct')
 SConscript('core/SConstruct')
 SConscript('os/SConstruct')
+
 
 for header in cbenv.includes:
     cbenv.Prepend(CPPPATH=[header])
