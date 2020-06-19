@@ -40,7 +40,7 @@ void crash_handler_test();
 
 int _main(int argc, char** argv) {
 	
-	//dl_test();
+	dl_test();
 	//parser_test();
 	//crash_handler_test();
 	
@@ -84,14 +84,16 @@ void dl_test() {
 	// }
 	// /**********************/
 
-	DlLoader lib("bin/mylib.dll");
+	DynamicLibrary lib("bin/mylib.dll");
 	var i = 42, f = 3.14, s = "hello";
-	int ret;
-	ret = lib.dl_call("r0_func_a0");
+	int ret =0;
+	var x;
+	//lib.call("asdf", &x);
+	ret = lib.call("r0_func_a0");
 	PRINT(ret);
-	ret = lib.dl_call("ra1_func_a1", i);
+	ret = lib.call("ra1_func_a1", &i);
 	PRINT(ret);
-	ret = lib.dl_call("r0_func_a3", i, f, s);
+	ret = lib.call("r0_func_a3", &i, &f, &s);
 	PRINT(ret);
 }
 

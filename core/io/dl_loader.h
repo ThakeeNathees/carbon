@@ -36,13 +36,13 @@
 
 namespace carbon {
 
-class DlLoader : public Object {
+class DynamicLibrary : public Object {
 public:
 	// Object overrides.
-	virtual String get_class_name() const override { return "DlLoader"; }
+	virtual String get_class_name() const override { return "DynamicLibrary"; }
 
 	// Methods.
-	void dl_open(const char* p_lib_name) {
+	void open(const char* p_lib_name) {
 		if (handle) {
 			throw Error(Error::IO_INVALID_OPERATORN, "lib already opened (close before reopening).");
 		}
@@ -53,41 +53,41 @@ public:
 		lib_name = p_lib_name;
 	}
 
-#define VISIT_ARGS(...) GET_ARG_COUNT(__VA_ARGS__), __VA_ARGS__, var()
-	int dl_call(const char* p_func) {
+	int call(const char* p_func) {
+		//return _Visit<0>::_visit(this, p_func, nullptr);
 		return _call(p_func);
 	}
-	int dl_call(const char* p_func, var& arg0) {
-		return _visit(p_func, VISIT_ARGS(arg0)); 
+	int call(const char* p_func, var* arg0) {
+		return _Visit<1>::_visit(this, p_func, arg0, nullptr); 
 	}
-	int dl_call(const char* p_func, var& arg0, var& arg1) {
-		return _visit(p_func, VISIT_ARGS(arg0, arg1));
+	int call(const char* p_func, var* arg0, var* arg1) {
+		return _Visit<2>::_visit(this, p_func, arg0, arg1, nullptr);
 	}
-	int dl_call(const char* p_func, var& arg0, var& arg1, var& arg3) {
-		return _visit(p_func, VISIT_ARGS(arg0, arg1, arg3));
+	int call(const char* p_func, var* arg0, var* arg1, var* arg3) {
+		return _Visit<3>::_visit(this, p_func, arg0, arg1, arg3, nullptr);
 	}
-	int dl_call(const char* p_func, var& arg0, var& arg1, var& arg3, var& arg4) {
-		return _visit(p_func, VISIT_ARGS(arg0, arg1, arg3, arg4));
+	int call(const char* p_func, var* arg0, var* arg1, var* arg3, var* arg4) {
+		return _Visit<4>::_visit(this, p_func, arg0, arg1, arg3, arg4, nullptr);
 	}
-	int dl_call(const char* p_func, var& arg0, var& arg1, var& arg3, var& arg4, var& arg5) {
-		return _visit(p_func, VISIT_ARGS(arg0, arg1, arg3, arg4, arg5));
+	int call(const char* p_func, var* arg0, var* arg1, var* arg3, var* arg4, var* arg5) {
+		return _Visit<5>::_visit(this, p_func, arg0, arg1, arg3, arg4, arg5, nullptr);
 	}
 	// !!!!!!!!! NO MORE => NUMBER OF RECURSIVE VARIADIC TEMPLATE WILL EXPLODE !!!!!!!!!
 #undef VISIT_ARGS
 
-	void dl_close() {
+	void close() {
 		if (handle) {
 			dlclose(handle);
 			handle = nullptr;
 		}
 	}
 
-	DlLoader(){}
-	DlLoader(const char* p_lib_name) {
-		dl_open(p_lib_name);
+	DynamicLibrary(){}
+	DynamicLibrary(const char* p_lib_name) {
+		open(p_lib_name);
 	}
-	~DlLoader(){
-		dl_close();
+	~DynamicLibrary(){
+		close();
 	}
 
 protected:
@@ -97,7 +97,7 @@ private:
 	String lib_name;
 
 	template<typename... T>
-	int _call(const char* p_func_name, T... val) {
+	int _call(const char* p_func_name, T... p_args) {
 
 		if (!handle) {
 			throw Error(Error::IO_INVALID_OPERATORN, "handle was NULL");
@@ -113,38 +113,41 @@ private:
 			throw Error(Error::IO_ERROR, String::format("%s", dlerror()));
 		}
 
-		int ret = fp(val...);
+		int ret = fp(p_args...);
 		return ret;
 	}
 
+	template<unsigned int t_argn> struct _Visit {
 	template<typename... Targs>
-	int _visit(const char* p_func_name, int p_argn, var p_arg0, Targs... p_args) {
+	static int _visit(DynamicLibrary* p_lib, const char* p_func_name, var* p_arg0, Targs... p_args) {
 
-		if (p_argn == 0) {
-			return _call(p_func_name, p_args...);
-		}
+		if (p_arg0->get_type() == var::Type::BOOL) {
+			return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator bool());
 
-		if (p_arg0.get_type() == var::Type::BOOL) {
-			return _visit(p_func_name, p_argn - 1, p_args..., p_arg0.operator bool());
+		} else if (p_arg0->get_type() == var::Type::INT) {
+			return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator int());
 
-		} else if (p_arg0.get_type() == var::Type::INT) {
-			return _visit(p_func_name, p_argn - 1, p_args..., p_arg0.operator int());
+		} else if (p_arg0->get_type() == var::Type::FLOAT) {
+			return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator float());
 
-		} else if (p_arg0.get_type() == var::Type::FLOAT) {
-			return _visit(p_func_name, p_argn - 1, p_args..., p_arg0.operator float());
-
-		} else if (p_arg0.get_type() == var::Type::STRING) {
-			return _visit(p_func_name, p_argn - 1, p_args..., p_arg0.to_string().c_str());
+		} else if (p_arg0->get_type() == var::Type::STRING) {
+			return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->to_string().c_str());
 		
-		} else if (p_arg0.get_type() == var::Type::OBJECT) {
-			return _visit(p_func_name, p_argn - 1, p_args..., p_arg0.operator ptr<varh::Object>());
+		//} else if (p_arg0->get_type() == var::Type::OBJECT) {
+		//	return _visit(p_func_name, p_argn - 1, p_args..., p_arg0->operator ptr<varh::Object>());
 		
-		} else { // else var
-			return _visit(p_func_name, p_argn - 1, p_args..., p_arg0);
+		} else { // else var*
+			return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0);
 		}
 
 		throw Error(Error::INTERNAL_BUG, "Please Bug Report.");
-	}
+	}};
+
+	template<> struct _Visit<0> {
+	template<typename... Targs>
+	static int _visit(DynamicLibrary* p_lib, const char* p_func_name, var* p_nullptr, Targs... p_args) {
+		return p_lib->_call(p_func_name, p_args...);
+	}};
 
 };
 
