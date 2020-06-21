@@ -125,25 +125,26 @@ elif cbenv['platform'] == "windows":
         cbenv.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
 
 # includes and libs
-cbenv.includes = []
+#cbenv.includes = []
 cbenv.sources  = [       # cpp files
     'main/main_%s.cpp' % cbenv['platform'],
     'main/main.cpp'
 ]
-for src in cbenv.sources:
-    add_ide_sources(src)
-cbenv.Append(CPPPATH=[]) # include files
+
+cbenv.Append(CPPPATH=[Dir('.')]) # include dir
 cbenv.Append(LIBPATH=[]) # static lib dir
 
 Export('cbenv')
 SConscript('thirdparty/SConstruct')
+SConscript('io/SConstruct')
 SConscript('core/SConstruct')
 SConscript('os/SConstruct')
 
+for src in cbenv.sources:
+    add_ide_sources(src)
 
-for header in cbenv.includes:
-    cbenv.Prepend(CPPPATH=[header])
-
+#for header in cbenv.includes:
+#    cbenv.Prepend(CPPPATH=[header])
 
 target = cbenv.Program(target=os.path.join(
     cbenv['target_path'], cbenv['target_name'] + cbenv['out_suffix']),
@@ -173,9 +174,21 @@ def msvs_collect_header():
     for _dir in cbenv['CPPPATH']:
         _dir = str(_dir)
         for file in os.listdir(_dir):
-            if os.path.isfile(os.path.join(_dir, file)) and (file.endswith('.h') or file.endswith('.hpp')):
-                abspath = os.path.join(_dir, file)
-                ret.append('$(ProjectDir)' + os.path.relpath(str(abspath)))
+            file = os.path.join(_dir, file)
+            if os.path.isfile(file) and (file.endswith('.h') or file.endswith('.hpp')):
+                ret.append('$(ProjectDir)' + os.path.relpath(file))
+            elif os.path.isdir(file):
+                ret += _msvc_collect_header_internal_dir(file)
+    return ret
+
+def _msvc_collect_header_internal_dir(dir):
+    ret = []
+    for file in os.listdir(dir):
+        file = os.path.join(dir, file)
+        if os.path.isfile(file) and (file.endswith('.h') or file.endswith('.hpp')):
+            ret.append('$(ProjectDir)' + os.path.relpath(file))
+        elif os.path.isdir(file):
+            ret += _msvc_collect_header_internal_dir(file)
     return ret
 
 def msvc_build_commandline(commands):

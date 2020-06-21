@@ -68,7 +68,7 @@ public:
 
 private:
 	Type type = OK;
-	String msg;
+	String msg = "<NO-ERROR-MSG-SET>";
 	Vect2i pos = Vect2i(-1, -1);
 };
 

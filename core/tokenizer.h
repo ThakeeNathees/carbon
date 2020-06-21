@@ -63,8 +63,6 @@ enum class Token {
 	OP_DIVEQ,
 	OP_MOD,
 	OP_MOD_EQ,
-	OP_INCR,
-	OP_DECR,
 	OP_LT,
 	OP_LTEQ,
 	OP_GT,
@@ -138,7 +136,9 @@ public:
 	const TokenData& next(int p_offset = 0) { 
 		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }
 		token_ptr += p_offset;
-		return tokens[token_ptr++];
+		const TokenData& tk = tokens[token_ptr++];
+		cur_line = tk.line; cur_col = tk.col;
+		return tk;
 	}
 	const TokenData& peek(int p_offset = 0) const {
 		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }

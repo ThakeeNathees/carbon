@@ -433,6 +433,11 @@ const void Tokenizer::tokenize(const String& p_source) {
 					break;
 				}
 
+				if (GET_CHAR(0) == '.') {
+					_eat_token(Token::SYM_DOT);
+					break;
+				}
+
 				DEBUG_BREAK(); // TODO:
 
 			} // default case

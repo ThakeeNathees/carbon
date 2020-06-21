@@ -38,10 +38,23 @@ void dl_test();
 void parser_test();
 void crash_handler_test();
 
+//#define _CATCH_
+
 int _main(int argc, char** argv) {
 	
-	dl_test();
-	//parser_test();
+	//dl_test();
+
+#ifdef _CATCH_
+	try {
+#endif
+		parser_test();
+
+#ifdef _CATCH_
+	} catch (const Error & err) {
+		ConsoleLogger::logf_error("Error:\n%s\n", err.what());
+	}
+#endif
+
 	//crash_handler_test();
 	
 	return 0;
@@ -87,13 +100,11 @@ void dl_test() {
 	DynamicLibrary lib("bin/mylib.dll");
 	var i = 42, f = 3.14, s = "hello";
 	int ret =0;
-	var x;
-	//lib.call("asdf", &x);
 	ret = lib.call("r0_func_a0");
 	PRINT(ret);
-	ret = lib.call("ra1_func_a1", &i);
+	ret = lib.call("ra1_func_a1", i);
 	PRINT(ret);
-	ret = lib.call("r0_func_a3", &i, &f, &s);
+	ret = lib.call("r0_func_a3", i, f, s);
 	PRINT(ret);
 }
 

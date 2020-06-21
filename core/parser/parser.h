@@ -30,25 +30,28 @@
 
 namespace carbon {
 
-#define THROW_PARSER_ERR(m_err_type, m_msg, m_line)                                                                                       \
-	if (m_line > 0) {                                                                                                                     \
-		throw Error(m_err_type, String(m_msg), Vect2i(m_line, 0));                                                                        \
+#define THROW_PARSER_ERR(m_err_type, m_msg, m_line, m_col)                                                                                \
+	if (m_line > 0 && m_col > 0) {                                                                                                        \
+		throw Error(m_err_type, String::format("%s\n%s", m_msg, _error_pos_str(m_line, m_col).c_str()), Vect2i(m_line, m_col));           \
 	} else {                                                                                                                              \
-		throw Error(m_err_type, String(m_msg), Vect2i(tokenizer->get_line(), 0));                                                         \
+		int line = tokenizer->get_line(), col = tokenizer->get_col();                                                                     \
+		throw Error(m_err_type, String::format("%s\n%s", m_msg, _error_pos_str(line, col).c_str()), Vect2i(line, col));                   \
 	}
 
 #define THROW_UNEXP_TOKEN(m_tk)                                                                                                           \
 	if (m_tk != "") {                                                                                                                     \
-		THROW_PARSER_ERR(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\"). expected \"%s\"", "<tk_name>", m_tk), -1);        \
+		THROW_PARSER_ERR(Error::SYNTAX_ERROR,                                                                                             \
+			String::format("Unexpected token(\"%s\"). expected \"%s\"", "<tk_name>", m_tk).c_str(), -1, -1);                              \
 	} else {                                                                                                                              \
-		THROW_PARSER_ERR(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\").", "<tk_name>"), -1);                              \
+		THROW_PARSER_ERR(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\").", "<tk_name>").c_str(), -1, -1);                  \
 	}
 
 #define THROW_IF_ALREADY_FOUND(m_identifier, m_node)                                                                                      \
 	do {                                                                                                                                  \
 		IdentifierLocation loc = _find_identifier_location(m_identifier, m_node);                                                         \
 		if (loc.found) {                                                                                                                  \
-			THROW_PARSER_ERR(Error::ALREADY_DEFINED, String::format("Identifier %s already defined at %s:%i", loc.file_path, loc.line));  \
+			THROW_PARSER_ERR(Error::ALREADY_DEFINED,                                                                                      \
+				String::format("Identifier %s already defined at %s:%i", loc.file_path, loc.line).c_str());                               \
 		}                                                                                                                                 \
 	} while (false)
 
@@ -98,6 +101,7 @@ public:
 
 	struct FileNode : public Node {
 		String path;
+		String source;
 		stdvec<ptr<FileNode>> imports;
 		stdvec<ptr<VarNode>> file_vars;
 		stdvec<ptr<ClassNode>> classes;
@@ -256,8 +260,6 @@ public:
 			OP_DIVEQ,
 			OP_MOD,
 			OP_MOD_EQ,
-			OP_INCR,
-			OP_DECR,
 			OP_LT,
 			OP_LTEQ,
 			OP_GT,
@@ -278,6 +280,9 @@ public:
 			OP_BIT_AND_EQ,
 			OP_BIT_XOR,
 			OP_BIT_XOR_EQ,
+
+			OP_POSITIVE,
+			OP_NEGATIVE,
 		};
 		OpType op_type;
 		stdvec<ptr<Node>> args;
@@ -315,6 +320,28 @@ public:
 protected:
 
 private:
+	struct Expr {
+		Expr(OperatorNode::OpType p_op) { _is_op = true; op = p_op; }
+		Expr(const ptr<Node>& p_node) { _is_op = false; expr = p_node; }
+		Expr(const Expr& p_other) {
+			if (p_other._is_op) { _is_op = true; op = p_other.op; } else { _is_op = false; expr = p_other.expr; }
+		}
+		Expr& operator=(const Expr& p_other) {
+			if (p_other._is_op) { _is_op = true; op = p_other.op; } else { _is_op = false; expr = p_other.expr; }
+			return *this;
+		}
+		~Expr() { if (!_is_op) { expr = nullptr; } }
+
+		bool is_op() const { return _is_op; }
+		OperatorNode::OpType get_op() const { return op; }
+		ptr<Node>& get_expr() { return expr; }
+	private:
+		bool _is_op = true;
+		
+		OperatorNode::OpType op;
+		ptr<Node> expr;
+	};
+
 	struct IdentifierLocation {
 		bool found = false;
 		int line = 0, col = 0;
@@ -331,8 +358,6 @@ private:
 	};
 
 	// Methods.
-	//void _throw(Error::Type p_type, const String& p_msg, int line = -1);
-	//void _throw_unexp_token(const String& p_exp = "");
 
 	template<typename T=Node, typename... Targs>
 	ptr<T> new_node(Targs... p_args) {
@@ -342,24 +367,26 @@ private:
 		return ret;
 	}
 
-	IdentifierLocation _find_identifier_location(const String& p_name, const ptr<Node> p_node) const;
+	//IdentifierLocation _find_identifier_location(const String& p_name, const ptr<Node> p_node) const;
 
 	ptr<ClassNode> _parse_class();
 	ptr<EnumNode> _parse_enum(ptr<Node> p_parent = nullptr);
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent, bool p_static);
 	ptr<FunctionNode> _parse_func(ptr<Node> p_parent, bool p_static);
 	ptr<BlockNode> _parse_block(const ptr<Node>& p_parent);
+
 	ptr<Node> _parse_expression(const ptr<Node>& p_parent, bool p_static);
-	void _parse_arguments(stdvec<ptr<Node>>& p_args, const ptr<Node>& p_parent, bool p_static);
-	void _reduce_expression(ptr<Node>& p_expr);
+	stdvec<ptr<Node>> _parse_arguments(const ptr<Node>& p_parent, bool p_static);
+	void _reduce_expression(ptr<Node>& p_expr) const;
+
+	ptr<Node> _reduce_operator_tree(stdvec<Expr>& p_expr);
+	static int _get_operator_precedence(OperatorNode::OpType p_op);
+
+	String _error_pos_str(int p_line, int p_col) const;
 
 	// Members.
-	String file_path;
-	String source;
 	ptr<FileNode> file_node;
 	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
-
-
 };
 
 

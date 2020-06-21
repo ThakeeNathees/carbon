@@ -84,6 +84,8 @@ using namespace varh;
 #define STRCAT4(m_1, m_2, m_3, m_4) m_1##m_2##m_3##m_4
 #define STRCAT5(m_1, m_2, m_3, m_4, m_5) m_1##m_2##m_3##m_4##m_5
 
+#define func var
+
 #define STR(m_) #m_
 #define STRINGIFY(m_) STR(m_)
 #define NOEFFECT(m_) m_
@@ -110,6 +112,11 @@ using namespace varh;
 #	define DEBUG_BREAK()
 #endif
 
+#define _CRASH()                \
+do {                            \
+	char* CRASH_HERE = nullptr; \
+	*CRASH_HERE = '\0';         \
+} while(false)
 
 #ifdef DEBUG_BUILD
 #define DEBUG_PRINT(...)                                                                                       \
@@ -128,7 +135,8 @@ do {                                                                            
 	do {                                                                                                     \
 		if (!(m_cond)) {                                                                                     \
 			printf("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond));  \
-			DEBUG_BREAK();                                                                                   \
+			throw Error(Error::INTERNAL_BUG);                                                                \
+			/*_CRASH();*/     /* debug break could skipped by debugger stepping */                           \
 		}                                                                                                    \
 	} while (false)
 
@@ -152,14 +160,17 @@ do {                                                                            
 // }
 // --------------------------------------------------
 
-template<typename T>
-using ptr = std::shared_ptr<T>;
+// Definition in var.h ------------------------------
+// template<typename T>
+// using ptr = std::shared_ptr<T>;
+// 
+// template<typename T>
+// using stdvec = std::vector<T>;
+// --------------------------------------------------
 
-template<typename T>
-using stdvec = std::vector<T>;
-
-typedef unsigned char byte;
-
+namespace carbon {
+typedef char byte;
+}
 
 // for windows dll define CARBON_DLL, CARBON_DLL_EXPORT
 #if defined(CARBON_DLL)

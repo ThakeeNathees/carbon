@@ -57,20 +57,20 @@ public:
 		//return _Visit<0>::_visit(this, p_func, nullptr);
 		return _call(p_func);
 	}
-	int call(const char* p_func, var* arg0) {
-		return _Visit<1>::_visit(this, p_func, arg0, nullptr); 
+	int call(const char* p_func, var& arg0) {
+		return _Visit<1>::_visit(this, p_func, &arg0, nullptr); 
 	}
-	int call(const char* p_func, var* arg0, var* arg1) {
-		return _Visit<2>::_visit(this, p_func, arg0, arg1, nullptr);
+	int call(const char* p_func, var& arg0, var& arg1) {
+		return _Visit<2>::_visit(this, p_func, &arg0, &arg1, nullptr);
 	}
-	int call(const char* p_func, var* arg0, var* arg1, var* arg3) {
-		return _Visit<3>::_visit(this, p_func, arg0, arg1, arg3, nullptr);
+	int call(const char* p_func, var& arg0, var& arg1, var& arg3) {
+		return _Visit<3>::_visit(this, p_func, &arg0, &arg1, &arg3, nullptr);
 	}
-	int call(const char* p_func, var* arg0, var* arg1, var* arg3, var* arg4) {
-		return _Visit<4>::_visit(this, p_func, arg0, arg1, arg3, arg4, nullptr);
+	int call(const char* p_func, var& arg0, var& arg1, var& arg3, var& arg4) {
+		return _Visit<4>::_visit(this, p_func, &arg0, &arg1, &arg3, &arg4, nullptr);
 	}
-	int call(const char* p_func, var* arg0, var* arg1, var* arg3, var* arg4, var* arg5) {
-		return _Visit<5>::_visit(this, p_func, arg0, arg1, arg3, arg4, arg5, nullptr);
+	int call(const char* p_func, var& arg0, var& arg1, var& arg3, var& arg4, var& arg5) {
+		return _Visit<5>::_visit(this, p_func, &arg0, &arg1, &arg3, &arg4, &arg5, nullptr);
 	}
 	// !!!!!!!!! NO MORE => NUMBER OF RECURSIVE VARIADIC TEMPLATE WILL EXPLODE !!!!!!!!!
 #undef VISIT_ARGS
