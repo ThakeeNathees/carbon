@@ -52,6 +52,7 @@ public:
 		// other classes
 		BUFFER,
 		FILE,
+		DYNAMIC_LIBRARY,
 	};
 
 };

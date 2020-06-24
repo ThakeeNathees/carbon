@@ -23,7 +23,7 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include <iostream>
+//#include <iostream>
 #include <string>
 #define PRINT(x) std::cout << (x) << std::endl
 
@@ -31,14 +31,14 @@
 #include "parser/parser.h"
 #include "io/console_logger.h"
 #include "io/file.h"
-#include "io/dl_loader.h"
+#include "io/dynamic_library.h"
 using namespace carbon;
 
 void dl_test();
 void parser_test();
 void crash_handler_test();
 
-//#define _CATCH_
+#define _CATCH_
 
 int _main(int argc, char** argv) {
 	
@@ -48,15 +48,19 @@ int _main(int argc, char** argv) {
 	try {
 #endif
 		parser_test();
+		ConsoleLogger::logf_info("Parsing success.");
 
 #ifdef _CATCH_
 	} catch (const Error & err) {
 		ConsoleLogger::logf_error("Error:\n%s\n", err.what());
+	} catch (...) {
+		DEBUG_BREAK();
 	}
 #endif
 
 	//crash_handler_test();
-	
+
+	int c = getchar();
 	return 0;
 }
 

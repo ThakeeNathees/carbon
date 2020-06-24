@@ -23,8 +23,8 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef DL_LOADER_H
-#define DL_lOADER_H
+#ifndef DYNAMIC_LYBRARY_H
+#define DYNAMIC_LYBRARY_H
 
 #include "core.h"
 
@@ -153,4 +153,4 @@ private:
 
 }
 
-#endif // DL_LOADER_H
+#endif // DYNAMIC_LYBRARY_H

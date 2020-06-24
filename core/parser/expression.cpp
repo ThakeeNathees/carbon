@@ -100,18 +100,23 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 			// No literal for dictionary.
 			ptr<ArrayNode> arr = new_node<ArrayNode>();
 			bool done = false;
+			bool comma_valid = false;
 			while (!done) {
-				tk = &tokenizer->next();
-				bool comma_valid = false;
+				tk = &tokenizer->peek();
 				switch (tk->type) {
 					case Token::_EOF:
+						tk = &tokenizer->next(); // eat eof
 						THROW_UNEXP_TOKEN("");
+						break;
 					case Token::SYM_COMMA:
+						tk = &tokenizer->next(); // eat comma
 						if (!comma_valid) {
 							THROW_UNEXP_TOKEN("");
 						}
 						comma_valid = false;
+						break;
 					case Token::BRACKET_RCUR:
+						tk = &tokenizer->next(); // eat '}'
 						done = true;
 						break;
 					default:
@@ -163,7 +168,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 			} else if (tk->type == Token::BRACKET_LSQ) {
 				ptr<OperatorNode> ind_mapped = new_node<OperatorNode>(OperatorNode::OpType::OP_INDEX_MAPPED);
 
-				tk = &tokenizer->next(1);
+				tk = &tokenizer->next();
 				ptr<Node> key = _parse_expression(p_parent, p_static);
 				tk = &tokenizer->next();
 				if (tk->type != Token::BRACKET_RSQ) {

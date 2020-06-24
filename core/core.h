@@ -31,23 +31,26 @@
 using namespace varh;
 
 #include <assert.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+#include <string>
 #include <cstring>
+#include <vector>
+#include <map>
+#include <type_traits>
+#include <typeinfo>
+
 #include <iostream>
 #include <ostream>
 #include <sstream>
 #include <fstream>
 #include <memory>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string>
-#include <type_traits>
-#include <typeinfo>
 #include <new>
-
-#define _USE_MATH_DEFINES
-#include <map>
-#include <math.h>
-#include <vector>
 
 #include "error.h"
 
@@ -67,24 +70,6 @@ using namespace varh;
 #   define INTERNAL_GET_ARG_COUNT_PRIVATE(_0, _1_, _2_, _3_, _4_, _5_, _6_, _7_, _8_, _9_, _10_, _11_, _12_, _13_, _14_, _15_, _16_, _17_, _18_, _19_, _20_, _21_, _22_, _23_, _24_, _25_, _26_, _27_, _28_, _29_, _30_, _31_, _32_, _33_, _34_, _35_, _36, _37, _38, _39, _40, _41, _42, _43, _44, _45, _46, _47, _48, _49, _50, _51, _52, _53, _54, _55, _56, _57, _58, _59, _60, _61, _62, _63, _64, _65, _66, _67, _68, _69, _70, count, ...) count
 
 #endif
-
-#define ARG_1(_1,...) _1
-#define ARG_2(_1,_2,...) _2
-#define ARG_3(_1,_2,_3,...) _3
-#define ARG_4(_1,_2,_3,_4,...) _4
-#define ARG_5(_1,_2,_3,_4,_5,...) _5
-#define ARG_6(_1,_2,_3,_4,_5,_6,...) _6
-#define ARG_7(_1,_2,_3,_4,_5,_6,_7,...) _7
-#define ARG_8(_1,_2,_3,_4,_5,_6,_7,_8,...) _8
-#define ARG_9(_1,_2,_3,_4,_5,_6,_7,_8,_9,...) _9
-#define ARG_10(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,...) _10
-
-#define STRCAT2(m_1, m_2) m_1##m_2
-#define STRCAT3(m_1, m_2, m_3) m_1##m_2##m_3
-#define STRCAT4(m_1, m_2, m_3, m_4) m_1##m_2##m_3##m_4
-#define STRCAT5(m_1, m_2, m_3, m_4, m_5) m_1##m_2##m_3##m_4##m_5
-
-#define func var
 
 #define STR(m_) #m_
 #define STRINGIFY(m_) STR(m_)
@@ -146,30 +131,26 @@ do {                                                                            
 
 #define VSNPRINTF_BUFF_SIZE 8192
 
-// Definition in var.h ------------------------------
-// template<typename T, typename... Targs>
-// inline ptr<T> newptr(Targs... p_args) {
-// 	return std::make_shared<T>(p_args...);
-// }
-// --------------------------------------------------
-
-// Definition in var.h ------------------------------
-// template<typename T1, typename T2>
-// inline ptr<T1> ptrcast(T2 p_ptr) {
-// 	return std::static_pointer_cast<T1>(p_ptr);
-// }
-// --------------------------------------------------
-
-// Definition in var.h ------------------------------
-// template<typename T>
-// using ptr = std::shared_ptr<T>;
-// 
-// template<typename T>
-// using stdvec = std::vector<T>;
-// --------------------------------------------------
+#if !defined(_VAR_H) && !defined(VAR_H)
+	template<typename T, typename... Targs>
+	inline ptr<T> newptr(Targs... p_args) {
+		return std::make_shared<T>(p_args...);
+	}
+	
+	template<typename T1, typename T2>
+	inline ptr<T1> ptrcast(T2 p_ptr) {
+		return std::static_pointer_cast<T1>(p_ptr);
+	}
+	
+	template<typename T>
+	using ptr = std::shared_ptr<T>;
+	
+	template<typename T>
+	using stdvec = std::vector<T>;
+#endif
 
 namespace carbon {
-typedef char byte;
+typedef char byte_t;
 }
 
 // for windows dll define CARBON_DLL, CARBON_DLL_EXPORT

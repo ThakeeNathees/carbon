@@ -311,6 +311,7 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node, bool p_static)
 		tk = &tokenizer->next();                                      \
 		if (tk->type == Token::OP_EQ) {                               \
 			ptr<Node> expr = _parse_expression(p_node, p_static);     \
+			_reduce_expression(expr);                                 \
 			var_node->assignment = expr;                              \
 	                                                                  \
 			tk = &tokenizer->next();                                  \
