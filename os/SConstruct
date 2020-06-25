@@ -26,11 +26,14 @@ elif env_os['platform'] == "windows":
     SConscript('windows/SConstruct')
     pass
 
-for src in env_os.sources:
-    cbenv.add_ide_sources(src)
+cbenv.sources += env_os.sources
 
-# make library
-lib = env_os.StaticLibrary(
-        'bin/' + 'os' + env_os['out_suffix'],
-        env_os.sources)
-cbenv.Prepend(LIBS=[lib])
+## Making a lib.
+# for src in env_os.sources:
+#     cbenv.add_ide_sources(src)
+# 
+# # make library
+# lib = env_os.StaticLibrary(
+#         'bin/' + 'os' + env_os['out_suffix'],
+#         env_os.sources)
+# cbenv.Prepend(LIBS=[lib])

@@ -20,15 +20,17 @@ elif env_thirdparty['platform'] in ('x11', 'linux'):
     pass
 elif env_thirdparty['platform'] == "windows":
     env_thirdparty.sources += [
-        'dlfcn-win32/dlfcn.c'
+        File('dlfcn-win32/dlfcn.c')
     ]
     pass
 
-for src in env_thirdparty.sources:
-    cbenv.add_ide_sources(src)
-    
-# make library
-lib = env_thirdparty.StaticLibrary(
-        'bin/' + 'thirdparty' + env_thirdparty['out_suffix'],
-        env_thirdparty.sources)
-cbenv.Prepend(LIBS=[lib])
+cbenv.sources += env_thirdparty.sources
+
+## make library
+#for src in env_thirdparty.sources:
+#    cbenv.add_ide_sources(src)
+#    
+#lib = env_thirdparty.StaticLibrary(
+#        'bin/' + 'thirdparty' + env_thirdparty['out_suffix'],
+#        env_thirdparty.sources)
+#cbenv.Prepend(LIBS=[lib])

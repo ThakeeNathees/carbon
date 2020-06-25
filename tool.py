@@ -26,9 +26,9 @@ REMOVE_DIRS = [
     'release',
     
     'bin/',
-    'core/bin',
-    'os/bin',
-    'thirdparty/bin/'
+    #'core/bin',
+    #'os/bin',
+    #'thirdparty/bin/'
 ]
 
 IGNORE_FILES = [

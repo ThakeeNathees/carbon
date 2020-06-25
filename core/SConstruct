@@ -16,18 +16,20 @@ env_core.sources = []         # source files
 
 # collect obj files
 env_core.sources += [
-    'var.h/var.cpp',
+    File('var.h/var.cpp'),
     Glob('*.cpp'),
 ]
 Export('env_core')
 SConscript('parser/SConstruct')
 
-for src in env_core.sources:
-    cbenv.add_ide_sources(src)
+cbenv.sources += env_core.sources
 
-# make library
-lib = env_core.StaticLibrary(
-        'bin/' + 'core' + env_core['out_suffix'], 
-        env_core.sources
-    )
-cbenv.Prepend(LIBS=[lib])
+## make library
+#for src in env_core.sources:
+#    cbenv.add_ide_sources(src)
+#
+# lib = env_core.StaticLibrary(
+#         'bin/' + 'core' + env_core['out_suffix'], 
+#         env_core.sources
+#     )
+# cbenv.Prepend(LIBS=[lib])

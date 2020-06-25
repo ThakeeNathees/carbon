@@ -56,10 +56,16 @@ def add_ide_sources(src):
     if type(src) == str:
         _path = os.path.join(Dir('.').abspath, src)
         cbenv.ide_sources.append(_path)
+    elif str(src).endswith('.cpp') or str(src).endswith('.c'):
+        _path = os.path.join(Dir('.').abspath, str(src))
+        cbenv.ide_sources.append(_path)
     else: ## Glob
-        for _src in src:
-            _path = os.path.join(Dir('.').abspath, str(_src))
-            cbenv.ide_sources.append(_path)
+        try:
+            for _src in src:
+                _path = os.path.join(Dir('.').abspath, str(_src))
+                cbenv.ide_sources.append(_path)
+        except Exception as err:
+            print('Error: ', err, '(at add_ide_sources())')
 cbenv.add_ide_sources = add_ide_sources
 
 def add_lib(name, path=None):
