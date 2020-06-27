@@ -144,19 +144,19 @@ def no_verbose(sys, cbenv):
 	compile_shared_source_message = "{}Compiling shared {}==> {}$SOURCE{}".format(
 		colors["blue"], colors["purple"], colors["yellow"], colors["end"]
 	)
-	link_program_message = "{}Linking Program        {}==> {}$TARGET{}".format(
+	link_program_message = "{}Linking Program {}==> {}$TARGET{}".format(
 		colors["red"], colors["purple"], colors["yellow"], colors["end"]
 	)
 	link_library_message = "{}Linking Static Library {}==> {}$TARGET{}".format(
 		colors["red"], colors["purple"], colors["yellow"], colors["end"]
 	)
-	ranlib_library_message = "{}Ranlib Library         {}==> {}$TARGET{}".format(
+	ranlib_library_message = "{}Ranlib Library {}==> {}$TARGET{}".format(
 		colors["red"], colors["purple"], colors["yellow"], colors["end"]
 	)
 	link_shared_library_message = "{}Linking Shared Library {}==> {}$TARGET{}".format(
 		colors["red"], colors["purple"], colors["yellow"], colors["end"]
 	)
-	java_library_message = "{}Creating Java Archive  {}==> {}$TARGET{}".format(
+	java_library_message = "{}Creating Java Archive {}==> {}$TARGET{}".format(
 		colors["red"], colors["purple"], colors["yellow"], colors["end"]
 	)
 	cbenv.Append(CXXCOMSTR=[compile_source_message])

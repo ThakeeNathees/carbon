@@ -53,7 +53,7 @@ void File::open(const String& p_path, int p_mode) {
 		mode |= std::ios::binary;
 	}
 
-	file.open(path, mode);
+	file.open(path, (std::ios_base::openmode)mode);
 	if (!file.is_open()) {
 		throw Error(Error::CANT_OPEN_FILE, String::format("can't open \"%s\"", path.c_str()));
 	}

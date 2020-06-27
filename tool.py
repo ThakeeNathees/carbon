@@ -10,12 +10,12 @@ clean - clean the generated files
     --all, -a       if all, clean all generated (includes project) files
 
 run - runs the output binary debug x86_64 by default
-    --debug, -d      run the debug version
-    --release, -r    run the release version
-    --x86_64         run the 64 bit binary
-    --x86            run the 32 bit binary
     --gdb, -g        debug the output binary with gdb
 '''
+#    --debug, -d      run the debug version
+#    --release, -r    run the release version
+#    --x86_64         run the 64 bit binary
+#    --x86            run the 32 bit binary
 
 NAME = 'tool.py'
 
@@ -26,9 +26,6 @@ REMOVE_DIRS = [
     'release',
     
     'bin/',
-    #'core/bin',
-    #'os/bin',
-    #'thirdparty/bin/'
 ]
 
 IGNORE_FILES = [
@@ -87,10 +84,10 @@ def clean(cleanll = False, REMOVE_DIRS=REMOVE_DIRS, REMOVE_FILES=REMOVE_FILES, V
                     print('%s: Removed - %s' % (NAME, os.path.join(path, file)))
     print(NAME + ': done cleaning targets.')
 
-def run(target, bits, gdb):
-    out_file = 'carbon.%s.%s.%s'%(get_platform(), target, bits)
+def run(is_gdb):
+    out_file = 'carbon'
     run_target = os.path.join(os.getcwd(), 'bin', out_file)
-    if gdb:
+    if is_gdb:
         os.system('gdb "%s"' % run_target)
     else:
         os.system('"%s"' % run_target)
@@ -118,29 +115,28 @@ if __name__ == '__main__':
         gdb = None
         for i in range(2, argcount):
 
-            if sys.argv[i] in ('--debug', '-d'):
-                if not target: target = 'debug'
-                else: error_exit('multiple definition argument target')
-            elif sys.argv[i] in ('--release', '-r'):
-                if not target: target = 'release'
-                else: error_exit('multiple definition argument target')
-            elif sys.argv[i] == '--x86_64':
-                if not bits: bits = '64'
-                else: error_exit('multiple definition bits')
-            elif sys.argv[i] == '--x86':
-                if not bits: bits = '32'
-                else: error_exit('multiple definition bits')
+            #if sys.argv[i] in ('--debug', '-d'):
+            #    if not target: target = 'debug'
+            #    else: error_exit('multiple definition argument target')
+            #elif sys.argv[i] in ('--release', '-r'):
+            #    if not target: target = 'release'
+            #    else: error_exit('multiple definition argument target')
+            #elif sys.argv[i] == '--x86_64':
+            #    if not bits: bits = '64'
+            #    else: error_exit('multiple definition bits')
+            #elif sys.argv[i] == '--x86':
+            #    if not bits: bits = '32'
+            #    else: error_exit('multiple definition bits')
+            
             if sys.argv[i] in ('--gdb', '-g'):
                 if not gdb: gdb = True
                 else: error_exit('multiple definition argument gdb')
             else:
                 error_command(sys.argv[i])
 
-        if not target: target = 'debug'
-        if not bits: bits = '64'
         if not gdb: gdb = False
 
-        run(target, bits, gdb)
+        run(gdb)
 
     else:
         error_command(sys.argv[1])

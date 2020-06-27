@@ -30,12 +30,7 @@
 
 #include "crash_handler_x11.h"
 
-
-#ifdef _DEBUG
-#define CRASH_HANDLER_ENABLED 1
-#endif
-
-#ifdef CRASH_HANDLER_ENABLED
+#ifdef DEBUG_BUILD
 #include <cxxabi.h>
 #include <dlfcn.h>
 #include <execinfo.h>
@@ -263,7 +258,7 @@ void CrashHandler::disable() {
 	if (disabled)
 		return;
 
-#ifdef CRASH_HANDLER_ENABLED
+#ifdef DEBUG_BUILD
 	signal(SIGSEGV, nullptr);
 	signal(SIGFPE, nullptr);
 	signal(SIGILL, nullptr);
@@ -273,7 +268,7 @@ void CrashHandler::disable() {
 }
 
 void CrashHandler::initialize() {
-#ifdef CRASH_HANDLER_ENABLED
+#ifdef DEBUG_BUILD
 	signal(SIGSEGV, handle_crash);
 	signal(SIGFPE, handle_crash);
 	signal(SIGILL, handle_crash);

@@ -36,6 +36,35 @@
 
 namespace carbon {
 
+// FOR g++ this template should be in namespace scope
+// error: explicit specialization in non-namespace scope
+class DynamicLibrary;
+template<unsigned int t_argn> struct _Visit {
+template<typename... Targs>
+static int _visit(DynamicLibrary* p_lib, const char* p_func_name, var* p_arg0, Targs... p_args) {
+
+	if (p_arg0->get_type() == var::Type::BOOL) {
+		return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator bool());
+
+	} else if (p_arg0->get_type() == var::Type::INT) {
+		return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator int());
+
+	} else if (p_arg0->get_type() == var::Type::FLOAT) {
+		return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator float());
+
+	} else if (p_arg0->get_type() == var::Type::STRING) {
+		return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->to_string().c_str());
+		
+	//} else if (p_arg0->get_type() == var::Type::OBJECT) {
+	//	return _visit(p_func_name, p_argn - 1, p_args..., p_arg0->operator ptr<varh::Object>());
+		
+	} else { // else var*
+		return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0);
+	}
+
+	throw Error(Error::INTERNAL_BUG, "Please Bug Report.");
+}};
+
 class DynamicLibrary : public Object {
 public:
 	// Object overrides.
@@ -92,7 +121,7 @@ public:
 
 protected:
 
-private:
+public:
 	void* handle = nullptr;
 	String lib_name;
 
@@ -117,39 +146,16 @@ private:
 		return ret;
 	}
 
-	template<unsigned int t_argn> struct _Visit {
-	template<typename... Targs>
-	static int _visit(DynamicLibrary* p_lib, const char* p_func_name, var* p_arg0, Targs... p_args) {
-
-		if (p_arg0->get_type() == var::Type::BOOL) {
-			return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator bool());
-
-		} else if (p_arg0->get_type() == var::Type::INT) {
-			return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator int());
-
-		} else if (p_arg0->get_type() == var::Type::FLOAT) {
-			return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator float());
-
-		} else if (p_arg0->get_type() == var::Type::STRING) {
-			return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->to_string().c_str());
-		
-		//} else if (p_arg0->get_type() == var::Type::OBJECT) {
-		//	return _visit(p_func_name, p_argn - 1, p_args..., p_arg0->operator ptr<varh::Object>());
-		
-		} else { // else var*
-			return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0);
-		}
-
-		throw Error(Error::INTERNAL_BUG, "Please Bug Report.");
-	}};
-
-	template<> struct _Visit<0> {
-	template<typename... Targs>
-	static int _visit(DynamicLibrary* p_lib, const char* p_func_name, var* p_nullptr, Targs... p_args) {
-		return p_lib->_call(p_func_name, p_args...);
-	}};
+	template<unsigned int t_argn> friend class _Visit;
 
 };
+
+template<> struct _Visit<0> {
+template<typename... Targs>
+static int _visit(DynamicLibrary* p_lib, const char* p_func_name, var* p_nullptr, Targs... p_args) {
+	return p_lib->_call(p_func_name, p_args...);
+}};
+
 
 }
 

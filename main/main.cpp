@@ -42,8 +42,8 @@ void crash_handler_test();
 
 int _main(int argc, char** argv) {
 	
-	//dl_test();
-
+	dl_test();
+	//crash_handler_test();
 #ifdef _CATCH_
 	try {
 #endif
@@ -53,12 +53,11 @@ int _main(int argc, char** argv) {
 #ifdef _CATCH_
 	} catch (const Error & err) {
 		ConsoleLogger::logf_error("Error:\n%s\n", err.what());
+		DEBUG_BREAK();
 	} catch (...) {
 		DEBUG_BREAK();
 	}
 #endif
-
-	//crash_handler_test();
 
 	int c = getchar();
 	return 0;
@@ -100,8 +99,14 @@ void dl_test() {
 	// 
 	// }
 	// /**********************/
-
+#if defined(PLATFORM_WINDOWS)
 	DynamicLibrary lib("bin/mylib.dll");
+#elif defined(PLATFORM_X11)
+	DynamicLibrary lib("bin/mylib.so");
+#else
+	#error ""
+#endif
+
 	var i = 42, f = 3.14, s = "hello";
 	int ret =0;
 	ret = lib.call("r0_func_a0");
@@ -115,7 +120,7 @@ void dl_test() {
 void crash_handler_test() {
 	// crash handler test
 	ConsoleLogger::logf_error("Error: %s\n", "Debug break ...");
-	DEBUG_BREAK();
 	char* invalid_ptr = NULL;
 	*invalid_ptr = 0xff;
+	//DEBUG_BREAK();
 }

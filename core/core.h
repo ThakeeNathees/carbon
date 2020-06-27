@@ -82,7 +82,7 @@ using namespace varh;
 #elif defined(__APPLE__) || defined(__MACH__)
 #	define PLATFORM_APPLE
 #elif defined(__linux__)
-#	define PLATFORM_LINUX
+#	define PLATFORM_X11
 #else
 #	error "PLATFORM NOT SUPPORTED."
 #endif

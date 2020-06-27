@@ -300,14 +300,6 @@ const void Tokenizer::tokenize(const String& p_source) {
 				else _eat_token(Token::OP_GT);
 				break;
 			}
-			case '&&': {
-				_eat_token(Token::OP_AND);
-				break;
-			}
-			case '||': {
-				_eat_token(Token::OP_OR);
-				break;
-			}
 			case '!': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_NOTEQ, 2);
 				else _eat_token(Token::OP_NOT);
@@ -318,11 +310,13 @@ const void Tokenizer::tokenize(const String& p_source) {
 				break;
 			case '|': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_BIT_OR_EQ, 2);
+				else if (GET_CHAR(1) == '|') _eat_token(Token::OP_OR, 2);
 				else _eat_token(Token::OP_BIT_OR);
 				break;
 			}
 			case '&': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_BIT_AND_EQ, 2);
+				else if (GET_CHAR(1) == '&') _eat_token(Token::OP_AND, 2);
 				else _eat_token(Token::OP_BIT_AND);
 				break;
 			}
