@@ -3,4 +3,6 @@ import os
 
 Import('cbenv')
 
-cbenv.sources += [ Glob('*.cpp') ]
+cbenv.SOURCES += [
+	Glob('*.cpp'),
+]

@@ -2,17 +2,11 @@
 import os, subprocess
 Import('env_os')
 
-# project includes
-env_os.add_include_dir('.')
-env_os.add_lib('dl')
+## project includes
+env_os.Append(LIBS=['dl'])
+env_os.Append(CPPDEFINES=[])
 
-# windows env
-env_os.Append(CPPDEFINES=[]) # predefined macros
-sources = [                  # source files
+## x11 env
+env_os.SOURCES += [
     Glob('*.cpp'),
 ]
-
-# compie list
-for file in sources:
-    obj = env_os.Object(file)
-    env_os.source.append(obj)

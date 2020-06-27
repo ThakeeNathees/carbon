@@ -31,6 +31,8 @@
 #ifndef CRASH_HANDLER_X11_H
 #define CRASH_HANDLER_X11_H
 
+#include <iostream>
+
 // env.Append(LIBS=['dl'])
 
 class CrashHandler {

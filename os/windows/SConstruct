@@ -1,19 +1,13 @@
 #!python
 import os, subprocess
 Import('env_os')
+Import('cbenv')
 
-# project includes
-env_os.add_include_dir('.')
-env_os.add_lib('psapi')
-env_os.add_lib('dbghelp')
+## project includes
+cbenv.Append(LIBS=['psapi', 'dbghelp'])
+env_os.Append(CPPDEFINES=[])
 
-# windows env
-env_os.Append(CPPDEFINES=[]) # predefined macros
-env_os.sources += [          # source files
+## windows env
+env_os.SOURCES += [
     Glob('*.cpp'),
 ]
-
-## this will compile to obj file and append
-## for file in sources:
-##     obj = env_os.Object(file)
-##     env_os.sources.append(obj)

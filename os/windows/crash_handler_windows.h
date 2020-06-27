@@ -32,6 +32,7 @@
 #define CRASH_HANDLER_WINDOWS_H
 
 #include <windows.h>
+#include <iostream>
 
 // #pragma comment(lib, "psapi.lib")
 // #pragma comment(lib, "dbghelp.lib")

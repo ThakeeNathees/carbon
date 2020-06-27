@@ -2,38 +2,15 @@
 import os, subprocess
 Import('cbenv')
 
-# project includes
-#env.add_include_dir('include')
+## project includes
+#cbenv.Append(CPPPATH=[Dir("./")])
 
-# os env
+## os env
 env_os = cbenv.Clone()
-env_os.Append(CPPDEFINES=[])    # predefined macros
-env_os.Append(LIBPATH=[])       # static lib dir
-env_os.Append(LIBS=[])          # static libs
+env_os.SOURCES = []
 
-# source files
+## source files
 Export('env_os')
-env_os.sources = [
-]
+SConscript('%s/SConstruct'%env_os['platform']) ## windows, x11, osx
 
-if env_os['platform'] == "osx":
-    #SConscript('osx/SConstruct')
-    pass # TODO:
-elif env_os['platform'] in ('x11', 'linux'):
-    SConscript('x11/SConstruct')
-    pass
-elif env_os['platform'] == "windows":
-    SConscript('windows/SConstruct')
-    pass
-
-cbenv.sources += env_os.sources
-
-## Making a lib.
-# for src in env_os.sources:
-#     cbenv.add_ide_sources(src)
-# 
-# # make library
-# lib = env_os.StaticLibrary(
-#         'bin/' + 'os' + env_os['out_suffix'],
-#         env_os.sources)
-# cbenv.Prepend(LIBS=[lib])
+cbenv.SOURCES += env_os.SOURCES
