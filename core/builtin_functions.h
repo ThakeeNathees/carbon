@@ -32,7 +32,7 @@ namespace carbon {
 
 class BuiltinFunctions {
 public:
-	enum class Function {
+	enum class Type {
 		UNKNOWN,
 
 		PRINT,
@@ -46,7 +46,8 @@ public:
 	};
 
 	// Methods.
-	static const char* get_func_name(Function p_func);
+	static const char* get_func_name(Type p_func);
+	static void call(Type p_func, const stdvec<var>& p_args, var& r_ret);
 
 protected:
 

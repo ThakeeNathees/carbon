@@ -77,14 +77,14 @@ static KeywordName _keyword_name_list[] = {
 	{ "return",   Token::KWORD_RETURN	     },
 };
 
-struct BuiltinFuncName { const char* name; BuiltinFunctions::Function func; };
+struct BuiltinFuncName { const char* name; BuiltinFunctions::Type func; };
 static BuiltinFuncName _builtin_func_list[] = {
 	// { "", BuiltinFunctions::Function::UNKNOWN  },
-	{ "print", BuiltinFunctions::Function::PRINT    },
-	{ "input", BuiltinFunctions::Function::INPUT    },
-	{ "min",   BuiltinFunctions::Function::MATH_MIN },
-	{ "max",   BuiltinFunctions::Function::MATH_MAX },
-	{ "pow",   BuiltinFunctions::Function::MATH_POW },
+	{ "print", BuiltinFunctions::Type::PRINT    },
+	{ "input", BuiltinFunctions::Type::INPUT    },
+	{ "min",   BuiltinFunctions::Type::MATH_MIN },
+	{ "max",   BuiltinFunctions::Type::MATH_MAX },
+	{ "pow",   BuiltinFunctions::Type::MATH_POW },
 };
 
 void Tokenizer::_eat_escape(String& p_str) {

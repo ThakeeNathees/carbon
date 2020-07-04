@@ -383,8 +383,77 @@ ptr<Parser::Node> Parser::_reduce_operator_tree(stdvec<Expr>& p_expr) {
 	return p_expr[0].get_expr();
 }
 
-void Parser::_reduce_expression(ptr<Node>& p_expr) const {
-	// TODO:
+void Parser::_reduce_expression(ptr<Node>& p_expr) {
+	switch (p_expr->type) {
+		case Node::Type::BUILTIN_FUNCTION: {
+		} break;
+		case Node::Type::ARRAY: {
+			ptr<ArrayNode>& arr = ptrcast<ArrayNode>(p_expr);
+			for (int i = 0; i < arr->elements.size(); i++) {
+				_reduce_expression(arr->elements[i]);
+			}	
+		} break;
+		case Node::Type::MAP: {
+			ptr<MapNode>& map = ptrcast<MapNode>(p_expr);
+			for (int i = 0; i < map->elements.size(); i++) {
+				_reduce_expression(map->elements[i].key);
+				// TODO: key should be hashable?
+				_reduce_expression(map->elements[i].value);
+			}
+		} break;
+		case Node::Type::OPERATOR: {
+			ptr<OperatorNode>& op = ptrcast<OperatorNode>(p_expr);
+
+			bool all_const = true;
+			for (int i = 0; i < op->args.size(); i++) {
+				_reduce_expression(op->args[i]);
+				if (op->args[i]->type != Node::Type::CONST_VALUE) {
+					if (i == 0 && op->args[i]->type == Node::Type::BUILTIN_FUNCTION) {
+						// Could be all const.
+					} else {
+						all_const = false;
+					}
+				}
+			}
+
+			switch (op->op_type) {
+				case OperatorNode::OpType::OP_CALL: {
+
+					// TODO: add built in class for Array(), Map(), ...
+					if (op->args[0]->type == Node::Type::BUILTIN_FUNCTION && all_const) {
+						ptr<BuiltinFunctionNode>& bf = ptrcast<BuiltinFunctionNode>(op->args[0]);
+						if (bf->func != BuiltinFunctions::Type::PRINT) {
+							stdvec<var> args;
+							for (int i = 1; i < op->args.size(); i++) {
+								args.push_back(ptrcast<ConstValueNode>(op->args[i])->value);
+							}
+							var ret;
+							BuiltinFunctions::call(bf->func, args, ret);
+							ptr<ConstValueNode> cv = new_node<ConstValueNode>(ret);
+							p_expr = cv;
+						}
+					}
+				} break;
+				case OperatorNode::OpType::OP_INDEX: {
+					// TODO: const_node_var.x or idf_node_enum.VALUE
+				} break;
+				case OperatorNode::OpType::OP_INDEX_MAPPED: {
+					// Can't reduce at compile time.
+				} break;
+				default: {
+					// TODO: binary, unary operators, and others
+				}
+			}
+
+		} break;
+		case Node::Type::CONST_VALUE: {
+		} break; // Can't reduce anymore.
+
+		default: {
+			// ASSERT ?
+		}
+
+	}
 }
 
 }

@@ -42,7 +42,7 @@ void crash_handler_test();
 
 int _main(int argc, char** argv) {
 	
-	dl_test();
+	//dl_test();
 	//crash_handler_test();
 #ifdef _CATCH_
 	try {

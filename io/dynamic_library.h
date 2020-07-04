@@ -121,7 +121,7 @@ public:
 
 protected:
 
-public:
+private:
 	void* handle = nullptr;
 	String lib_name;
 
@@ -146,7 +146,7 @@ public:
 		return ret;
 	}
 
-	template<unsigned int t_argn> friend class _Visit;
+	template<unsigned int t_argn> friend struct _Visit;
 
 };
 

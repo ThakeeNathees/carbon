@@ -219,11 +219,11 @@ public:
 	};
 
 	struct BuiltinFunctionNode : public Node {
-		BuiltinFunctions::Function func;
+		BuiltinFunctions::Type func;
 		BuiltinFunctionNode() {
 			type = Type::BUILTIN_FUNCTION;
 		}
-		BuiltinFunctionNode(BuiltinFunctions::Function p_func) {
+		BuiltinFunctionNode(BuiltinFunctions::Type p_func) {
 			type = Type::BUILTIN_FUNCTION;
 			func = p_func;
 		}
@@ -377,7 +377,7 @@ private:
 
 	ptr<Node> _parse_expression(const ptr<Node>& p_parent, bool p_static);
 	stdvec<ptr<Node>> _parse_arguments(const ptr<Node>& p_parent, bool p_static);
-	void _reduce_expression(ptr<Node>& p_expr) const;
+	void _reduce_expression(ptr<Node>& p_expr);
 
 	ptr<Node> _reduce_operator_tree(stdvec<Expr>& p_expr);
 	static int _get_operator_precedence(OperatorNode::OpType p_op);

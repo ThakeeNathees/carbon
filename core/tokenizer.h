@@ -122,7 +122,7 @@ struct TokenData {
 
 	// Identifiers.
 	String identifier;
-	BuiltinFunctions::Function builtin_func = BuiltinFunctions::Function::UNKNOWN;
+	BuiltinFunctions::Type builtin_func = BuiltinFunctions::Type::UNKNOWN;
 	BuiltinClasses::Class builtin_class = BuiltinClasses::Class::_NULL;
 	var::Type biltin_type = var::Type::_NULL;
 };
