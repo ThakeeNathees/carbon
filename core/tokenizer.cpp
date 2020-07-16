@@ -77,35 +77,15 @@ static KeywordName _keyword_name_list[] = {
 	{ "return",   Token::KWORD_RETURN	     },
 };
 
-struct BuiltinFuncName { const char* name; BuiltinFunctions::Function func; };
+struct BuiltinFuncName { const char* name; BuiltinFunctions::Type func; };
 static BuiltinFuncName _builtin_func_list[] = {
 	// { "", BuiltinFunctions::Function::UNKNOWN  },
-	{ "print", BuiltinFunctions::Function::PRINT    },
-	{ "input", BuiltinFunctions::Function::INPUT    },
-	{ "min",   BuiltinFunctions::Function::MATH_MIN },
-	{ "max",   BuiltinFunctions::Function::MATH_MAX },
-	{ "pow",   BuiltinFunctions::Function::MATH_POW },
+	{ "print", BuiltinFunctions::Type::PRINT    },
+	{ "input", BuiltinFunctions::Type::INPUT    },
+	{ "min",   BuiltinFunctions::Type::MATH_MIN },
+	{ "max",   BuiltinFunctions::Type::MATH_MAX },
+	{ "pow",   BuiltinFunctions::Type::MATH_POW },
 };
-
-//struct BuiltinClassName { const char* name; BuiltinClasses::Class cls; };
-//static BuiltinClassName _builtin_class_list[]{
-//	{ "null",   BuiltinClasses::Class::_NULL   },
-//	{ "bool",   BuiltinClasses::Class::BOOL	   },
-//	{ "int",    BuiltinClasses::Class::INT	   },
-//	{ "float",  BuiltinClasses::Class::FLOAT   },
-//	
-//	{ "String", BuiltinClasses::Class::STRING  },
-//	{ "Vect2f", BuiltinClasses::Class::VECT2F  },
-//	{ "Vect2i", BuiltinClasses::Class::VECT2I  },
-//	{ "Vect3f", BuiltinClasses::Class::VECT3F  },
-//	{ "Vect3i", BuiltinClasses::Class::VECT3I  },
-//	{ "Array",  BuiltinClasses::Class::ARRAY   },
-//	{ "Map",    BuiltinClasses::Class::MAP	   },
-//	{ "Object", BuiltinClasses::Class::OBJECT  },
-//
-//	{ "Buffer", BuiltinClasses::Class::BUFFER  },
-//	{ "File",   BuiltinClasses::Class::FILE	   },
-//};
 
 void Tokenizer::_eat_escape(String& p_str) {
 	char c = GET_CHAR(0);
@@ -144,6 +124,8 @@ void Tokenizer::_eat_eof() {
 	EAT_CHAR(1);
 }
 
+// TODO: eat const value, ... cur_line, cur_col are not at the end of the token
+// make the position to be at the start
 void Tokenizer::_eat_const_value(const var& p_value, int p_eat_size) {
 	TokenData tk;
 	tk.line = cur_line;
@@ -193,16 +175,6 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 			}
 		}
 	}
-
-	//if (tk.type == Token::IDENTIFIER) {
-	//	for (const BuiltinClassName& bc : _builtin_class_list) {
-	//		if (bc.name == p_idf) {
-	//			tk.type = Token::BUILTIN_CLASS;
-	//			tk.builtin_class = bc.cls;
-	//			break;
-	//		}
-	//	}
-	//}
 
 	tokens.push_back(tk);
 	EAT_CHAR(p_eat_size);
@@ -328,14 +300,6 @@ const void Tokenizer::tokenize(const String& p_source) {
 				else _eat_token(Token::OP_GT);
 				break;
 			}
-			case '&&': {
-				_eat_token(Token::OP_AND);
-				break;
-			}
-			case '||': {
-				_eat_token(Token::OP_OR);
-				break;
-			}
 			case '!': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_NOTEQ, 2);
 				else _eat_token(Token::OP_NOT);
@@ -346,11 +310,13 @@ const void Tokenizer::tokenize(const String& p_source) {
 				break;
 			case '|': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_BIT_OR_EQ, 2);
+				else if (GET_CHAR(1) == '|') _eat_token(Token::OP_OR, 2);
 				else _eat_token(Token::OP_BIT_OR);
 				break;
 			}
 			case '&': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_BIT_AND_EQ, 2);
+				else if (GET_CHAR(1) == '&') _eat_token(Token::OP_AND, 2);
 				else _eat_token(Token::OP_BIT_AND);
 				break;
 			}
@@ -430,6 +396,11 @@ const void Tokenizer::tokenize(const String& p_source) {
 						EAT_CHAR(1);
 					}
 					_eat_identifier(identifier);
+					break;
+				}
+
+				if (GET_CHAR(0) == '.') {
+					_eat_token(Token::SYM_DOT);
 					break;
 				}
 

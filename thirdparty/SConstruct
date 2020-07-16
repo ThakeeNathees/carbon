@@ -2,33 +2,23 @@
 import os
 Import('cbenv')
 
-cbenv.add_include_dir('.')
+cbenv.Append(CPPPATH=[Dir("./")])
 
-# thirdparty env
+## thirdparty env
 env_thirdparty = cbenv.Clone()
-env_thirdparty.Append(CPPDEFINES=[])    # predefined macros
-env_thirdparty.Append(LIBPATH=[])       # static lib dir
-env_thirdparty.Append(LIBS=[])          # static libs
+env_thirdparty.SOURCES = []
 
-# source files
-Export('env_thirdparty')
-env_thirdparty.sources = []
+## source files
+#Export('env_thirdparty')
 
 if env_thirdparty['platform'] == "osx":
     pass
 elif env_thirdparty['platform'] in ('x11', 'linux'):
     pass
 elif env_thirdparty['platform'] == "windows":
-    env_thirdparty.sources += [
-        'dlfcn-win32/dlfcn.c'
+    env_thirdparty.SOURCES += [
+        File('dlfcn-win32/dlfcn.c')
     ]
     pass
 
-for src in env_thirdparty.sources:
-    cbenv.add_ide_sources(src)
-    
-# make library
-lib = env_thirdparty.StaticLibrary(
-        'bin/' + 'thirdparty' + env_thirdparty['out_suffix'],
-        env_thirdparty.sources)
-cbenv.Prepend(LIBS=[lib])
+cbenv.SOURCES += env_thirdparty.SOURCES

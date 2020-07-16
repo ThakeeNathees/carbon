@@ -23,7 +23,7 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "crash_handler_x11.h"
+#include "os/x11/crash_handler_x11.h"
 
 int _main(int argc, char** argv);
 

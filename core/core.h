@@ -31,23 +31,26 @@
 using namespace varh;
 
 #include <assert.h>
+#include <stdlib.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#define _USE_MATH_DEFINES
+#include <math.h>
+
+#include <string>
 #include <cstring>
+#include <vector>
+#include <map>
+#include <type_traits>
+#include <typeinfo>
+
 #include <iostream>
 #include <ostream>
 #include <sstream>
 #include <fstream>
 #include <memory>
-#include <stdarg.h>
-#include <stdio.h>
-#include <string>
-#include <type_traits>
-#include <typeinfo>
 #include <new>
-
-#define _USE_MATH_DEFINES
-#include <map>
-#include <math.h>
-#include <vector>
 
 #include "error.h"
 
@@ -68,22 +71,6 @@ using namespace varh;
 
 #endif
 
-#define ARG_1(_1,...) _1
-#define ARG_2(_1,_2,...) _2
-#define ARG_3(_1,_2,_3,...) _3
-#define ARG_4(_1,_2,_3,_4,...) _4
-#define ARG_5(_1,_2,_3,_4,_5,...) _5
-#define ARG_6(_1,_2,_3,_4,_5,_6,...) _6
-#define ARG_7(_1,_2,_3,_4,_5,_6,_7,...) _7
-#define ARG_8(_1,_2,_3,_4,_5,_6,_7,_8,...) _8
-#define ARG_9(_1,_2,_3,_4,_5,_6,_7,_8,_9,...) _9
-#define ARG_10(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,...) _10
-
-#define STRCAT2(m_1, m_2) m_1##m_2
-#define STRCAT3(m_1, m_2, m_3) m_1##m_2##m_3
-#define STRCAT4(m_1, m_2, m_3, m_4) m_1##m_2##m_3##m_4
-#define STRCAT5(m_1, m_2, m_3, m_4, m_5) m_1##m_2##m_3##m_4##m_5
-
 #define STR(m_) #m_
 #define STRINGIFY(m_) STR(m_)
 #define NOEFFECT(m_) m_
@@ -95,7 +82,7 @@ using namespace varh;
 #elif defined(__APPLE__) || defined(__MACH__)
 #	define PLATFORM_APPLE
 #elif defined(__linux__)
-#	define PLATFORM_LINUX
+#	define PLATFORM_X11
 #else
 #	error "PLATFORM NOT SUPPORTED."
 #endif
@@ -110,6 +97,11 @@ using namespace varh;
 #	define DEBUG_BREAK()
 #endif
 
+#define _CRASH()                \
+do {                            \
+	char* CRASH_HERE = nullptr; \
+	*CRASH_HERE = '\0';         \
+} while(false)
 
 #ifdef DEBUG_BUILD
 #define DEBUG_PRINT(...)                                                                                       \
@@ -128,7 +120,8 @@ do {                                                                            
 	do {                                                                                                     \
 		if (!(m_cond)) {                                                                                     \
 			printf("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond));  \
-			DEBUG_BREAK();                                                                                   \
+			throw Error(Error::INTERNAL_BUG);                                                                \
+			/*_CRASH();*/     /* debug break could skipped by debugger stepping */                           \
 		}                                                                                                    \
 	} while (false)
 
@@ -138,28 +131,27 @@ do {                                                                            
 
 #define VSNPRINTF_BUFF_SIZE 8192
 
-// Definition in var.h ------------------------------
-// template<typename T, typename... Targs>
-// inline ptr<T> newptr(Targs... p_args) {
-// 	return std::make_shared<T>(p_args...);
-// }
-// --------------------------------------------------
+#if !defined(_VAR_H) && !defined(VAR_H)
+	template<typename T, typename... Targs>
+	inline ptr<T> newptr(Targs... p_args) {
+		return std::make_shared<T>(p_args...);
+	}
+	
+	template<typename T1, typename T2>
+	inline ptr<T1> ptrcast(T2 p_ptr) {
+		return std::static_pointer_cast<T1>(p_ptr);
+	}
+	
+	template<typename T>
+	using ptr = std::shared_ptr<T>;
+	
+	template<typename T>
+	using stdvec = std::vector<T>;
+#endif
 
-// Definition in var.h ------------------------------
-// template<typename T1, typename T2>
-// inline ptr<T1> ptrcast(T2 p_ptr) {
-// 	return std::static_pointer_cast<T1>(p_ptr);
-// }
-// --------------------------------------------------
-
-template<typename T>
-using ptr = std::shared_ptr<T>;
-
-template<typename T>
-using stdvec = std::vector<T>;
-
-typedef unsigned char byte;
-
+namespace carbon {
+typedef char byte_t;
+}
 
 // for windows dll define CARBON_DLL, CARBON_DLL_EXPORT
 #if defined(CARBON_DLL)

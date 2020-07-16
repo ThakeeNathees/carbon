@@ -23,7 +23,7 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "crash_handler_windows.h"
+#include "os/windows/crash_handler_windows.h"
 
 int _main(int argc, char** argv);
 

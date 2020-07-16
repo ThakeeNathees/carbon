@@ -40,26 +40,26 @@ public:
 
 	// Methods.
 	void alloc(size_t p_size) {
-		buffer = ptr<char[]>(new char[p_size]);
+		_buffer = ptr<byte_t[]>(new byte_t[p_size]);
 		_size = p_size;
 	}
-	char* front() { return buffer.get(); }
+	byte_t* front() { return _buffer.get(); }
 	size_t size() const { return _size; }
 
-	char& operator[](size_t p_index) {
+	byte_t& operator[](size_t p_index) {
 		if (p_index >= _size) throw Error(Error::INVALID_INDEX, "");
-		return buffer.get()[p_index];
+		return _buffer.get()[p_index];
 	}
-	const char& operator[](size_t p_index) const {
+	const byte_t& operator[](size_t p_index) const {
 		if (p_index >= _size) throw Error(Error::INVALID_INDEX, "");
-		return buffer.get()[p_index];
+		return _buffer.get()[p_index];
 	}
 
 protected:
 
 private:
 	// Members.
-	ptr<char[]> buffer;
+	ptr<byte_t[]> _buffer;
 	size_t _size = 0;
 };
 
