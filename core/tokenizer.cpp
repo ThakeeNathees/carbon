@@ -204,7 +204,7 @@ const void Tokenizer::tokenize(const String& p_source) {
 			{
 				if (GET_CHAR(1) == '/') { // comment
 
-					while (GET_CHAR(0) != '\n' || GET_CHAR(0) != 0 ) {
+					while (GET_CHAR(0) != '\n' && GET_CHAR(0) != 0 ) {
 						EAT_CHAR(1);
 					}
 					if (GET_CHAR(0) == '\n') {
@@ -219,6 +219,7 @@ const void Tokenizer::tokenize(const String& p_source) {
 					while (true) {
 						if (GET_CHAR(0) == '*' && GET_CHAR(1) == '/') {
 							EAT_CHAR(2);
+							break;
 						} else if (GET_CHAR(0) == 0) {
 							ERROR(Error::UNEXPECTED_EOF, "");
 						} else if (GET_CHAR(0) == '\n') {
@@ -235,7 +236,6 @@ const void Tokenizer::tokenize(const String& p_source) {
 				break;
 			}
 			// symbols
-			// TODO: case SYM_DOT could be float value
 			case ',': _eat_token(Token::SYM_COMMA); break;
 			case ':': _eat_token(Token::SYM_COLLON); break;
 			case ';': _eat_token(Token::SYM_SEMI_COLLON); break;
@@ -404,7 +404,7 @@ const void Tokenizer::tokenize(const String& p_source) {
 					break;
 				}
 
-				DEBUG_BREAK(); // TODO:
+				DEBUG_BREAK(); // TODO: Unknown character.
 
 			} // default case
 

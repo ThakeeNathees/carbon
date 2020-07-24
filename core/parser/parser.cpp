@@ -298,56 +298,43 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node, bool p_static)
 	// check identifier when reducing
 	// IF_IDF_ALREADY_FOUND_RET_ERR(tk->identifier, p_node);
 
-#define PARSE_EXPR_VAR()                                              \
-	while (true) {                                                    \
-	                                                                  \
-		tk = &tokenizer->next();                                      \
-		if (tk->type != Token::IDENTIFIER) {                          \
-			THROW_UNEXP_TOKEN("<identifier>");                        \
-		}                                                             \
-		ptr<VarNode> var_node = new_node<VarNode>();                  \
-		var_node->name = tk->identifier;                              \
-	                                                                  \
-		tk = &tokenizer->next();                                      \
-		if (tk->type == Token::OP_EQ) {                               \
-			ptr<Node> expr = _parse_expression(p_node, p_static);     \
-			_reduce_expression(expr);                                 \
-			var_node->assignment = expr;                              \
-	                                                                  \
-			tk = &tokenizer->next();                                  \
-			if (tk->type == Token::SYM_COMMA) {                       \
-			} else if (tk->type == Token::SYM_SEMI_COLLON) {          \
-				vars.push_back(var_node);                             \
-				break;                                                \
-			} else {                                                  \
-				THROW_UNEXP_TOKEN("");                                \
-			}                                                         \
-		} else if (tk->type == Token::SYM_COMMA) {                    \
-		} else if (tk->type == Token::SYM_SEMI_COLLON) {              \
-			vars.push_back(var_node);                                 \
-			break;                                                    \
-		} else {                                                      \
-			THROW_UNEXP_TOKEN("");                                    \
-		}                                                             \
-		vars.push_back(var_node);                                     \
-	}
-
 	const TokenData* tk;
 	stdvec<ptr<VarNode>> vars;
 
-	switch (p_node->type) {
-		case Node::Type::CLASS: {
-			PARSE_EXPR_VAR();
-			break;
-		}
-		case Node::Type::BLOCK: {
+	if (p_node->type == Node::Type::CLASS || p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::FILE) {
+		if (p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::FILE)
 			ASSERT(p_static);
-			PARSE_EXPR_VAR();
-			break;
-		}
-		case Node::Type::FILE: {
-			ASSERT(p_static);
-			PARSE_EXPR_VAR();
+
+		while (true) {
+			tk = &tokenizer->next();
+			if (tk->type != Token::IDENTIFIER) {
+				THROW_UNEXP_TOKEN("<identifier>");
+			}
+			ptr<VarNode> var_node = new_node<VarNode>();
+			var_node->name = tk->identifier;
+
+			tk = &tokenizer->next();
+			if (tk->type == Token::OP_EQ) {
+				ptr<Node> expr = _parse_expression(p_node, p_static);
+				_reduce_expression(expr);
+				var_node->assignment = expr;
+
+				tk = &tokenizer->next();
+				if (tk->type == Token::SYM_COMMA) {
+				} else if (tk->type == Token::SYM_SEMI_COLLON) {
+					vars.push_back(var_node);
+					break;
+				} else {
+					THROW_UNEXP_TOKEN("");
+				}
+			} else if (tk->type == Token::SYM_COMMA) {
+			} else if (tk->type == Token::SYM_SEMI_COLLON) {
+				vars.push_back(var_node);
+				break;
+			} else {
+				THROW_UNEXP_TOKEN("");
+			}
+			vars.push_back(var_node);
 		}
 	}
 

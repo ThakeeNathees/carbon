@@ -52,7 +52,7 @@ int _main(int argc, char** argv) {
 
 #ifdef _CATCH_
 	} catch (const Error & err) {
-		ConsoleLogger::logf_error("Error:\n%s\n", err.what());
+		ConsoleLogger::logf_error("Error:\n\t%s\n", err.what());
 		DEBUG_BREAK();
 	} catch (...) {
 		DEBUG_BREAK();
