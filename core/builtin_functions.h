@@ -32,7 +32,7 @@ namespace carbon {
 
 class BuiltinFunctions {
 public:
-	enum class Type {
+	enum Type {
 		UNKNOWN,
 
 		PRINT,

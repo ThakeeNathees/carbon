@@ -63,16 +63,16 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 		} else if (tk->type == Token::OP_PLUS || tk->type == Token::OP_MINUS || tk->type == Token::OP_NOT || tk->type == Token::OP_BIT_NOT) {
 			switch (tk->type) {
 				case Token::OP_PLUS:
-					expressions.push_back(Expr(OperatorNode::OpType::OP_POSITIVE));
+					expressions.push_back(Expr(OperatorNode::OpType::OP_POSITIVE, CURRENT_PARSER_POS()));
 					break;
 				case Token::OP_MINUS:
-					expressions.push_back(Expr(OperatorNode::OpType::OP_NEGATIVE));
+					expressions.push_back(Expr(OperatorNode::OpType::OP_NEGATIVE, CURRENT_PARSER_POS()));
 					break;
 				case Token::OP_NOT:
-					expressions.push_back(Expr(OperatorNode::OpType::OP_NOT));
+					expressions.push_back(Expr(OperatorNode::OpType::OP_NOT, CURRENT_PARSER_POS()));
 					break;
 				case Token::OP_BIT_NOT:
-					expressions.push_back(Expr(OperatorNode::OpType::OP_BIT_NOT));
+					expressions.push_back(Expr(OperatorNode::OpType::OP_BIT_NOT, CURRENT_PARSER_POS()));
 					break;
 			}
 			continue;
@@ -230,9 +230,10 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 
 			default: valid = false;
 		}
+		MISSED_ENUM_CHECK(OperatorNode::OpType::__OP_MAX__, 36);
 
 		if (valid) {
-			expressions.push_back(Expr(op));
+			expressions.push_back(Expr(op, CURRENT_PARSER_POS()));
 			tk = &tokenizer->next();
 		} else {
 			break;
@@ -320,6 +321,7 @@ int Parser::_get_operator_precedence(OperatorNode::OpType p_op) {
 			ASSERT(false);
 			return -1;
 	}
+	MISSED_ENUM_CHECK(OperatorNode::OpType::__OP_MAX__, 36);
 }
 
 ptr<Parser::Node> Parser::_reduce_operator_tree(stdvec<Expr>& p_expr) {
@@ -336,6 +338,7 @@ ptr<Parser::Node> Parser::_reduce_operator_tree(stdvec<Expr>& p_expr) {
 			if (!p_expr[i].is_op()) {
 				continue;
 			}
+
 			int precedence = _get_operator_precedence(p_expr[i].get_op());
 			if (precedence < min_precedence) {
 				next_op = i;
@@ -361,6 +364,7 @@ ptr<Parser::Node> Parser::_reduce_operator_tree(stdvec<Expr>& p_expr) {
 
 			for (int i = next_expr - 1; i >= next_op; i--) {
 				ptr<OperatorNode> op_node = new_node<OperatorNode>(p_expr[i].get_op());
+				op_node->pos = p_expr[i].get_pos();
 				op_node->args.push_back(p_expr[i + 1].get_expr());
 				p_expr.at(i) = Expr(op_node);
 				p_expr.erase(p_expr.begin() + i + 1);
@@ -371,6 +375,34 @@ ptr<Parser::Node> Parser::_reduce_operator_tree(stdvec<Expr>& p_expr) {
 			ASSERT(!p_expr[next_op - 1].is_op() && !p_expr[next_op + 1].is_op());
 
 			ptr<OperatorNode> op_node = new_node<OperatorNode>(p_expr[next_op].get_op());
+
+			if (p_expr[next_op - 1].get_expr()->type == Node::Type::OPERATOR) {
+				switch (ptrcast<OperatorNode>(p_expr[next_op - 1].get_expr())->op_type) {
+					case OperatorNode::OpType::OP_EQ:
+					case OperatorNode::OpType::OP_PLUSEQ:
+					case OperatorNode::OpType::OP_MINUSEQ:
+					case OperatorNode::OpType::OP_MULEQ:
+					case OperatorNode::OpType::OP_DIVEQ:
+					case OperatorNode::OpType::OP_MOD_EQ: {
+						THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", -1, -1);
+					}
+				}
+			}
+
+			if (p_expr[next_op + 1].get_expr()->type == Node::Type::OPERATOR) {
+				switch (ptrcast<OperatorNode>(p_expr[next_op + 1].get_expr())->op_type) {
+					case OperatorNode::OpType::OP_EQ:
+					case OperatorNode::OpType::OP_PLUSEQ:
+					case OperatorNode::OpType::OP_MINUSEQ:
+					case OperatorNode::OpType::OP_MULEQ:
+					case OperatorNode::OpType::OP_DIVEQ:
+					case OperatorNode::OpType::OP_MOD_EQ: {
+						Vect2i pos = ptrcast<OperatorNode>(p_expr[next_op + 1].get_expr())->pos;
+						THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", (int)pos.x, (int)pos.y);
+					}
+				}
+			}
+
 			op_node->args.push_back(p_expr[next_op - 1].get_expr());
 			op_node->args.push_back(p_expr[next_op + 1].get_expr());
 

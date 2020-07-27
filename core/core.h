@@ -129,6 +129,10 @@ do {                                                                            
 #define ASSERT(...)
 #endif
 
+#define MISSED_ENUM_CHECK(m_max_enum, m_max_value) \
+    static_assert((int)m_max_enum == m_max_value, "MissedEnum: " STRINGIFY(m_max_enum) " != " STRINGIFY(m_value) \
+        "\n\tat: " __FILE__ "(" STRINGIFY(__LINE__) ")")
+
 #define VSNPRINTF_BUFF_SIZE 8192
 
 #if !defined(_VAR_H) && !defined(VAR_H)

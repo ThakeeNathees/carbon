@@ -31,28 +31,27 @@
 
 namespace carbon {
 
-class BuiltinClasses {
+class BuiltinTypes {
 public:
-	enum class Class {
-		// var.h classes
+	enum Type {
 		_NULL,
 		BOOL,
 		INT,
 		FLOAT,
-
 		STRING,
-		VECT2F,
-		VECT2I,
-		VECT3F,
-		VECT3I,
+		// Vectors are not exposed.
+		//VECT2F,
+		//VECT2I,
+		//VECT3F,
+		//VECT3I,
 		ARRAY,
 		MAP,
-		OBJECT,
+		//OBJECT,
 
-		// other classes
-		BUFFER,
-		FILE,
-		DYNAMIC_LIBRARY,
+		// Native classes.
+		//BUFFER,
+		//FILE,
+		//DYNAMIC_LIBRARY,
 	};
 
 };

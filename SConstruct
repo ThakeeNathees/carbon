@@ -80,7 +80,7 @@ if cbenv['platform'] == "osx":
 		cbenv.Append(LINKFLAGS=['-arch', 'x86_64'])
 
 elif cbenv['platform'] == 'x11':
-	cbenv.Append(LIBS=['GL', 'GLU', 'dl', 'X11', 'pthread']) 
+	cbenv.Append(LIBS=['dl', 'pthread']) 
 	if cbenv['target'] == 'debug':
 		cbenv.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
 		cbenv.Append(CXXFLAGS=['-std=c++17'])

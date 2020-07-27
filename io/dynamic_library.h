@@ -47,7 +47,7 @@ static int _visit(DynamicLibrary* p_lib, const char* p_func_name, var* p_arg0, T
 		return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator bool());
 
 	} else if (p_arg0->get_type() == var::Type::INT) {
-		return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator int());
+		return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator int64_t());
 
 	} else if (p_arg0->get_type() == var::Type::FLOAT) {
 		return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator float());

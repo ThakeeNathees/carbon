@@ -43,6 +43,17 @@
 #define STRCAT4(m_1, m_2, m_3, m_4) m_1##m_2##m_3##m_4
 #define STRCAT5(m_1, m_2, m_3, m_4, m_5) m_1##m_2##m_3##m_4##m_5
 
+#define THROW_INVALID_INDEX(m_size, m_ind)                                                            \
+if (m_ind < 0 || m_size <= m_ind) {                                                                   \
+	throw Error(Error::INVALID_INDEX, String::format("Index %s = %lli is out of bounds (%s = %lli)",  \
+		STRINGIFY(m_size), m_size, STRINGIFY(m_ind), m_ind));                                         \
+} else ((void)0)
+
+#define THROW_IF_NULLPTR(m_ptr)                                                                       \
+if (m_ptr == nullptr){                                                                                \
+	throw Error(Error::NULL_POINTER, String::format("The pointer \"%s\" is null", STRINGIFY(m_ptr))); \
+} else ((void)0)
+
 #include "var.h/_var.h"
 using namespace varh;
 
@@ -77,17 +88,41 @@ public:
 	};
 
 	const char* what() const noexcept override { return msg.c_str(); }
+
 	Type get_type() const { return type; }
 	Vect2i get_pos() const { return pos; }
+
+	String get_file() const noexcept { return file.c_str(); }
+	String get_line() const { return line; }
+	String get_line_pos() const {
+		std::stringstream ss_pos;
+		size_t cur_col = 0;
+		for (size_t i = 0; i < line.size(); i++) {
+			cur_col++;
+			if (cur_col == pos.y) {
+				ss_pos << '^';
+				break;
+			} else if (line[i] != '\t') {
+				ss_pos << ' ';
+			} else {
+				ss_pos << '\t';
+			}
+		}
+		return String(line + ((line[line.size()-1] != '\n')? "\n" : "") + ss_pos.str()).c_str();
+	}
 
 	Error() {}
 	Error(Type p_type) { type = p_type; }
 	Error(Type p_type, const String& p_msg) { type = p_type; msg = p_msg; }
+
 	Error(Type p_type, const String& p_msg, const Vect2i p_pos) { type = p_type; msg = p_msg; pos = p_pos; }
+	Error(Type p_type, const String& p_msg, const String& p_file, const String& p_line, const Vect2i p_pos) { type = p_type; msg = p_msg; file = p_file; line = p_line; pos = p_pos; }
 
 private:
 	Type type = OK;
 	String msg = "<NO-ERROR-MSG-SET>";
+	String file = "<NO-FILE-SET>";
+	String line = "<NO-LINE-SET>";
 	Vect2i pos = Vect2i(-1, -1);
 };
 

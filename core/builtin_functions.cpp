@@ -34,10 +34,11 @@ const char* BuiltinFunctions::get_func_name(BuiltinFunctions::Type p_func) {
 		"min",
 		"max",
 		"pow",
-		"_FUNC_MAX_",
+		nullptr,
 	};
 	return func_names[(int)p_func];
 }
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
 
 void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) {
 	switch (p_func) {
@@ -83,8 +84,8 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 			r_ret = pow(p_args[0].operator double(), p_args[1].operator double());
 		} break;
 
-
 	}
+	MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
 }
 
 }
