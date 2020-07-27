@@ -28,7 +28,7 @@
 
 #include "core.h"
 #include "builtin_functions.h"
-#include "builtin_classes.h"
+#include "builtin_types.h"
 
 namespace carbon {
 
@@ -98,7 +98,11 @@ enum class Token {
 	KWORD_IF,
 	KWORD_ELSE,
 	KWORD_WHILE,
-	KWORD_FOR,
+	//KWORD_FOR, 
+/*  var i = 0; while(i < 10) { i += 1;
+		print(i);
+	} 
+*/
 	KWORD_SWITCH,
 	KWORD_BREAK,
 	KWORD_CONTINUE,
@@ -123,7 +127,7 @@ struct TokenData {
 	// Identifiers.
 	String identifier;
 	BuiltinFunctions::Type builtin_func = BuiltinFunctions::Type::UNKNOWN;
-	BuiltinClasses::Class builtin_class = BuiltinClasses::Class::_NULL;
+	BuiltinTypes::Type builtin_class = BuiltinTypes::Type::_NULL;
 	var::Type biltin_type = var::Type::_NULL;
 };
 

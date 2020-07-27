@@ -30,14 +30,17 @@
 
 namespace carbon {
 
-#define THROW_PARSER_ERR(m_err_type, m_msg, m_line, m_col)                                                                                \
-	if (m_line > 0 && m_col > 0) {                                                                                                        \
-		throw Error(m_err_type, String::format("%s\n%s", m_msg, _error_pos_str(m_line, m_col).c_str()), Vect2i(m_line, m_col));           \
-	} else {                                                                                                                              \
-		int line = tokenizer->get_line(), col = tokenizer->get_col();                                                                     \
-		throw Error(m_err_type, String::format("%s\n%s", m_msg, _error_pos_str(line, col).c_str()), Vect2i(line, col));                   \
+#define CURRENT_PARSER_POS() Vect2i(tokenizer->get_line(), tokenizer->get_col())
+
+#define THROW_PARSER_ERR(m_err_type, m_msg, m_line, m_col)                                                                               \
+	if (m_line > 0 && m_col > 0) {                                                                                                       \
+		throw Error(m_err_type, m_msg, file_node->path, get_line(m_line), Vect2i(m_line, m_col));                                        \
+	} else {                                                                                                                             \
+		int line = tokenizer->get_line(), col = tokenizer->get_col();                                                                    \
+		throw Error(m_err_type, m_msg, file_node->path, get_line(line), Vect2i(line, col));                                              \
 	}
 
+// TODO: error message like above.
 #define THROW_UNEXP_TOKEN(m_tk)                                                                                                           \
 	if (m_tk != "") {                                                                                                                     \
 		THROW_PARSER_ERR(Error::SYNTAX_ERROR,                                                                                             \
@@ -81,7 +84,7 @@ public:
 			CONTROL_FLOW,
 		};
 		Type type;
-		int line, col;
+		Vect2i pos;
 		ptr<Node> parernt_node;
 	};
 
@@ -230,11 +233,11 @@ public:
 	};
 
 	struct BuiltinClassNode : public Node {
-		BuiltinClasses::Class cls;
+		BuiltinTypes::Type cls;
 		BuiltinClassNode() {
 			type = Type::BUILTIN_CLASS;
 		}
-		BuiltinClassNode(BuiltinClasses::Class p_cls) {
+		BuiltinClassNode(BuiltinTypes::Type p_cls) {
 			type = Type::BUILTIN_CLASS;
 			cls = p_cls;
 		}
@@ -283,6 +286,8 @@ public:
 
 			OP_POSITIVE,
 			OP_NEGATIVE,
+
+			__OP_MAX__,
 		};
 		OpType op_type;
 		stdvec<ptr<Node>> args;
@@ -321,40 +326,29 @@ protected:
 
 private:
 	struct Expr {
-		Expr(OperatorNode::OpType p_op) { _is_op = true; op = p_op; }
-		Expr(const ptr<Node>& p_node) { _is_op = false; expr = p_node; }
+		Expr(OperatorNode::OpType p_op, const Vect2i& p_pos) { _is_op = true; op = p_op; pos = p_pos; }
+		Expr(const ptr<Node>& p_node) { _is_op = false; expr = p_node; pos = p_node->pos; }
 		Expr(const Expr& p_other) {
 			if (p_other._is_op) { _is_op = true; op = p_other.op; } else { _is_op = false; expr = p_other.expr; }
+			pos = p_other.pos;
 		}
 		Expr& operator=(const Expr& p_other) {
 			if (p_other._is_op) { _is_op = true; op = p_other.op; } else { _is_op = false; expr = p_other.expr; }
+			pos = p_other.pos;
 			return *this;
 		}
 		~Expr() { if (!_is_op) { expr = nullptr; } }
 
 		bool is_op() const { return _is_op; }
+		Vect2i get_pos() const { return pos; }
 		OperatorNode::OpType get_op() const { return op; }
 		ptr<Node>& get_expr() { return expr; }
+
 	private:
 		bool _is_op = true;
-		
+		Vect2i pos;
 		OperatorNode::OpType op;
 		ptr<Node> expr;
-	};
-
-	struct IdentifierLocation {
-		bool found = false;
-		int line = 0, col = 0;
-		String file_path;
-		Node::Type type = Node::Type::UNKNOWN;
-		IdentifierLocation() {}
-		IdentifierLocation(const ptr<Node>& p_node, const String& p_file_path) {
-			found = true;
-			file_path = p_file_path;
-			line = p_node->line;
-			col = p_node->col;
-			type = p_node->type;
-		}
 	};
 
 	// Methods.
@@ -362,8 +356,7 @@ private:
 	template<typename T=Node, typename... Targs>
 	ptr<T> new_node(Targs... p_args) {
 		ptr<T> ret = newptr<T>(p_args...);
-		ret->line = tokenizer->get_line();
-		ret->col = tokenizer->get_col();
+		ret->pos = CURRENT_PARSER_POS();
 		return ret;
 	}
 
@@ -382,7 +375,7 @@ private:
 	ptr<Node> _reduce_operator_tree(stdvec<Expr>& p_expr);
 	static int _get_operator_precedence(OperatorNode::OpType p_op);
 
-	String _error_pos_str(int p_line, int p_col) const;
+	String get_line(int p_line) const;
 
 	// Members.
 	ptr<FileNode> file_node;

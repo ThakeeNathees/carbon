@@ -67,7 +67,7 @@ static KeywordName _keyword_name_list[] = {
 	{ "if",       Token::KWORD_IF		     },
 	{ "else",     Token::KWORD_ELSE	         },
 	{ "while",    Token::KWORD_WHILE	     },
-	{ "for",      Token::KWORD_FOR		     },
+	//{ "for",      Token::KWORD_FOR		     },
 	{ "switch",   Token::KWORD_SWITCH		 },
 	{ "break",    Token::KWORD_BREAK	     },
 	{ "continue", Token::KWORD_CONTINUE      },
@@ -76,6 +76,7 @@ static KeywordName _keyword_name_list[] = {
 	{ "super",    Token::KWORD_SUPER         },
 	{ "return",   Token::KWORD_RETURN	     },
 };
+MISSED_ENUM_CHECK(Token::_TK_MAX_, 70);
 
 struct BuiltinFuncName { const char* name; BuiltinFunctions::Type func; };
 static BuiltinFuncName _builtin_func_list[] = {
@@ -86,6 +87,7 @@ static BuiltinFuncName _builtin_func_list[] = {
 	{ "max",   BuiltinFunctions::Type::MATH_MAX },
 	{ "pow",   BuiltinFunctions::Type::MATH_POW },
 };
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
 
 void Tokenizer::_eat_escape(String& p_str) {
 	char c = GET_CHAR(0);

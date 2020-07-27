@@ -27,79 +27,6 @@
 
 namespace carbon {
 
-//#define THROW_IF_ALREADY_FOUND(m_identifier, m_node)                                                                                \
-//	do {                                                                                                                                  \
-//		IdentifierLocation loc = _find_identifier_location(m_identifier, m_node);                                                         \
-//		if (loc.found) {                                                                                                                  \
-//			THROW_PARSER_ERR(Error::ALREADY_DEFINED, String::format("Identifier %s already defined at %s:%i", loc.file_path, loc.line));            \
-//		}                                                                                                                                 \
-//	} while (false)
-//
-//void Parser::THROW_PARSER_ERR(Error::Type p_type, const String& p_msg, int p_line) {
-//	if (p_line > 0) {
-//		throw Error(p_type, p_msg, Vect2i(p_line, 0));
-//	} else {
-//		throw Error(p_type, p_msg, Vect2i(tokenizer->get_line(), 0));
-//	}
-//}
-
-// TODO: refector after class
-//Parser::IdentifierLocation Parser::_find_identifier_location(const String& p_name, const ptr<Node> p_node) const {
-//	ASSERT(p_node == nullptr || p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::CLASS);
-//
-//	// if class scope no need to check outer scope
-//	if (p_node && p_node->type == Node::Type::CLASS) {
-//		for (const ptr<VarNode>& lv : ptrcast<ClassNode>(p_node)->members) {
-//			if (lv->name == p_name) {
-//				return IdentifierLocation(p_node, file_path);
-//			}
-//		}
-//		return IdentifierLocation();
-//	}
-//
-//	ptr<Node> outer_node = p_node;
-//	while (outer_node) {
-//		switch (outer_node->type) {
-//
-//			case Node::Type::BLOCK: {
-//				for (const ptr<VarNode>& local_var : ptrcast<BlockNode>(outer_node)->local_vars) {
-//					if (local_var->name == p_name) {
-//						return IdentifierLocation(outer_node, file_path);
-//					}
-//				}
-//			}
-//			case Node::Type::FUNCTION: {
-//				for (const String& arg : ptrcast<FunctionNode>(outer_node)->args) {
-//					if (arg == p_name) {
-//						return IdentifierLocation(outer_node, file_path);
-//					}
-//				}
-//			}
-//		}
-//		outer_node = outer_node->parernt_node;
-//	}
-//
-//	for (const ptr<ClassNode>& struct_node : file_node->classes) {
-//		if (struct_node->name == p_name) {
-//			return IdentifierLocation(struct_node, file_path);
-//		}
-//	}
-//	for (const ptr<EnumNode>& enum_node : file_node->enums) {
-//		if (enum_node->name == p_name) {
-//			return IdentifierLocation(enum_node, file_path);
-//		}
-//	}
-//	for (const ptr<FunctionNode>& func_node : file_node->functions) {
-//		if (func_node->name == p_name) {
-//			return IdentifierLocation(func_node, file_path);
-//		}
-//	}
-//
-//	// TODO: find from import lib, binary
-//
-//	return IdentifierLocation();
-//}
-
 void Parser::parse(String p_source, String p_file_path) {
 
 	file_node = new_node<FileNode>();
@@ -316,7 +243,7 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node, bool p_static)
 			tk = &tokenizer->next();
 			if (tk->type == Token::OP_EQ) {
 				ptr<Node> expr = _parse_expression(p_node, p_static);
-				_reduce_expression(expr);
+				//_reduce_expression(expr); TODO: reduce after all are parsed.
 				var_node->assignment = expr;
 
 				tk = &tokenizer->next();
@@ -367,39 +294,24 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent, bool p_static)
 	return func_node;
 }
 
-String Parser::_error_pos_str(int p_line, int p_col) const {
+String Parser::get_line(int p_line) const {
 	const char* source = file_node->source.c_str();
 	int cur_line = 1;
-	int cur_col = 0;
 	std::stringstream ss_line;
-	std::stringstream ss_pos;
-	while (char c = *source) {
-		cur_col++;
 
+	while (char c = *source) {
 		if (c == '\n') {
 			if (cur_line >= p_line) {
-				ASSERT(cur_col >= p_col);
 				break;
 			}
 			cur_line++;
-			cur_col = 0;
-
 		} else if (cur_line == p_line) {
 			ss_line << c;
-			
-			if (cur_col == p_col) {
-				ss_pos << '^';
-			} else if (c != '\t') {
-				ss_pos << ' ';
-			} else {
-				ss_pos << '\t';
-			}
 		}
-
 		source++;
 	}
 
-	ss_line << '\n' << ss_pos.str();
+	ss_line << '\n';
 	return ss_line.str();
 }
 
