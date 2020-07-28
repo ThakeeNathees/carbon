@@ -100,7 +100,9 @@ public:
 		for (size_t i = 0; i < line.size(); i++) {
 			cur_col++;
 			if (cur_col == pos.y) {
-				ss_pos << '^';
+				for (uint32_t i = 0; i < err_len; i++) {
+					ss_pos << '^';
+				}
 				break;
 			} else if (line[i] != '\t') {
 				ss_pos << ' ';
@@ -115,8 +117,17 @@ public:
 	Error(Type p_type) { type = p_type; }
 	Error(Type p_type, const String& p_msg) { type = p_type; msg = p_msg; }
 
-	Error(Type p_type, const String& p_msg, const Vect2i p_pos) { type = p_type; msg = p_msg; pos = p_pos; }
-	Error(Type p_type, const String& p_msg, const String& p_file, const String& p_line, const Vect2i p_pos) { type = p_type; msg = p_msg; file = p_file; line = p_line; pos = p_pos; }
+	Error(Type p_type, const String& p_msg, const Vect2i p_pos, uint32_t p_err_len = 1) { 
+		type = p_type; msg = p_msg; pos = p_pos; err_len = p_err_len; 
+	}
+	Error(Type p_type, const String& p_msg, const String& p_file, const String& p_line, const Vect2i p_pos, uint32_t p_err_len = 1) {
+		type = p_type; msg = p_msg; file = p_file; line = p_line; pos = p_pos; err_len = p_err_len;
+	}
+
+	Error& set_file(const String& p_file) { file = p_file;    return *this; }
+	Error& set_line(const String& p_line) { line = p_line;    return *this; }
+	Error& set_pos(const Vect2i& p_pos)   { pos = p_pos;      return *this; }
+	Error& set_err_len(uint32_t p_len)    { err_len = p_len;  return *this; }
 
 private:
 	Type type = OK;
@@ -124,6 +135,7 @@ private:
 	String file = "<NO-FILE-SET>";
 	String line = "<NO-LINE-SET>";
 	Vect2i pos = Vect2i(-1, -1);
+	uint32_t err_len = 1;
 };
 
 }

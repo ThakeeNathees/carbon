@@ -129,6 +129,8 @@ struct TokenData {
 	BuiltinFunctions::Type builtin_func = BuiltinFunctions::Type::UNKNOWN;
 	BuiltinTypes::Type builtin_class = BuiltinTypes::Type::_NULL;
 	var::Type biltin_type = var::Type::_NULL;
+
+	String to_string() const;
 };
 
 
@@ -140,17 +142,25 @@ public:
 	const TokenData& next(int p_offset = 0) { 
 		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }
 		token_ptr += p_offset;
-		const TokenData& tk = tokens[token_ptr++];
-		cur_line = tk.line; cur_col = tk.col;
-		return tk;
+		tk_last = &tokens[token_ptr++];
+		cur_line = tk_last->line; cur_col = tk_last->col;
+		return *tk_last;
 	}
-	const TokenData& peek(int p_offset = 0) const {
+	const TokenData& peek(int p_offset = 0) {
 		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }
-		return tokens[token_ptr+p_offset];
+		tk_last = &tokens[token_ptr+p_offset];
+		return *tk_last;
+	}
+
+	const TokenData& last() const {
+		if (tk_last == nullptr) throw Error(Error::INTERNAL_BUG, "The pointer tk_last was nullptr.");
+		return *tk_last;
 	}
 
 	int get_line() const { return cur_line; }
 	int get_col() const { return cur_col; }
+
+	static const char* get_token_name(Token p_tk);
 
 protected:
 
@@ -165,6 +175,7 @@ private:
 	// Members.
 	String source;
 	stdvec<TokenData> tokens;
+	TokenData* tk_last = nullptr; // Last seen token from next() or peek()
 	int cur_line = 1, cur_col = 1;
 	int char_ptr = 0;
 	int token_ptr = 0; // for next()

@@ -46,7 +46,7 @@ protected:
 		log(p_msg, true, ConsoleColor::D_YELLOW);
 	}
 	virtual void log_error_impl(const char* p_msg) {
-		log(p_msg, true, ConsoleColor::L_RED);
+		log(p_msg, true, ConsoleColor::D_RED);
 	}
 
 	virtual void logf_impl(const char* p_fmt, va_list p_list) {
@@ -59,7 +59,7 @@ protected:
 		logf(p_fmt, p_list, true, ConsoleColor::D_YELLOW);
 	}
 	virtual void logf_error_impl(const char* p_fmt, va_list p_list) {
-		logf(p_fmt, p_list, true, ConsoleColor::L_RED);
+		logf(p_fmt, p_list, true, ConsoleColor::D_RED);
 	}
 
 public:

@@ -32,32 +32,27 @@ namespace carbon {
 
 #define CURRENT_PARSER_POS() Vect2i(tokenizer->get_line(), tokenizer->get_col())
 
-#define THROW_PARSER_ERR(m_err_type, m_msg, m_line, m_col)                                                                               \
-	if (m_line > 0 && m_col > 0) {                                                                                                       \
-		throw Error(m_err_type, m_msg, file_node->path, get_line(m_line), Vect2i(m_line, m_col));                                        \
-	} else {                                                                                                                             \
-		int line = tokenizer->get_line(), col = tokenizer->get_col();                                                                    \
-		throw Error(m_err_type, m_msg, file_node->path, get_line(line), Vect2i(line, col));                                              \
+#define THROW_PARSER_ERR(m_err_type, m_msg, m_line, m_col)                                                             \
+	uint32_t err_len = 1;                                                                                              \
+	String token_str = tokenizer->last().to_string();                                                                  \
+	if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;            \
+	else err_len = (uint32_t)token_str.size();                                                                         \
+	if (m_line > 0 && m_col > 0) {                                                                                     \
+		throw Error(m_err_type, m_msg, file_node->path, get_line(m_line), Vect2i(m_line, m_col), err_len);             \
+	} else {                                                                                                           \
+		int line = tokenizer->get_line(), col = tokenizer->get_col();                                                  \
+		throw Error(m_err_type, m_msg, file_node->path, get_line(line), CURRENT_PARSER_POS(), err_len);                \
 	}
 
-// TODO: error message like above.
-#define THROW_UNEXP_TOKEN(m_tk)                                                                                                           \
-	if (m_tk != "") {                                                                                                                     \
-		THROW_PARSER_ERR(Error::SYNTAX_ERROR,                                                                                             \
-			String::format("Unexpected token(\"%s\"). expected \"%s\"", "<tk_name>", m_tk).c_str(), -1, -1);                              \
-	} else {                                                                                                                              \
-		THROW_PARSER_ERR(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\").", "<tk_name>").c_str(), -1, -1);                  \
+#define THROW_UNEXP_TOKEN(m_tk)                                                                                        \
+	if (m_tk != "") {                                                                                                  \
+		THROW_PARSER_ERR(Error::SYNTAX_ERROR,                                                                          \
+			String::format("Unexpected token(\"%s\"). expected %s.",                                                   \
+				Tokenizer::get_token_name(tokenizer->last().type), m_tk).c_str(), -1, -1);                             \
+	} else {                                                                                                           \
+		THROW_PARSER_ERR(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\").",                              \
+			Tokenizer::get_token_name(tokenizer->last().type)).c_str(), -1, -1);                                       \
 	}
-
-#define THROW_IF_ALREADY_FOUND(m_identifier, m_node)                                                                                      \
-	do {                                                                                                                                  \
-		IdentifierLocation loc = _find_identifier_location(m_identifier, m_node);                                                         \
-		if (loc.found) {                                                                                                                  \
-			THROW_PARSER_ERR(Error::ALREADY_DEFINED,                                                                                      \
-				String::format("Identifier %s already defined at %s:%i", loc.file_path, loc.line).c_str());                               \
-		}                                                                                                                                 \
-	} while (false)
-
 
 class Parser {
 public:
@@ -360,8 +355,6 @@ private:
 		return ret;
 	}
 
-	//IdentifierLocation _find_identifier_location(const String& p_name, const ptr<Node> p_node) const;
-
 	ptr<ClassNode> _parse_class();
 	ptr<EnumNode> _parse_enum(ptr<Node> p_parent = nullptr);
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent, bool p_static);
@@ -375,7 +368,7 @@ private:
 	ptr<Node> _reduce_operator_tree(stdvec<Expr>& p_expr);
 	static int _get_operator_precedence(OperatorNode::OpType p_op);
 
-	String get_line(int p_line) const;
+	String get_line(int64_t p_line) const;
 
 	// Members.
 	ptr<FileNode> file_node;

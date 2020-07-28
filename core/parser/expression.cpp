@@ -233,8 +233,8 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 		MISSED_ENUM_CHECK(OperatorNode::OpType::__OP_MAX__, 36);
 
 		if (valid) {
+			tokenizer->next(); // Eat peeked token.
 			expressions.push_back(Expr(op, CURRENT_PARSER_POS()));
-			tk = &tokenizer->next();
 		} else {
 			break;
 		}
@@ -375,6 +375,7 @@ ptr<Parser::Node> Parser::_reduce_operator_tree(stdvec<Expr>& p_expr) {
 			ASSERT(!p_expr[next_op - 1].is_op() && !p_expr[next_op + 1].is_op());
 
 			ptr<OperatorNode> op_node = new_node<OperatorNode>(p_expr[next_op].get_op());
+			op_node->pos = p_expr[next_op].get_pos();
 
 			if (p_expr[next_op - 1].get_expr()->type == Node::Type::OPERATOR) {
 				switch (ptrcast<OperatorNode>(p_expr[next_op - 1].get_expr())->op_type) {
@@ -384,7 +385,8 @@ ptr<Parser::Node> Parser::_reduce_operator_tree(stdvec<Expr>& p_expr) {
 					case OperatorNode::OpType::OP_MULEQ:
 					case OperatorNode::OpType::OP_DIVEQ:
 					case OperatorNode::OpType::OP_MOD_EQ: {
-						THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", -1, -1);
+						Vect2i pos = ptrcast<OperatorNode>(p_expr[next_op - 1].get_expr())->pos;
+						THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", (int)pos.x, (int)pos.y);
 					}
 				}
 			}
@@ -460,8 +462,18 @@ void Parser::_reduce_expression(ptr<Node>& p_expr) {
 								args.push_back(ptrcast<ConstValueNode>(op->args[i])->value);
 							}
 							var ret;
-							BuiltinFunctions::call(bf->func, args, ret);
+							try {
+								BuiltinFunctions::call(bf->func, args, ret);
+							} catch (Error& err) {
+								throw err
+									.set_file(file_node->path)
+									.set_line(get_line(op->pos.x))
+									.set_pos(op->pos)
+									.set_err_len(String(BuiltinFunctions::get_func_name(bf->func)).size())
+								;
+							}
 							ptr<ConstValueNode> cv = new_node<ConstValueNode>(ret);
+							cv->pos = op->pos;
 							p_expr = cv;
 						}
 					}
