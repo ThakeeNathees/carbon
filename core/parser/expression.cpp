@@ -27,7 +27,7 @@
 
 namespace carbon {
 
-ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_static) {
+ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent) {
 	ASSERT(p_parent != nullptr);
 
 	stdvec<Expr> expressions;
@@ -38,23 +38,21 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 		ptr<Node> expr = nullptr;
 		
 		if (tk->type == Token::BRACKET_LPARAN) {
-			expr = _parse_expression(p_parent, p_static);
+			expr = _parse_expression(p_parent);
 
 			tk = &tokenizer->next();
 			if (tk->type != Token::BRACKET_RPARAN) {
-				THROW_UNEXP_TOKEN(")");
+				THROW_UNEXP_TOKEN("symbol \")\"");
 			}
 
 		} else if (tk->type == Token::KWORD_THIS) {
-			if (p_static) {
-				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Invalid use of \"self\" in static scope.", -1, -1);
-			}
+			if (parser_context.current_class == nullptr || (parser_context.current_func && parser_context.current_func->is_static))
+				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Keyword \"this\" only be used in non-static member function.", Vect2i());
 			expr = new_node<ThisNode>();
 
 		} else if (tk->type == Token::KWORD_SUPER) {
-			if (p_static) {
-				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Invalid use of \"super\" in static scope.", -1, -1);
-			}
+			if (parser_context.current_class == nullptr || (parser_context.current_func && parser_context.current_func->is_static))
+				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Keyword \"super\" only be used in non-static member function.", Vect2i());
 			expr = new_node<SuperNode>();
 
 		} else if (tk->type == Token::VALUE_FLOAT || tk->type == Token::VALUE_INT || tk->type == Token::VALUE_STRING) {
@@ -63,16 +61,16 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 		} else if (tk->type == Token::OP_PLUS || tk->type == Token::OP_MINUS || tk->type == Token::OP_NOT || tk->type == Token::OP_BIT_NOT) {
 			switch (tk->type) {
 				case Token::OP_PLUS:
-					expressions.push_back(Expr(OperatorNode::OpType::OP_POSITIVE, CURRENT_PARSER_POS()));
+					expressions.push_back(Expr(OperatorNode::OpType::OP_POSITIVE, tokenizer->get_pos()));
 					break;
 				case Token::OP_MINUS:
-					expressions.push_back(Expr(OperatorNode::OpType::OP_NEGATIVE, CURRENT_PARSER_POS()));
+					expressions.push_back(Expr(OperatorNode::OpType::OP_NEGATIVE, tokenizer->get_pos()));
 					break;
 				case Token::OP_NOT:
-					expressions.push_back(Expr(OperatorNode::OpType::OP_NOT, CURRENT_PARSER_POS()));
+					expressions.push_back(Expr(OperatorNode::OpType::OP_NOT, tokenizer->get_pos()));
 					break;
 				case Token::OP_BIT_NOT:
-					expressions.push_back(Expr(OperatorNode::OpType::OP_BIT_NOT, CURRENT_PARSER_POS()));
+					expressions.push_back(Expr(OperatorNode::OpType::OP_BIT_NOT, tokenizer->get_pos()));
 					break;
 			}
 			continue;
@@ -90,7 +88,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 
 			tk = &tokenizer->next();
 			ASSERT(tk->type == Token::BRACKET_LPARAN);
-			call->args = _parse_arguments(p_parent, p_static);
+			call->args = _parse_arguments(p_parent);
 			expr = call;
 
 		} else if (tk->type == Token::IDENTIFIER) {
@@ -120,7 +118,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 						done = true;
 						break;
 					default:
-						ptr<Node> subexpr = _parse_expression(p_parent, p_static);
+						ptr<Node> subexpr = _parse_expression(p_parent);
 						arr->elements.push_back(subexpr);
 						comma_valid = true;
 				}
@@ -150,7 +148,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 					call->args.push_back(expr);
 					call->args.push_back(new_node<IdentifierNode>(tk->identifier));
 					tk = &tokenizer->next();
-					call->args = _parse_arguments(p_parent, p_static);
+					call->args = _parse_arguments(p_parent);
 
 					expr = call;
 
@@ -169,10 +167,10 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 				ptr<OperatorNode> ind_mapped = new_node<OperatorNode>(OperatorNode::OpType::OP_INDEX_MAPPED);
 
 				tk = &tokenizer->next();
-				ptr<Node> key = _parse_expression(p_parent, p_static);
+				ptr<Node> key = _parse_expression(p_parent);
 				tk = &tokenizer->next();
 				if (tk->type != Token::BRACKET_RSQ) {
-					THROW_UNEXP_TOKEN("}");
+					THROW_UNEXP_TOKEN("symbol \"}\"");
 				}
 
 				ind_mapped->args.push_back(expr);
@@ -234,7 +232,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 
 		if (valid) {
 			tokenizer->next(); // Eat peeked token.
-			expressions.push_back(Expr(op, CURRENT_PARSER_POS()));
+			expressions.push_back(Expr(op, tokenizer->get_pos()));
 		} else {
 			break;
 		}
@@ -244,7 +242,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_st
 
 }
 
-stdvec<ptr<Parser::Node>> Parser::_parse_arguments(const ptr<Node>& p_parent, bool p_static) {
+stdvec<ptr<Parser::Node>> Parser::_parse_arguments(const ptr<Node>& p_parent) {
 	const TokenData* tk = &tokenizer->peek();
 	stdvec<ptr<Node>> args;
 
@@ -253,7 +251,7 @@ stdvec<ptr<Parser::Node>> Parser::_parse_arguments(const ptr<Node>& p_parent, bo
 	} else {
 		while (true) {
 
-			ptr<Node> arg = _parse_expression(p_parent, p_static);
+			ptr<Node> arg = _parse_expression(p_parent);
 			args.push_back(arg);
 
 			tk = &tokenizer->next();
@@ -358,7 +356,7 @@ ptr<Parser::Node> Parser::_reduce_operator_tree(stdvec<Expr>& p_expr) {
 			int next_expr = next_op;
 			while (p_expr[next_expr].is_op()) {
 				if (++next_expr == p_expr.size()) {
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "", -1, -1);
+					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "", Vect2i());
 				}
 			}
 
@@ -386,7 +384,7 @@ ptr<Parser::Node> Parser::_reduce_operator_tree(stdvec<Expr>& p_expr) {
 					case OperatorNode::OpType::OP_DIVEQ:
 					case OperatorNode::OpType::OP_MOD_EQ: {
 						Vect2i pos = ptrcast<OperatorNode>(p_expr[next_op - 1].get_expr())->pos;
-						THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", (int)pos.x, (int)pos.y);
+						THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", Vect2i(pos.x, pos.y));
 					}
 				}
 			}
@@ -400,7 +398,7 @@ ptr<Parser::Node> Parser::_reduce_operator_tree(stdvec<Expr>& p_expr) {
 					case OperatorNode::OpType::OP_DIVEQ:
 					case OperatorNode::OpType::OP_MOD_EQ: {
 						Vect2i pos = ptrcast<OperatorNode>(p_expr[next_op + 1].get_expr())->pos;
-						THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", (int)pos.x, (int)pos.y);
+						THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", Vect2i(pos.x, pos.y));
 					}
 				}
 			}
@@ -467,9 +465,9 @@ void Parser::_reduce_expression(ptr<Node>& p_expr) {
 							} catch (Error& err) {
 								throw err
 									.set_file(file_node->path)
-									.set_line(get_line(op->pos.x))
+									.set_line(file_node->source.get_line(op->pos.x))
 									.set_pos(op->pos)
-									.set_err_len(String(BuiltinFunctions::get_func_name(bf->func)).size())
+									.set_err_len((uint32_t)String(BuiltinFunctions::get_func_name(bf->func)).size())
 								;
 							}
 							ptr<ConstValueNode> cv = new_node<ConstValueNode>(ret);

@@ -142,23 +142,28 @@ public:
 	const TokenData& next(int p_offset = 0) { 
 		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }
 		token_ptr += p_offset;
-		tk_last = &tokens[token_ptr++];
-		cur_line = tk_last->line; cur_col = tk_last->col;
-		return *tk_last;
-	}
-	const TokenData& peek(int p_offset = 0) {
-		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }
-		tk_last = &tokens[token_ptr+p_offset];
-		return *tk_last;
+		cur_line = tokens[token_ptr].line; cur_col = tokens[token_ptr].col;
+		return tokens[token_ptr++];
 	}
 
-	const TokenData& last() const {
-		if (tk_last == nullptr) throw Error(Error::INTERNAL_BUG, "The pointer tk_last was nullptr.");
-		return *tk_last;
+	const TokenData& peek(int p_offset = 0, bool p_safe = false) {
+		static TokenData tmp;
+		if (token_ptr + p_offset >= (int)tokens.size()) {
+			if (p_safe) return tmp;
+			else throw Error(Error::INVALID_INDEX); 
+		}
+		return tokens[token_ptr + p_offset];
 	}
 
-	int get_line() const { return cur_line; }
-	int get_col() const { return cur_col; }
+	Vect2i get_pos() const { return Vect2i(cur_line, cur_col); }
+	const TokenData& get_token_at(const Vect2i& p_pos) const {
+		for (size_t i = 0; i < tokens.size(); i++) {
+			if (tokens[i].line == p_pos.x && tokens[i].col == p_pos.y) {
+				return tokens[i];
+			}
+		}
+		throw Error(Error::INTERNAL_BUG, "TokenData::get_token_at() called with invalid position.");
+	}
 
 	static const char* get_token_name(Token p_tk);
 
@@ -175,8 +180,9 @@ private:
 	// Members.
 	String source;
 	stdvec<TokenData> tokens;
-	TokenData* tk_last = nullptr; // Last seen token from next() or peek()
+
 	int cur_line = 1, cur_col = 1;
+	
 	int char_ptr = 0;
 	int token_ptr = 0; // for next()
 

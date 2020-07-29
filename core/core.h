@@ -121,7 +121,6 @@ do {                                                                            
 		if (!(m_cond)) {                                                                                     \
 			printf("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond));  \
 			throw Error(Error::INTERNAL_BUG);                                                                \
-			/*_CRASH();*/     /* debug break could skipped by debugger stepping */                           \
 		}                                                                                                    \
 	} while (false)
 

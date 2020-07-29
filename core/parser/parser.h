@@ -30,29 +30,35 @@
 
 namespace carbon {
 
-#define CURRENT_PARSER_POS() Vect2i(tokenizer->get_line(), tokenizer->get_col())
+#define THROW_PARSER_ERR(m_err_type, m_msg, m_pos)                                                                         \
+	do {                                                                                                                   \
+		uint32_t err_len = 1;                                                                                              \
+		String token_str = "";                                                                                             \
+		if (m_pos.x > 0 && m_pos.y > 0) token_str = tokenizer->get_token_at(m_pos).to_string();                            \
+		else token_str = tokenizer->peek(-1, true).to_string();                                                            \
+		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;            \
+		else err_len = (uint32_t)token_str.size();                                                                         \
+																														   \
+		if (m_pos.x > 0 && m_pos.y > 0) {                                                                                  \
+			String line = file_node->source.get_line(m_pos.x);                                                             \
+			throw Error(m_err_type, m_msg, file_node->path, line, m_pos, err_len);                                         \
+		} else {                                                                                                           \
+			String line = file_node->source.get_line(tokenizer->get_pos().x);                                              \
+			throw Error(m_err_type, m_msg, file_node->path, line, tokenizer->get_pos(), err_len);                          \
+		}                                                                                                                  \
+	} while (false)
 
-#define THROW_PARSER_ERR(m_err_type, m_msg, m_line, m_col)                                                             \
-	uint32_t err_len = 1;                                                                                              \
-	String token_str = tokenizer->last().to_string();                                                                  \
-	if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;            \
-	else err_len = (uint32_t)token_str.size();                                                                         \
-	if (m_line > 0 && m_col > 0) {                                                                                     \
-		throw Error(m_err_type, m_msg, file_node->path, get_line(m_line), Vect2i(m_line, m_col), err_len);             \
-	} else {                                                                                                           \
-		int line = tokenizer->get_line(), col = tokenizer->get_col();                                                  \
-		throw Error(m_err_type, m_msg, file_node->path, get_line(line), CURRENT_PARSER_POS(), err_len);                \
-	}
-
-#define THROW_UNEXP_TOKEN(m_tk)                                                                                        \
-	if (m_tk != "") {                                                                                                  \
-		THROW_PARSER_ERR(Error::SYNTAX_ERROR,                                                                          \
-			String::format("Unexpected token(\"%s\"). expected %s.",                                                   \
-				Tokenizer::get_token_name(tokenizer->last().type), m_tk).c_str(), -1, -1);                             \
-	} else {                                                                                                           \
-		THROW_PARSER_ERR(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\").",                              \
-			Tokenizer::get_token_name(tokenizer->last().type)).c_str(), -1, -1);                                       \
-	}
+#define THROW_UNEXP_TOKEN(m_tk)                                                                                            \
+	do {                                                                                                                   \
+		if (m_tk != "") {                                                                                                  \
+			THROW_PARSER_ERR(Error::SYNTAX_ERROR,                                                                          \
+				String::format("Unexpected token(\"%s\"). expected %s.",                                                   \
+					Tokenizer::get_token_name(tokenizer->peek(-1, true).type), m_tk).c_str(), Vect2i());                   \
+		} else {                                                                                                           \
+			THROW_PARSER_ERR(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\").",                              \
+				Tokenizer::get_token_name(tokenizer->peek(-1, true).type)).c_str(), Vect2i());                             \
+		}                                                                                                                  \
+	} while (false)
 
 class Parser {
 public:
@@ -101,7 +107,7 @@ public:
 		String path;
 		String source;
 		stdvec<ptr<FileNode>> imports;
-		stdvec<ptr<VarNode>> file_vars;
+		stdvec<ptr<VarNode>> vars; // Global vars.
 		stdvec<ptr<ClassNode>> classes;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<FunctionNode>> functions;
@@ -135,7 +141,7 @@ public:
 
 	struct FunctionNode : public Node {
 		String name;
-		bool is_static = true; // All functions are static by default.
+		bool is_static = false;
 		stdvec<String> args;
 		ptr<BlockNode> body;
 		FunctionNode() {
@@ -298,8 +304,7 @@ public:
 	struct ControlFlowNode : public Node {
 		enum class CfType {
 			IF,
-			FOR,      // for ( var i = 0; i < 10; i++ ) { }
-			FOR_EACH, // for ( var i : a_list ) { }
+			SWITCH,
 			WHILE,
 			BREAK,
 			CONTINUE,
@@ -308,7 +313,7 @@ public:
 		CfType cf_type;
 		stdvec<ptr<Node>> args;
 		ptr<BlockNode> body;
-		ptr<BlockNode> body_else; // for cf if node
+		ptr<BlockNode> body_else; // For if node.
 		ControlFlowNode() {
 			type = Type::CONTROL_FLOW;
 		}
@@ -346,33 +351,37 @@ private:
 		ptr<Node> expr;
 	};
 
+	struct ParserContext {
+		ClassNode* current_class = nullptr;
+		FunctionNode* current_func = nullptr;
+	};
+
 	// Methods.
 
 	template<typename T=Node, typename... Targs>
 	ptr<T> new_node(Targs... p_args) {
 		ptr<T> ret = newptr<T>(p_args...);
-		ret->pos = CURRENT_PARSER_POS();
+		ret->pos = tokenizer->get_pos();
 		return ret;
 	}
 
 	ptr<ClassNode> _parse_class();
 	ptr<EnumNode> _parse_enum(ptr<Node> p_parent = nullptr);
-	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent, bool p_static);
-	ptr<FunctionNode> _parse_func(ptr<Node> p_parent, bool p_static);
+	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent);
+	ptr<FunctionNode> _parse_func(ptr<Node> p_parent);
 	ptr<BlockNode> _parse_block(const ptr<Node>& p_parent);
 
-	ptr<Node> _parse_expression(const ptr<Node>& p_parent, bool p_static);
-	stdvec<ptr<Node>> _parse_arguments(const ptr<Node>& p_parent, bool p_static);
+	ptr<Node> _parse_expression(const ptr<Node>& p_parent);
+	stdvec<ptr<Node>> _parse_arguments(const ptr<Node>& p_parent);
 	void _reduce_expression(ptr<Node>& p_expr);
 
 	ptr<Node> _reduce_operator_tree(stdvec<Expr>& p_expr);
 	static int _get_operator_precedence(OperatorNode::OpType p_op);
 
-	String get_line(int64_t p_line) const;
-
 	// Members.
 	ptr<FileNode> file_node;
 	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
+	ParserContext parser_context;
 };
 
 

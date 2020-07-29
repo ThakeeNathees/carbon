@@ -48,11 +48,21 @@ namespace carbon {
 ( (c == '_') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') )
 
 
-#define ERROR(m_type, m_msg)                                \
-do {                                                        \
-    /*TODO: msg += __LINE__, __FUNCTION__*/                 \
-	throw Error(m_type, m_msg, Vect2i(cur_line, cur_col));  \
-} while (false)
+/*TODO: msg += __LINE__, __FUNCTION__*/
+#define ERROR(m_err_type, m_msg)                                                                                     \
+	do {                                                                                                             \
+		uint32_t err_len = 1;                                                                                        \
+		String token_str = peek(-1, true).to_string();                                                               \
+		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;      \
+		else err_len = (uint32_t)token_str.size();                                                                   \
+		throw Error(m_err_type, m_msg, "", source.get_line(cur_line), Vect2i(cur_line, cur_col), err_len);           \
+	} while (false)
+
+
+//#define ERROR(m_type, m_msg)                                \
+//do {                                                        \
+//	throw Error(m_type, m_msg, Vect2i(cur_line, cur_col));  \
+//} while (false)
 
 struct KeywordName { const char* name; Token tk; };
 static KeywordName _keyword_name_list[] = {
@@ -67,7 +77,7 @@ static KeywordName _keyword_name_list[] = {
 	{ "if",       Token::KWORD_IF		     },
 	{ "else",     Token::KWORD_ELSE	         },
 	{ "while",    Token::KWORD_WHILE	     },
-	//{ "for",      Token::KWORD_FOR		     },
+	//{ "for",    Token::KWORD_FOR		     },
 	{ "switch",   Token::KWORD_SWITCH		 },
 	{ "break",    Token::KWORD_BREAK	     },
 	{ "continue", Token::KWORD_CONTINUE      },
@@ -80,7 +90,7 @@ MISSED_ENUM_CHECK(Token::_TK_MAX_, 70);
 
 struct BuiltinFuncName { const char* name; BuiltinFunctions::Type func; };
 static BuiltinFuncName _builtin_func_list[] = {
-	// { "", BuiltinFunctions::Function::UNKNOWN  },
+	//{ "", BuiltinFunctions::Function::UNKNOWN },
 	{ "print", BuiltinFunctions::Type::PRINT    },
 	{ "input", BuiltinFunctions::Type::INPUT    },
 	{ "min",   BuiltinFunctions::Type::MATH_MIN },
@@ -158,7 +168,7 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 	TokenData tk;
 	tk.type = Token::IDENTIFIER;
 	tk.identifier = p_idf; // method name may be builtin func
-	tk.col = cur_col - p_idf.size();
+	tk.col = cur_col - (int)p_idf.size();
 	tk.line = cur_line;
 
 	for (const KeywordName& kw : _keyword_name_list) {
@@ -503,57 +513,57 @@ MISSED_ENUM_CHECK(Token::_TK_MAX_, 70);
 String TokenData::to_string() const {
 	switch (type) {
 		case Token::UNKNOWN: return "<unknown>";
-		case Token::_EOF: return "<eof>";
+		case Token::_EOF:    return "<eof>";
 
-		case Token::SYM_DOT: return ".";
-		case Token::SYM_COMMA: return ",";
-		case Token::SYM_COLLON: return ":";
+		case Token::SYM_DOT:         return ".";
+		case Token::SYM_COMMA:       return ",";
+		case Token::SYM_COLLON:      return ":";
 		case Token::SYM_SEMI_COLLON: return ";";
-		case Token::SYM_AT: return "@";
-		case Token::SYM_HASH: return "#";
-		case Token::SYM_DOLLAR: return "$";
-		case Token::SYM_QUESTION: return "?";
-		case Token::BRACKET_LPARAN: return "(";
-		case Token::BRACKET_RPARAN: return ")";
-		case Token::BRACKET_LCUR: return "{";
-		case Token::BRACKET_RCUR: return "}";
-		case Token::BRACKET_RSQ: return "[";
-		case Token::BRACKET_LSQ: return "]";
+		case Token::SYM_AT:          return "@";
+		case Token::SYM_HASH:        return "#";
+		case Token::SYM_DOLLAR:      return "$";
+		case Token::SYM_QUESTION:    return "?";
+		case Token::BRACKET_LPARAN:  return "(";
+		case Token::BRACKET_RPARAN:  return ")";
+		case Token::BRACKET_LCUR:    return "{";
+		case Token::BRACKET_RCUR:    return "}";
+		case Token::BRACKET_RSQ:     return "[";
+		case Token::BRACKET_LSQ:     return "]";
 
-		case Token::OP_EQ: return "=";
-		case Token::OP_EQEQ: return "==";
-		case Token::OP_PLUS: return "+";
-		case Token::OP_PLUSEQ: return "+=";
-		case Token::OP_MINUS: return "-";
+		case Token::OP_EQ:      return "=";
+		case Token::OP_EQEQ:    return "==";
+		case Token::OP_PLUS:    return "+";
+		case Token::OP_PLUSEQ:  return "+=";
+		case Token::OP_MINUS:   return "-";
 		case Token::OP_MINUSEQ: return "-=";
-		case Token::OP_MUL: return "*";
-		case Token::OP_MULEQ: return "*=";
-		case Token::OP_DIV: return "/";
-		case Token::OP_DIVEQ: return "/=";
-		case Token::OP_MOD: return "%";
-		case Token::OP_MOD_EQ: return "%=";
-		case Token::OP_LT: return "<";
-		case Token::OP_LTEQ: return "<=";
-		case Token::OP_GT: return ">";
-		case Token::OP_GTEQ: return ">=";
-		case Token::OP_AND: return "&&";
-		case Token::OP_OR: return "||";
-		case Token::OP_NOT: return "!";
-		case Token::OP_NOTEQ: return "!=";
+		case Token::OP_MUL:     return "*";
+		case Token::OP_MULEQ:   return "*=";
+		case Token::OP_DIV:     return "/";
+		case Token::OP_DIVEQ:   return "/=";
+		case Token::OP_MOD:     return "%";
+		case Token::OP_MOD_EQ:  return "%=";
+		case Token::OP_LT:      return "<";
+		case Token::OP_LTEQ:    return "<=";
+		case Token::OP_GT:      return ">";
+		case Token::OP_GTEQ:    return ">=";
+		case Token::OP_AND:     return "&&";
+		case Token::OP_OR:      return "||";
+		case Token::OP_NOT:     return "!";
+		case Token::OP_NOTEQ:   return "!=";
 
-		case Token::OP_BIT_NOT: return "~";
-		case Token::OP_BIT_LSHIFT: return "<<";
+		case Token::OP_BIT_NOT:       return "~";
+		case Token::OP_BIT_LSHIFT:    return "<<";
 		case Token::OP_BIT_LSHIFT_EQ: return "<<=";
-		case Token::OP_BIT_RSHIFT: return ">>";
+		case Token::OP_BIT_RSHIFT:    return ">>";
 		case Token::OP_BIT_RSHIFT_EQ: return ">>=";
-		case Token::OP_BIT_OR: return "|";
-		case Token::OP_BIT_OR_EQ: return "|=";
-		case Token::OP_BIT_AND: return "&";
-		case Token::OP_BIT_AND_EQ: return "&=";
-		case Token::OP_BIT_XOR: return "^";
-		case Token::OP_BIT_XOR_EQ: return "^=";
+		case Token::OP_BIT_OR:        return "|";
+		case Token::OP_BIT_OR_EQ:     return "|=";
+		case Token::OP_BIT_AND:       return "&";
+		case Token::OP_BIT_AND_EQ:    return "&=";
+		case Token::OP_BIT_XOR:       return "^";
+		case Token::OP_BIT_XOR_EQ:    return "^=";
 
-		case Token::IDENTIFIER: return identifier;
+		case Token::IDENTIFIER:   return identifier;
 		case Token::BUILTIN_FUNC: return BuiltinFunctions::get_func_name(builtin_func);
 
 		case Token::KWORD_IMPORT:   return "import";
@@ -582,6 +592,7 @@ String TokenData::to_string() const {
 
 		case Token::_TK_MAX_: return "<_TK_MAX_>";
 	}
+	throw Error(Error::INTERNAL_BUG, String::format("enum(%i) missed in TokenData::to_string()", (int)type));
 }
 MISSED_ENUM_CHECK(Token::_TK_MAX_, 70);
 
