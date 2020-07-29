@@ -84,7 +84,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 	const TokenData* tk = &tokenizer->next();
 
 	if (tk->type != Token::IDENTIFIER) {
-		THROW_UNEXP_TOKEN("<identifier>");
+		THROW_UNEXP_TOKEN("an identifier");
 	}
 	// TODO: check identifier predefined.
 	class_node->name = tk->identifier;
@@ -95,7 +95,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 		const TokenData& base = tokenizer->next();
 		// TODO: base could be builtin class (Object, File, Map)
 		if (base.type != Token::IDENTIFIER) {
-			THROW_UNEXP_TOKEN("<identifier>");
+			THROW_UNEXP_TOKEN("an identifier");
 		}
 		// TODO: check identifier predefined.
 		class_node->base = base.identifier;
@@ -104,30 +104,34 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 	}
 
 	if (tk->type != Token::BRACKET_LCUR) {
-		THROW_UNEXP_TOKEN("{");
+		THROW_UNEXP_TOKEN("symbol \"{\"");
 	}
 	
 	while (true) {
 		const TokenData& token = tokenizer->next();
 		switch (token.type) {
-			case Token::_EOF:
+
+			case Token::_EOF: {
 				THROW_PARSER_ERR(Error::UNEXPECTED_EOF, "Unexpected end of file.", -1, -1);
+			} break;
 
-			case Token::BRACKET_RCUR:
+			case Token::BRACKET_RCUR: {
 				return class_node;
+			}
 
-			case Token::SYM_SEMI_COLLON: // ignore
-				break;
+			case Token::SYM_SEMI_COLLON: { // ignore
+			} break;
 
-			case Token::KWORD_ENUM:
+			case Token::KWORD_ENUM: {
 				_parse_enum(class_node);
-				break;
+			} break;
 
-			case Token::KWORD_STATIC:
+			case Token::KWORD_STATIC: {
 				if (tokenizer->peek().type != Token::KWORD_FUNC && tokenizer->peek().type != Token::KWORD_VAR) {
-					THROW_UNEXP_TOKEN("func or var");
+					THROW_UNEXP_TOKEN("keyword \"func\" or \"var\"");
 				}
-				break;
+
+			} break;
 
 			case Token::KWORD_FUNC: {
 				bool _static = tokenizer->peek(-2).type == Token::KWORD_STATIC;
@@ -137,8 +141,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 				} else {
 					class_node->functions.push_back(func);
 				}
-				break;
-			}
+			} break;
 
 			case Token::KWORD_VAR: {
 				bool _static = tokenizer->peek(-2).type == Token::KWORD_STATIC;
@@ -150,11 +153,11 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 						class_node->members.push_back(_var);
 					}
 				}
-				break;
-			}
+			} break;
 
-			default:
+			default: {
 				THROW_UNEXP_TOKEN("");
+			}
 		}
 	}
 
@@ -168,28 +171,30 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 
 	const TokenData& enum_name = tokenizer->next();
 	if (enum_name.type != Token::IDENTIFIER) {
-		THROW_UNEXP_TOKEN("<identifier>");
+		THROW_UNEXP_TOKEN("an identifier");
 	}
 	enum_node->name = enum_name.identifier;
 
 	if (tokenizer->next().type != Token::BRACKET_LCUR) {
-		THROW_UNEXP_TOKEN("{");
+		THROW_UNEXP_TOKEN("symbol \"{\"");
 	}
 
 	while (true) {
 		const TokenData& token = tokenizer->next();
 		switch (token.type) {
-			case Token::_EOF:
+
+			case Token::_EOF: {
 				THROW_PARSER_ERR(Error::UNEXPECTED_EOF, "Unexpected end of file.", -1, -1);
+			} break;
 
-			case Token::BRACKET_RCUR:
+			case Token::BRACKET_RCUR: {
 				return enum_node;
+			} break;
 
-			case Token::SYM_SEMI_COLLON: // ignore
-				break;
+			case Token::SYM_SEMI_COLLON: { // ignore
+			} break;
 
 			case Token::IDENTIFIER: {
-
 				// TODO: check identifier with struct name, enum name, static var name, and from import, import-> import , ...
 				enum_node->values[token.identifier] = ++cur_value;
 				
@@ -197,7 +202,7 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 				if (tk->type == Token::OP_EQ) {
 					tk = &tokenizer->next();
 					if (tk->type != Token::VALUE_INT) {
-						THROW_UNEXP_TOKEN("<integer constant>");
+						THROW_UNEXP_TOKEN("an integer constant");
 					}
 					ASSERT(tk->constant.get_type() == var::INT);
 					cur_value = tk->constant;
@@ -206,13 +211,13 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 
 				tk = &tokenizer->next();
 				if (tk->type != Token::SYM_COMMA) {
-					THROW_UNEXP_TOKEN(",");
+					THROW_UNEXP_TOKEN("symbol \",\"");
 				}
-				break;
-			}
+			} break;
 
-			default:
-				THROW_UNEXP_TOKEN("<identifier>");
+			default: {
+				THROW_UNEXP_TOKEN("an identifier");
+			} break;
 		}
 	}
 }
@@ -235,7 +240,7 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node, bool p_static)
 		while (true) {
 			tk = &tokenizer->next();
 			if (tk->type != Token::IDENTIFIER) {
-				THROW_UNEXP_TOKEN("<identifier>");
+				THROW_UNEXP_TOKEN("an identifier");
 			}
 			ptr<VarNode> var_node = new_node<VarNode>();
 			var_node->name = tk->identifier;
@@ -274,7 +279,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent, bool p_static)
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER) {
-		THROW_UNEXP_TOKEN("<identifier>");
+		THROW_UNEXP_TOKEN("an identifier");
 	}
 
 	func_node->name = tk->identifier;
@@ -283,20 +288,20 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent, bool p_static)
 	// TODO: arguments
 
 	if (tokenizer->next().type != Token::BRACKET_LCUR) {
-		THROW_UNEXP_TOKEN("{");
+		THROW_UNEXP_TOKEN("symbol \"{\"");
 	}
 
 	ptr<BlockNode> body = _parse_block(func_node);
 	if (tokenizer->peek(-1).type != Token::BRACKET_RCUR) {
-		THROW_UNEXP_TOKEN("}");
+		THROW_UNEXP_TOKEN("symbol \"}\"");
 	}
 	func_node->body = body;
 	return func_node;
 }
 
-String Parser::get_line(int p_line) const {
+String Parser::get_line(int64_t p_line) const {
 	const char* source = file_node->source.c_str();
-	int cur_line = 1;
+	int64_t cur_line = 1;
 	std::stringstream ss_line;
 
 	while (char c = *source) {
