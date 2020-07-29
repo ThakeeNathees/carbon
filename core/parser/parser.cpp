@@ -32,7 +32,8 @@ void Parser::parse(String p_source, String p_file_path) {
 	file_node = new_node<FileNode>();
 	file_node->source = p_source;
 	file_node->path = p_file_path;
-	tokenizer->tokenize(file_node->source); // this will throw
+
+	tokenizer->tokenize(file_node->source, file_node->path);
 
 	while (true) {
 	
@@ -53,14 +54,14 @@ void Parser::parse(String p_source, String p_file_path) {
 				break;
 			}
 			case Token::KWORD_FUNC: {
-				ptr<FunctionNode> func = _parse_func(file_node, true);
+				ptr<FunctionNode> func = _parse_func(file_node);
 				file_node->functions.push_back(func);
 				break;
 			}
 			case Token::KWORD_VAR: {
-				stdvec<ptr<VarNode>> vars = _parse_var(file_node, true);
+				stdvec<ptr<VarNode>> vars = _parse_var(file_node);
 				for (ptr<VarNode>& _var : vars) {
-					file_node->file_vars.push_back(_var);
+					file_node->vars.push_back(_var);
 				}
 				break;
 			}
@@ -76,10 +77,10 @@ void Parser::parse(String p_source, String p_file_path) {
 
 }
 
-
 ptr<Parser::ClassNode> Parser::_parse_class() {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_CLASS);
 	ptr<ClassNode> class_node = new_node<ClassNode>();
+	parser_context.current_class = class_node.get();
 
 	const TokenData* tk = &tokenizer->next();
 
@@ -112,7 +113,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 		switch (token.type) {
 
 			case Token::_EOF: {
-				THROW_PARSER_ERR(Error::UNEXPECTED_EOF, "Unexpected end of file.", -1, -1);
+				THROW_PARSER_ERR(Error::UNEXPECTED_EOF, "Unexpected end of file.", Vect2i());
 			} break;
 
 			case Token::BRACKET_RCUR: {
@@ -135,7 +136,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 
 			case Token::KWORD_FUNC: {
 				bool _static = tokenizer->peek(-2).type == Token::KWORD_STATIC;
-				ptr<FunctionNode> func = _parse_func(class_node, _static);
+				ptr<FunctionNode> func = _parse_func(class_node);
 				if (_static) {
 					class_node->static_functions.push_back(func);
 				} else {
@@ -145,7 +146,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 
 			case Token::KWORD_VAR: {
 				bool _static = tokenizer->peek(-2).type == Token::KWORD_STATIC;
-				stdvec<ptr<VarNode>> vars = _parse_var(class_node, _static);
+				stdvec<ptr<VarNode>> vars = _parse_var(class_node);
 				for (ptr<VarNode>& _var : vars) {
 					if (_static) {
 						class_node->static_members.push_back(_var);
@@ -161,6 +162,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 		}
 	}
 
+	parser_context.current_class = nullptr;
 }
 
 ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
@@ -184,7 +186,7 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 		switch (token.type) {
 
 			case Token::_EOF: {
-				THROW_PARSER_ERR(Error::UNEXPECTED_EOF, "Unexpected end of file.", -1, -1);
+				THROW_PARSER_ERR(Error::UNEXPECTED_EOF, "Unexpected end of file.", Vect2i());
 			} break;
 
 			case Token::BRACKET_RCUR: {
@@ -222,60 +224,57 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 	}
 }
 
-stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node, bool p_static) {
+stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node) {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_VAR);
 	ASSERT(p_node != nullptr);
 	ASSERT(p_node->type == Node::Type::FILE || p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::CLASS);
 
-	// check identifier when reducing
-	// IF_IDF_ALREADY_FOUND_RET_ERR(tk->identifier, p_node);
-
 	const TokenData* tk;
 	stdvec<ptr<VarNode>> vars;
 
-	if (p_node->type == Node::Type::CLASS || p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::FILE) {
-		if (p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::FILE)
-			ASSERT(p_static);
+	while (true) {
+		tk = &tokenizer->next();
+		if (tk->type != Token::IDENTIFIER) {
+			THROW_UNEXP_TOKEN("an identifier");
+		}
+		ptr<VarNode> var_node = new_node<VarNode>();
+		var_node->name = tk->identifier;
 
-		while (true) {
+		tk = &tokenizer->next();
+		if (tk->type == Token::OP_EQ) {
+			ptr<Node> expr = _parse_expression(p_node);
+			//_reduce_expression(expr); TODO: reduce after all are parsed.
+			var_node->assignment = expr;
+
 			tk = &tokenizer->next();
-			if (tk->type != Token::IDENTIFIER) {
-				THROW_UNEXP_TOKEN("an identifier");
-			}
-			ptr<VarNode> var_node = new_node<VarNode>();
-			var_node->name = tk->identifier;
-
-			tk = &tokenizer->next();
-			if (tk->type == Token::OP_EQ) {
-				ptr<Node> expr = _parse_expression(p_node, p_static);
-				//_reduce_expression(expr); TODO: reduce after all are parsed.
-				var_node->assignment = expr;
-
-				tk = &tokenizer->next();
-				if (tk->type == Token::SYM_COMMA) {
-				} else if (tk->type == Token::SYM_SEMI_COLLON) {
-					vars.push_back(var_node);
-					break;
-				} else {
-					THROW_UNEXP_TOKEN("");
-				}
-			} else if (tk->type == Token::SYM_COMMA) {
+			if (tk->type == Token::SYM_COMMA) {
 			} else if (tk->type == Token::SYM_SEMI_COLLON) {
 				vars.push_back(var_node);
 				break;
 			} else {
 				THROW_UNEXP_TOKEN("");
 			}
+		} else if (tk->type == Token::SYM_COMMA) {
+		} else if (tk->type == Token::SYM_SEMI_COLLON) {
 			vars.push_back(var_node);
+			break;
+		} else {
+			THROW_UNEXP_TOKEN("");
 		}
+		vars.push_back(var_node);
 	}
 
 	return vars;
 }
 
-ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent, bool p_static) {
+ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_FUNC);
 	ptr<FunctionNode> func_node = new_node<FunctionNode>();
+	
+	if (tokenizer->peek(-2, true).type == Token::KWORD_STATIC) {
+		// TODO: static keyword must only be found in class.
+		func_node->is_static = true;
+	}
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER) {
@@ -283,7 +282,6 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent, bool p_static)
 	}
 
 	func_node->name = tk->identifier;
-	func_node->is_static = p_static;
 
 	// TODO: arguments
 
@@ -297,27 +295,6 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent, bool p_static)
 	}
 	func_node->body = body;
 	return func_node;
-}
-
-String Parser::get_line(int64_t p_line) const {
-	const char* source = file_node->source.c_str();
-	int64_t cur_line = 1;
-	std::stringstream ss_line;
-
-	while (char c = *source) {
-		if (c == '\n') {
-			if (cur_line >= p_line) {
-				break;
-			}
-			cur_line++;
-		} else if (cur_line == p_line) {
-			ss_line << c;
-		}
-		source++;
-	}
-
-	ss_line << '\n';
-	return ss_line.str();
 }
 
 }

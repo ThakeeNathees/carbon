@@ -52,7 +52,8 @@ int _main(int argc, char** argv) {
 
 #ifdef _CATCH_
 	} catch (const Error & err) {
-		ConsoleLogger::logf_error("Error: %s at: %s(%lli, %lli)\n%s\n", err.what(), err.get_file().c_str(), err.get_pos().x, err.get_pos().y, err.get_line_pos().c_str());
+		ConsoleLogger::logf_error("Error: %s at: %s(%lli, %lli)\n", err.what(), err.get_file().c_str(), err.get_pos().x, err.get_pos().y);
+		ConsoleLogger::logf_info("%s\n", err.get_line_pos().c_str());
 		DEBUG_BREAK();
 	} catch (...) {
 		DEBUG_BREAK();

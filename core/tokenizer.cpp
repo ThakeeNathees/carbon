@@ -28,7 +28,7 @@
 namespace carbon {
 
 #define GET_CHAR(m_off) \
-( (char_ptr + m_off >= source.size())? '\0': source[char_ptr+m_off] )
+( ((size_t)char_ptr + m_off >= source.size())? '\0': source[(size_t)char_ptr + m_off] )
 
 #define EAT_CHAR(m_num)      \
 {	char_ptr += m_num;       \
@@ -48,11 +48,15 @@ namespace carbon {
 ( (c == '_') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') )
 
 
-#define ERROR(m_type, m_msg)                                \
-do {                                                        \
-    /*TODO: msg += __LINE__, __FUNCTION__*/                 \
-	throw Error(m_type, m_msg, Vect2i(cur_line, cur_col));  \
-} while (false)
+/*TODO: msg += __LINE__, __FUNCTION__*/
+#define THROW_ERROR(m_err_type, m_msg)                                                                               \
+	do {                                                                                                             \
+		uint32_t err_len = 1;                                                                                        \
+		String token_str = peek(-1, true).to_string();                                                               \
+		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;      \
+		else err_len = (uint32_t)token_str.size();                                                                   \
+		throw Error(m_err_type, m_msg, source_path, source.get_line(cur_line), Vect2i(cur_line, cur_col), err_len);  \
+	} while (false)
 
 struct KeywordName { const char* name; Token tk; };
 static KeywordName _keyword_name_list[] = {
@@ -67,7 +71,7 @@ static KeywordName _keyword_name_list[] = {
 	{ "if",       Token::KWORD_IF		     },
 	{ "else",     Token::KWORD_ELSE	         },
 	{ "while",    Token::KWORD_WHILE	     },
-	//{ "for",      Token::KWORD_FOR		     },
+	//{ "for",    Token::KWORD_FOR		     },
 	{ "switch",   Token::KWORD_SWITCH		 },
 	{ "break",    Token::KWORD_BREAK	     },
 	{ "continue", Token::KWORD_CONTINUE      },
@@ -80,7 +84,7 @@ MISSED_ENUM_CHECK(Token::_TK_MAX_, 70);
 
 struct BuiltinFuncName { const char* name; BuiltinFunctions::Type func; };
 static BuiltinFuncName _builtin_func_list[] = {
-	// { "", BuiltinFunctions::Function::UNKNOWN  },
+	//{ "", BuiltinFunctions::Function::UNKNOWN },
 	{ "print", BuiltinFunctions::Type::PRINT    },
 	{ "input", BuiltinFunctions::Type::INPUT    },
 	{ "min",   BuiltinFunctions::Type::MATH_MIN },
@@ -95,7 +99,7 @@ void Tokenizer::_eat_escape(String& p_str) {
 	c = GET_CHAR(1);
 	switch (c) {
 		case 0:
-			ERROR(Error::UNEXPECTED_EOF, "");
+			THROW_ERROR(Error::UNEXPECTED_EOF, "");
 			break;
 		case '\\': p_str += '\\'; EAT_CHAR(2); break;
 		case '\'': p_str += '\''; EAT_CHAR(2); break;
@@ -131,7 +135,7 @@ void Tokenizer::_eat_eof() {
 void Tokenizer::_eat_const_value(const var& p_value, int p_eat_size) {
 	TokenData tk;
 	tk.line = cur_line;
-	tk.col = cur_col;
+	tk.col = cur_col - __const_val_token_len;
 	tk.constant = p_value;
 
 	switch (p_value.get_type()) {
@@ -145,7 +149,7 @@ void Tokenizer::_eat_const_value(const var& p_value, int p_eat_size) {
 			tk.type = Token::VALUE_FLOAT;
 			break;
 		default:
-			DEBUG_BREAK(); // TODO:
+			THROW_ERROR(Error::INTERNAL_BUG, "Internal Bug: Report!");
 			break;
 	}
 
@@ -158,7 +162,7 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 	TokenData tk;
 	tk.type = Token::IDENTIFIER;
 	tk.identifier = p_idf; // method name may be builtin func
-	tk.col = cur_col - p_idf.size();
+	tk.col = cur_col - (int)p_idf.size();
 	tk.line = cur_line;
 
 	for (const KeywordName& kw : _keyword_name_list) {
@@ -182,9 +186,10 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 	EAT_CHAR(p_eat_size);
 }
 
-const void Tokenizer::tokenize(const String& p_source) {
+const void Tokenizer::tokenize(const String& p_source, const String& p_source_path) {
 
 	source = p_source;
+	source_path = p_source_path;
 	cur_line = cur_col = 1;
 	char_ptr = 0;
 	tokens.clear();
@@ -223,7 +228,7 @@ const void Tokenizer::tokenize(const String& p_source) {
 							EAT_CHAR(2);
 							break;
 						} else if (GET_CHAR(0) == 0) {
-							ERROR(Error::UNEXPECTED_EOF, "");
+							THROW_ERROR(Error::UNEXPECTED_EOF, ""); // TODO: Error message.
 						} else if (GET_CHAR(0) == '\n') {
 							EAT_LINE();
 						} else {
@@ -277,7 +282,7 @@ const void Tokenizer::tokenize(const String& p_source) {
 			}
 			// case '/': { } // already hadled
 			case '\\':
-				ERROR(Error::SYNTAX_ERROR, "Invalid character '\\'");
+				THROW_ERROR(Error::SYNTAX_ERROR, "Invalid character '\\'");
 				break;
 			case '%': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_MOD_EQ, 2);
@@ -336,10 +341,10 @@ const void Tokenizer::tokenize(const String& p_source) {
 					if (GET_CHAR(0) == '\\') {
 						_eat_escape(str);
 					} else if (GET_CHAR(0) == 0) {
-						ERROR(Error::UNEXPECTED_EOF, "");
+						THROW_ERROR(Error::UNEXPECTED_EOF, ""); // TODO: Error message.
 						break;
 					} else if(GET_CHAR(0) == '\n'){
-						ERROR(Error::UNEXPECTED_EOF, "");
+						THROW_ERROR(Error::SYNTAX_ERROR, "Unexpected EOL while parsing string");
 						break;
 					} else {
 						str += GET_CHAR(0);
@@ -347,15 +352,17 @@ const void Tokenizer::tokenize(const String& p_source) {
 					}
 				}
 				EAT_CHAR(1);
+				__const_val_token_len = (int)str.size() + 2;
 				_eat_const_value(str);
 				break;
 			}
 			case '\'':
-				ERROR(Error::SYNTAX_ERROR, "Invalid character '\\''.");
+				THROW_ERROR(Error::SYNTAX_ERROR, "Invalid character '\\''.");
 				break;
 			default: {
 				
 				// NOTE: 1.2.3 => float=1.2 float=.3 is this okey?
+				// TODO: 1.2e3 => is a valid float number
 				// TODO: hex/binary/octal numbers
 
 				// float value begins with '.'
@@ -367,6 +374,7 @@ const void Tokenizer::tokenize(const String& p_source) {
 						EAT_CHAR(1);
 					}
 					double float_val = float_str.to_float();
+					__const_val_token_len = (int)float_str.size();
 					_eat_const_value(float_val);
 					break;
 				}
@@ -383,6 +391,11 @@ const void Tokenizer::tokenize(const String& p_source) {
 						num += GET_CHAR(0);
 						EAT_CHAR(1);
 					}
+
+					// "1." parsed as 1.0 which should be error.
+					if (num[num.size() - 1] == '.') THROW_ERROR(Error::SYNTAX_ERROR, "Invalid numeric value.");
+
+					__const_val_token_len = (int)num.size();
 					if (is_float)
 						_eat_const_value(num.to_float());
 					else
@@ -503,57 +516,57 @@ MISSED_ENUM_CHECK(Token::_TK_MAX_, 70);
 String TokenData::to_string() const {
 	switch (type) {
 		case Token::UNKNOWN: return "<unknown>";
-		case Token::_EOF: return "<eof>";
+		case Token::_EOF:    return "<eof>";
 
-		case Token::SYM_DOT: return ".";
-		case Token::SYM_COMMA: return ",";
-		case Token::SYM_COLLON: return ":";
+		case Token::SYM_DOT:         return ".";
+		case Token::SYM_COMMA:       return ",";
+		case Token::SYM_COLLON:      return ":";
 		case Token::SYM_SEMI_COLLON: return ";";
-		case Token::SYM_AT: return "@";
-		case Token::SYM_HASH: return "#";
-		case Token::SYM_DOLLAR: return "$";
-		case Token::SYM_QUESTION: return "?";
-		case Token::BRACKET_LPARAN: return "(";
-		case Token::BRACKET_RPARAN: return ")";
-		case Token::BRACKET_LCUR: return "{";
-		case Token::BRACKET_RCUR: return "}";
-		case Token::BRACKET_RSQ: return "[";
-		case Token::BRACKET_LSQ: return "]";
+		case Token::SYM_AT:          return "@";
+		case Token::SYM_HASH:        return "#";
+		case Token::SYM_DOLLAR:      return "$";
+		case Token::SYM_QUESTION:    return "?";
+		case Token::BRACKET_LPARAN:  return "(";
+		case Token::BRACKET_RPARAN:  return ")";
+		case Token::BRACKET_LCUR:    return "{";
+		case Token::BRACKET_RCUR:    return "}";
+		case Token::BRACKET_RSQ:     return "[";
+		case Token::BRACKET_LSQ:     return "]";
 
-		case Token::OP_EQ: return "=";
-		case Token::OP_EQEQ: return "==";
-		case Token::OP_PLUS: return "+";
-		case Token::OP_PLUSEQ: return "+=";
-		case Token::OP_MINUS: return "-";
+		case Token::OP_EQ:      return "=";
+		case Token::OP_EQEQ:    return "==";
+		case Token::OP_PLUS:    return "+";
+		case Token::OP_PLUSEQ:  return "+=";
+		case Token::OP_MINUS:   return "-";
 		case Token::OP_MINUSEQ: return "-=";
-		case Token::OP_MUL: return "*";
-		case Token::OP_MULEQ: return "*=";
-		case Token::OP_DIV: return "/";
-		case Token::OP_DIVEQ: return "/=";
-		case Token::OP_MOD: return "%";
-		case Token::OP_MOD_EQ: return "%=";
-		case Token::OP_LT: return "<";
-		case Token::OP_LTEQ: return "<=";
-		case Token::OP_GT: return ">";
-		case Token::OP_GTEQ: return ">=";
-		case Token::OP_AND: return "&&";
-		case Token::OP_OR: return "||";
-		case Token::OP_NOT: return "!";
-		case Token::OP_NOTEQ: return "!=";
+		case Token::OP_MUL:     return "*";
+		case Token::OP_MULEQ:   return "*=";
+		case Token::OP_DIV:     return "/";
+		case Token::OP_DIVEQ:   return "/=";
+		case Token::OP_MOD:     return "%";
+		case Token::OP_MOD_EQ:  return "%=";
+		case Token::OP_LT:      return "<";
+		case Token::OP_LTEQ:    return "<=";
+		case Token::OP_GT:      return ">";
+		case Token::OP_GTEQ:    return ">=";
+		case Token::OP_AND:     return "&&";
+		case Token::OP_OR:      return "||";
+		case Token::OP_NOT:     return "!";
+		case Token::OP_NOTEQ:   return "!=";
 
-		case Token::OP_BIT_NOT: return "~";
-		case Token::OP_BIT_LSHIFT: return "<<";
+		case Token::OP_BIT_NOT:       return "~";
+		case Token::OP_BIT_LSHIFT:    return "<<";
 		case Token::OP_BIT_LSHIFT_EQ: return "<<=";
-		case Token::OP_BIT_RSHIFT: return ">>";
+		case Token::OP_BIT_RSHIFT:    return ">>";
 		case Token::OP_BIT_RSHIFT_EQ: return ">>=";
-		case Token::OP_BIT_OR: return "|";
-		case Token::OP_BIT_OR_EQ: return "|=";
-		case Token::OP_BIT_AND: return "&";
-		case Token::OP_BIT_AND_EQ: return "&=";
-		case Token::OP_BIT_XOR: return "^";
-		case Token::OP_BIT_XOR_EQ: return "^=";
+		case Token::OP_BIT_OR:        return "|";
+		case Token::OP_BIT_OR_EQ:     return "|=";
+		case Token::OP_BIT_AND:       return "&";
+		case Token::OP_BIT_AND_EQ:    return "&=";
+		case Token::OP_BIT_XOR:       return "^";
+		case Token::OP_BIT_XOR_EQ:    return "^=";
 
-		case Token::IDENTIFIER: return identifier;
+		case Token::IDENTIFIER:   return identifier;
 		case Token::BUILTIN_FUNC: return BuiltinFunctions::get_func_name(builtin_func);
 
 		case Token::KWORD_IMPORT:   return "import";
@@ -576,12 +589,14 @@ String TokenData::to_string() const {
 		case Token::KWORD_RETURN:   return "return";
 			
 		case Token::VALUE_STRING: 
+			return String("\"") + constant.operator String() + "\"";
 		case Token::VALUE_INT: 
-		case Token::VALUE_FLOAT:
+		case Token::VALUE_FLOAT: 
 			return constant.to_string();
 
 		case Token::_TK_MAX_: return "<_TK_MAX_>";
 	}
+	throw Error(Error::INTERNAL_BUG, String::format("enum(%i) missed in TokenData::to_string()", (int)type));
 }
 MISSED_ENUM_CHECK(Token::_TK_MAX_, 70);
 

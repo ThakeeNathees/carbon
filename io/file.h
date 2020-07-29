@@ -48,7 +48,7 @@ public:
 
 	// Methods.
 	bool is_open() const { return file.is_open(); }
-	void open(const String& p_path, int p_mode = READ);
+	void open(const String& p_path, int p_mode = READ | APPEND);
 	void close();
 	size_t size();
 	String get_path() const { return path; }
@@ -65,7 +65,7 @@ protected:
 private:
 	std::fstream file;
 	String path;
-	int mode;
+	int mode = READ | APPEND;
 
 };
 }
