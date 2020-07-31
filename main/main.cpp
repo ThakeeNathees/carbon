@@ -29,7 +29,7 @@
 
 
 #include "parser/parser.h"
-#include "io/console_logger.h"
+#include "io/logger.h"
 #include "io/file.h"
 #include "io/dynamic_library.h"
 using namespace carbon;
@@ -44,19 +44,20 @@ int _main(int argc, char** argv) {
 	
 	//dl_test();
 	//crash_handler_test();
+
 #ifdef _CATCH_
 	try {
 #endif
 		parser_test();
-		ConsoleLogger::logf_info("Parsing success.");
+		Logger::logf_info("Parsing success.");
 
 #ifdef _CATCH_
 	} catch (const Error & err) {
-		ConsoleLogger::logf_error("Error: %s at: %s(%lli, %lli)\n", err.what(), err.get_file().c_str(), err.get_pos().x, err.get_pos().y);
+		Logger::logf_error("Error: %s at: %s(%lli, %lli)\n", err.what(), err.get_file().c_str(), err.get_pos().x, err.get_pos().y);
 	#if DEBUG_BUILD
-		ConsoleLogger::logf_error("\tat %s (%s:%i)\n", err.get_dbg_func().c_str(), err.get_dbg_file().c_str(), err.get_dbg_line());
+		Logger::logf_error("\tat %s (%s:%i)\n", err.get_dbg_func().c_str(), err.get_dbg_file().c_str(), err.get_dbg_line());
 	#endif
-		ConsoleLogger::logf_info("%s\n%s\n", err.get_line().c_str(), err.get_line_pos().c_str());
+		Logger::logf_info("%s\n%s\n", err.get_line().c_str(), err.get_line_pos().c_str());
 
 		DEBUG_BREAK();
 	} catch (...) {
@@ -124,7 +125,7 @@ void dl_test() {
 
 void crash_handler_test() {
 	// crash handler test
-	ConsoleLogger::logf_error("Error: %s\n", "Debug break ...");
+	Logger::logf_error("Error: %s\n", "Debug break ...");
 	char* invalid_ptr = NULL;
 	*invalid_ptr = 0xff;
 	//DEBUG_BREAK();
