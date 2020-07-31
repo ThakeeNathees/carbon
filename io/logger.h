@@ -42,6 +42,7 @@ public:
 	};
 
 	enum class Color {
+		DEFAULT   = -1,
 		BLACK     = 0,
 
 		L_BLUE    = 1,

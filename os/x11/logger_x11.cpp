@@ -34,21 +34,24 @@ class LoggerX11 :public Logger
 private:
 
 protected:
-	virtual void log_impl(const char* p_msg) { log(p_msg, false); }
+	virtual void log_impl(const char* p_msg, Color p_fg, Color p_bg) const override {
+		log(p_msg, false, p_fg, p_bg);
+	}
 	virtual void set_cursor_impl(int p_line, int p_column) const override {
 		printf("\033[%d;%dH", p_column + 1, p_line + 1);
 	}
 
-	virtual void log_info_impl(const char* p_msg) { log(p_msg, false, Color::L_WHITE); }
-	virtual void log_success_impl(const char* p_msg) { log(p_msg, false, Color::D_GREEN); }
-	virtual void log_warning_impl(const char* p_msg) { log(p_msg, true, Color::D_YELLOW); }
-	virtual void log_error_impl(const char* p_msg) { log(p_msg, true, Color::D_RED); }
+	virtual void log_verbose_impl(const char* p_msg) const override { log(p_msg, false); }
+	virtual void log_info_impl(const char* p_msg)    const override { log(p_msg, false, Color::L_WHITE); }
+	virtual void log_success_impl(const char* p_msg) const override { log(p_msg, false, Color::D_GREEN); }
+	virtual void log_warning_impl(const char* p_msg) const override { log(p_msg, true, Color::D_YELLOW); }
+	virtual void log_error_impl(const char* p_msg)   const override { log(p_msg, true, Color::D_RED); }
 
-	virtual void logf_impl(const char* p_fmt, va_list p_list) { logf(p_fmt, p_list, false); }
-	virtual void logf_info_impl(const char* p_fmt, va_list p_list) { logf(p_fmt, p_list, false, Color::L_WHITE); }
-	virtual void logf_success_impl(const char* p_fmt, va_list p_list) { logf(p_fmt, p_list, false, Color::D_GREEN); }
-	virtual void logf_warning_impl(const char* p_fmt, va_list p_list) { logf(p_fmt, p_list, true, Color::D_YELLOW); }
-	virtual void logf_error_impl(const char* p_fmt, va_list p_list) { logf(p_fmt, p_list, true, Color::D_RED); }
+	virtual void logf_verbose_impl(const char* p_fmt, va_list p_list) const override { logf(p_fmt, p_list, false); }
+	virtual void logf_info_impl(const char* p_fmt, va_list p_list)    const override { logf(p_fmt, p_list, false, Color::L_WHITE); }
+	virtual void logf_success_impl(const char* p_fmt, va_list p_list) const override { logf(p_fmt, p_list, false, Color::D_GREEN); }
+	virtual void logf_warning_impl(const char* p_fmt, va_list p_list) const override { logf(p_fmt, p_list, true, Color::D_YELLOW); }
+	virtual void logf_error_impl(const char* p_fmt, va_list p_list)   const override { logf(p_fmt, p_list, true, Color::D_RED); }
 
 
 	enum ANSI_Codes {
@@ -62,6 +65,8 @@ protected:
 		FMT_BLINK      = 5,
 		FMT_REVERSE    = 7,
 		FMT_HIDDEN     = 8,
+
+		DEFAULT        = 39,
 
 		BLACK          = 30,
 		RED            = 31,
@@ -78,37 +83,36 @@ protected:
 		BRIGHT_MEGENTA = 95,
 		CYAN           = 96,
 		BRIGHT_WHITE   = 97,
-		DEFAULT        = 39,
 	};
 
 public:
 
-	static void log(const char* p_msg, bool p_err, Color p_fg = Color::L_WHITE, Color p_bg = Color::BLACK) {
+	static void log(const char* p_msg, bool p_err, Color p_fg = Color::DEFAULT, Color p_bg = Color::DEFAULT) {
 
-#define MAP_COLOR(m_target, m_offset)                                                   \
-   switch (p_##m_target) {                                                              \
-       case Color::BLACK:     m_target = ANSI_Codes::BLACK + m_offset;          break;  \
-       case Color::L_BLUE:    m_target = ANSI_Codes::BLUE + m_offset;           break;  \
-       case Color::L_GREEN:   m_target = ANSI_Codes::GREEN + m_offset;          break;  \
-       case Color::L_SKYBLUE: m_target = ANSI_Codes::CYAN + m_offset;           break;  \
-       case Color::L_RED:     m_target = ANSI_Codes::RED + m_offset;            break;  \
-       case Color::L_PINK:    m_target = ANSI_Codes::MAGENTA + m_offset;        break;  \
-       case Color::L_YELLOW:  m_target = ANSI_Codes::YELLOW + m_offset;         break;  \
-       case Color::L_WHITE:   m_target = ANSI_Codes::WHITE + m_offset;          break;  \
-       case Color::L_GRAY:    m_target = ANSI_Codes::GRAY + m_offset;           break;  \
-       case Color::D_BLUE:    m_target = ANSI_Codes::BRIGHT_BLUE + m_offset;    break;  \
-       case Color::D_GREEN:   m_target = ANSI_Codes::BRIGHT_GREEN + m_offset;   break;  \
-       case Color::D_SKYBLUE: m_target = ANSI_Codes::CYAN + m_offset;           break;  \
-       case Color::D_RED:     m_target = ANSI_Codes::BRIGHT_RED + m_offset;     break;  \
-       case Color::D_PINK:    m_target = ANSI_Codes::BRIGHT_MEGENTA + m_offset; break;  \
-       case Color::D_YELLOW:  m_target = ANSI_Codes::BRIGHT_YELLOW + m_offset;  break;  \
-       case Color::D_WHITE:   m_target = ANSI_Codes::BRIGHT_WHITE + m_offset;   break;  \
+#define MAP_COLOR(m_target, m_offset)                                                    \
+   switch (p_##m_target) {                                                               \
+		case Color::DEFAULT:   m_target = ANSI_Codes::DEFAULT + m_offset;        break;  \
+		case Color::BLACK:     m_target = ANSI_Codes::BLACK + m_offset;          break;  \
+		case Color::L_BLUE:    m_target = ANSI_Codes::BLUE + m_offset;           break;  \
+		case Color::L_GREEN:   m_target = ANSI_Codes::GREEN + m_offset;          break;  \
+		case Color::L_SKYBLUE: m_target = ANSI_Codes::CYAN + m_offset;           break;  \
+		case Color::L_RED:     m_target = ANSI_Codes::RED + m_offset;            break;  \
+		case Color::L_PINK:    m_target = ANSI_Codes::MAGENTA + m_offset;        break;  \
+		case Color::L_YELLOW:  m_target = ANSI_Codes::YELLOW + m_offset;         break;  \
+		case Color::L_WHITE:   m_target = ANSI_Codes::WHITE + m_offset;          break;  \
+		case Color::L_GRAY:    m_target = ANSI_Codes::GRAY + m_offset;           break;  \
+		case Color::D_BLUE:    m_target = ANSI_Codes::BRIGHT_BLUE + m_offset;    break;  \
+		case Color::D_GREEN:   m_target = ANSI_Codes::BRIGHT_GREEN + m_offset;   break;  \
+		case Color::D_SKYBLUE: m_target = ANSI_Codes::CYAN + m_offset;           break;  \
+		case Color::D_RED:     m_target = ANSI_Codes::BRIGHT_RED + m_offset;     break;  \
+		case Color::D_PINK:    m_target = ANSI_Codes::BRIGHT_MEGENTA + m_offset; break;  \
+		case Color::D_YELLOW:  m_target = ANSI_Codes::BRIGHT_YELLOW + m_offset;  break;  \
+		case Color::D_WHITE:   m_target = ANSI_Codes::BRIGHT_WHITE + m_offset;   break;  \
    }
 		int fg = ANSI_Codes::WHITE + ANSI_Codes::FG_OFFSET;
 		int bg = ANSI_Codes::BLACK + ANSI_Codes::BG_OFFSET;
 		MAP_COLOR(fg, ANSI_Codes::FG_OFFSET);
 		MAP_COLOR(bg, ANSI_Codes::BG_OFFSET);
-
 		if (!p_err) {
 			fprintf(stdout, "\033[%i;%i;%im%s\033[%im", ANSI_Codes::FMT_DEFAULT, fg, bg, p_msg, ANSI_Codes::FMT_DEFAULT);
 		} else {
@@ -116,7 +120,7 @@ public:
 		}
 	}
 
-	static void logf(const char* p_fmt, va_list p_args, bool p_err, Color p_fg = Color::FG_DEFAULT, Color p_bg = Color::BLACK) {
+	static void logf(const char* p_fmt, va_list p_args, bool p_err, Color p_fg = Color::DEFAULT, Color p_bg = Color::DEFAULT) {
 		static const unsigned int BUFFER_SIZE = VSNPRINTF_BUFF_SIZE;
 		char buf[BUFFER_SIZE + 1]; // +1 for the terminating character
 		int len = vsnprintf(buf, BUFFER_SIZE, p_fmt, p_args);

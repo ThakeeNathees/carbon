@@ -62,11 +62,13 @@ protected:
 	virtual void logf_error_impl(const char* p_fmt, va_list p_list)   const override { logf(p_fmt, p_list, true, Color::D_RED); }
 
 public:
-	static void _set_console_color(Color p_forground, Color p_background = Color::BLACK) {
+	static void _set_console_color(Color p_forground, Color p_background = Color::DEFAULT) {
+		if (p_background == Color::DEFAULT) p_background = Color::BLACK;
 			SetConsoleTextAttribute(h_console, (int)p_background << 4 | (int)p_forground);
 	}
-	static void log(const char* p_message, bool p_err, 
-		Color p_forground = Color::L_WHITE, Color p_background = Color::BLACK) {
+	static void log(const char* p_message, bool p_err, Color p_forground = Color::DEFAULT, Color p_background = Color::DEFAULT) {
+		if (p_forground == Color::DEFAULT) p_forground = Color::L_WHITE;
+		if (p_background == Color::DEFAULT) p_background = Color::BLACK;
 		_set_console_color(p_forground, p_background);
 		if (p_err) {
 			fprintf(stderr, p_message);
@@ -76,8 +78,9 @@ public:
 		_set_console_color(Color::L_WHITE);
 	}
 
-	static void logf(const char* p_fmt, va_list p_args, bool p_err,
-		Color p_forground = Color::L_WHITE, Color p_background = Color::BLACK) {
+	static void logf(const char* p_fmt, va_list p_args, bool p_err, Color p_forground = Color::DEFAULT, Color p_background = Color::DEFAULT) {
+		if (p_forground == Color::DEFAULT) p_forground = Color::L_WHITE;
+		if (p_background == Color::DEFAULT) p_background = Color::BLACK;
 		static const unsigned int BUFFER_SIZE = VSNPRINTF_BUFF_SIZE;
 		char buf[BUFFER_SIZE + 1]; // +1 for the terminating character
 		int len = vsnprintf(buf, BUFFER_SIZE, p_fmt, p_args);

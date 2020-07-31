@@ -420,13 +420,13 @@ void Parser::_reduce_expression(ptr<Node>& p_expr) {
 		case Node::Type::BUILTIN_FUNCTION: {
 		} break;
 		case Node::Type::ARRAY: {
-			ptr<ArrayNode>& arr = ptrcast<ArrayNode>(p_expr);
+			ptr<ArrayNode> arr = ptrcast<ArrayNode>(p_expr);
 			for (int i = 0; i < arr->elements.size(); i++) {
 				_reduce_expression(arr->elements[i]);
 			}	
 		} break;
 		case Node::Type::MAP: {
-			ptr<MapNode>& map = ptrcast<MapNode>(p_expr);
+			ptr<MapNode> map = ptrcast<MapNode>(p_expr);
 			for (int i = 0; i < map->elements.size(); i++) {
 				_reduce_expression(map->elements[i].key);
 				// TODO: key should be hashable?
@@ -434,7 +434,7 @@ void Parser::_reduce_expression(ptr<Node>& p_expr) {
 			}
 		} break;
 		case Node::Type::OPERATOR: {
-			ptr<OperatorNode>& op = ptrcast<OperatorNode>(p_expr);
+			ptr<OperatorNode> op = ptrcast<OperatorNode>(p_expr);
 
 			bool all_const = true;
 			for (int i = 0; i < op->args.size(); i++) {
@@ -453,7 +453,7 @@ void Parser::_reduce_expression(ptr<Node>& p_expr) {
 
 					// TODO: add built in class for Array(), Map(), ...
 					if (op->args[0]->type == Node::Type::BUILTIN_FUNCTION && all_const) {
-						ptr<BuiltinFunctionNode>& bf = ptrcast<BuiltinFunctionNode>(op->args[0]);
+						ptr<BuiltinFunctionNode> bf = ptrcast<BuiltinFunctionNode>(op->args[0]);
 						if (bf->func != BuiltinFunctions::Type::PRINT) {
 							stdvec<var> args;
 							for (int i = 1; i < op->args.size(); i++) {
