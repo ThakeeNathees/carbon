@@ -93,9 +93,12 @@ using namespace varh;
 #	else
 #		define DEBUG_BREAK() __builtin_trap()
 #	endif
+#	define DEBUG_BREAK_COND(m_cond) if (m_cond) DEBUG_BREAK()
 #else 
 #	define DEBUG_BREAK()
+#	define DEBUG_BREAK_COND(m_cond)
 #endif
+
 
 #define _CRASH()                \
 do {                            \
@@ -104,15 +107,14 @@ do {                            \
 } while(false)
 
 #ifdef DEBUG_BUILD
-#define DEBUG_PRINT(...)                                                                                       \
+#define DEBUG_PRINT(m_msg)                                                                                     \
 do {                                                                                                           \
-	if (GET_ARG_COUNT(__VA_ARGS__) == 0)                                                                       \
-		printf("DEBUG_PRINT: at %s (%s:%i)\n", __FUNCTION__, __FILE__, __LINE__);                              \
-	else                                                                                                       \
-		printf("DEBUG_PRINT: \"%s\" at %s (%s:%i)\n", ARG_1(__VA_ARGS__), __FUNCTION__, __FILE__, __LINE__);   \
+	printf("DEBUG_PRINT: \"%s\" at %s (%s:%i)\n", String(m_msg).c_str(), __FUNCTION__, __FILE__, __LINE__);    \
 } while (false)
+#define DEBUG_PRINT_COND(m_cond, m_msg) if (m_cond) DEBUG_PRINT(m_msg)
 #else
-#define DEBUG_PRINT(...)
+#define DEBUG_PRINT(m_msg)
+#define DEBUG_PRINT_COND(m_cond, m_msg)
 #endif
 
 #if defined(DEBUG_BUILD)
@@ -125,7 +127,7 @@ do {                                                                            
 	} while (false)
 
 #else
-#define ASSERT(...)
+#define ASSERT(m_cond)
 #endif
 
 #define MISSED_ENUM_CHECK(m_max_enum, m_max_value) \

@@ -41,10 +41,11 @@ namespace carbon {
 																														   \
 		if (m_pos.x > 0 && m_pos.y > 0) {                                                                                  \
 			String line = file_node->source.get_line(m_pos.x);                                                             \
-			throw Error(m_err_type, m_msg, file_node->path, line, m_pos, err_len);                                         \
+			throw Error(m_err_type, m_msg, file_node->path, line, m_pos, err_len)_ERR_ADD_DBG_VARS;                        \
 		} else {                                                                                                           \
 			String line = file_node->source.get_line(tokenizer->get_pos().x);                                              \
-			throw Error(m_err_type, m_msg, file_node->path, line, tokenizer->peek(-1, true).get_pos(), err_len);           \
+			throw Error(m_err_type, m_msg, file_node->path, line, tokenizer->peek(-1, true).get_pos(), err_len)            \
+			_ERR_ADD_DBG_VARS;                                                                                             \
 		}                                                                                                                  \
 	} while (false)
 

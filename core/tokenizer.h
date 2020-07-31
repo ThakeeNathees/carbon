@@ -30,6 +30,17 @@
 #include "builtin_functions.h"
 #include "builtin_types.h"
 
+#define THROW_TOKENIZE_ERROR(m_err_type, m_msg)                                                                      \
+	do {                                                                                                             \
+		uint32_t err_len = 1;                                                                                        \
+		String token_str = peek(-1, true).to_string();                                                               \
+		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;      \
+		else err_len = (uint32_t)token_str.size();                                                                   \
+		throw Error(m_err_type, m_msg, source_path, source.get_line(cur_line), Vect2i(cur_line, cur_col), err_len)   \
+		_ERR_ADD_DBG_VARS;                                                                                           \
+	} while (false)
+
+
 namespace carbon {
 
 enum class Token {
@@ -147,11 +158,11 @@ public:
 		return tokens[token_ptr++];
 	}
 
-	const TokenData& peek(int p_offset = 0, bool p_safe = false) {
+	const TokenData& peek(int p_offset = 0, bool p_safe = false) const {
 		static TokenData tmp;
 		if (token_ptr + p_offset  < 0 || token_ptr + p_offset >= (int)tokens.size()) {
 			if (p_safe) return tmp;
-			else throw Error(Error::INVALID_INDEX); 
+			else THROW_TOKENIZE_ERROR(Error::INVALID_INDEX, "Internal Bug: TokenData::peek() index out of bounds");
 		}
 		return tokens[token_ptr + p_offset];
 	}
@@ -163,7 +174,7 @@ public:
 				return tokens[i];
 			}
 		}
-		throw Error(Error::INTERNAL_BUG, "TokenData::get_token_at() called with invalid position.");
+		THROW_TOKENIZE_ERROR(Error::INTERNAL_BUG, "TokenData::get_token_at() called with invalid position.");
 	}
 
 	static const char* get_token_name(Token p_tk);

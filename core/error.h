@@ -43,16 +43,25 @@
 #define STRCAT4(m_1, m_2, m_3, m_4) m_1##m_2##m_3##m_4
 #define STRCAT5(m_1, m_2, m_3, m_4, m_5) m_1##m_2##m_3##m_4##m_5
 
+#if DEBUG_BUILD
+#define _ERR_ADD_DBG_VARS .set_deg_variables(__FUNCTION__, __FILE__, __LINE__)
+#else
+#define _ERR_ADD_DBG_VARS 
+#endif
+
 #define THROW_INVALID_INDEX(m_size, m_ind)                                                            \
 if (m_ind < 0 || m_size <= m_ind) {                                                                   \
 	throw Error(Error::INVALID_INDEX, String::format("Index %s = %lli is out of bounds (%s = %lli)",  \
-		STRINGIFY(m_size), m_size, STRINGIFY(m_ind), m_ind));                                         \
+		STRINGIFY(m_size), m_size, STRINGIFY(m_ind), m_ind))_ERR_ADD_DBG_VARS;                        \
 } else ((void)0)
 
 #define THROW_IF_NULLPTR(m_ptr)                                                                       \
 if (m_ptr == nullptr){                                                                                \
-	throw Error(Error::NULL_POINTER, String::format("The pointer \"%s\" is null", STRINGIFY(m_ptr))); \
+	throw Error(Error::NULL_POINTER, String::format("The pointer \"%s\" is null", STRINGIFY(m_ptr)))  \
+	_ERR_ADD_DBG_VARS;                                                                                \
 } else ((void)0)
+
+#define THROW_INTERNAL(m_type, m_msg) throw Error(m_type, m_msg)_ERR_ADD_DBG_VARS
 
 #include "var.h/_var.h"
 using namespace varh;
@@ -93,7 +102,12 @@ public:
 	Vect2i get_pos() const { return pos; }
 
 	String get_file() const noexcept { return file.c_str(); }
-	String get_line() const { return line; }
+	String get_line() const { // TODO: refactor line with line.rstrip("\n") when setting it.
+		if (line[line.size() - 1] == '\n') {
+			return line.substr(0, line.size() - 1);
+		}
+		return line;
+	}
 	String get_line_pos() const {
 		std::stringstream ss_pos;
 		size_t cur_col = 0;
@@ -110,8 +124,15 @@ public:
 				ss_pos << '\t';
 			}
 		}
-		return String(line + ((line[line.size()-1] != '\n')? "\n" : "") + ss_pos.str()).c_str();
+		//return String(line + ((line[line.size()-1] != '\n')? "\n" : "") + ss_pos.str());
+		return ss_pos.str();
 	}
+
+#if DEBUG_BUILD
+	const String& get_dbg_func() const { return __dbg_func__; }
+	const String& get_dbg_file() const { return __dbg_file__; }
+	int get_dbg_line() const { return __dbg_line__; }
+#endif
 
 	Error() {}
 	Error(Type p_type) { type = p_type; }
@@ -129,6 +150,15 @@ public:
 	Error& set_pos(const Vect2i& p_pos)   { pos = p_pos;      return *this; }
 	Error& set_err_len(uint32_t p_len)    { err_len = p_len;  return *this; }
 
+#if DEBUG_BUILD
+	Error& set_deg_variables(const String& p_func, const String& p_file, uint32_t p_line) {
+		__dbg_func__ = p_func;
+		__dbg_file__ = p_file;
+		__dbg_line__ = p_line;
+		return *this;
+	}
+#endif
+
 private:
 	Type type = OK;
 	String msg = "<NO-ERROR-MSG-SET>";
@@ -136,6 +166,12 @@ private:
 	String line = "<NO-LINE-SET>";
 	Vect2i pos = Vect2i(-1, -1);
 	uint32_t err_len = 1;
+
+#if DEBUG_BUILD
+	String __dbg_func__ = "<NO-FUNC-SET>";
+	String __dbg_file__ = "<NO-FILE-SET>";
+	uint32_t __dbg_line__ = 0;
+#endif
 };
 
 }

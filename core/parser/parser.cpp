@@ -272,18 +272,33 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	ptr<FunctionNode> func_node = new_node<FunctionNode>();
 	
 	if (tokenizer->peek(-2, true).type == Token::KWORD_STATIC) {
-		// TODO: static keyword must only be found in class.
 		func_node->is_static = true;
 	}
 
 	const TokenData* tk = &tokenizer->next();
-	if (tk->type != Token::IDENTIFIER) {
-		THROW_UNEXP_TOKEN("an identifier");
-	}
-
+	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
 	func_node->name = tk->identifier;
 
-	// TODO: arguments
+	tk = &tokenizer->next();
+	if (tk->type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
+	tk = &tokenizer->next();
+
+	if (tk->type != Token::BRACKET_RPARAN) {
+		while (true) {
+			if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+			DEBUG_PRINT(tk->identifier);
+			func_node->args.push_back(tk->identifier);
+
+			tk = &tokenizer->next();
+			if (tk->type == Token::SYM_COMMA) {
+				tk = &tokenizer->next();
+			} else if (tk->type == Token::BRACKET_RPARAN) {
+				break;
+			} else {
+				THROW_UNEXP_TOKEN("");
+			}
+		}
+	}
 
 	if (tokenizer->next().type != Token::BRACKET_LCUR) {
 		THROW_UNEXP_TOKEN("symbol \"{\"");

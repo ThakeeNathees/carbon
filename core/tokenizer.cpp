@@ -49,14 +49,6 @@ namespace carbon {
 
 
 /*TODO: msg += __LINE__, __FUNCTION__*/
-#define THROW_ERROR(m_err_type, m_msg)                                                                               \
-	do {                                                                                                             \
-		uint32_t err_len = 1;                                                                                        \
-		String token_str = peek(-1, true).to_string();                                                               \
-		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;      \
-		else err_len = (uint32_t)token_str.size();                                                                   \
-		throw Error(m_err_type, m_msg, source_path, source.get_line(cur_line), Vect2i(cur_line, cur_col), err_len);  \
-	} while (false)
 
 struct KeywordName { const char* name; Token tk; };
 static KeywordName _keyword_name_list[] = {
@@ -99,7 +91,7 @@ void Tokenizer::_eat_escape(String& p_str) {
 	c = GET_CHAR(1);
 	switch (c) {
 		case 0:
-			THROW_ERROR(Error::UNEXPECTED_EOF, "");
+			THROW_TOKENIZE_ERROR(Error::UNEXPECTED_EOF, "");
 			break;
 		case '\\': p_str += '\\'; EAT_CHAR(2); break;
 		case '\'': p_str += '\''; EAT_CHAR(2); break;
@@ -149,7 +141,7 @@ void Tokenizer::_eat_const_value(const var& p_value, int p_eat_size) {
 			tk.type = Token::VALUE_FLOAT;
 			break;
 		default:
-			THROW_ERROR(Error::INTERNAL_BUG, "Internal Bug: Report!");
+			THROW_TOKENIZE_ERROR(Error::INTERNAL_BUG, "Internal Bug: Report!");
 			break;
 	}
 
@@ -228,7 +220,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 							EAT_CHAR(2);
 							break;
 						} else if (GET_CHAR(0) == 0) {
-							THROW_ERROR(Error::UNEXPECTED_EOF, ""); // TODO: Error message.
+							THROW_TOKENIZE_ERROR(Error::UNEXPECTED_EOF, ""); // TODO: Error message.
 						} else if (GET_CHAR(0) == '\n') {
 							EAT_LINE();
 						} else {
@@ -282,7 +274,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 			}
 			// case '/': { } // already hadled
 			case '\\':
-				THROW_ERROR(Error::SYNTAX_ERROR, "Invalid character '\\'");
+				THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "Invalid character '\\'");
 				break;
 			case '%': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_MOD_EQ, 2);
@@ -341,10 +333,10 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 					if (GET_CHAR(0) == '\\') {
 						_eat_escape(str);
 					} else if (GET_CHAR(0) == 0) {
-						THROW_ERROR(Error::UNEXPECTED_EOF, ""); // TODO: Error message.
+						THROW_TOKENIZE_ERROR(Error::UNEXPECTED_EOF, ""); // TODO: Error message.
 						break;
 					} else if(GET_CHAR(0) == '\n'){
-						THROW_ERROR(Error::SYNTAX_ERROR, "Unexpected EOL while parsing string");
+						THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "Unexpected EOL while parsing string");
 						break;
 					} else {
 						str += GET_CHAR(0);
@@ -357,7 +349,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 				break;
 			}
 			case '\'':
-				THROW_ERROR(Error::SYNTAX_ERROR, "Invalid character '\\''.");
+				THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "Invalid character '\\''.");
 				break;
 			default: {
 				
@@ -393,7 +385,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 					}
 
 					// "1." parsed as 1.0 which should be error.
-					if (num[num.size() - 1] == '.') THROW_ERROR(Error::SYNTAX_ERROR, "Invalid numeric value.");
+					if (num[num.size() - 1] == '.') THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "Invalid numeric value.");
 
 					__const_val_token_len = (int)num.size();
 					if (is_float)
@@ -596,7 +588,7 @@ String TokenData::to_string() const {
 
 		case Token::_TK_MAX_: return "<_TK_MAX_>";
 	}
-	throw Error(Error::INTERNAL_BUG, String::format("enum(%i) missed in TokenData::to_string()", (int)type));
+	THROW_INTERNAL(Error::INTERNAL_BUG, String::format("enum(%i) missed in TokenData::to_string()", (int)type));
 }
 MISSED_ENUM_CHECK(Token::_TK_MAX_, 70);
 
