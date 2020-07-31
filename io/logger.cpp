@@ -23,11 +23,11 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "console_logger.h"
+#include "logger.h"
 
 namespace carbon {
 
-ConsoleLogger::LogLevel ConsoleLogger::level = ConsoleLogger::LogLevel::VERBOSE;
-// singleton declaration is in <platform>/console_logger_<platform>.cpp
+Logger::LogLevel Logger::level = Logger::LogLevel::VERBOSE;
+// singleton declaration is in <platform>/logger_<platform>.cpp
 
 }
