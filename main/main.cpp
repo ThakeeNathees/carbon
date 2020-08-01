@@ -65,7 +65,7 @@ int _main(int argc, char** argv) {
 	}
 #endif
 
-	int c = getchar();
+	getchar();
 	return 0;
 }
 
@@ -79,6 +79,7 @@ void parser_test() {
 
 	Parser p;
 	p.parse(source, path);
+	p.print_tree();
 }
 
 void dl_test() {

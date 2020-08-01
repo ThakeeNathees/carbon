@@ -90,7 +90,7 @@ public:
 	static void log(const char* p_msg, bool p_err, Color p_fg = Color::DEFAULT, Color p_bg = Color::DEFAULT) {
 
 #define MAP_COLOR(m_target, m_offset)                                                    \
-   switch (p_##m_target) {                                                               \
+	switch (p_##m_target) {                                                              \
 		case Color::DEFAULT:   m_target = ANSI_Codes::DEFAULT + m_offset;        break;  \
 		case Color::BLACK:     m_target = ANSI_Codes::BLACK + m_offset;          break;  \
 		case Color::L_BLUE:    m_target = ANSI_Codes::BLUE + m_offset;           break;  \
@@ -108,7 +108,9 @@ public:
 		case Color::D_PINK:    m_target = ANSI_Codes::BRIGHT_MEGENTA + m_offset; break;  \
 		case Color::D_YELLOW:  m_target = ANSI_Codes::BRIGHT_YELLOW + m_offset;  break;  \
 		case Color::D_WHITE:   m_target = ANSI_Codes::BRIGHT_WHITE + m_offset;   break;  \
-   }
+	}
+	MISSED_ENUM_CHECK(Color::__COLOR_MAX__, 16);
+
 		int fg = ANSI_Codes::WHITE + ANSI_Codes::FG_OFFSET;
 		int bg = ANSI_Codes::BLACK + ANSI_Codes::BG_OFFSET;
 		MAP_COLOR(fg, ANSI_Codes::FG_OFFSET);
