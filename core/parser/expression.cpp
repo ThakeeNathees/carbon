@@ -92,7 +92,17 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent) {
 			expr = call;
 
 		} else if (tk->type == Token::IDENTIFIER) {
-			expr = new_node<IdentifierNode>(tk->identifier);
+			ptr<IdentifierNode> id = new_node<IdentifierNode>(tk->identifier);
+			id->declared_block = parser_context.current_block;
+			if (parser_context.current_func) {
+				for (int i = 0; i < parser_context.current_func->args.size(); i++) {
+					if (parser_context.current_func->args[i] == tk->identifier) {
+						id->arg_index = i;
+						break;
+					}
+				}
+			}
+			expr = id;
 
 		} else if (tk->type == Token::BRACKET_LCUR) {
 			// No literal for dictionary.

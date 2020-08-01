@@ -141,6 +141,9 @@ struct TokenData {
 	BuiltinTypes::Type builtin_class = BuiltinTypes::_NULL;
 	var::Type biltin_type = var::Type::_NULL;
 
+	TokenData() {}
+	TokenData(Token p_type) { type = p_type; }
+
 	String to_string() const;
 	Vect2i get_pos() const {  return Vect2i(line, col);  }
 };
@@ -159,7 +162,7 @@ public:
 	}
 
 	const TokenData& peek(int p_offset = 0, bool p_safe = false) const {
-		static TokenData tmp;
+		static TokenData tmp = { Token::_EOF };
 		if (token_ptr + p_offset  < 0 || token_ptr + p_offset >= (int)tokens.size()) {
 			if (p_safe) return tmp;
 			else THROW_TOKENIZE_ERROR(Error::INVALID_INDEX, "Internal Bug: TokenData::peek() index out of bounds");

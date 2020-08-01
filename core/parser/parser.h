@@ -27,6 +27,7 @@
 #define PARSER_H
 
 #include "tokenizer.h"
+#include "io/logger.h"
 
 namespace carbon {
 
@@ -121,12 +122,11 @@ public:
 
 	struct ClassNode : public Node {
 		String name;
-		String base;
+		String base; // TODO: file_node.file_node.ClassName ??
 		stdvec<ptr<EnumNode>> enums;
-		stdvec<ptr<FunctionNode>> functions;
-		stdvec<ptr<FunctionNode>> static_functions;
 		stdvec<ptr<VarNode>> members;
-		stdvec<ptr<VarNode>> static_members;
+		stdvec<ptr<FunctionNode>> functions;
+		// TODO: implement const.
 		ClassNode() {
 			type = Type::CLASS;
 		}
@@ -134,7 +134,8 @@ public:
 
 	struct EnumNode : public Node {
 		String name;
-		std::map<String, int> values;
+		bool named_enum = false;
+		std::map<String, int64_t> values;
 		EnumNode() {
 			type = Type::ENUM;
 		}
@@ -160,6 +161,8 @@ public:
 
 	struct IdentifierNode : public Node {
 		String name;
+		int arg_index = -1; // For argument identifier.
+		BlockNode* declared_block = nullptr; // For local vars.
 		IdentifierNode() {
 			type = Type::IDENTIFIER;
 		}
@@ -172,10 +175,7 @@ public:
 
 	struct VarNode : public Node {
 		String name;
-		// all variables are static by default.
-		// but static variables are only allows inside class
-		// not inside any scope.
-		bool is_static = true; 
+		bool is_static = false;
 		ptr<Node> assignment;
 		VarNode() {
 			type = Type::VAR;
@@ -303,7 +303,7 @@ public:
 	};
 
 	struct ControlFlowNode : public Node {
-		enum class CfType {
+		enum CfType {
 			IF,
 			SWITCH,
 			WHILE,
@@ -318,14 +318,40 @@ public:
 		ControlFlowNode() {
 			type = Type::CONTROL_FLOW;
 		}
+		ControlFlowNode(CfType p_cf_type) {
+			type = Type::CONTROL_FLOW;
+			cf_type = p_cf_type;
+		}
 	};
+
+	/* How if block parsed
+	-----------------------------------------
+	if (c1){
+	} else if (c2) {
+	} else if (c3) {
+	} else {}
+	---- the above parsed into --------------
+	if (c1){
+	} else {
+		if (c2){
+		} else {
+			if (c3) {
+			} else {}
+		}
+	}
+	-----------------------------------------
+	*/
 
 	// Methods.
 	void parse(String p_source, String p_file_path);
+#if DEBUG_BUILD
+	void print_tree() const;
+#endif
 
 protected:
 
 private:
+
 	struct Expr {
 		Expr(OperatorNode::OpType p_op, const Vect2i& p_pos) { _is_op = true; op = p_op; pos = p_pos; }
 		Expr(const ptr<Node>& p_node) { _is_op = false; expr = p_node; pos = p_node->pos; }
@@ -355,6 +381,7 @@ private:
 	struct ParserContext {
 		ClassNode* current_class = nullptr;
 		FunctionNode* current_func = nullptr;
+		BlockNode* current_block = nullptr;
 	};
 
 	// Methods.
@@ -370,7 +397,9 @@ private:
 	ptr<EnumNode> _parse_enum(ptr<Node> p_parent = nullptr);
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent);
 	ptr<FunctionNode> _parse_func(ptr<Node> p_parent);
-	ptr<BlockNode> _parse_block(const ptr<Node>& p_parent);
+
+	ptr<BlockNode> _parse_block(const ptr<Node>& p_parent, bool p_single_statement = false);
+	ptr<ControlFlowNode> _parse_if_block(const ptr<BlockNode>& p_parent);
 
 	ptr<Node> _parse_expression(const ptr<Node>& p_parent);
 	stdvec<ptr<Node>> _parse_arguments(const ptr<Node>& p_parent);

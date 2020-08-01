@@ -61,6 +61,8 @@ public:
 		D_PINK    = 13,
 		D_YELLOW  = 14,
 		D_WHITE   = 15,
+
+		__COLOR_MAX__,
 	};
 
 	static void set_level(LogLevel p_level) { level = p_level; }
