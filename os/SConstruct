@@ -7,7 +7,7 @@ Import('cbenv')
 
 ## os env
 env_os = cbenv.Clone()
-env_os.SOURCES = []
+env_os.SOURCES = [ Glob('*.cpp') ]
 
 ## source files
 Export('env_os')

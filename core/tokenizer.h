@@ -109,12 +109,9 @@ enum class Token {
 	KWORD_IF,
 	KWORD_ELSE,
 	KWORD_WHILE,
-	//KWORD_FOR, 
-/*  var i = 0; while(i < 10) { i += 1;
-		print(i);
-	} 
-*/
+	KWORD_FOR,
 	KWORD_SWITCH,
+	KWORD_CASE,
 	KWORD_BREAK,
 	KWORD_CONTINUE,
 	KWORD_STATIC,
@@ -125,6 +122,8 @@ enum class Token {
 	VALUE_STRING,
 	VALUE_INT,
 	VALUE_FLOAT,
+	VALUE_BOOL,
+
 	_TK_MAX_,
 };
 

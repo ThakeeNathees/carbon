@@ -46,7 +46,7 @@ public:
 		//VECT3I,
 		ARRAY,
 		MAP,
-		//OBJECT,
+		//OBJECT, // Object is considered as Native.
 
 		// Native classes.
 		//BUFFER,

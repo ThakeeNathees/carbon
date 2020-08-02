@@ -78,23 +78,26 @@ public:
 			VAR,
 			CONST_VALUE,
 			ARRAY,
-			MAP,
+			MAP,   // <-- TODO: should be literal map ?
 			THIS,
 			SUPER,
 			BUILTIN_FUNCTION,
-			BUILTIN_CLASS,
+			BUILTIN_TYPE,
 			OPERATOR,
 			CONTROL_FLOW,
+
+			_NODE_MAX_,
 		};
 		Type type = Type::UNKNOWN;
 		Vect2i pos;
 		ptr<Node> parernt_node;
+		static const char* get_node_type_name(Type p_type);
 	};
 
 	struct ClassNode;
 	struct EnumNode;
 	struct BuiltinFunctionNode;
-	struct BuiltinClassNode;
+	struct BuiltinTypeNode;
 	struct FunctionNode;
 	struct BlockNode;
 	struct IdentifierNode;
@@ -122,7 +125,8 @@ public:
 
 	struct ClassNode : public Node {
 		String name;
-		String base; // TODO: file_node.file_node.ClassName ??
+		stdvec<String> inherits;
+		//String base; // TODO: file_node.file_node.ClassName ??
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<VarNode>> members;
 		stdvec<ptr<FunctionNode>> functions;
@@ -135,7 +139,7 @@ public:
 	struct EnumNode : public Node {
 		String name;
 		bool named_enum = false;
-		std::map<String, int64_t> values;
+		std::map<String, ptr<Node>> values;
 		EnumNode() {
 			type = Type::ENUM;
 		}
@@ -146,6 +150,7 @@ public:
 		bool is_static = false;
 		stdvec<String> args;
 		ptr<BlockNode> body;
+		ptr<Node> parent_node;
 		FunctionNode() {
 			type = Type::FUNCTION;
 		}
@@ -153,6 +158,7 @@ public:
 
 	struct BlockNode : public Node {
 		stdvec<ptr<Node>> statements;
+		// quick reference instead of searching from statement (change to VarNode* maybe).
 		stdvec<ptr<VarNode>> local_vars;
 		BlockNode() {
 			type = Type::BLOCK;
@@ -234,13 +240,13 @@ public:
 		}
 	};
 
-	struct BuiltinClassNode : public Node {
+	struct BuiltinTypeNode : public Node {
 		BuiltinTypes::Type cls;
-		BuiltinClassNode() {
-			type = Type::BUILTIN_CLASS;
+		BuiltinTypeNode() {
+			type = Type::BUILTIN_TYPE;
 		}
-		BuiltinClassNode(BuiltinTypes::Type p_cls) {
-			type = Type::BUILTIN_CLASS;
+		BuiltinTypeNode(BuiltinTypes::Type p_cls) {
+			type = Type::BUILTIN_TYPE;
 			cls = p_cls;
 		}
 	};
@@ -248,7 +254,7 @@ public:
 
 
 	struct OperatorNode : public Node {
-		enum class OpType {
+		enum OpType {
 			OP_CALL,
 			OP_INDEX,
 			OP_INDEX_MAPPED,
@@ -289,7 +295,7 @@ public:
 			OP_POSITIVE,
 			OP_NEGATIVE,
 
-			__OP_MAX__,
+			_OP_MAX_,
 		};
 		OpType op_type;
 		stdvec<ptr<Node>> args;
@@ -300,6 +306,21 @@ public:
 			type = Type::OPERATOR;
 			op_type = p_type;
 		}
+		static bool is_assignment(OpType p_op_type) {
+			return
+				p_op_type == OperatorNode::OpType::OP_EQ ||
+				p_op_type == OperatorNode::OpType::OP_PLUSEQ ||
+				p_op_type == OperatorNode::OpType::OP_MINUSEQ ||
+				p_op_type == OperatorNode::OpType::OP_MULEQ ||
+				p_op_type == OperatorNode::OpType::OP_DIVEQ ||
+				p_op_type == OperatorNode::OpType::OP_MOD_EQ ||
+				p_op_type == OperatorNode::OpType::OP_BIT_LSHIFT_EQ ||
+				p_op_type == OperatorNode::OpType::OP_BIT_RSHIFT_EQ ||
+				p_op_type == OperatorNode::OpType::OP_BIT_OR_EQ ||
+				p_op_type == OperatorNode::OpType::OP_BIT_AND_EQ ||
+				p_op_type == OperatorNode::OpType::OP_BIT_XOR_EQ;
+			}
+		static const char* get_op_name(OpType p_op);
 	};
 
 	struct ControlFlowNode : public Node {
@@ -307,14 +328,22 @@ public:
 			IF,
 			SWITCH,
 			WHILE,
+			FOR,
 			BREAK,
 			CONTINUE,
 			RETURN,
+
+			_CF_MAX_,
+		};
+		struct SwitchCase {
+			ptr<Node> value; // TODO: any 2 values can't be same.
+			ptr<BlockNode> body;
 		};
 		CfType cf_type;
 		stdvec<ptr<Node>> args;
 		ptr<BlockNode> body;
-		ptr<BlockNode> body_else; // For if node.
+		ptr<BlockNode> body_else;
+		stdvec<SwitchCase> switch_cases;
 		ControlFlowNode() {
 			type = Type::CONTROL_FLOW;
 		}
@@ -322,6 +351,7 @@ public:
 			type = Type::CONTROL_FLOW;
 			cf_type = p_cf_type;
 		}
+		static const char* get_cftype_name(CfType p_type);
 	};
 
 	/* How if block parsed
@@ -398,10 +428,10 @@ private:
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent);
 	ptr<FunctionNode> _parse_func(ptr<Node> p_parent);
 
-	ptr<BlockNode> _parse_block(const ptr<Node>& p_parent, bool p_single_statement = false);
+	ptr<BlockNode> _parse_block(const ptr<Node>& p_parent, bool p_single_statement = false, stdvec<Token> p_termination = { Token::BRACKET_RCUR } );
 	ptr<ControlFlowNode> _parse_if_block(const ptr<BlockNode>& p_parent);
 
-	ptr<Node> _parse_expression(const ptr<Node>& p_parent);
+	ptr<Node> _parse_expression(const ptr<Node>& p_parent, bool p_allow_assign);
 	stdvec<ptr<Node>> _parse_arguments(const ptr<Node>& p_parent);
 	void _reduce_expression(ptr<Node>& p_expr);
 

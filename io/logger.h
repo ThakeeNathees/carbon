@@ -69,7 +69,7 @@ public:
 	static LogLevel get_level() { return level; }
 	static bool is_level(LogLevel p_level) { return (int)p_level >= (int)level; }
 	
-	static void log(const char* p_msg, LogLevel p_level, Color p_fg = Color::L_WHITE, Color p_bg = Color::BLACK) {
+	static void log(const char* p_msg, LogLevel p_level = VERBOSE, Color p_fg = Color::L_WHITE, Color p_bg = Color::BLACK) {
 		if (!is_level(p_level)) return; singleton->log_impl(p_msg, p_fg, p_bg);
 	}
 	static void set_cursor(int p_line, int p_column) { singleton->set_cursor_impl(p_line, p_column); }
