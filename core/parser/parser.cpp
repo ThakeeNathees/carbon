@@ -105,13 +105,21 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 	tk = &tokenizer->next();
 
 	if (tk->type == Token::SYM_COLLON) {
-		const TokenData& base = tokenizer->next();
-		// TODO: base could be builtin class (Object, File, Map)
-		if (base.type != Token::IDENTIFIER) {
-			THROW_UNEXP_TOKEN("an identifier");
+
+		while (true) {
+			const TokenData* base = &tokenizer->next();
+
+			// TODO: base could be builtin class (Object, File)
+			if (base->type != Token::IDENTIFIER) {
+				THROW_UNEXP_TOKEN("an identifier");
+			}
+			// TODO: check identifier predefined.
+			class_node->inherits.push_back(base->identifier);
+
+			base = &tokenizer->peek();
+			if (base->type == Token::SYM_DOT) tokenizer->next(); // eat "."
+			else break;			
 		}
-		// TODO: check identifier predefined.
-		class_node->base = base.identifier;
 
 		tk = &tokenizer->next();
 	}
@@ -136,7 +144,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 			} break;
 
 			case Token::KWORD_ENUM: {
-				_parse_enum(class_node);
+				class_node->enums.push_back(_parse_enum(class_node));
 			} break;
 
 			case Token::KWORD_STATIC: {
@@ -169,7 +177,6 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_ENUM);
 
 	ptr<EnumNode> enum_node = new_node<EnumNode>();
-	int64_t cur_value = -1;
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER && tk->type != Token::BRACKET_LCUR)
@@ -204,23 +211,18 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 
 			case Token::IDENTIFIER: {
 				// TODO: check identifier with class name, enum name, static var name, and from import, import-> import , ...
-				for (const std::pair<String, int64_t>& value : enum_node->values) {
+				for (const std::pair<String, ptr<Node>>& value : enum_node->values) {
 					if (value.first == token.identifier) {
 						THROW_PARSER_ERR(Error::ALREADY_DEFINED, String::format("enum name \"%s\" is already defined", token.identifier.c_str()), Vect2i());
 					}
 				}
-				enum_node->values[token.identifier] = ++cur_value;
 				
 				const TokenData* tk = &tokenizer->peek();
 				if (tk->type == Token::OP_EQ) {
-					tk = &tokenizer->next(1);
-					// TODO: this could be a constant expression evaluvated to int.
-					if (tk->type != Token::VALUE_INT) {
-						THROW_UNEXP_TOKEN("an integer constant");
-					}
-					ASSERT(tk->constant.get_type() == var::INT);
-					cur_value = tk->constant.operator int64_t();
-					enum_node->values[token.identifier] = cur_value;
+					tk = &tokenizer->next(); // eat "=".
+					enum_node->values[token.identifier] = _parse_expression(enum_node, false);
+				} else {
+					enum_node->values[token.identifier] = nullptr;
 				}
 
 				comma_valid = true;
@@ -263,7 +265,7 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node) {
 
 		tk = &tokenizer->next();
 		if (tk->type == Token::OP_EQ) {
-			ptr<Node> expr = _parse_expression(p_node);
+			ptr<Node> expr = _parse_expression(p_node, false);
 			//_reduce_expression(expr); TODO: reduce after all are parsed.
 			var_node->assignment = expr;
 
@@ -342,11 +344,11 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 		THROW_UNEXP_TOKEN("symbol \"{\"");
 	}
 
-	ptr<BlockNode> body = _parse_block(func_node);
-	if (tokenizer->peek(-1).type != Token::BRACKET_RCUR) {
+	func_node->body = _parse_block(func_node);
+	if (tokenizer->next().type != Token::BRACKET_RCUR) {
 		THROW_UNEXP_TOKEN("symbol \"}\"");
 	}
-	func_node->body = body;
+
 	return func_node;
 }
 
@@ -357,7 +359,12 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 #define KEYWORD_COLOR Logger::Color::L_YELLOW
 #define TYPE_COLOR Logger::Color::L_GREEN
 
-#define PRINT_INDENT(m_indent) for (int i = 0; i < m_indent; i++)  printf("    ")
+static int _print_id = 0; // dirty way for debugging.
+#define PRINT_INDENT(m_indent)                           \
+do {                                                     \
+	for (int i = 0; i < m_indent; i++)  printf("    ");  \
+	_print_id++;                                         \
+} while (false)
 #define PRINT_COLOR(m_log, m_color) Logger::log(m_log, Logger::VERBOSE, m_color)
 
 static void print_var_node(const Parser::VarNode* p_var, int p_indent) {
@@ -367,8 +374,77 @@ static void print_var_node(const Parser::VarNode* p_var, int p_indent) {
 	}
 	PRINT_COLOR(TokenData(Token::KWORD_VAR).to_string().c_str(), KEYWORD_COLOR);
 	printf(" %s = ", p_var->name.c_str());
-	if (p_var->assignment != nullptr) PRINT_COLOR(" [expr]\n", Logger::Color::L_GRAY);
-	else PRINT_COLOR(" nullptr\n", Logger::Color::L_GRAY);
+	if (p_var->assignment != nullptr) {
+		if (p_var->assignment->type == Parser::Node::Type::CONST_VALUE)
+			printf("%s\n", ptrcast<Parser::ConstValueNode>(p_var->assignment)->value.to_string().c_str());
+		else
+			PRINT_COLOR(String::format("[expr:%i]\n", _print_id).c_str(), Logger::Color::L_GRAY);
+	}
+	else PRINT_COLOR("nullptr\n", Logger::Color::L_GRAY);
+}
+
+
+static void print_block_node(const Parser::BlockNode* p_block, int p_indent) {
+	for (ptr<Parser::Node> node : p_block->statements) {
+		switch (node->type) {
+			//BLOCK,
+			case Parser::Node::Type::VAR: {
+				print_var_node(ptrcast<Parser::VarNode>(node).get(), p_indent);
+			} break;
+
+			case Parser::Node::Type::IDENTIFIER: {
+				PRINT_INDENT(p_indent);
+				printf("%s\n", ptrcast<Parser::IdentifierNode>(node)->name.c_str());
+			} break;
+
+			case Parser::Node::Type::CONST_VALUE: {
+				PRINT_INDENT(p_indent);
+				printf("%s\n", ptrcast<Parser::ConstValueNode>(node)->value.to_string().c_str());
+			} break;
+
+			case Parser::Node::Type::ARRAY: {
+				PRINT_INDENT(p_indent);
+				PRINT_COLOR(String::format("[Array:%i]\n", _print_id).c_str(), Logger::Color::L_GRAY);
+			} break;
+			//case Parser::Node::Type::MAP: {
+			//	PRINT_INDENT(p_indent);
+			//	PRINT_COLOR("[MAP]\n", Logger::Color::L_GRAY);
+			//} break;
+			case Parser::Node::Type::THIS: {
+				PRINT_INDENT(p_indent);
+				PRINT_COLOR("this\n", KEYWORD_COLOR);
+			} break;
+			case Parser::Node::Type::SUPER: {
+				PRINT_INDENT(p_indent);
+				PRINT_COLOR("super\n", KEYWORD_COLOR);
+			} break;
+
+			// TODO: function call is operator node. create seperate function for print_expr();
+			//case Parser::Node::Type::BUILTIN_FUNCTION: {
+			//	PRINT_INDENT(p_indent);
+			//	const char* func_name = BuiltinFunctions::get_func_name(ptrcast<Parser::BuiltinFunctionNode>(node)->func);
+			//	int arg_count = BuiltinFunctions::get_arg_count(ptrcast<Parser::BuiltinFunctionNode>(node)->func);
+			//	printf("%s(", func_name);
+			//	if (arg_count != 0) printf("...");
+			//	printf(");\n");
+			//}
+			//BUILTIN_FUNCTION,
+			//BUILTIN_CLASS,
+
+			case Parser::Node::Type::OPERATOR: {
+				PRINT_INDENT(p_indent);
+				const char* op_name = Parser::OperatorNode::get_op_name(ptrcast<Parser::OperatorNode>(node)->op_type);
+				PRINT_COLOR(String::format("[%s:%i]\n", op_name, _print_id).c_str(), Logger::Color::L_GRAY);
+			} break;
+
+			case Parser::Node::Type::CONTROL_FLOW: {
+				PRINT_INDENT(p_indent);
+				Parser::ControlFlowNode* dbg = ptrcast<Parser::ControlFlowNode>(node).get();
+				const char* cf_name = Parser::ControlFlowNode::get_cftype_name(ptrcast<Parser::ControlFlowNode>(node)->cf_type);
+				PRINT_COLOR(String::format("[%s:%i]\n", cf_name, _print_id).c_str(), Logger::Color::L_GRAY);
+			} break;
+		}
+	}
 }
 
 static void print_enum_node(const Parser::EnumNode* p_enum, int p_indent) {
@@ -377,9 +453,20 @@ static void print_enum_node(const Parser::EnumNode* p_enum, int p_indent) {
 	if (p_enum->named_enum) PRINT_COLOR(String(String(" ") + p_enum->name + "\n").c_str(), TYPE_COLOR);
 	else PRINT_COLOR(" [not named]\n", Logger::Color::L_GRAY);
 
-	for (const std::pair<String, int64_t>& value : p_enum->values) {
+	for (const std::pair<String, ptr<Parser::Node>>& value : p_enum->values) {
 		PRINT_INDENT(p_indent + 1);
-		printf("%s = %lli\n", value.first.c_str(), value.second);
+		printf("%s = ", value.first.c_str());
+		if (value.second != nullptr) {
+			if (value.second->type == Parser::Node::Type::CONST_VALUE) {
+				ptr<Parser::ConstValueNode> enum_val = ptrcast<Parser::ConstValueNode>(value.second);
+				ASSERT(enum_val->value.get_type() == var::INT);
+				printf("%lli\n", enum_val->value.operator int64_t());
+			} else {
+				PRINT_COLOR("[TODO: reduce expression]\n", Logger::Color::L_GRAY);
+			}
+		} else {
+			PRINT_COLOR("[TODO: auto increase]\n", Logger::Color::L_GRAY);
+		}
 	}
 }
 
@@ -395,16 +482,22 @@ static void print_func_node(const Parser::FunctionNode* p_func, int p_indent) {
 		printf("%s", p_func->args[j].c_str());
 	}
 	printf(")\n");
+
+	print_block_node(p_func->body.get(), p_indent + 1);
 }
 
 static void print_class_node(Parser::ClassNode* p_class, int p_indent) {
 	PRINT_INDENT(p_indent);
 	PRINT_COLOR(TokenData(Token::KWORD_CLASS).to_string().c_str(), KEYWORD_COLOR);
 	PRINT_COLOR((String(" ") + p_class->name).c_str(), TYPE_COLOR);
-	if (p_class->base != "") {
+	if (p_class->inherits.size() != 0) {
 		printf(" inherits ");
-		PRINT_COLOR((p_class->base + "\n").c_str(), TYPE_COLOR);
+		for (int i = 0; i < (int)p_class->inherits.size(); i++) {
+			if (i > 0) printf(".");
+			PRINT_COLOR(p_class->inherits[i].c_str(), TYPE_COLOR);
+		} 
 	}
+	printf("\n");
 
 	for (int i = 0; i < (int)p_class->enums.size(); i++) {
 		print_enum_node(p_class->enums[i].get(), p_indent + 1);
@@ -441,6 +534,7 @@ static void print_file_node(const Parser::FileNode* p_fn, int p_indent) {
 	}
 }
 void Parser::print_tree() const {
+	_print_id = 0;
 	print_file_node(file_node.get(), 0);
 }
 #endif

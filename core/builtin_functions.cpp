@@ -37,8 +37,22 @@ const char* BuiltinFunctions::get_func_name(BuiltinFunctions::Type p_func) {
 		nullptr,
 	};
 	return func_names[(int)p_func];
-}
 MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
+}
+
+int BuiltinFunctions::get_arg_count(BuiltinFunctions::Type p_func) {
+	switch (p_func) {
+		case Type::PRINT:
+		case Type::INPUT:
+		case Type::MATH_MAX:
+		case Type::MATH_MIN:
+			return -1;
+		case Type::MATH_POW:
+			return 2;
+	}
+	return 0;
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
+}
 
 void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) {
 	switch (p_func) {
@@ -85,7 +99,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 		} break;
 
 	}
-	MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
 }
 
 }

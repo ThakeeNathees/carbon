@@ -115,6 +115,7 @@ enum class Token {
 	} 
 */
 	KWORD_SWITCH,
+	KWORD_CASE,
 	KWORD_BREAK,
 	KWORD_CONTINUE,
 	KWORD_STATIC,
@@ -125,6 +126,8 @@ enum class Token {
 	VALUE_STRING,
 	VALUE_INT,
 	VALUE_FLOAT,
+	VALUE_BOOL,
+
 	_TK_MAX_,
 };
 

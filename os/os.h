@@ -23,40 +23,16 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BUILTIN_FUNCTIONS_H
-#define BUILTIN_FUNCTIONS_H
+#ifndef OS_H
+#define OS_H
 
 #include "core.h"
 
 namespace carbon {
 
-class BuiltinFunctions {
-public:
-	enum Type {
-		UNKNOWN,
-
-		PRINT,
-		INPUT,
-
-		MATH_MIN,
-		MATH_MAX,
-		MATH_POW,
-
-		_FUNC_MAX_,
-	};
-
-	// Methods.
-	static const char* get_func_name(Type p_func);
-	// returns -1 if variadic.
-	static int get_arg_count(Type p_func);
-	static void call(Type p_func, const stdvec<var>& p_args, var& r_ret);
-
-protected:
-
-private:
+class OS {
 
 };
 
 }
-
-#endif // BUILTIN_FUNCTIONS_H
+#endif // OS_H

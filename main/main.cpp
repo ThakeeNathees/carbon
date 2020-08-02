@@ -49,7 +49,7 @@ int _main(int argc, char** argv) {
 	try {
 #endif
 		parser_test();
-		Logger::logf_info("Parsing success.");
+		Logger::logf_success("\nSuccess: parsing completed.");
 
 #ifdef _CATCH_
 	} catch (const Error & err) {
