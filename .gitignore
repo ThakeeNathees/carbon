@@ -4,6 +4,7 @@
 bin/
 */bin/
 x64/
+__pycache__/
 .vs/
 .vscode/
 Carbon.sln

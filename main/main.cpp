@@ -27,32 +27,57 @@
 #include <string>
 #define PRINT(x) std::cout << (x) << std::endl
 
-
+#include "native_classes.h"
 #include "parser/parser.h"
 #include "io/logger.h"
+
+#include "os/os.h"
 #include "io/file.h"
 #include "io/dynamic_library.h"
 using namespace carbon;
 
+#define _CATCH_
 void dl_test();
 void parser_test();
 void crash_handler_test();
+void method_bind_test();
 
-#define _CATCH_
 
 int _main(int argc, char** argv) {
-	
+	File::_register_class();
+	Buffer::_register_class();
+	OS::_register_class();
+	DynamicLibrary::_register_class();
+
 	//dl_test();
 	//crash_handler_test();
+	parser_test();
+	//method_bind_test();
+
+	getchar(); // pause
+	return 0;
+}
+
+// --------	TESTS -----------------------------------
+
+void parser_test() {
 
 #ifdef _CATCH_
 	try {
 #endif
-		parser_test();
+		String path = "bin/main.cb";
+		File file;
+		file.open(path);
+		String source = file.read();
+
+		Parser p;
+		p.parse(source, path);
+		p.print_tree();
+
 		Logger::logf_success("\nSuccess: parsing completed.");
 
 #ifdef _CATCH_
-	} catch (const Error & err) {
+	} catch (const Error& err) {
 		Logger::logf_error("Error: %s at: %s(%lli, %lli)\n", err.what(), err.get_file().c_str(), err.get_pos().x, err.get_pos().y);
 	#if DEBUG_BUILD
 		Logger::logf_error("\tat %s (%s:%i)\n", err.get_dbg_func().c_str(), err.get_dbg_file().c_str(), err.get_dbg_line());
@@ -65,21 +90,7 @@ int _main(int argc, char** argv) {
 	}
 #endif
 
-	getchar();
-	return 0;
-}
-
-// --------	TESTS -----------------------------------
-
-void parser_test() {
-	String path = "bin/main.cb";
-	File file;
-	file.open(path);
-	String source = file.read();
-
-	Parser p;
-	p.parse(source, path);
-	p.print_tree();
+	
 }
 
 void dl_test() {
@@ -122,6 +133,44 @@ void dl_test() {
 	PRINT(ret);
 	ret = lib.call("r0_func_a3", i, f, s);
 	PRINT(ret);
+}
+
+void method_bind_test() {
+#ifdef _CATCH_
+	try {
+#endif
+
+		var f = newptr<File>();
+		f.call_method("open", "bin/main.cb", File::READ);
+		String text = f.call_method("read");
+		printf("%s\n", text.c_str());
+		f.call_method("close");
+
+		var d = newptr<DynamicLibrary>();
+		d.call_method("open", "bin/mylib.dll");
+		d.call_method("call", "r0_func_a0");
+		d.call_method("close");
+
+		//stdvec<var> args = { "bin/main.cb", File::READ };
+		//ptrcast<MethodBind>(NativeClasses::get_bind_data(f.get_class_name(), "open"))->call(f, args);
+		//args.clear();
+		//var text = ptrcast<MethodBind>(NativeClasses::get_bind_data(f.get_class_name(), "read"))->call(f, args);
+		//printf("%s\n", text.to_string().c_str());
+		//ptrcast<MethodBind>(NativeClasses::get_bind_data(f.get_class_name(), "close"))->call(f, args);
+
+#ifdef _CATCH_
+	} catch (const Error& err) {
+		Logger::logf_error("Error: %s at: %s(%lli, %lli)\n", err.what(), err.get_file().c_str(), err.get_pos().x, err.get_pos().y);
+#if DEBUG_BUILD
+		Logger::logf_error("\tat %s (%s:%i)\n", err.get_dbg_func().c_str(), err.get_dbg_file().c_str(), err.get_dbg_line());
+#endif
+		Logger::logf_info("%s\n%s\n", err.get_line().c_str(), err.get_line_pos().c_str());
+
+		DEBUG_BREAK();
+	} catch (...) {
+		DEBUG_BREAK();
+	}
+#endif
 }
 
 void crash_handler_test() {

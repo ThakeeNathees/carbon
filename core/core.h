@@ -26,7 +26,14 @@
 #ifndef CORE_H
 #define CORE_H
 
+#define INHERITS_OBJECT_ADDNL(m_class, m_inheritance)                       \
+	static void _register_class() {                                         \
+		NativeClasses::set_inheritance(STR(m_class), STR(m_inheritance));   \
+		_bind_data();                                                       \
+	}
+
 #define UNDEF_VAR_DEFINES
+#define HAVE_OBJECT_CALL_MAP
 #include "var.h/_var.h"
 using namespace varh;
 
@@ -53,6 +60,7 @@ using namespace varh;
 #include <new>
 
 #include "error.h"
+#include "native_bind.gen.h"
 
 // https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
 #ifdef _MSC_VER // Microsoft compilers

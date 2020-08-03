@@ -26,7 +26,7 @@
 #ifndef DYNAMIC_LYBRARY_H
 #define DYNAMIC_LYBRARY_H
 
-#include "core.h"
+#include "native_classes.h"
 
 #ifdef PLATFORM_WINDOWS
 #include "dlfcn-win32/dlfcn.h"
@@ -41,7 +41,7 @@ namespace carbon {
 class DynamicLibrary;
 template<unsigned int t_argn> struct _Visit {
 template<typename... Targs>
-static int _visit(DynamicLibrary* p_lib, const char* p_func_name, var* p_arg0, Targs... p_args) {
+static int _visit(DynamicLibrary* p_lib, const String& p_func_name, var* p_arg0, Targs... p_args) {
 
 	if (p_arg0->get_type() == var::Type::BOOL) {
 		return _Visit<t_argn - 1>::_visit(p_lib, p_func_name, p_args..., p_arg0->operator bool());
@@ -66,40 +66,61 @@ static int _visit(DynamicLibrary* p_lib, const char* p_func_name, var* p_arg0, T
 }};
 
 class DynamicLibrary : public Object {
+	INHERITS_OBJECT(DynamicLibrary, Object);
 public:
-	// Object overrides.
-	virtual String get_class_name() const override { return "DynamicLibrary"; }
+	static void _bind_data() {
+		BIND_METHOD("open", &DynamicLibrary::open);
+		BIND_METHOD_VA("call", &DynamicLibrary::_call_va_args);
+		BIND_METHOD("close", &DynamicLibrary::close);
+	}
 
 	// Methods.
-	void open(const char* p_lib_name) {
+	void open(const String& p_lib_name) {
 		if (handle) {
 			throw Error(Error::IO_INVALID_OPERATORN, "lib already opened (close before reopening).");
 		}
-		handle = dlopen(p_lib_name, RTLD_LAZY);
+		handle = dlopen(p_lib_name.c_str(), RTLD_LAZY);
 		if (!handle) { /* fail to load the library */
 			throw Error(Error::IO_ERROR, String::format("%s", dlerror()));
 		}
 		lib_name = p_lib_name;
 	}
 
-	int call(const char* p_func) {
-		//return _Visit<0>::_visit(this, p_func, nullptr);
-		return _call(p_func);
+	int _call_va_args(stdvec<var>& p_args) {
+		if (p_args.size() == 0) throw Error(Error::INVALID_ARG_COUNT, "")_ERR_ADD_DBG_VARS;
+		if (p_args[0].get_type() != var::STRING) // TODO: better error msg
+			throw Error(Error::INVALID_ARGUMENT, "first argument of call() must be string (name of the function)")_ERR_ADD_DBG_VARS;
+		const String& func = p_args[0];
+		switch ((int)(p_args.size()-1)) {
+			case 0: return _call(func.c_str());
+			case 1: return  call(func, p_args[1]);
+			case 2: return  call(func, p_args[1], p_args[2]);
+			case 3: return  call(func, p_args[1], p_args[2], p_args[3]);
+			case 4: return  call(func, p_args[1], p_args[2], p_args[3], p_args[4]);
+			case 5: return  call(func, p_args[1], p_args[2], p_args[3], p_args[4], p_args[5]);
+			default:
+				throw Error(Error::INVALID_ARG_COUNT, "dynamic library call argument count must be less than 5");
+		}
 	}
-	int call(const char* p_func, var& arg0) {
+
+	int call(const String& p_func) {
+		//return _Visit<0>::_visit(this, p_func, nullptr);
+		return _call(p_func.c_str());
+	}
+	int call(const String& p_func, var& arg0) {
 		return _Visit<1>::_visit(this, p_func, &arg0, nullptr); 
 	}
-	int call(const char* p_func, var& arg0, var& arg1) {
+	int call(const String& p_func, var& arg0, var& arg1) {
 		return _Visit<2>::_visit(this, p_func, &arg0, &arg1, nullptr);
 	}
-	int call(const char* p_func, var& arg0, var& arg1, var& arg3) {
-		return _Visit<3>::_visit(this, p_func, &arg0, &arg1, &arg3, nullptr);
+	int call(const String& p_func, var& arg0, var& arg1, var& arg2) {
+		return _Visit<3>::_visit(this, p_func, &arg0, &arg1, &arg2, nullptr);
 	}
-	int call(const char* p_func, var& arg0, var& arg1, var& arg3, var& arg4) {
-		return _Visit<4>::_visit(this, p_func, &arg0, &arg1, &arg3, &arg4, nullptr);
+	int call(const String& p_func, var& arg0, var& arg1, var& arg2, var& arg3) {
+		return _Visit<4>::_visit(this, p_func, &arg0, &arg1, &arg2, &arg3, nullptr);
 	}
-	int call(const char* p_func, var& arg0, var& arg1, var& arg3, var& arg4, var& arg5) {
-		return _Visit<5>::_visit(this, p_func, &arg0, &arg1, &arg3, &arg4, &arg5, nullptr);
+	int call(const String& p_func, var& arg0, var& arg1, var& arg2, var& arg3, var& arg4) {
+		return _Visit<5>::_visit(this, p_func, &arg0, &arg1, &arg2, &arg3, &arg4, nullptr);
 	}
 	// !!!!!!!!! NO MORE => NUMBER OF RECURSIVE VARIADIC TEMPLATE WILL EXPLODE !!!!!!!!!
 #undef VISIT_ARGS
@@ -152,8 +173,8 @@ private:
 
 template<> struct _Visit<0> {
 template<typename... Targs>
-static int _visit(DynamicLibrary* p_lib, const char* p_func_name, var* p_nullptr, Targs... p_args) {
-	return p_lib->_call(p_func_name, p_args...);
+static int _visit(DynamicLibrary* p_lib, const String& p_func_name, var* p_nullptr, Targs... p_args) {
+	return p_lib->_call(p_func_name.c_str(), p_args...);
 }};
 
 

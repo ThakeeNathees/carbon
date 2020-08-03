@@ -111,6 +111,7 @@ public:
 	struct FileNode : public Node {
 		String path;
 		String source;
+		String name; // import name = "path/to/source.cb";
 		stdvec<ptr<FileNode>> imports;
 		stdvec<ptr<VarNode>> vars; // Global vars.
 		stdvec<ptr<ClassNode>> classes;
@@ -423,6 +424,7 @@ private:
 		return ret;
 	}
 
+	ptr<FileNode> _parse_import(); // TODO: must return codegen.
 	ptr<ClassNode> _parse_class();
 	ptr<EnumNode> _parse_enum(ptr<Node> p_parent = nullptr);
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent);

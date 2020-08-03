@@ -26,13 +26,15 @@
 #ifndef FILE_H
 #define FILE_H
 
-#include "core.h"
+#include "native_classes.h"
 #include "buffer.h"
 
 namespace carbon {
 
 class File : public Object {
+	INHERITS_OBJECT(File, Object);
 public:
+
 	enum {
 		READ   = 1 << 0,
 		WRITE  = 1 << 1,
@@ -40,19 +42,20 @@ public:
 		BINARY = 1 << 3,
 	};
 
-	// Object overrides.
-	virtual String get_class_name() const override { return "File"; }
-
 	File();
 	~File();
 
+
 	// Methods.
+	static void _bind_data();
+
 	bool is_open() const { return file.is_open(); }
 	void open(const String& p_path, int p_mode = READ | APPEND);
 	void close();
 	size_t size();
 	String get_path() const { return path; }
 	int get_mode() const { return mode; }
+
 
 	String read_text();
 	ptr<Buffer> read_bytes();

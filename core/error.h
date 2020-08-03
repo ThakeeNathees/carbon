@@ -27,15 +27,15 @@
 #define ERRORS_H
 
 
-#define ARG_1 (_1,...) _1
-#define ARG_2 (_1,_2,...) _2
-#define ARG_3 (_1,_2,_3,...) _3
-#define ARG_4 (_1,_2,_3,_4,...) _4
-#define ARG_5 (_1,_2,_3,_4,_5,...) _5
-#define ARG_6 (_1,_2,_3,_4,_5,_6,...) _6
-#define ARG_7 (_1,_2,_3,_4,_5,_6,_7,...) _7
-#define ARG_8 (_1,_2,_3,_4,_5,_6,_7,_8,...) _8
-#define ARG_9 (_1,_2,_3,_4,_5,_6,_7,_8,_9,...) _9
+#define ARG_1(_1,...) _1
+#define ARG_2(_1,_2,...) _2
+#define ARG_3(_1,_2,_3,...) _3
+#define ARG_4(_1,_2,_3,_4,...) _4
+#define ARG_5(_1,_2,_3,_4,_5,...) _5
+#define ARG_6(_1,_2,_3,_4,_5,_6,...) _6
+#define ARG_7(_1,_2,_3,_4,_5,_6,_7,...) _7
+#define ARG_8(_1,_2,_3,_4,_5,_6,_7,_8,...) _8
+#define ARG_9(_1,_2,_3,_4,_5,_6,_7,_8,_9,...) _9
 #define ARG_10(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,...) _10
 
 #define STRCAT2(m_1, m_2) m_1##m_2
@@ -61,7 +61,9 @@ if (m_ptr == nullptr){                                                          
 	_ERR_ADD_DBG_VARS;                                                                                \
 } else ((void)0)
 
+
 #define THROW_INTERNAL(m_type, m_msg) throw Error(m_type, m_msg)_ERR_ADD_DBG_VARS
+#define THROW_BUG(m_msg) THROW_INTERNAL(Error::INTERNAL_BUG, m_msg)
 
 #include "var.h/_var.h"
 using namespace varh;
@@ -79,11 +81,14 @@ public:
 		ALREADY_DEFINED,
 
 		// Runtime errors.
-		NULL_POINTER,
-		INVALID_INDEX,
-		INVALID_CASTING,
 		NOT_IMPLEMENTED,
+
+		NULL_POINTER,
 		ZERO_DIVISION,
+
+		INVALID_INDEX,     // arr[-1]
+		INVALID_GET_INDEX, // o.attrib
+		INVALID_CASTING,
 		INVALID_ARGUMENT,
 		INVALID_ARG_COUNT,
 

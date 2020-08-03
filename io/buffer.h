@@ -26,17 +26,17 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "core.h"
+#include "native_classes.h"
 
 namespace carbon {
 
 class Buffer : public Object {
+	INHERITS_OBJECT(Buffer, Object);
 public:
+	static void _bind_data(){}
+
 	Buffer() {}
 	Buffer(size_t p_size) { alloc(p_size); }
-
-	// Object override.
-	virtual String get_class_name() const override { return "Buffer"; }
 
 	// Methods.
 	void alloc(size_t p_size) {

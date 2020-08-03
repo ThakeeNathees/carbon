@@ -42,7 +42,7 @@ void Parser::parse(String p_source, String p_file_path) {
 			case  Token::_EOF:
 				return;
 			case Token::KWORD_IMPORT: {
-				// TODO:
+				file_node->imports.push_back(_parse_import());
 				break;
 			}
 			case Token::KWORD_CLASS: {
@@ -75,6 +75,23 @@ void Parser::parse(String p_source, String p_file_path) {
 
 	} // while true
 
+}
+
+ptr<Parser::FileNode> Parser::_parse_import() {
+	ASSERT(tokenizer->peek(-1).type == Token::KWORD_IMPORT);
+	ptr<FileNode> import_file = new_node<FileNode>();
+
+	const TokenData* tk = &tokenizer->next();
+	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+	// TODO: check identifier
+	import_file->name = tk->identifier;
+
+	if (tokenizer->next().type != Token::OP_EQ) THROW_UNEXP_TOKEN("symbol \"=\"");
+	tk = &tokenizer->next();
+	if (tk->type != Token::VALUE_STRING) THROW_UNEXP_TOKEN("string path to source");
+	// TODO:
+
+	return import_file;
 }
 
 ptr<Parser::ClassNode> Parser::_parse_class() {
