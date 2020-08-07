@@ -42,7 +42,6 @@ void parser_test();
 void crash_handler_test();
 void method_bind_test();
 
-
 int _main(int argc, char** argv) {
 	File::_register_class();
 	Buffer::_register_class();

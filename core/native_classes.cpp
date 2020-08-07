@@ -56,7 +56,7 @@ void NativeClasses::set_inheritance(const String& p_class_name, const String& p_
 }
 
 String NativeClasses::get_inheritance(const String& p_class_name) {
-	if (classes[p_class_name.hash()].class_name.size() != 0) {
+	if (classes[p_class_name.hash()].class_name.size() == 0) {
 		THROW_INTERNAL(Error::NULL_POINTER, String::format("the class %s isn't registered in native class entries", p_class_name));
 	}
 	return classes[p_class_name.hash()].parent_class_name;

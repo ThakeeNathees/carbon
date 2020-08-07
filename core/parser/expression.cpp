@@ -75,20 +75,25 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 					break;
 			}
 			continue;
-		} else if ((tk->type == Token::IDENTIFIER || tk->type == Token::BUILTIN_FUNC) && tokenizer->peek().type == Token::BRACKET_LPARAN) {
+		} else if ((tk->type == Token::IDENTIFIER || tk->type == Token::BUILTIN_TYPE) && tokenizer->peek().type == Token::BRACKET_LPARAN) {
 			ptr<OperatorNode> call = new_node<OperatorNode>(OperatorNode::OpType::OP_CALL);
 
-			if (tk->type == Token::BUILTIN_FUNC) {
-				call->args.push_back(new_node<BuiltinFunctionNode>(tk->builtin_func));
+			if (tk->type == Token::IDENTIFIER) {
+				BuiltinFunctions::Type builtin_func = BuiltinFunctions::get_func_type(tk->identifier);
+				if (builtin_func != BuiltinFunctions::UNKNOWN) {
+					call->args.push_back(new_node<BuiltinFunctionNode>(builtin_func));
+				} else {
+					// Identifier node could be builtin class like File(), another static method, ...
+					// will know when reducing.
+					call->args.push_back(new_node<Node>()); // UNKNOWN on may/may-not be self
+					call->args.push_back(new_node<IdentifierNode>(tk->identifier));
+				}
 			} else {
-				// Identifier node could be builtin class like File(), another static method, ...
-				// will know when reducing.
-				call->args.push_back(new_node<Node>()); // UNKNOWN on may/may-not be self
-				call->args.push_back(new_node<IdentifierNode>(tk->identifier));
+				call->args.push_back(new_node<BuiltinTypeNode>(tk->builtin_type));
 			}
 
 			tk = &tokenizer->next();
-			ASSERT(tk->type == Token::BRACKET_LPARAN);
+			ASSERT(tk->type == Token::BRACKET_LPARAN); // TODO: throw
 			call->args = _parse_arguments(p_parent);
 			expr = call;
 
@@ -103,8 +108,21 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 					}
 				}
 			}
+			BlockNode* outer_block = parser_context.current_block;
+			while (outer_block) {
+				for (int i = 0; i < (int)outer_block->local_vars.size(); i++) {
+					if (outer_block->local_vars[i]->name == tk->identifier) {
+						id->declared_block = outer_block;
+					}
+				}
+				if (outer_block->parernt_node->type == Node::Type::BLOCK) {
+					outer_block = ptrcast<BlockNode>(outer_block->parernt_node).get();
+				} else {
+					outer_block = nullptr;
+				}
+			}
 			expr = id;
-
+		// } else if (tk->type == Token::BUILTIN_TYPE) { // TODO: String.format(...);
 		} else if (tk->type == Token::BRACKET_LCUR) {
 			// No literal for dictionary.
 			ptr<ArrayNode> arr = new_node<ArrayNode>();
@@ -148,7 +166,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			if (tk->type == Token::SYM_DOT) {
 				tk = &tokenizer->next(1);
 
-				if (tk->type != Token::IDENTIFIER && tk->type != Token::BUILTIN_FUNC) {
+				if (tk->type != Token::IDENTIFIER) {
 					THROW_UNEXP_TOKEN("");
 				}
 
@@ -418,89 +436,6 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 	}
 	ASSERT(!p_expr[0].is_op());
 	return p_expr[0].get_expr();
-}
-
-void Parser::_reduce_expression(ptr<Node>& p_expr) {
-	switch (p_expr->type) {
-		case Node::Type::BUILTIN_FUNCTION: {
-		} break;
-		case Node::Type::ARRAY: {
-			ptr<ArrayNode> arr = ptrcast<ArrayNode>(p_expr);
-			for (int i = 0; i < arr->elements.size(); i++) {
-				_reduce_expression(arr->elements[i]);
-			}	
-		} break;
-		case Node::Type::MAP: {
-			ptr<MapNode> map = ptrcast<MapNode>(p_expr);
-			for (int i = 0; i < map->elements.size(); i++) {
-				_reduce_expression(map->elements[i].key);
-				// TODO: key should be hashable?
-				_reduce_expression(map->elements[i].value);
-			}
-		} break;
-		case Node::Type::OPERATOR: {
-			ptr<OperatorNode> op = ptrcast<OperatorNode>(p_expr);
-
-			bool all_const = true;
-			for (int i = 0; i < op->args.size(); i++) {
-				_reduce_expression(op->args[i]);
-				if (op->args[i]->type != Node::Type::CONST_VALUE) {
-					if (i == 0 && op->args[i]->type == Node::Type::BUILTIN_FUNCTION) {
-						// Could be all const.
-					} else {
-						all_const = false;
-					}
-				}
-			}
-
-			switch (op->op_type) {
-				case OperatorNode::OpType::OP_CALL: {
-
-					// TODO: add built in class for Array(), Map(), ...
-					if (op->args[0]->type == Node::Type::BUILTIN_FUNCTION && all_const) {
-						ptr<BuiltinFunctionNode> bf = ptrcast<BuiltinFunctionNode>(op->args[0]);
-						if (bf->func != BuiltinFunctions::Type::PRINT) {
-							stdvec<var> args;
-							for (int i = 1; i < op->args.size(); i++) {
-								args.push_back(ptrcast<ConstValueNode>(op->args[i])->value);
-							}
-							var ret;
-							try {
-								BuiltinFunctions::call(bf->func, args, ret);
-							} catch (Error& err) {
-								throw err
-									.set_file(file_node->path)
-									.set_line(file_node->source.get_line(op->pos.x))
-									.set_pos(op->pos)
-									.set_err_len((uint32_t)String(BuiltinFunctions::get_func_name(bf->func)).size())
-								;
-							}
-							ptr<ConstValueNode> cv = new_node<ConstValueNode>(ret);
-							cv->pos = op->pos;
-							p_expr = cv;
-						}
-					}
-				} break;
-				case OperatorNode::OpType::OP_INDEX: {
-					// TODO: const_node_var.x or idf_node_enum.VALUE
-				} break;
-				case OperatorNode::OpType::OP_INDEX_MAPPED: {
-					// Can't reduce at compile time.
-				} break;
-				default: {
-					// TODO: binary, unary operators, and others
-				}
-			}
-
-		} break;
-		case Node::Type::CONST_VALUE: {
-		} break; // Can't reduce anymore.
-
-		default: {
-			// ASSERT ?
-		}
-
-	}
 }
 
 }

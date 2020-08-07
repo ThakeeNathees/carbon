@@ -34,6 +34,8 @@ namespace carbon {
 class BuiltinTypes {
 public:
 	enum Type {
+		UNKNOWN,
+
 		_NULL,
 		BOOL,
 		INT,
@@ -52,8 +54,24 @@ public:
 		//BUFFER,
 		//FILE,
 		//DYNAMIC_LIBRARY,
+		_TYPE_MAX_,
 	};
 
+	static String get_type_name(Type p_func) {
+		return _type_list[p_func];
+	}
+
+	static Type get_type_type(const String& p_func) {
+		for (const std::pair<Type, String>& pair : _type_list) {
+			if (pair.second == p_func) {
+				return pair.first;
+			}
+		}
+		return BuiltinTypes::UNKNOWN;
+	}
+
+private:
+	static stdmap<Type, String> _type_list;
 };
 
 }

@@ -63,7 +63,7 @@ protected:
 	const char* class_name;
 
 public:
-	enum Type{
+	enum Type {
 		METHOD,
 		STATIC_FUNC,
 		MEMBER_VAR,

@@ -27,17 +27,20 @@
 
 namespace carbon {
 
-const char* BuiltinFunctions::get_func_name(BuiltinFunctions::Type p_func) {
-	static const char* func_names[] = {
-		"print",
-		"input",
-		"min",
-		"max",
-		"pow",
-		nullptr,
-	};
-	return func_names[(int)p_func];
+
 MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
+
+String BuiltinFunctions::get_func_name(BuiltinFunctions::Type p_func) {
+	return _func_list[p_func];
+}
+
+BuiltinFunctions::Type BuiltinFunctions::get_func_type(const String& p_func) {
+	for (const std::pair<Type, String>& pair: _func_list) {
+		if (pair.second == p_func) {
+			return pair.first;
+		}
+	}
+	return BuiltinFunctions::UNKNOWN;
 }
 
 int BuiltinFunctions::get_arg_count(BuiltinFunctions::Type p_func) {
@@ -58,7 +61,6 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 	switch (p_func) {
 		case Type::PRINT: {
 			for (int i = 0; i < p_args.size(); i++) {
-				// printf is faster than std::cout << ...
 				printf("%s", p_args[i].operator String().c_str());
 			}
 			printf("\n");

@@ -81,8 +81,8 @@ String TokenData::to_string() const {
 		case Token::OP_BIT_XOR:       return "^";
 		case Token::OP_BIT_XOR_EQ:    return "^=";
 
-		case Token::IDENTIFIER:   return identifier;
-		case Token::BUILTIN_FUNC: return BuiltinFunctions::get_func_name(builtin_func);
+		case Token::IDENTIFIER:     return identifier;
+		case Token::BUILTIN_TYPE:   return BuiltinTypes::get_type_name(builtin_type);
 
 		case Token::KWORD_IMPORT:   return "import";
 		case Token::KWORD_CLASS:    return "class";
@@ -174,7 +174,7 @@ const char* Tokenizer::get_token_name(Token p_tk) {
 		"OP_BIT_XOR_EQ",
 
 		"IDENTIFIER",
-		"BUILTIN_FUNC",
+		"BUILTIN_TYPE",
 
 		"KWORD_IMPORT",
 		"KWORD_CLASS",
@@ -295,5 +295,36 @@ const char* Parser::ControlFlowNode::get_cftype_name(CfType p_type) {
 
 MISSED_ENUM_CHECK(Parser::ControlFlowNode::_CF_MAX_, 7);
 }
+
+
+stdmap<BuiltinFunctions::Type, String> BuiltinFunctions::_func_list = {
+	//{ "", BuiltinFunctions::UNKNOWN },
+	//{ "", BuiltinFunctions::_FUNC_MAX_ },
+
+	{ BuiltinFunctions::PRINT,    "print" },
+	{ BuiltinFunctions::INPUT,    "input" },
+	{ BuiltinFunctions::MATH_MIN, "min"   },
+	{ BuiltinFunctions::MATH_MAX, "max"   },
+	{ BuiltinFunctions::MATH_POW, "pow"   },
+
+};
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
+
+stdmap<BuiltinTypes::Type, String> BuiltinTypes::_type_list = {
+	//{ "", BuiltinTypes::UNKNOWN    },
+	//{ "", BuiltinTypes::_TYPE_MAX_ },
+
+	{ BuiltinTypes::_NULL,  "null",      },
+	{ BuiltinTypes::BOOL,   "bool",      },
+	{ BuiltinTypes::INT,    "int",       },
+	{ BuiltinTypes::FLOAT,  "float",     },
+	{ BuiltinTypes::STRING, "String",    },
+	{ BuiltinTypes::ARRAY,  "Array",     },
+	{ BuiltinTypes::MAP,    "Map",       },
+
+};
+MISSED_ENUM_CHECK(BuiltinTypes::Type::_TYPE_MAX_, 8);
+
+
 
 }

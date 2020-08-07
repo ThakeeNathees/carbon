@@ -75,17 +75,6 @@ static KeywordName _keyword_name_list[] = {
 };
 MISSED_ENUM_CHECK(Token::_TK_MAX_, 73);
 
-struct BuiltinFuncName { const char* name; BuiltinFunctions::Type func; };
-static BuiltinFuncName _builtin_func_list[] = {
-	//{ "", BuiltinFunctions::Function::UNKNOWN },
-	{ "print", BuiltinFunctions::Type::PRINT    },
-	{ "input", BuiltinFunctions::Type::INPUT    },
-	{ "min",   BuiltinFunctions::Type::MATH_MIN },
-	{ "max",   BuiltinFunctions::Type::MATH_MAX },
-	{ "pow",   BuiltinFunctions::Type::MATH_POW },
-};
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
-
 void Tokenizer::_eat_escape(String& p_str) {
 	char c = GET_CHAR(0);
 	ASSERT(c == '\\');
@@ -173,12 +162,10 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 	}
 
 	if (tk.type == Token::IDENTIFIER) {
-		for (const BuiltinFuncName& bf : _builtin_func_list) {
-			if (bf.name == p_idf) {
-				tk.type = Token::BUILTIN_FUNC;
-				tk.builtin_func = bf.func;
-				break;
-			}
+		BuiltinTypes::Type bf_type = BuiltinTypes::get_type_type(tk.identifier);
+		if (bf_type != BuiltinTypes::UNKNOWN) {
+			tk.type = Token::BUILTIN_TYPE;
+			tk.builtin_type = bf_type;
 		}
 	}
 
