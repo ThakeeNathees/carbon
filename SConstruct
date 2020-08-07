@@ -72,6 +72,7 @@ if cbenv['use_llvm']:
 
 ## Check our platform specifics
 if cbenv['platform'] == "osx":
+	cbenv.Append(CXXFLAGS=['-std=c++17'])
 	if cbenv['target'] == 'debug':
 		cbenv.Append(CCFLAGS=['-g', '-O2', '-arch', 'x86_64'])
 		cbenv.Append(LINKFLAGS=['-arch', 'x86_64'])
@@ -81,18 +82,18 @@ if cbenv['platform'] == "osx":
 
 elif cbenv['platform'] == 'x11':
 	cbenv.Append(LIBS=['dl', 'pthread']) 
+	cbenv.Append(CXXFLAGS=['-std=c++17'])
 	if cbenv['target'] == 'debug':
 		cbenv.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
-		cbenv.Append(CXXFLAGS=['-std=c++17'])
 	else:
 		cbenv.Append(CCFLAGS=['-fPIC', '-g', '-O3'])
-		cbenv.Append(CXXFLAGS=['-std=c++17'])
 
 elif cbenv['platform'] == "windows":
 	## This makes sure to keep the session environment variables on windows,
 	## that way you can run scons in a vs 2017 prompt and it will find all the required tools
 	cbenv.Append(ENV=os.environ)
 
+	cbenv.Append(CXXFLAGS=['/std:c++17', '/bigobj'])
 	cbenv.Append(CPPDEFINES=['WIN32', '_WIN32', '_WINDOWS', '_CRT_SECURE_NO_WARNINGS'])
 	cbenv.Append(CCFLAGS=['-W3', '-GR'])
 	cbenv.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
@@ -172,6 +173,12 @@ def no_verbose(sys, cbenv):
 if not cbenv['build_verbose']:
 	no_verbose(sys, cbenv)
 
+## generate scripts
+import source_gen
+if not os.path.exists('core/native_bind.gen.h'): 
+	## TODO: change it to SCONS.BUILDER() <-- to detect file changes also.
+	source_gen.generage_method_calls('core/native_bind.gen.h', 6)
+
 ## update user data
 USER_DATA(cbenv)
 
@@ -180,7 +187,7 @@ for script in cbenv.SCONSCRIPTS:
 	SConscript(script)
 
 build_command = None
-if   cbenv.BUILD == Target.EXECUTABLE:   build_command = cbenv.Program
+if   cbenv.BUILD == Target.EXECUTABLE: build_command = cbenv.Program
 elif cbenv.BUILD == Target.SHARED_LIB: build_command = cbenv.SharedLibrary
 elif cbenv.BUILD == Target.LIBRARY:    build_command = cbenv.Library
 

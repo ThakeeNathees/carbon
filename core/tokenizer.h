@@ -27,6 +27,7 @@
 #define TOKENIZER_H
 
 #include "core.h"
+#include "native_classes.h"
 #include "builtin_functions.h"
 #include "builtin_types.h"
 
@@ -96,7 +97,9 @@ enum class Token {
 	OP_BIT_XOR_EQ,
 
 	IDENTIFIER,
-	BUILTIN_FUNC, // also identifier
+	//BUILTIN_FUNC, // also identifier
+	BUILTIN_TYPE,  // bool, int, String, ... cant be identifiers
+	//native type, // also identifier
 
 	KWORD_IMPORT,
 	KWORD_CLASS,
@@ -131,14 +134,9 @@ struct TokenData {
 	Token type = Token::UNKNOWN;
 	int line = 0, col = 0;
 	
-	// Constant int, float, string values.
 	var constant;
-
-	// Identifiers.
 	String identifier;
-	BuiltinFunctions::Type builtin_func = BuiltinFunctions::UNKNOWN;
-	BuiltinTypes::Type builtin_class = BuiltinTypes::_NULL;
-	var::Type biltin_type = var::Type::_NULL;
+	BuiltinTypes::Type builtin_type = BuiltinTypes::UNKNOWN;
 
 	TokenData() {}
 	TokenData(Token p_type) { type = p_type; }

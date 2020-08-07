@@ -25,10 +25,54 @@
 
 #include "parser.h"
 
+#define THROW_PREDEFINED(m_what, m_name, m_pos)             \
+	THROW_PARSER_ERR(Error::ALREADY_DEFINED,                \
+	String::format(m_what " named \"%s\" already exists at (line:%i, col:%i)", m_name.c_str(), m_pos.x, m_pos.y), Vect2i())
+
+#define THROW_IF_NAME_DEFINED___CLS(m_identifier, m_parent)                                                                                          \
+	for (int i = 0; i < (int)m_parent->classes.size(); i++) {                                                                                        \
+		if (m_parent->classes[i]->name == m_identifier) {                                                                                            \
+			ptr<ClassNode>& cls = m_parent->classes[i];                                                                                              \
+			THROW_PREDEFINED("a class", cls->name, cls->pos);                                                                                        \
+		}										                                                                                                     \
+	}
+#define THROW_IF_NAME_DEFINED___EN(m_identifier, m_parent)                                                                                           \
+	for (int i = 0; i < (int)m_parent->enums.size(); i++) {                                                                                          \
+		if (m_parent->enums[i]->named_enum && m_parent->enums[i]->name == m_identifier) {                                                            \
+			ptr<EnumNode>& en = m_parent->enums[i];                                                                                                  \
+			THROW_PREDEFINED("an enum", en->name, en->pos);                                                                                          \
+		}										                                                                                                     \
+	}
+
+#define THROW_IF_NAME_DEFINED___FN(m_identifier, m_parent)                                                                                           \
+	for (int i = 0; i < (int)m_parent->functions.size(); i++) {                                                                                      \
+		if (m_parent->functions[i]->name == m_identifier) {                                                                                          \
+			ptr<FunctionNode>& fn = m_parent->functions[i];                                                                                          \
+			THROW_PREDEFINED("a function", fn->name, fn->pos);                                                                                       \
+		}										                                                                                                     \
+	}
+#define THROW_IF_NAME_DEFINED___VAR(m_identifier, m_parent)                                                                                          \
+	for (int i = 0; i < (int)m_parent->vars.size(); i++) {                                                                                           \
+		if (m_parent->vars[i]->name == m_identifier) {                                                                                               \
+			ptr<VarNode>& vn = m_parent->vars[i];                                                                                                    \
+			THROW_PREDEFINED("a variable", vn->name, vn->pos);                                                                                       \
+		}										                                                                                                     \
+	}
+#define THROW_IF_NAME_DEFINED___CLS_EN_FN_VAR(m_identifier, m_parent) \
+	THROW_IF_NAME_DEFINED___CLS(m_identifier, m_parent)               \
+	THROW_IF_NAME_DEFINED___EN(m_identifier, m_parent)                \
+	THROW_IF_NAME_DEFINED___FN(m_identifier, m_parent)                \
+	THROW_IF_NAME_DEFINED___VAR(m_identifier, m_parent)
+
+#define THROW_IF_NAME_DEFINED___EN_FN_VAR(m_identifier, m_parent)     \
+	THROW_IF_NAME_DEFINED___EN(m_identifier, m_parent)                \
+	THROW_IF_NAME_DEFINED___FN(m_identifier, m_parent)                \
+	THROW_IF_NAME_DEFINED___VAR(m_identifier, m_parent)
+
+
 namespace carbon {
 
 void Parser::parse(String p_source, String p_file_path) {
-
 	file_node = new_node<FileNode>();
 	file_node->source = p_source;
 	file_node->path = p_file_path;
@@ -42,7 +86,7 @@ void Parser::parse(String p_source, String p_file_path) {
 			case  Token::_EOF:
 				return;
 			case Token::KWORD_IMPORT: {
-				// TODO:
+				file_node->imports.push_back(_parse_import());
 				break;
 			}
 			case Token::KWORD_CLASS: {
@@ -50,7 +94,7 @@ void Parser::parse(String p_source, String p_file_path) {
 				break;
 			}
 			case Token::KWORD_ENUM: {
-				file_node->enums.push_back(_parse_enum());
+				file_node->enums.push_back(_parse_enum(file_node));
 				break;
 			}
 			case Token::KWORD_FUNC: {
@@ -77,6 +121,23 @@ void Parser::parse(String p_source, String p_file_path) {
 
 }
 
+ptr<Parser::FileNode> Parser::_parse_import() {
+	ASSERT(tokenizer->peek(-1).type == Token::KWORD_IMPORT);
+	ptr<FileNode> import_file = new_node<FileNode>();
+
+	const TokenData* tk = &tokenizer->next();
+	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+	// TODO: check identifier
+	import_file->name = tk->identifier;
+
+	if (tokenizer->next().type != Token::OP_EQ) THROW_UNEXP_TOKEN("symbol \"=\"");
+	tk = &tokenizer->next();
+	if (tk->type != Token::VALUE_STRING) THROW_UNEXP_TOKEN("string path to source");
+	// TODO:
+
+	return import_file;
+}
+
 ptr<Parser::ClassNode> Parser::_parse_class() {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_CLASS);
 	ptr<ClassNode> class_node = new_node<ClassNode>();
@@ -99,7 +160,9 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 	if (tk->type != Token::IDENTIFIER) {
 		THROW_UNEXP_TOKEN("an identifier");
 	}
-	// TODO: check identifier predefined.
+	// TODO: check identifier from import.
+	THROW_IF_NAME_DEFINED___CLS_EN_FN_VAR(tk->identifier, file_node);
+
 	class_node->name = tk->identifier;
 
 	tk = &tokenizer->next();
@@ -162,7 +225,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 			case Token::KWORD_VAR: {
 				stdvec<ptr<VarNode>> vars = _parse_var(class_node);
 				for (ptr<VarNode>& _var : vars) {
-					class_node->members.push_back(_var);
+					class_node->vars.push_back(_var);
 				}
 			} break;
 
@@ -175,6 +238,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 
 ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_ENUM);
+	ASSERT(p_parent->type == Node::Type::FILE || p_parent->type == Node::Type::CLASS);
 
 	ptr<EnumNode> enum_node = new_node<EnumNode>();
 
@@ -183,7 +247,9 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 		THROW_UNEXP_TOKEN("an identifier or symbol \"{\"");	
 
 	if (tk->type == Token::IDENTIFIER) {
-		// TODO: identifier check.
+
+		// TODO: check identifier from import.
+		THROW_IF_NAME_DEFINED___CLS_EN_FN_VAR(tk->identifier, file_node);
 		enum_node->name = tk->identifier;
 		enum_node->named_enum = true;
 		tk = &tokenizer->next();
@@ -192,6 +258,7 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 	if (tk->type != Token::BRACKET_LCUR) THROW_UNEXP_TOKEN("symbol \"{\"");
 
 	bool comma_valid = false;
+	int64_t next_value = 0;
 	while (true) {
 		const TokenData& token = tokenizer->next();
 		switch (token.type) {
@@ -210,19 +277,32 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 			} break;
 
 			case Token::IDENTIFIER: {
-				// TODO: check identifier with class name, enum name, static var name, and from import, import-> import , ...
-				for (const std::pair<String, ptr<Node>>& value : enum_node->values) {
+				// TODO: check identifier with include
+				for (const std::pair<String, int64_t>& value : enum_node->values) {
 					if (value.first == token.identifier) {
-						THROW_PARSER_ERR(Error::ALREADY_DEFINED, String::format("enum name \"%s\" is already defined", token.identifier.c_str()), Vect2i());
+						THROW_PREDEFINED("an enum value", value.first, enum_node->pos);
+					}
+				}
+				if (!enum_node->named_enum) {
+					if (p_parent->type == Node::Type::FILE) {
+						THROW_IF_NAME_DEFINED___CLS_EN_FN_VAR(token.identifier, file_node);
+					} else { // CLASS
+						THROW_IF_NAME_DEFINED___EN_FN_VAR(token.identifier, ptrcast<ClassNode>(p_parent));
 					}
 				}
 				
 				const TokenData* tk = &tokenizer->peek();
 				if (tk->type == Token::OP_EQ) {
 					tk = &tokenizer->next(); // eat "=".
-					enum_node->values[token.identifier] = _parse_expression(enum_node, false);
+					ptr<Node> expr = _parse_expression(enum_node, false);
+					_reduce_expression(expr);
+					if (expr->type != Node::Type::CONST_VALUE || ptrcast<ConstValueNode>(expr)->value.get_type() != var::INT) {
+						THROW_PARSER_ERR(Error::INVALID_ARGUMENT, "enum value must be a constant integer", Vect2i());
+					}
+					next_value = ptrcast<ConstValueNode>(expr)->value.operator int64_t();
+					enum_node->values[token.identifier] = next_value++;
 				} else {
-					enum_node->values[token.identifier] = nullptr;
+					enum_node->values[token.identifier] = next_value++;
 				}
 
 				comma_valid = true;
@@ -235,10 +315,10 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 	}
 }
 
-stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node) {
+stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_parent) {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_VAR);
-	ASSERT(p_node != nullptr);
-	ASSERT(p_node->type == Node::Type::FILE || p_node->type == Node::Type::BLOCK || p_node->type == Node::Type::CLASS);
+	ASSERT(p_parent != nullptr);
+	ASSERT(p_parent->type == Node::Type::FILE || p_parent->type == Node::Type::BLOCK || p_parent->type == Node::Type::CLASS);
 
 	bool _static = tokenizer->peek(-2, true).type == Token::KWORD_STATIC;
 
@@ -250,22 +330,38 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node) {
 		if (tk->type != Token::IDENTIFIER) {
 			THROW_UNEXP_TOKEN("an identifier");
 		}
+
+		// TODO: check identifier include import
+		if (p_parent->type == Node::Type::FILE) {
+			THROW_IF_NAME_DEFINED___CLS_EN_FN_VAR(tk->identifier, file_node);
+		} else if (p_parent->type == Node::Type::CLASS) {
+			ptr<ClassNode> cls = ptrcast<ClassNode>(p_parent);
+			THROW_IF_NAME_DEFINED___EN_FN_VAR(tk->identifier, cls);
+		} else { // BLOCK local var
+			ASSERT(parser_context.current_func != nullptr);
+			for (int i = 0; i < (int)parser_context.current_func->args.size(); i++) {
+				if (parser_context.current_func->args[i] == tk->identifier) {
+					THROW_PREDEFINED("an argument", tk->identifier, parser_context.current_func->pos);
+				}
+			}
+			BlockNode* block = ptrcast<BlockNode>(p_parent).get();
+			while (block) {
+				for (int i = 0; i < (int)block->local_vars.size(); i++) {
+					if (block->local_vars[i]->name == tk->identifier) {
+						THROW_PREDEFINED("a variable", tk->identifier, block->local_vars[i]->pos);
+					}
+				}
+				block = ptrcast<BlockNode>(block->parernt_node).get();
+			}
+		}
+
 		ptr<VarNode> var_node = new_node<VarNode>();
 		var_node->is_static = _static;
 		var_node->name = tk->identifier;
 
-		if (parser_context.current_func) {
-			stdvec<String>* args = &parser_context.current_func->args;
-			if (std::find(args->begin(), args->end(), var_node->name) != args->end()) {
-				THROW_PARSER_ERR(Error::ALREADY_DEFINED, 
-					String::format("identifier \"%s\" already defined in arguments", var_node->name.c_str()), Vect2i());
-			}
-		}
-		// TODO: identifier check.
-
 		tk = &tokenizer->next();
 		if (tk->type == Token::OP_EQ) {
-			ptr<Node> expr = _parse_expression(p_node, false);
+			ptr<Node> expr = _parse_expression(p_parent, false);
 			//_reduce_expression(expr); TODO: reduce after all are parsed.
 			var_node->assignment = expr;
 
@@ -292,6 +388,7 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_node) {
 
 ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_FUNC);
+	ASSERT(p_parent->type == Node::Type::FILE || p_parent->type == Node::Type::CLASS);
 
 	ptr<FunctionNode> func_node = new_node<FunctionNode>();
 	if (tokenizer->peek(-2, true).type == Token::KWORD_STATIC) {
@@ -311,8 +408,16 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	};
 	ScopeDestruct distruct = ScopeDestruct(&parser_context);
 
+	// TODO: check identifier from import
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+	if (p_parent->type == Node::Type::FILE) {
+		THROW_IF_NAME_DEFINED___CLS_EN_FN_VAR(tk->identifier, file_node);
+	} else { // CLASS
+		ptr<ClassNode> cln = ptrcast<ClassNode>(p_parent);
+		THROW_IF_NAME_DEFINED___EN_FN_VAR(tk->identifier, cln);
+	}
+
 	func_node->name = tk->identifier;
 
 	tk = &tokenizer->next();
@@ -326,7 +431,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 				THROW_PARSER_ERR(Error::ALREADY_DEFINED, 
 					String::format("identifier \"%s\" already defined in arguments", tk->identifier.c_str()), Vect2i());
 			}
-			// TODO: identifier shadow check.
+			// TODO: identifier shadow check. ??
 			func_node->args.push_back(tk->identifier);
 
 			tk = &tokenizer->next();
@@ -453,20 +558,21 @@ static void print_enum_node(const Parser::EnumNode* p_enum, int p_indent) {
 	if (p_enum->named_enum) PRINT_COLOR(String(String(" ") + p_enum->name + "\n").c_str(), TYPE_COLOR);
 	else PRINT_COLOR(" [not named]\n", Logger::Color::L_GRAY);
 
-	for (const std::pair<String, ptr<Parser::Node>>& value : p_enum->values) {
+	for (const std::pair<String, int64_t>& value : p_enum->values) {
 		PRINT_INDENT(p_indent + 1);
 		printf("%s = ", value.first.c_str());
-		if (value.second != nullptr) {
-			if (value.second->type == Parser::Node::Type::CONST_VALUE) {
-				ptr<Parser::ConstValueNode> enum_val = ptrcast<Parser::ConstValueNode>(value.second);
-				ASSERT(enum_val->value.get_type() == var::INT);
-				printf("%lli\n", enum_val->value.operator int64_t());
-			} else {
-				PRINT_COLOR("[TODO: reduce expression]\n", Logger::Color::L_GRAY);
-			}
-		} else {
-			PRINT_COLOR("[TODO: auto increase]\n", Logger::Color::L_GRAY);
-		}
+		//if (value.second != nullptr) {
+		//	if (value.second->type == Parser::Node::Type::CONST_VALUE) {
+		//		ptr<Parser::ConstValueNode> enum_val = ptrcast<Parser::ConstValueNode>(value.second);
+		//		ASSERT(enum_val->value.get_type() == var::INT);
+		//		printf("%lli\n", enum_val->value.operator int64_t());
+		//	} else {
+		//		PRINT_COLOR("[TODO: reduce expression]\n", Logger::Color::L_GRAY);
+		//	}
+		//} else {
+		//	PRINT_COLOR("[TODO: auto increase]\n", Logger::Color::L_GRAY);
+		//}
+		printf("%lli\n", value.second);
 	}
 }
 
@@ -503,8 +609,8 @@ static void print_class_node(Parser::ClassNode* p_class, int p_indent) {
 		print_enum_node(p_class->enums[i].get(), p_indent + 1);
 	}
 
-	for (int i = 0; i < (int)p_class->members.size(); i++) {
-		print_var_node(p_class->members[i].get(), p_indent + 1);
+	for (int i = 0; i < (int)p_class->vars.size(); i++) {
+		print_var_node(p_class->vars[i].get(), p_indent + 1);
 	}
 
 	for (int i = 0; i < (int)p_class->functions.size(); i++) {

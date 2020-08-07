@@ -1,4 +1,3 @@
-
 //------------------------------------------------------------------------------
 // MIT License
 //------------------------------------------------------------------------------
@@ -24,56 +23,38 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BUILTIN_CLASSES_H
-#define BUILTIN_CLASSES_H
+#ifndef NATIVE_CLASSES_H
+#define NATIVE_CLASSES_H
 
 #include "core.h"
 
+#define BIND_METHOD(m_name, m_method) NativeClasses::bind_data(_bind_method(m_name, get_class_name_s(), m_method))
+#define BIND_METHOD_VA(m_name, m_method) NativeClasses::bind_data(_bind_va_method(m_name, get_class_name_s(), m_method))
+#define BIND_STATIC_FUNC(m_name, m_func) NativeClasses::bind_data(_bind_static_func(m_name, get_class_name_s(), m_func))
+#define BIND_STATIC_FUNC_VA(m_name, m_func) NativeClasses::bind_data(_bind_va_static_func(m_name, get_class_name_s(), m_func))
+
+
+
 namespace carbon {
 
-class BuiltinTypes {
-public:
-	enum Type {
-		UNKNOWN,
-
-		_NULL,
-		BOOL,
-		INT,
-		FLOAT,
-		STRING,
-		// Vectors are not exposed.
-		//VECT2F,
-		//VECT2I,
-		//VECT3F,
-		//VECT3I,
-		ARRAY,
-		MAP,
-		//OBJECT, // Object is considered as Native.
-
-		// Native classes.
-		//BUFFER,
-		//FILE,
-		//DYNAMIC_LIBRARY,
-		_TYPE_MAX_,
+class NativeClasses {
+	struct ClassEntries {
+		String class_name;
+		String parent_class_name;
+		stdhashtable<size_t, ptr<BindData>> bind_data;
 	};
 
-	static String get_type_name(Type p_func) {
-		return _type_list[p_func];
-	}
-
-	static Type get_type_type(const String& p_func) {
-		for (const std::pair<Type, String>& pair : _type_list) {
-			if (pair.second == p_func) {
-				return pair.first;
-			}
-		}
-		return BuiltinTypes::UNKNOWN;
-	}
-
 private:
-	static stdmap<Type, String> _type_list;
+	static stdhashtable<size_t, ClassEntries> classes;
+
+public:
+	static void bind_data(ptr<BindData> p_bind_data);
+	static ptr<BindData> get_bind_data(const String& cls, const String& attrib);
+	static void set_inheritance(const String& p_class_name, const String& p_parent_class_name);
+	static String get_inheritance(const String& p_class_name);
+	static bool is_class_registered(const String& p_class_name);
 };
 
 }
 
-#endif // BUILTIN_CLASSES_H
+#endif // NATIVE_CLASSES_H

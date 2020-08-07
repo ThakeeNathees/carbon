@@ -26,12 +26,14 @@
 #ifndef OS_H
 #define OS_H
 
-#include "core.h"
+#include "native_classes.h"
 
 namespace carbon {
 
-class OS {
-
+class OS : public Object {
+	INHERITS_OBJECT(OS, Object);
+public:
+	static void _bind_data() {}
 };
 
 }

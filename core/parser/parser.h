@@ -111,6 +111,7 @@ public:
 	struct FileNode : public Node {
 		String path;
 		String source;
+		String name; // import name = "path/to/source.cb";
 		stdvec<ptr<FileNode>> imports;
 		stdvec<ptr<VarNode>> vars; // Global vars.
 		stdvec<ptr<ClassNode>> classes;
@@ -128,7 +129,7 @@ public:
 		stdvec<String> inherits;
 		//String base; // TODO: file_node.file_node.ClassName ??
 		stdvec<ptr<EnumNode>> enums;
-		stdvec<ptr<VarNode>> members;
+		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<FunctionNode>> functions;
 		// TODO: implement const.
 		ClassNode() {
@@ -139,7 +140,7 @@ public:
 	struct EnumNode : public Node {
 		String name;
 		bool named_enum = false;
-		std::map<String, ptr<Node>> values;
+		std::map<String, int64_t> values;
 		EnumNode() {
 			type = Type::ENUM;
 		}
@@ -241,13 +242,13 @@ public:
 	};
 
 	struct BuiltinTypeNode : public Node {
-		BuiltinTypes::Type cls;
+		BuiltinTypes::Type builtin_type;
 		BuiltinTypeNode() {
 			type = Type::BUILTIN_TYPE;
 		}
 		BuiltinTypeNode(BuiltinTypes::Type p_cls) {
 			type = Type::BUILTIN_TYPE;
-			cls = p_cls;
+			builtin_type = p_cls;
 		}
 	};
 
@@ -423,8 +424,9 @@ private:
 		return ret;
 	}
 
+	ptr<FileNode> _parse_import(); // TODO: must return codegen.
 	ptr<ClassNode> _parse_class();
-	ptr<EnumNode> _parse_enum(ptr<Node> p_parent = nullptr);
+	ptr<EnumNode> _parse_enum(ptr<Node> p_parent);
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent);
 	ptr<FunctionNode> _parse_func(ptr<Node> p_parent);
 
@@ -433,10 +435,12 @@ private:
 
 	ptr<Node> _parse_expression(const ptr<Node>& p_parent, bool p_allow_assign);
 	stdvec<ptr<Node>> _parse_arguments(const ptr<Node>& p_parent);
-	void _reduce_expression(ptr<Node>& p_expr);
 
 	ptr<Node> _build_operator_tree(stdvec<Expr>& p_expr);
 	static int _get_operator_precedence(OperatorNode::OpType p_op);
+
+
+	void _reduce_expression(ptr<Node>& p_expr);
 
 	// Members.
 	ptr<FileNode> file_node;

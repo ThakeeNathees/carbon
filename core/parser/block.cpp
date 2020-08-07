@@ -55,7 +55,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 
 			case Token::KWORD_VAR: {
 				tokenizer->next(); // eat "var"
-				stdvec<ptr<VarNode>> vars = _parse_var(file_node);
+				stdvec<ptr<VarNode>> vars = _parse_var(block_node);
 				for (ptr<VarNode>& _var : vars) {
 					block_node->local_vars.push_back(_var); // for quick access.
 					block_node->statements.push_back(_var);
