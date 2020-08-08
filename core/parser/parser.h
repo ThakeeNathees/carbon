@@ -90,7 +90,7 @@ public:
 		};
 		Type type = Type::UNKNOWN;
 		Vect2i pos;
-		ptr<Node> parernt_node;
+		ptr<Node> parernt_node; // TODO: need to set to all nodes.
 		static const char* get_node_type_name(Type p_type);
 	};
 
@@ -115,6 +115,7 @@ public:
 		stdvec<ptr<FileNode>> imports;
 		stdvec<ptr<VarNode>> vars; // Global vars.
 		stdvec<ptr<ClassNode>> classes;
+		ptr<EnumNode> unnamed_enum;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<FunctionNode>> functions;
 
@@ -128,6 +129,7 @@ public:
 		String name;
 		stdvec<String> inherits;
 		//String base; // TODO: file_node.file_node.ClassName ??
+		ptr<EnumNode> unnamed_enum;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<FunctionNode>> functions;
@@ -137,19 +139,37 @@ public:
 		}
 	};
 
+	struct EnumValueNode {
+		Vect2i pos = Vect2i(-1, -1);
+		int64_t value = 0;
+		EnumValueNode() {}
+		EnumValueNode(int64_t p_value, Vect2i p_pos) {
+			pos = p_pos;
+			value = p_value;
+		}
+	};
 	struct EnumNode : public Node {
 		String name;
 		bool named_enum = false;
-		std::map<String, int64_t> values;
+		std::map<String, EnumValueNode> values;
 		EnumNode() {
 			type = Type::ENUM;
 		}
 	};
 
+	struct ArgumentNode {
+		Vect2i pos = Vect2i(-1, -1);
+		String name;
+		ArgumentNode() {}
+		ArgumentNode(String p_name, Vect2i p_pos) {
+			name = p_name;
+			pos = p_pos;
+		}
+	};
 	struct FunctionNode : public Node {
 		String name;
 		bool is_static = false;
-		stdvec<String> args;
+		stdvec<ArgumentNode> args;
 		ptr<BlockNode> body;
 		ptr<Node> parent_node;
 		FunctionNode() {

@@ -75,6 +75,9 @@ public:
 	enum Type {
 		OK = 0,
 
+		// Warnings. (warnings are basically errors and throws if flag set unless ignored)
+		WARNING_NAME_PREDEFINED,
+
 		// Compiletime errors.
 		SYNTAX_ERROR,
 		UNEXPECTED_EOF,

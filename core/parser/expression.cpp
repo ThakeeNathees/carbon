@@ -102,7 +102,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			id->declared_block = parser_context.current_block;
 			if (parser_context.current_func) {
 				for (int i = 0; i < parser_context.current_func->args.size(); i++) {
-					if (parser_context.current_func->args[i] == tk->identifier) {
+					if (parser_context.current_func->args[i].name == tk->identifier) {
 						id->arg_index = i;
 						break;
 					}
