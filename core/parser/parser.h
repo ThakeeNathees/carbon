@@ -464,7 +464,7 @@ private:
 
 	// Members.
 	ptr<FileNode> file_node;
-	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
+	ptr<Tokenizer> tokenizer;
 	ParserContext parser_context;
 };
 

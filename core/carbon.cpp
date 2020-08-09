@@ -1,6 +1,4 @@
 //------------------------------------------------------------------------------
-// MIT License
-//------------------------------------------------------------------------------
 // 
 // Copyright (c) 2020 Thakee Nathees
 // 
@@ -23,17 +21,16 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
+#include "carbon.h"
 
-#include "core/carbon.h"
-using namespace carbon;
+namespace carbon {
 
-int _test_main(int argc, char** argv);
+void initialize() {
+	// Register native classes,
+	File::_register_class();
+	Buffer::_register_class();
+	OS::_register_class();
+	DynamicLibrary::_register_class();
+}
 
-int _main(int argc, char** argv) {
-
-	initialize();
-	_test_main(argc, argv);
-
-	getchar(); // pause
-	return 0;
 }

@@ -23,17 +23,32 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
+#define DOCTEST_CONFIG_IMPLEMENT
+#include <doctest/doctest.h>
 
-#include "core/carbon.h"
-using namespace carbon;
 
-int _test_main(int argc, char** argv);
+int _test_main(int argc, char** argv) {
+	doctest::Context context;
 
-int _main(int argc, char** argv) {
+	// !!! THIS IS JUST AN EXAMPLE SHOWING HOW DEFAULTS/OVERRIDES ARE SET !!!
 
-	initialize();
-	_test_main(argc, argv);
+	// defaults
+	context.addFilter("test-case-exclude", "[crash_handler]"); // exclude test cases
+	context.addFilter("test-case-exclude", "[native:dll]");    // exclude test cases
+	context.setOption("rand-seed", 324);                       // if order-by is set to "rand" use this seed
+	context.setOption("order-by", "file");                     // sort the test cases by file and line
 
-	getchar(); // pause
-	return 0;
+	context.applyCommandLine(argc, argv);
+
+	// overrides
+	context.setOption("no-breaks", true); // don't break in the debugger when assertions fail
+
+	int res = context.run(); // run queries, or run tests unless --no-run is specified
+
+	if (context.shouldExit()) // important - query flags (and --exit) rely on the user doing this
+		return res;          // propagate the result of the tests
+
+	context.clearFilters(); // removes all filters added up to this point
+
+	return res;
 }

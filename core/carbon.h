@@ -23,17 +23,25 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
+#ifndef CARBON_H
+#define CARBON_H
 
-#include "core/carbon.h"
-using namespace carbon;
+// core imports
+#include "core/core.h"
+#include "core/parser/parser.h"
+#include "native_classes.h"
 
-int _test_main(int argc, char** argv);
+// native imports
+#include "io/logger.h"
+#include "io/file.h"
+#include "io/dynamic_library.h"
+#include "os/os.h"
 
-int _main(int argc, char** argv) {
+namespace carbon {
 
-	initialize();
-	_test_main(argc, argv);
+void initialize();
 
-	getchar(); // pause
-	return 0;
 }
+
+
+#endif // CARBON_H
