@@ -27,12 +27,18 @@
 #include "core/carbon.h"
 using namespace carbon;
 
-int _test_main(int argc, char** argv);
+#if DEBUG_BUILD
+#include "tests/carbon_tests.h"
+#endif // DEBUG_BUILD
 
 int _main(int argc, char** argv) {
 
 	initialize();
+#if DEBUG_BUILD
 	_test_main(argc, argv);
+#endif // DEBUG_BUILD
+
+
 
 	getchar(); // pause
 	return 0;

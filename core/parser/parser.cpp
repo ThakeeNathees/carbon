@@ -362,14 +362,7 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_parent) {
 			THROW_IF_NAME_DEFINED(file_node, "a variable", tk->identifier, vars);
 			THROW_IF_NAME_DEFINED(file_node, "a function", tk->identifier, functions);
 			THROW_IF_NAME_DEFINED(file_node, "an enum", tk->identifier, enums);
-			//THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
-			if (file_node->unnamed_enum != nullptr) {
-				for (auto it = file_node->unnamed_enum->values.begin(); it != file_node->unnamed_enum->values.end(); it++) {
-					if (it->first == tk->identifier) {
-						THROW_PREDEFINED("an enum value", tk->identifier, it->second.pos);
-					}
-				}
-			}
+			THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
 		} else if (p_parent->type == Node::Type::CLASS) {
 			ptr<ClassNode> cn = ptrcast<ClassNode>(p_parent);
 			THROW_IF_NAME_DEFINED(cn, "a variable", tk->identifier, vars);

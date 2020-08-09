@@ -72,7 +72,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 			r_ret = input;
 		} break;
 		case Type::MATH_MAX: {
-			if (p_args.size() <= 1) throw Error(Error::INVALID_ARG_COUNT, "Expected at least 2 argument.");
+			if (p_args.size() <= 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at least 2 argument.");
 			var min = p_args[0];
 			for (int i = 1; i < p_args.size(); i++) {
 				if (p_args[i] < min) {
@@ -82,7 +82,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 			r_ret = min;
 		} break;
 		case Type::MATH_MIN: {
-			if (p_args.size() <= 1) throw Error(Error::INVALID_ARG_COUNT, "Expected at least 2 argument.");
+			if (p_args.size() <= 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at least 2 argument.");
 			var max = p_args[0];
 			for (int i = 1; i < p_args.size(); i++) {
 				if (p_args[i] > max) {
@@ -92,11 +92,11 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 			r_ret = max;
 		} break;
 		case Type::MATH_POW: {
-			if (p_args.size() != 2) throw Error(Error::INVALID_ARG_COUNT, "Expected exactly 2 arguments.");
+			if (p_args.size() != 2) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected exactly 2 arguments.");
 			if (p_args[0].get_type() != var::INT && p_args[1].get_type() != var::FLOAT)
-				throw Error(Error::INVALID_ARGUMENT, "Expected a numeric value at argument 0.");
+				THROW_ERROR(Error::INVALID_ARGUMENT, "Expected a numeric value at argument 0.");
 			if (p_args[1].get_type() != var::INT && p_args[1].get_type() != var::FLOAT)
-				throw Error(Error::INVALID_ARGUMENT, "Expected a numeric value at argument 1.");
+				THROW_ERROR(Error::INVALID_ARGUMENT, "Expected a numeric value at argument 1.");
 			r_ret = pow(p_args[0].operator double(), p_args[1].operator double());
 		} break;
 

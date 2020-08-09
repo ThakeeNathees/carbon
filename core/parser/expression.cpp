@@ -393,7 +393,7 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 			int next_expr = next_op;
 			while (p_expr[next_expr].is_op()) {
 				if (++next_expr == p_expr.size()) {
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "", Vect2i());
+					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "expected an expression", Vect2i());
 				}
 			}
 

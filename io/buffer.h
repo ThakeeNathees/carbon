@@ -47,11 +47,11 @@ public:
 	size_t size() const { return _size; }
 
 	byte_t& operator[](size_t p_index) {
-		if (p_index >= _size) throw Error(Error::INVALID_INDEX, "");
+		THROW_INVALID_INDEX(_size, p_index);
 		return _buffer.get()[p_index];
 	}
 	const byte_t& operator[](size_t p_index) const {
-		if (p_index >= _size) throw Error(Error::INVALID_INDEX, "");
+		THROW_INVALID_INDEX(_size, p_index);
 		return _buffer.get()[p_index];
 	}
 

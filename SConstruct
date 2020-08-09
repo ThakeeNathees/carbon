@@ -16,12 +16,15 @@ def USER_DATA(env):
 	    'main/main.cpp'
 	]
 	env.SCONSCRIPTS = [
-		'tests/SConstruct',
 		'thirdparty/SConstruct',
 		'io/SConstruct',
 		'core/SConstruct',
 		'os/SConstruct',
 	]
+	if env['target'] == 'debug':
+		env.SCONSCRIPTS.append(
+			'tests/SConstruct',
+		)
 	env.Append(CPPPATH=[Dir("./")])
 
 #################################################################################################

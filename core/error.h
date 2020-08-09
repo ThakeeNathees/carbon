@@ -62,8 +62,8 @@ if (m_ptr == nullptr){                                                          
 } else ((void)0)
 
 
-#define THROW_INTERNAL(m_type, m_msg) throw Error(m_type, m_msg)_ERR_ADD_DBG_VARS
-#define THROW_BUG(m_msg) THROW_INTERNAL(Error::INTERNAL_BUG, m_msg)
+#define THROW_ERROR(m_type, m_msg) throw Error(m_type, m_msg)_ERR_ADD_DBG_VARS
+#define THROW_BUG(m_msg) THROW_ERROR(Error::INTERNAL_BUG, m_msg)
 
 #include "var.h/_var.h"
 using namespace varh;
@@ -102,39 +102,21 @@ public:
 		// for debugging
 		INTERNAL_BUG,
 
+		_ERROR_MAX_,
+
 	};
 
-	const char* what() const noexcept override { return msg.c_str(); }
+	const char* what() const noexcept override;
 
+	String get_msg() const { return msg; }
 	Type get_type() const { return type; }
 	Vect2i get_pos() const { return pos; }
 
 	String get_file() const noexcept { return file.c_str(); }
-	String get_line() const { // TODO: refactor line with line.rstrip("\n") when setting it.
-		if (line[line.size() - 1] == '\n') {
-			return line.substr(0, line.size() - 1);
-		}
-		return line;
-	}
-	String get_line_pos() const {
-		std::stringstream ss_pos;
-		size_t cur_col = 0;
-		for (size_t i = 0; i < line.size(); i++) {
-			cur_col++;
-			if (cur_col == pos.y) {
-				for (uint32_t i = 0; i < err_len; i++) {
-					ss_pos << '^';
-				}
-				break;
-			} else if (line[i] != '\t') {
-				ss_pos << ' ';
-			} else {
-				ss_pos << '\t';
-			}
-		}
-		//return String(line + ((line[line.size()-1] != '\n')? "\n" : "") + ss_pos.str());
-		return ss_pos.str();
-	}
+	String get_line() const;
+	String get_line_pos() const;
+
+	static String get_err_name(Error::Type p_type);
 
 #if DEBUG_BUILD
 	const String& get_dbg_func() const { return __dbg_func__; }
@@ -168,6 +150,7 @@ public:
 #endif
 
 private:
+	// TODO: bool is_carbon_script_error;
 	Type type = OK;
 	String msg = "<NO-ERROR-MSG-SET>";
 	String file = "<NO-FILE-SET>";
@@ -180,7 +163,13 @@ private:
 	String __dbg_file__ = "<NO-FILE-SET>";
 	uint32_t __dbg_line__ = 0;
 #endif
+
+	mutable String _what;
 };
+
+
+
+
 
 }
 

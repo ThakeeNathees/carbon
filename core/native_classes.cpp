@@ -36,8 +36,8 @@ void NativeClasses::bind_data(ptr<BindData> p_bind_data) {
 	ClassEntries& entries = classes[class_name.hash()];
 
 	if (entries.bind_data[data_name.hash()] != nullptr) {
-		THROW_INTERNAL(Error::ALREADY_DEFINED, 
-			String::format("entry %s already exists on class %s", p_bind_data->get_name(), p_bind_data->get_class_name())
+		THROW_ERROR(Error::ALREADY_DEFINED, 
+			String::format("entry \"%s\" already exists on class \"%s\"", p_bind_data->get_name(), p_bind_data->get_class_name())
 		);
 	}
 	entries.bind_data[data_name.hash()] = p_bind_data;
@@ -49,7 +49,7 @@ ptr<BindData> NativeClasses::get_bind_data(const String& cls, const String& attr
 
 void NativeClasses::set_inheritance(const String& p_class_name, const String& p_parent_class_name) {
 	if (classes[p_class_name.hash()].class_name.size() != 0) {
-		THROW_INTERNAL(Error::ALREADY_DEFINED, String::format("class %s already exists on NativeClasses entries", p_class_name));
+		THROW_ERROR(Error::ALREADY_DEFINED, String::format("class \"%s\" already exists on NativeClasses entries", p_class_name));
 	}
 	classes[p_class_name.hash()].class_name = p_class_name;
 	classes[p_class_name.hash()].parent_class_name = p_parent_class_name;
@@ -57,7 +57,7 @@ void NativeClasses::set_inheritance(const String& p_class_name, const String& p_
 
 String NativeClasses::get_inheritance(const String& p_class_name) {
 	if (classes[p_class_name.hash()].class_name.size() == 0) {
-		THROW_INTERNAL(Error::NULL_POINTER, String::format("the class %s isn't registered in native class entries", p_class_name.c_str()));
+		THROW_ERROR(Error::NULL_POINTER, String::format("the class \"%s\" isn't registered in native class entries", p_class_name.c_str()));
 	}
 	return classes[p_class_name.hash()].parent_class_name;
 }
@@ -76,7 +76,7 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 	String method_name = p_name;
 
 	if (!NativeClasses::is_class_registered(class_name)) {
-		THROW_INTERNAL(Error::NULL_POINTER, String::format("the class %s isn't registered in native class entries", class_name.c_str()));
+		THROW_ERROR(Error::NULL_POINTER, String::format("the class \"%s\" isn't registered in native class entries", class_name.c_str()));
 	}
 
 	while (class_name.size() != 0) {
@@ -89,15 +89,14 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 				return ptrcast<StaticFuncBind>(bind_data)->call(p_args);
 
 			} else {
-				// TODO: throw ERROR
-				ASSERT(false);
+				THROW_ERROR(Error::INVALID_GET_INDEX,
+					String::format("attribute named \"%s\" on type \"%s\" is not callable", method_name.c_str(), p_self->get_class_name()));
 			}
 		}
 		class_name = NativeClasses::get_inheritance(class_name);
 	}
 	
-	// TODO: No method found throw ERROR:
-	ASSERT(false);
+	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no method named \"%s\"", p_self->get_class_name(), method_name.c_str()));
 	return var();
 }
 #endif // HAVE_OBJECT_CALL_MAP

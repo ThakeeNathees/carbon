@@ -47,7 +47,7 @@ public:
 	virtual Type get_type() const = 0;
 	virtual const char* get_name() const { return name; }
 	virtual const char* get_class_name() const { return class_name; }
-	virtual int get_argc() const { THROW_INTERNAL(Error::INTERNAL_BUG, "invalid call"); }
+	virtual int get_argc() const { THROW_ERROR(Error::INTERNAL_BUG, "invalid call"); }
 };
 
 class MethodBind : public BindData {
