@@ -181,7 +181,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 	char_ptr = 0;
 	tokens.clear();
 
-	while (char_ptr < source.size()) {
+	while (char_ptr < (int)source.size()) {
 
 		switch (GET_CHAR(0)) {
 			case 0:

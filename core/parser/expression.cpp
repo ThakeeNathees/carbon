@@ -101,7 +101,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			ptr<IdentifierNode> id = new_node<IdentifierNode>(tk->identifier);
 			id->declared_block = parser_context.current_block;
 			if (parser_context.current_func) {
-				for (int i = 0; i < parser_context.current_func->args.size(); i++) {
+				for (int i = 0; i < (int)parser_context.current_func->args.size(); i++) {
 					if (parser_context.current_func->args[i].name == tk->identifier) {
 						id->arg_index = i;
 						break;
@@ -369,7 +369,7 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 		int min_precedence = 0xFFFFF;
 		bool unary = false;
 
-		for (int i = 0; i < p_expr.size(); i++) {
+		for (int i = 0; i < (int)p_expr.size(); i++) {
 			if (!p_expr[i].is_op()) {
 				continue;
 			}
@@ -393,7 +393,7 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 			int next_expr = next_op;
 			while (p_expr[next_expr].is_op()) {
 				if (++next_expr == p_expr.size()) {
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "", Vect2i());
+					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "expected an expression", Vect2i());
 				}
 			}
 
@@ -406,7 +406,7 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 			}
 
 		} else {
-			ASSERT(next_op >= 1 && next_op < p_expr.size()-1);
+			ASSERT(next_op >= 1 && next_op < (int)p_expr.size()-1);
 			ASSERT(!p_expr[(size_t)next_op - 1].is_op() && !p_expr[(size_t)next_op + 1].is_op());
 
 			ptr<OperatorNode> op_node = new_node<OperatorNode>(p_expr[(size_t)next_op].get_op());

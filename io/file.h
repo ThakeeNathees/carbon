@@ -36,10 +36,13 @@ class File : public Object {
 public:
 
 	enum {
-		READ   = 1 << 0,
-		WRITE  = 1 << 1,
-		APPEND = 1 << 2,
-		BINARY = 1 << 3,
+		READ   = 1 << 0, // "r"
+		WRITE  = 1 << 1, // "w"
+		APPEND = 1 << 2, // "a"
+		BINARY = 1 << 3, // "b"
+		EXTRA  = 1 << 4, // "+"
+
+		DEFAULT = APPEND | EXTRA,
 	};
 
 	File();
@@ -49,26 +52,31 @@ public:
 	// Methods.
 	static void _bind_data();
 
-	bool is_open() const { return file.is_open(); }
-	void open(const String& p_path, int p_mode = READ | APPEND);
+	inline bool is_open() const { return _file != NULL; }
+	void open(const String& p_path, int p_mode = DEFAULT);
 	void close();
-	size_t size();
+	long size();
 	String get_path() const { return path; }
 	int get_mode() const { return mode; }
 
 
 	String read_text();
+	void write_text(const String& p_text);
+
 	ptr<Buffer> read_bytes();
-	Array get_lines();
+	void write_bytes(const ptr<Buffer>& p_bytes);
+
 	var read();
+	void write(const var& p_what);
 
 
 protected:
 
 private:
-	std::fstream file;
+	//std::fstream file;
+	FILE* _file = NULL;
 	String path;
-	int mode = READ | APPEND;
+	int mode = DEFAULT;
 
 };
 }

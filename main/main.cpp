@@ -27,13 +27,29 @@
 #include "core/carbon.h"
 using namespace carbon;
 
-int _test_main(int argc, char** argv);
+#if DEBUG_BUILD
+#include "tests/carbon_tests.h"
+#endif // DEBUG_BUILD
+
+// TODO: VarError -> Error.
+// TODO: Make var submodule to local.
 
 int _main(int argc, char** argv) {
 
 	initialize();
-	_test_main(argc, argv);
+#if DEBUG_BUILD
+	int res = _test_main(argc, argv);
+	if (res) {
+		Logger::log("\nTests failed. continue? [Y/N] (default:N) ", Logger::VERBOSE, Logger::Color::L_WHITE);
+		char _continue = getchar();
+		if (_continue != 'Y' && _continue != 'y') {
+			return res;
+		}
+		CLEAR_GETCHAR_BUFFER();
+	}
+#endif // DEBUG_BUILD
 
+	Logger::log("\nPress enter to exit...", Logger::VERBOSE, Logger::Color::L_SKYBLUE);
 	getchar(); // pause
 	return 0;
 }

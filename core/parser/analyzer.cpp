@@ -33,13 +33,13 @@ void Parser::_reduce_expression(ptr<Node>& p_expr) {
 		} break;
 		case Node::Type::ARRAY: {
 			ptr<ArrayNode> arr = ptrcast<ArrayNode>(p_expr);
-			for (int i = 0; i < arr->elements.size(); i++) {
+			for (int i = 0; i < (int)arr->elements.size(); i++) {
 				_reduce_expression(arr->elements[i]);
 			}
 		} break;
 		case Node::Type::MAP: { // TODO: no literal for map.
 			ptr<MapNode> map = ptrcast<MapNode>(p_expr);
-			for (int i = 0; i < map->elements.size(); i++) {
+			for (int i = 0; i < (int)map->elements.size(); i++) {
 				_reduce_expression(map->elements[i].key);
 				// TODO: key should be hashable.
 				_reduce_expression(map->elements[i].value);
@@ -49,7 +49,7 @@ void Parser::_reduce_expression(ptr<Node>& p_expr) {
 			ptr<OperatorNode> op = ptrcast<OperatorNode>(p_expr);
 
 			bool all_const = true;
-			for (int i = 0; i < op->args.size(); i++) {
+			for (int i = 0; i < (int)op->args.size(); i++) {
 				_reduce_expression(op->args[i]);
 				if (op->args[i]->type != Node::Type::CONST_VALUE) {
 					if (i == 0 && (op->args[0]->type == Node::Type::BUILTIN_FUNCTION || op->args[0]->type == Node::Type::BUILTIN_TYPE)) {
@@ -67,7 +67,7 @@ void Parser::_reduce_expression(ptr<Node>& p_expr) {
 						ptr<BuiltinFunctionNode> bf = ptrcast<BuiltinFunctionNode>(op->args[0]);
 						if (bf->func != BuiltinFunctions::Type::PRINT) { // can't call print, TODO input at compile time
 							stdvec<var> args;
-							for (int i = 1; i < op->args.size(); i++) {
+							for (int i = 1; i < (int)op->args.size(); i++) {
 								args.push_back(ptrcast<ConstValueNode>(op->args[i])->value);
 							}
 							var ret;
@@ -90,7 +90,7 @@ void Parser::_reduce_expression(ptr<Node>& p_expr) {
 					if ((op->args[0]->type == Node::Type::BUILTIN_TYPE) && all_const) {
 						ptr<BuiltinTypeNode> bt = ptrcast<BuiltinTypeNode>(op->args[0]);
 						stdvec<var> args;
-						for (int i = 1; i < op->args.size(); i++) {
+						for (int i = 1; i < (int)op->args.size(); i++) {
 							args.push_back(ptrcast<ConstValueNode>(op->args[i])->value);
 						}
 						var ret;

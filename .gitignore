@@ -4,6 +4,8 @@
 bin/
 */bin/
 x64/
+release/
+debug/
 __pycache__/
 .vs/
 .vscode/

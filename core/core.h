@@ -115,9 +115,9 @@ do {                            \
 } while(false)
 
 #ifdef DEBUG_BUILD
-#define DEBUG_PRINT(m_msg)                                                                                     \
-do {                                                                                                           \
-	printf("DEBUG_PRINT: \"%s\" at %s (%s:%i)\n", String(m_msg).c_str(), __FUNCTION__, __FILE__, __LINE__);    \
+#define DEBUG_PRINT(m_msg)                                                                                        \
+do {                                                                                                              \
+	printf("DEBUG_PRINT: \"%s\" at %s (%s:%i)\n", String("" m_msg).c_str(), __FUNCTION__, __FILE__, __LINE__);    \
 } while (false)
 #define DEBUG_PRINT_COND(m_cond, m_msg) if (m_cond) DEBUG_PRINT(m_msg)
 #else
@@ -161,6 +161,12 @@ do {                                                                            
 	template<typename T>
 	using stdvec = std::vector<T>;
 #endif
+
+#define CLEAR_GETCHAR_BUFFER()						    \
+	do {											    \
+		char c;										    \
+		while ((c = getchar()) != '\n' && c != EOF) {}  \
+	} while (false)
 
 namespace carbon {
 typedef char byte_t;

@@ -23,30 +23,27 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "core/carbon.h"
+#ifndef CARBON_TESTS_H
+#define	CARBON_TESTS_H
+
+#include "carbon.h"
 using namespace carbon;
 
 #include <doctest/doctest.h>
 
-TEST_CASE("[parser_tests]") {
-	String path = "bin/main.cb";
-	File file;
-	file.open(path);
-	String source = file.read();
-	Parser p;
-	CHECK_THROWS(p.parse(source, path));
-	CHECK_THROWS(p.parse("var x = 1;", ""));
-	try {
-		//p.parse(source, path);
-		//p.print_tree();
-	} catch (const Error& err) {
-		Logger::logf_error("\nError: %s at: %s(%lli, %lli)\n", err.what(), err.get_file().c_str(), err.get_pos().x, err.get_pos().y);
-		#if DEBUG_BUILD
-		Logger::logf_error("\tat %s (%s:%i)\n", err.get_dbg_func().c_str(), err.get_dbg_file().c_str(), err.get_dbg_line());
-		#endif // DEBUG_BUILD
-		Logger::logf_info("%s\n%s\n", err.get_line().c_str(), err.get_line_pos().c_str());
-		throw err;
-	}
+#define CHECK_THROWS_CARBON_ERR(m_type, m_statement)																		\
+	do {																													\
+		try {																												\
+			m_statement;																									\
+		} catch (Error& err) {																								\
+			CHECK_MESSAGE(err.get_type() == m_type, String::format("expected error: \"%s\" got \"%s\"\n     msg: %s",		\
+				Error::get_err_name(m_type).c_str(), Error::get_err_name(err.get_type()).c_str(), err.get_msg().c_str()));  \
+			break;																											\
+		}																													\
+		CHECK_MESSAGE(false, String::format("expected error: \"%s\" but no error has thrown",								\
+			Error::get_err_name(m_type).c_str()));																			\
+	} while (false)
 
-	CHECK(true);
-}
+int _test_main(int argc, char** argv);
+
+#endif // CARBON_TESTS_H

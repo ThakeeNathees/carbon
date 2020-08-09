@@ -31,78 +31,100 @@ namespace carbon {
 void File::_bind_data() {
 	BIND_METHOD("open", &File::open);
 	BIND_METHOD("read", &File::read);
+	BIND_METHOD("write", &File::write);
 	BIND_METHOD("close", &File::close);
 }
 
 void File::close() {
-	if (file.is_open()) {
-		file.close();
+	if (is_open()) {
+		fclose(_file);
+		_file = NULL;
+	} else {
+		// TODO: Warn here.
 	}
 }
 
 void File::open(const String& p_path, int p_mode) {
+	if (p_mode < READ || (p_mode > (READ | WRITE | APPEND | BINARY | EXTRA))) THROW_ERROR(Error::IO_INVALID_OPERATORN, "invalid mode flag set in file");
+
+	// TODO: print given combination.
+	if ((p_mode & READ) && (p_mode & WRITE) && (p_mode & APPEND)) THROW_ERROR(Error::IO_INVALID_OPERATORN, "invalid combination of flags (WRITE & APPEND) in file");
+	if (!(p_mode & READ) && !(p_mode & WRITE) && !(p_mode & APPEND)) THROW_ERROR(Error::IO_INVALID_OPERATORN, "invalid combination of flags (WRITE & APPEND) in file");
 
 	path = p_path;
 	mode = p_mode;
 
-	int mode = 0;
+	String _strmode;
+	bool binary = (p_mode & BINARY);
+	bool extra = (p_mode & EXTRA);
 	if (p_mode & READ) {
-		mode |= std::ios::in;
-	}
-	if (p_mode & WRITE) {
-		mode |= std::ios::out;
-	}
-	if (p_mode & APPEND) {
-		mode |= std::ios::app;
-	}
-	if (p_mode & BINARY) {
-		mode |= std::ios::binary;
-	}
+		if (binary && extra) _strmode = "rb+";
+		else if (extra)      _strmode = "r+";
+		else if (binary)     _strmode = "rb";
+		else                 _strmode = "r";
+		
+	} else if (p_mode & WRITE) {
+		if (binary && extra) _strmode = "wb+";
+		else if (extra)      _strmode = "w+";
+		else if (binary)     _strmode = "wb";
+		else                 _strmode = "w";
 
-	file.open(path, (std::ios_base::openmode)mode);
-	if (!file.is_open()) {
-		throw Error(Error::CANT_OPEN_FILE, String::format("can't open \"%s\"", path.c_str()));
+	} else { // APPEND
+		if (binary && extra) _strmode = "ab+";
+		else if (extra)      _strmode = "a+";
+		else if (binary)     _strmode = "ab";
+		else                 _strmode = "a";
+	}
+	_file = fopen(path.c_str(), _strmode.c_str());
+	
+	if (_file == NULL) {
+		THROW_ERROR(Error::IO_ERROR, String::format("can't open file at \"%s\"", path.c_str()));
 	}
 }
 
-size_t File::size() {
-	std::streampos begin, end;
-	file.seekg(0, std::ios::beg);
-	begin = file.tellg();
-	file.seekg(0, std::ios::end);
-	end = file.tellg();
-	return end - begin;
+long File::size() {
+	fseek(_file, 0, SEEK_END);
+	long _size = ftell(_file);
+	fseek(_file, 0, SEEK_SET);
+	return _size;
 }
 
 String File::read_text() {
-	if (!is_open()) throw Error(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
+	if (!is_open()) THROW_ERROR(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
+	// TODO: check if in read mode.
 
-	std::stringstream sstream;
-	std::string line;
-	while (std::getline(file, line)) {
-		sstream << line << '\n';
-	}
-	return sstream.str();
+	long _file_size = size();
+	if (_file_size == 0) return String();
+	
+	char* buff = new char[_file_size + 1];
+	size_t read = fread(buff, sizeof(char), _file_size, _file);
+	buff[read] = '\0';
+	String text = buff;
+	delete[] buff;
+	
+	return text;
+}
+
+void File::write_text(const String& p_text) {
+	if (!is_open()) THROW_ERROR(Error::IO_INVALID_OPERATORN, "can't write on a closed file");
+	// TODO: check if in write mode.
+	fprintf(_file, p_text.c_str());
 }
 
 ptr<Buffer> File::read_bytes() {
-	if (!is_open()) throw Error(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
+	if (!is_open()) THROW_ERROR(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
 
-	size_t file_size = size();
+	long file_size = size();
 	ptr<Buffer> buff = newptr<Buffer>(file_size);
-	file.seekg(0, std::ios::beg);
-	file.read(buff->front(), file_size);
+	fseek(_file, 0, SEEK_SET);
+	fread(buff->front(), sizeof(byte_t), file_size, _file);
 	return buff;
 }
 
-Array File::get_lines() {
-	if (!is_open()) throw Error(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
-	Array arr;
-	std::string line;
-	while (std::getline(file, line)) {
-		arr.append(String(line));
-	}
-	return arr;
+void File::write_bytes(const ptr<Buffer>& p_bytes) {
+	if (!is_open()) THROW_ERROR(Error::IO_INVALID_OPERATORN, "can't write on a closed file");
+	// TODO: check if in write mode.
+	fwrite(p_bytes->front(), sizeof(byte_t), p_bytes->size(), _file);
 }
 
 var File::read() {
@@ -110,6 +132,20 @@ var File::read() {
 		return read_bytes();
 	} else {
 		return read_text();
+	}
+}
+
+void File::write(const var& p_what) {
+	if (mode & BINARY) {
+		if (p_what.get_type() != var::OBJECT || p_what.get_class_name() != Buffer::get_class_name_s()) {
+			// TODO: throw.
+		}
+		return write_bytes(ptrcast<Buffer>(p_what.operator ptr<Object>()));
+	} else {
+		if (p_what.get_type() != var::STRING) {
+			// TODO: throw.
+		}
+		return write_text(p_what.to_string());
 	}
 }
 
