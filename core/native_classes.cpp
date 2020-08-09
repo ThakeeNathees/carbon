@@ -57,7 +57,7 @@ void NativeClasses::set_inheritance(const String& p_class_name, const String& p_
 
 String NativeClasses::get_inheritance(const String& p_class_name) {
 	if (classes[p_class_name.hash()].class_name.size() == 0) {
-		THROW_INTERNAL(Error::NULL_POINTER, String::format("the class %s isn't registered in native class entries", p_class_name));
+		THROW_INTERNAL(Error::NULL_POINTER, String::format("the class %s isn't registered in native class entries", p_class_name.c_str()));
 	}
 	return classes[p_class_name.hash()].parent_class_name;
 }
@@ -76,7 +76,7 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 	String method_name = p_name;
 
 	if (!NativeClasses::is_class_registered(class_name)) {
-		THROW_INTERNAL(Error::NULL_POINTER, String::format("the class %s isn't registered in native class entries", class_name));
+		THROW_INTERNAL(Error::NULL_POINTER, String::format("the class %s isn't registered in native class entries", class_name.c_str()));
 	}
 
 	while (class_name.size() != 0) {

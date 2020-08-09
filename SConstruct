@@ -16,6 +16,7 @@ def USER_DATA(env):
 	    'main/main.cpp'
 	]
 	env.SCONSCRIPTS = [
+		'tests/SConstruct',
 		'thirdparty/SConstruct',
 		'io/SConstruct',
 		'core/SConstruct',

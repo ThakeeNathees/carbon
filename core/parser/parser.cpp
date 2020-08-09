@@ -49,6 +49,7 @@ if (m_parent->unnamed_enum != nullptr) {																		 \
 namespace carbon {
 
 void Parser::parse(String p_source, String p_file_path) {
+	tokenizer = newptr<Tokenizer>();
 	file_node = new_node<FileNode>();
 	file_node->source = p_source;
 	file_node->path = p_file_path;

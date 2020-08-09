@@ -9,8 +9,6 @@ env_thirdparty = cbenv.Clone()
 env_thirdparty.SOURCES = []
 
 ## source files
-#Export('env_thirdparty')
-
 if env_thirdparty['platform'] == "osx":
     pass
 elif env_thirdparty['platform'] in ('x11', 'linux'):
