@@ -302,16 +302,16 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 
 				if (!enum_node->named_enum) {
 					if (p_parent->type == Node::Type::FILE) {
-						THROW_IF_NAME_DEFINED(file_node, "a variable", tk->identifier, vars);
-						THROW_IF_NAME_DEFINED(file_node, "a function", tk->identifier, functions);
-						THROW_IF_NAME_DEFINED(file_node, "an enum", tk->identifier, enums);
+						THROW_IF_NAME_DEFINED(file_node, "a variable", token.identifier, vars);
+						THROW_IF_NAME_DEFINED(file_node, "a function", token.identifier, functions);
+						THROW_IF_NAME_DEFINED(file_node, "an enum", token.identifier, enums);
 						THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
 						
 					} else { // CLASS
 						ptr<ClassNode> cn = ptrcast<ClassNode>(p_parent);
-						THROW_IF_NAME_DEFINED(cn, "a variable", tk->identifier, vars);
-						THROW_IF_NAME_DEFINED(cn, "a function", tk->identifier, functions);
-						THROW_IF_NAME_DEFINED(cn, "an enum", tk->identifier, enums);
+						THROW_IF_NAME_DEFINED(cn, "a variable", token.identifier, vars);
+						THROW_IF_NAME_DEFINED(cn, "a function", token.identifier, functions);
+						THROW_IF_NAME_DEFINED(cn, "an enum", token.identifier, enums);
 						THROW_IF_NAME_DEFINED_ENUMVALUES(cn);
 					}
 				}

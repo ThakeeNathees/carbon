@@ -132,10 +132,11 @@ public:
 	}
 	Error(Type p_type, const String& p_msg, const String& p_file, const String& p_line, const Vect2i p_pos, uint32_t p_err_len = 1) {
 		type = p_type; msg = p_msg; file = p_file; line = p_line; pos = p_pos; err_len = p_err_len;
+		if (line[line.size() - 1] == '\n') line = line.substr(0, line.size() - 1);
 	}
 
 	Error& set_file(const String& p_file) { file = p_file;    return *this; }
-	Error& set_line(const String& p_line) { line = p_line;    return *this; }
+	Error& set_line(const String& p_line) { line = p_line; if (line[line.size() - 1] == '\n') line = line.substr(0, line.size() - 1);    return *this; }
 	Error& set_pos(const Vect2i& p_pos)   { pos = p_pos;      return *this; }
 	Error& set_err_len(uint32_t p_len)    { err_len = p_len;  return *this; }
 

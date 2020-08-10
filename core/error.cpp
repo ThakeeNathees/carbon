@@ -29,8 +29,14 @@ namespace carbon {
 
 #if DEBUG_BUILD
 const char* Error::what() const noexcept {
-	_what = String::format("\nERROR: %s: %s\n   at: %s (%s:%i)",
-		get_err_name(type).c_str(), msg.c_str(), __dbg_func__.c_str(), __dbg_file__.c_str(), __dbg_line__);
+	if (line.size() != 0 || pos != Vect2i(-1, -1)) {
+		_what = String::format("\nERROR: %s: %s at: (%s:%i)\n   at: %s (%s:%i)\n%s\n%s",
+			get_err_name(type).c_str(), msg.c_str(), file.c_str(), pos.x, __dbg_func__.c_str(), __dbg_file__.c_str(), __dbg_line__,
+			line.c_str(), get_line_pos().c_str());
+	} else {
+		_what = String::format("\nERROR: %s: %s\n   at: %s (%s:%i)",
+			get_err_name(type).c_str(), msg.c_str(), __dbg_func__.c_str(), __dbg_file__.c_str(), __dbg_line__);
+	}
 	return _what.c_str();
 }
 #else // TODO:
@@ -42,21 +48,19 @@ const char* Error::what() const noexcept {
 
 
 String Error::get_line() const { 
-	// TODO: refactor line with line.rstrip("\n") when setting it.
-	if (line[line.size() - 1] == '\n') {
-		return line.substr(0, line.size() - 1);
-	}
 	return line;
 }
 String Error::get_line_pos() const {
 	std::stringstream ss_pos;
 	size_t cur_col = 0;
+	bool done = false;
 	for (size_t i = 0; i < line.size(); i++) {
 		cur_col++;
 		if (cur_col == pos.y) {
 			for (uint32_t i = 0; i < err_len; i++) {
 				ss_pos << '^';
 			}
+			done = true;
 			break;
 		} else if (line[i] != '\t') {
 			ss_pos << ' ';
@@ -64,6 +68,7 @@ String Error::get_line_pos() const {
 			ss_pos << '\t';
 		}
 	}
+	if (!done) ss_pos << '^';
 	return ss_pos.str();
 }
 

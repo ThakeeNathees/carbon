@@ -84,7 +84,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 					tk = &tokenizer->next();
 					if (tk->type == Token::KWORD_CASE) {
 						ControlFlowNode::SwitchCase _case;
-						_case.value = _parse_expression(block_node, false);
+						_case.value = _parse_expression(block_node, false); // TODO: const int.
 						if (tokenizer->next().type != Token::SYM_COLLON) THROW_UNEXP_TOKEN("symbol \":\"");
 
 						// COMMENTED: `case VALUE: { expr; expr; }` <--- curly brackets are not allowed.

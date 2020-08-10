@@ -31,6 +31,9 @@ using namespace carbon;
 
 #include <doctest/doctest.h>
 
+#define NO_PATH "<NO-PATH-SET>"
+
+// TODO: handle varerror.
 #define CHECK_THROWS_CARBON_ERR(m_type, m_statement)																		\
 	do {																													\
 		try {																												\

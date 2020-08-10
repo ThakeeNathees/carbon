@@ -52,12 +52,13 @@ namespace carbon {
 
 #define THROW_UNEXP_TOKEN(m_tk)                                                                                            \
 	do {                                                                                                                   \
+		Error::Type err_type = Error::SYNTAX_ERROR;                                                                        \
+		if (tokenizer->peek(-1, true).type == Token::_EOF) err_type = Error::UNEXPECTED_EOF;                               \
 		if (m_tk != "") {                                                                                                  \
-			THROW_PARSER_ERR(Error::SYNTAX_ERROR,                                                                          \
-				String::format("Unexpected token(\"%s\"). expected %s.",                                                   \
+			THROW_PARSER_ERR(err_type, String::format("Unexpected token(\"%s\"). expected %s.",                            \
 					Tokenizer::get_token_name(tokenizer->peek(-1, true).type), m_tk).c_str(), Vect2i());                   \
 		} else {                                                                                                           \
-			THROW_PARSER_ERR(Error::SYNTAX_ERROR, String::format("Unexpected token(\"%s\").",                              \
+			THROW_PARSER_ERR(err_type, String::format("Unexpected token(\"%s\").",                                         \
 				Tokenizer::get_token_name(tokenizer->peek(-1, true).type)).c_str(), Vect2i());                             \
 		}                                                                                                                  \
 	} while (false)
