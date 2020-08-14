@@ -116,6 +116,8 @@ if cbenv['target'] == 'debug':
     cbenv.Append(CPPDEFINES=['DEBUG_BUILD'])
 else:
     cbenv.Append(CPPDEFINES=['RELEASE_BUILD'])
+    
+cbenv.Append(CPPDEFINES=['_VAR_H_EXTERN_IMPLEMENTATIONS'])
 
 ## --------------------------------------------------------------------------------
 
