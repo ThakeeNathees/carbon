@@ -360,6 +360,7 @@ public:
 		struct SwitchCase {
 			ptr<Node> value; // TODO: any 2 values can't be same.
 			ptr<BlockNode> body;
+			bool default_case = false;
 		};
 		CfType cf_type;
 		stdvec<ptr<Node>> args;

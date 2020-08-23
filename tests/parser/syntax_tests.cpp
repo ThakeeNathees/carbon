@@ -83,6 +83,8 @@ TEST_CASE("[parser_tests]:syntax_test") {
 			case 1 + 2 :
 				print("case 0, 1");
 				break;
+			default:
+				print("testing");
 		}
 	}	
 	)", NO_PATH));

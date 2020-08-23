@@ -98,6 +98,7 @@ String TokenData::to_string() const {
 		case Token::KWORD_FOR:      return "for";
 		case Token::KWORD_SWITCH:   return "switch";
 		case Token::KWORD_CASE:     return "case";
+		case Token::KWORD_DEFAULT:  return "default";
 		case Token::KWORD_BREAK:    return "break";
 		case Token::KWORD_CONTINUE: return "continue";
 		case Token::KWORD_STATIC:   return "static";
@@ -116,7 +117,7 @@ String TokenData::to_string() const {
 		case Token::_TK_MAX_: return "<_TK_MAX_>";
 	}
 	THROW_ERROR(Error::INTERNAL_BUG, String::format("enum(%i) missed in TokenData::to_string()", (int)type));
-MISSED_ENUM_CHECK(Token::_TK_MAX_, 73);
+MISSED_ENUM_CHECK(Token::_TK_MAX_, 74);
 }
 
 
@@ -190,6 +191,7 @@ const char* Tokenizer::get_token_name(Token p_tk) {
 		"KWORD_FOR",
 		"KWORD_SWITCH",
 		"KWORD_CASE",
+		"KWORD_DEFAULT",
 		"KWORD_BREAK",
 		"KWORD_CONTINUE",
 		"KWORD_STATIC",
@@ -201,10 +203,10 @@ const char* Tokenizer::get_token_name(Token p_tk) {
 		"VALUE_INT",
 		"VALUE_FLOAT",
 		"VALUE_BOOL",
-		nullptr //_TK_MAX_
+		nullptr, //_TK_MAX_
 	};
 	return token_names[(int)p_tk];
-MISSED_ENUM_CHECK(Token::_TK_MAX_, 73);
+MISSED_ENUM_CHECK(Token::_TK_MAX_, 74);
 }
 
 const char* Parser::Node::get_node_type_name(Type p_type) {

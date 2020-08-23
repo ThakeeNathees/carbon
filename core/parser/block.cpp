@@ -94,10 +94,15 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 						//	_case.body = _parse_block(block_node);
 						//	if (tokenizer->next().type != Token::BRACKET_RCUR) THROW_UNEXP_TOKEN("symbol \"}\"");
 						//} else {
-						_case.body = _parse_block(block_node, false, { Token::KWORD_CASE, Token::BRACKET_RCUR });
+						_case.body = _parse_block(block_node, false, { Token::KWORD_CASE, Token::KWORD_DEFAULT, Token::BRACKET_RCUR });
 						//}
 						switch_block->switch_cases.push_back(_case);
 
+					} else if (tk->type == Token::KWORD_DEFAULT) {
+						ControlFlowNode::SwitchCase _case;
+						_case.default_case = true;
+						if (tokenizer->next().type != Token::SYM_COLLON) THROW_UNEXP_TOKEN("symbol \":\"");
+						_case.body = _parse_block(block_node, false);
 					} else if (tk->type == Token::BRACKET_RCUR) {
 						break;
 					} else {
