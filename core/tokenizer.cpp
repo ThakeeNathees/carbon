@@ -57,6 +57,7 @@ static KeywordName _keyword_name_list[] = {
 	{ "enum",     Token::KWORD_ENUM	         },
 	{ "func",     Token::KWORD_FUNC	         },
 	{ "var",      Token::KWORD_VAR		     },
+	{ "const",      Token::KWORD_CONST	     },
 	{ "null",     Token::KWORD_NULL	         },
 	{ "true",     Token::KWORD_TRUE	         },
 	{ "false",    Token::KWORD_FALSE	     },
@@ -66,7 +67,7 @@ static KeywordName _keyword_name_list[] = {
 	{ "for",      Token::KWORD_FOR		     },
 	{ "switch",   Token::KWORD_SWITCH		 },
 	{ "case",     Token::KWORD_CASE		     },
-	{ "default",     Token::KWORD_DEFAULT    },
+	{ "default",  Token::KWORD_DEFAULT       },
 	{ "break",    Token::KWORD_BREAK	     },
 	{ "continue", Token::KWORD_CONTINUE      },
 	{ "static",   Token::KWORD_STATIC        },
@@ -74,7 +75,7 @@ static KeywordName _keyword_name_list[] = {
 	{ "super",    Token::KWORD_SUPER         },
 	{ "return",   Token::KWORD_RETURN	     },
 };
-MISSED_ENUM_CHECK(Token::_TK_MAX_, 74);
+MISSED_ENUM_CHECK(Token::_TK_MAX_, 75);
 
 void Tokenizer::_eat_escape(String& p_str) {
 	char c = GET_CHAR(0);

@@ -93,6 +93,7 @@ public:
 		INVALID_GET_INDEX, // o.attrib
 		INVALID_CASTING,
 		INVALID_ARGUMENT,
+		INVALID_TYPE,
 		INVALID_ARG_COUNT,
 		OPERATOR_NOT_SUPPORTED,
 
@@ -103,7 +104,6 @@ public:
 		INTERNAL_BUG,
 
 		_ERROR_MAX_,
-
 	};
 
 	const char* what() const noexcept override;

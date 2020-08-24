@@ -94,7 +94,10 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 
 			tk = &tokenizer->next();
 			ASSERT(tk->type == Token::BRACKET_LPARAN); // TODO: throw
-			call->args = _parse_arguments(p_parent);
+			stdvec<ptr<Node>> args = _parse_arguments(p_parent);
+			for (size_t i = 0; i < args.size(); i++) {
+				call->args.push_back(args[i]);
+			}
 			expr = call;
 
 		} else if (tk->type == Token::IDENTIFIER) {

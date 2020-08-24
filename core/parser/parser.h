@@ -77,6 +77,7 @@ public:
 			BLOCK,
 			IDENTIFIER,
 			VAR,
+			CONST,
 			CONST_VALUE,
 			ARRAY,
 			MAP,   // <-- TODO: should be literal map ?
@@ -92,6 +93,7 @@ public:
 		Type type = Type::UNKNOWN;
 		Vect2i pos;
 		ptr<Node> parernt_node;
+		bool is_reduced = false;
 		static const char* get_node_type_name(Type p_type);
 	};
 
@@ -103,6 +105,7 @@ public:
 	struct BlockNode;
 	struct IdentifierNode;
 	struct VarNode;
+	struct ConstNode;
 	struct ConstValueNode;
 	struct ArrayNode;
 	struct MapNode;
@@ -115,6 +118,7 @@ public:
 		String name; // import name = "path/to/source.cb";
 		stdvec<ptr<FileNode>> imports;
 		stdvec<ptr<VarNode>> vars; // Global vars.
+		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<ClassNode>> classes;
 		ptr<EnumNode> unnamed_enum;
 		stdvec<ptr<EnumNode>> enums;
@@ -133,6 +137,7 @@ public:
 		ptr<EnumNode> unnamed_enum;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<VarNode>> vars;
+		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<FunctionNode>> functions;
 		// TODO: implement const.
 		ClassNode() {
@@ -190,7 +195,13 @@ public:
 	struct IdentifierNode : public Node {
 		String name;
 		int arg_index = -1; // For argument identifier.
-		BlockNode* declared_block = nullptr; // For local vars.
+		// TODO: declared_block haven't added.
+		BlockNode* declared_block = nullptr; // For search in local vars.
+
+		//ClassNode* _class = nullptr;
+		//VarNode* _var = nullptr;
+		//ConstNode* _const = nullptr;
+
 		IdentifierNode() {
 			type = Type::IDENTIFIER;
 		}
@@ -198,7 +209,6 @@ public:
 			type = Type::IDENTIFIER;
 			name = p_name;
 		}
-
 	};
 
 	struct VarNode : public Node {
@@ -210,6 +220,17 @@ public:
 		}
 	};
 
+	struct ConstNode : public Node {
+		String name; // Every const are static.
+		ptr<Node> assignment;
+		var value;
+		ConstNode() {
+			type = Type::CONST;
+		}
+	};
+
+	// Note: ConstValueNode isn't constant values but they are compile time known variables.
+	//       and could be Array(1, 2, 3), Map if it has a literal.
 	struct ConstValueNode : public Node {
 		var value;
 		ConstValueNode() {
@@ -451,6 +472,7 @@ private:
 	ptr<ClassNode> _parse_class();
 	ptr<EnumNode> _parse_enum(ptr<Node> p_parent);
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent);
+	ptr<ConstNode> _parse_const(ptr<Node> p_parent);
 	ptr<FunctionNode> _parse_func(ptr<Node> p_parent);
 
 	ptr<BlockNode> _parse_block(const ptr<Node>& p_parent, bool p_single_statement = false, stdvec<Token> p_termination = { Token::BRACKET_RCUR } );

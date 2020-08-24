@@ -62,6 +62,10 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 				}
 			} break;
 
+			case Token::KWORD_CONST: {
+				// TODO: parse const.
+			} break;
+
 			// Ignore.
 			case Token::SYM_SEMI_COLLON:
 			case Token::VALUE_STRING: // should I include VALUE_INT, VALUE_FLOAT ??

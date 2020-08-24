@@ -89,6 +89,7 @@ String TokenData::to_string() const {
 		case Token::KWORD_ENUM:     return "enum";
 		case Token::KWORD_FUNC:     return "func";
 		case Token::KWORD_VAR:      return "var";
+		case Token::KWORD_CONST:    return "const";
 		case Token::KWORD_NULL:     return "null";
 		case Token::KWORD_TRUE:     return "true";
 		case Token::KWORD_FALSE:    return "false";
@@ -117,7 +118,7 @@ String TokenData::to_string() const {
 		case Token::_TK_MAX_: return "<_TK_MAX_>";
 	}
 	THROW_ERROR(Error::INTERNAL_BUG, String::format("enum(%i) missed in TokenData::to_string()", (int)type));
-MISSED_ENUM_CHECK(Token::_TK_MAX_, 74);
+MISSED_ENUM_CHECK(Token::_TK_MAX_, 75);
 }
 
 
@@ -182,6 +183,7 @@ const char* Tokenizer::get_token_name(Token p_tk) {
 		"KWORD_ENUM",
 		"KWORD_FUNC",
 		"KWORD_VAR",
+		"KWORD_CONST",
 		"KWORD_NULL",
 		"KWORD_TRUE",
 		"KWORD_FALSE",
@@ -206,7 +208,7 @@ const char* Tokenizer::get_token_name(Token p_tk) {
 		nullptr, //_TK_MAX_
 	};
 	return token_names[(int)p_tk];
-MISSED_ENUM_CHECK(Token::_TK_MAX_, 74);
+MISSED_ENUM_CHECK(Token::_TK_MAX_, 75);
 }
 
 const char* Parser::Node::get_node_type_name(Type p_type) {
@@ -219,6 +221,7 @@ const char* Parser::Node::get_node_type_name(Type p_type) {
 		"BLOCK",
 		"IDENTIFIER",
 		"VAR",
+		"CONST",
 		"CONST_VALUE",
 		"ARRAY",
 		"MAP",
@@ -231,7 +234,7 @@ const char* Parser::Node::get_node_type_name(Type p_type) {
 		nullptr, // _NODE_MAX_
 	};
 	return type_names[(int)p_type];
-MISSED_ENUM_CHECK(Parser::Node::Type::_NODE_MAX_, 17);
+MISSED_ENUM_CHECK(Parser::Node::Type::_NODE_MAX_, 18);
 }
 
 const char* Parser::OperatorNode::get_op_name(OpType p_op) {

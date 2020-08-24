@@ -25,10 +25,44 @@
 
 #include "parser.h"
 
+// TODO: implement THROW_ANALYZER_ERROR();
+
 namespace carbon {
-	
 
 void Parser::analyze() {
+	// File/class level constants.
+	for (size_t i = 0; i < file_node->constants.size(); i++) {
+		if (file_node->constants[i]->assignment != nullptr) {
+			_reduce_expression(file_node->constants[i]->assignment);
+			if (file_node->constants[i]->assignment->type != Parser::Node::Type::CONST_VALUE) {
+				THROW_ERROR(Error::INVALID_TYPE, "Expected a contant expression.");
+			}
+			ptr<ConstValueNode> cv = ptrcast<ConstValueNode>(file_node->constants[i]->assignment);
+			if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
+				cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING) {
+				THROW_ERROR(Error::INVALID_TYPE, "Expected a constant expression.");
+			}
+			file_node->constants[i]->value = cv->value;
+		}
+	}
+	for (size_t i = 0; i < file_node->classes.size(); i++) {
+		for (size_t j = 0; j < file_node->classes[i]->constants.size(); j++) {
+			if (file_node->classes[i]->constants[j]->assignment != nullptr) {
+				_reduce_expression(file_node->classes[i]->constants[j]->assignment);
+				if (file_node->classes[i]->constants[j]->assignment->type != Parser::Node::Type::CONST_VALUE) {
+					THROW_ERROR(Error::INVALID_TYPE, "Expected a contant expression.");
+				}
+				ptr<ConstValueNode> cv = ptrcast<ConstValueNode>(file_node->classes[i]->constants[j]->assignment);
+				if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
+					cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING) {
+					THROW_ERROR(Error::INVALID_TYPE, "Expected a constant expression.");
+				}
+				file_node->classes[i]->constants[j]->value = cv->value;
+			}
+		}
+	}
+
+	// File/class level variables.
 	for (size_t i = 0; i < file_node->vars.size(); i++) {
 		if (file_node->vars[i]->assignment != nullptr) {
 			_reduce_expression(file_node->vars[i]->assignment);
@@ -41,18 +75,44 @@ void Parser::analyze() {
 			}
 		}
 	}
+
+	// File level function body.
+	for (size_t i = 0; i < file_node->functions.size(); i++) {
+		_reduce_block(file_node->functions[i]->body);
+	}
+
+	// Inner class function body.
+	for (size_t i = 0; i < file_node->classes.size(); i++) {
+		for (size_t j = 0; j < file_node->classes[i]->functions.size(); j++) {
+			_reduce_block(file_node->classes[i]->functions[j]->body);
+		}
+	}
 }
 
 void Parser::_reduce_expression(ptr<Node>& p_expr) {
+
+	if (p_expr == nullptr) return;
+
+	// Prevent stack overflow.
+	if (p_expr->is_reduced) return;
+	p_expr->is_reduced = true;
+
 	switch (p_expr->type) {
+
 		case Node::Type::BUILTIN_FUNCTION: {
 		} break;
+
+		case Node::Type::IDENTIFIER: {
+			// TODO: 
+		} break;
+
 		case Node::Type::ARRAY: {
 			ptr<ArrayNode> arr = ptrcast<ArrayNode>(p_expr);
 			for (int i = 0; i < (int)arr->elements.size(); i++) {
 				_reduce_expression(arr->elements[i]);
 			}
 		} break;
+
 		case Node::Type::MAP: { // TODO: no literal for map.
 			ptr<MapNode> map = ptrcast<MapNode>(p_expr);
 			for (int i = 0; i < (int)map->elements.size(); i++) {
@@ -61,18 +121,20 @@ void Parser::_reduce_expression(ptr<Node>& p_expr) {
 				_reduce_expression(map->elements[i].value);
 			}
 		} break;
+
 		case Node::Type::OPERATOR: {
 			ptr<OperatorNode> op = ptrcast<OperatorNode>(p_expr);
 
 			bool all_const = true;
 			for (int i = 0; i < (int)op->args.size(); i++) {
-				_reduce_expression(op->args[i]);
+				if (i == 0 && (op->args[0]->type == Node::Type::BUILTIN_FUNCTION || op->args[0]->type == Node::Type::BUILTIN_TYPE)) {
+					// _don't_reduce_expression();
+					continue;
+				} else {
+					_reduce_expression(op->args[i]);
+				}
 				if (op->args[i]->type != Node::Type::CONST_VALUE) {
-					if (i == 0 && (op->args[0]->type == Node::Type::BUILTIN_FUNCTION || op->args[0]->type == Node::Type::BUILTIN_TYPE)) {
-						// Could be all const.
-					} else {
-						all_const = false;
-					}
+					all_const = false;
 				}
 			}
 

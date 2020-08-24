@@ -85,12 +85,15 @@ static const char* _error_names[Error::_ERROR_MAX_] = {
 	"INVALID_GET_INDEX",
 	"INVALID_CASTING",
 	"INVALID_ARGUMENT",
+	"INVALID_TYPE",
 	"INVALID_ARG_COUNT",
+	"OPERATOR_NOT_SUPPORTED",
 	"IO_ERROR",
 	"IO_INVALID_OPERATORN",
 	"INTERNAL_BUG",
 	//_ERROR_MAX_
 };
+MISSED_ENUM_CHECK(Error::Type::_ERROR_MAX_, 18);
 
 String Error::get_err_name(Error::Type p_type) {
 	return _error_names[p_type];
