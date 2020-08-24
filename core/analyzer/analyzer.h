@@ -2,10 +2,10 @@
 // MIT License
 //------------------------------------------------------------------------------
 // 
-// Copyright (c) 2020 Thakee Nathees
+// Copyright (c), 2020 Thakee Nathees
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
+// of this software and associated documentation files (the "Software"),, to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
@@ -23,29 +23,37 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_H
-#define CARBON_H
+#ifndef ANALYZER_H
+#define ANALYZER_H
 
-// core imports
-#include "core/core.h"
-
-// compilation pipeline
-#include "core/tokenizer/tokenizer.h"
-#include "core/parser/parser.h"
-#include "core/analyzer/analyzer.h"
-
-// native imports
-#include "native_classes.h"
-#include "io/logger.h"
-#include "io/file.h"
-#include "io/dynamic_library.h"
-#include "os/os.h"
+#include "core.h"
+#include "parser/parser.h"
 
 namespace carbon {
 
-void initialize();
+class Analyzer {
+public:
+	void analyze(ptr<Parser> p_parser);
+
+protected:
+
+private:
+	ptr<Parser> parser;
+	ptr<Parser::FileNode> file_node; // Quick access.
+
+	template<typename T = Parser::Node, typename... Targs>
+	ptr<T> new_node(Targs... p_args) {
+		ptr<T> ret = newptr<T>(p_args...);
+		return ret;
+	}
+
+	void _reduce_expression(ptr<Parser::Node>& p_expr);
+	void _reduce_block(ptr<Parser::BlockNode>& p_block);
+
+
+
+};
 
 }
 
-
-#endif // CARBON_H
+#endif // ANALYZER_H

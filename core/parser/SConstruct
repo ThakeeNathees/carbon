@@ -1,7 +1,0 @@
-#!python
-import os
-
-Import('env_core')
-Import('cbenv')
-
-env_core.SOURCES += [ Glob('*.cpp') ]

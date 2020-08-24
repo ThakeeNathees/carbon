@@ -26,7 +26,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "tokenizer.h"
+#include "tokenizer/tokenizer.h"
 #include "io/logger.h"
 
 namespace carbon {
@@ -120,7 +120,7 @@ public:
 		stdvec<ptr<VarNode>> vars; // Global vars.
 		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<ClassNode>> classes;
-		ptr<EnumNode> unnamed_enum;
+		ptr<EnumNode> unnamed_enum = nullptr;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<FunctionNode>> functions;
 
@@ -134,7 +134,7 @@ public:
 		String name;
 		stdvec<String> inherits;
 		//String base; // TODO: file_node.file_node.ClassName ??
-		ptr<EnumNode> unnamed_enum;
+		ptr<EnumNode> unnamed_enum = nullptr;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
@@ -147,16 +147,18 @@ public:
 
 	struct EnumValueNode {
 		Vect2i pos = Vect2i(-1, -1);
+		ptr<Node> expr;
 		int64_t value = 0;
 		EnumValueNode() {}
-		EnumValueNode(int64_t p_value, Vect2i p_pos) {
+		EnumValueNode(ptr<Node> p_expr, Vect2i p_pos) {
 			pos = p_pos;
-			value = p_value;
+			expr = p_expr;
 		}
 	};
 	struct EnumNode : public Node {
 		String name;
 		bool named_enum = false;
+		// EnumValueNode could be nullptr if no custom value.
 		std::map<String, EnumValueNode> values;
 		EnumNode() {
 			type = Type::ENUM;
@@ -418,12 +420,12 @@ public:
 
 	// Methods.
 	void parse(String p_source, String p_file_path);
-	void analyze();
 #if DEBUG_BUILD
 	void print_tree() const;
 #endif
 
 protected:
+	friend class Analyzer;
 
 private:
 
@@ -483,10 +485,6 @@ private:
 
 	ptr<Node> _build_operator_tree(stdvec<Expr>& p_expr);
 	static int _get_operator_precedence(OperatorNode::OpType p_op);
-
-	/**** Analyzer ****/
-	void _reduce_expression(ptr<Node>& p_expr);
-	void _reduce_block(ptr<BlockNode>& p_block);
 
 	// Members.
 	ptr<FileNode> file_node;
