@@ -91,7 +91,7 @@ public:
 		};
 		Type type = Type::UNKNOWN;
 		Vect2i pos;
-		ptr<Node> parernt_node; // TODO: need to set to all nodes.
+		ptr<Node> parernt_node;
 		static const char* get_node_type_name(Type p_type);
 	};
 
@@ -397,6 +397,7 @@ public:
 
 	// Methods.
 	void parse(String p_source, String p_file_path);
+	void analyze();
 #if DEBUG_BUILD
 	void print_tree() const;
 #endif
@@ -461,8 +462,9 @@ private:
 	ptr<Node> _build_operator_tree(stdvec<Expr>& p_expr);
 	static int _get_operator_precedence(OperatorNode::OpType p_op);
 
-
+	/**** Analyzer ****/
 	void _reduce_expression(ptr<Node>& p_expr);
+	void _reduce_block(ptr<BlockNode>& p_block);
 
 	// Members.
 	ptr<FileNode> file_node;

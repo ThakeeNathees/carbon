@@ -147,6 +147,8 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 						done = true;
 						break;
 					default:
+						if (comma_valid) THROW_UNEXP_TOKEN("symbol \",\"");
+						
 						ptr<Node> subexpr = _parse_expression(p_parent, false);
 						arr->elements.push_back(subexpr);
 						comma_valid = true;

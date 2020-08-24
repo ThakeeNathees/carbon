@@ -76,6 +76,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 			case Token::KWORD_SWITCH: {
 				tk = &tokenizer->next(); // eat "switch"
 				ptr<ControlFlowNode> switch_block = new_node<ControlFlowNode>(ControlFlowNode::SWITCH);
+				switch_block->parernt_node = p_parent;
 
 				switch_block->args.push_back(_parse_expression(block_node, false));
 				if (tokenizer->next().type != Token::BRACKET_LCUR) THROW_UNEXP_TOKEN("symbol \"{\"");
@@ -116,6 +117,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 			case Token::KWORD_WHILE: {
 				tk = &tokenizer->next(); // eat "while"
 				ptr<ControlFlowNode> while_block = new_node<ControlFlowNode>(ControlFlowNode::WHILE);
+				while_block->parernt_node = p_parent;
 				while_block->args.push_back(_parse_expression(block_node, false));
 				tk = &tokenizer->peek();
 				if (tk->type == Token::BRACKET_LCUR) {
@@ -131,6 +133,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 			case Token::KWORD_FOR: {
 				tk = &tokenizer->next(); // eat "for"
 				ptr<ControlFlowNode> for_block = new_node<ControlFlowNode>(ControlFlowNode::FOR);
+				for_block->parernt_node = p_parent;
 				if (tokenizer->next().type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
 
 				if (tokenizer->peek().type == Token::SYM_SEMI_COLLON) {
@@ -178,6 +181,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 				tk = &tokenizer->next(); // eat "break"
 				// TODO: check if inside loop/switch
 				ptr<ControlFlowNode> _break = new_node<ControlFlowNode>(ControlFlowNode::BREAK);
+				_break->parernt_node = p_parent;
 				block_node->statements.push_back(_break);
 			} break;
 
@@ -185,6 +189,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 				tk = &tokenizer->next(); // eat "continue"
 				// TODO: check if inside loop
 				ptr<ControlFlowNode> _continue = new_node<ControlFlowNode>(ControlFlowNode::CONTINUE);
+				_continue->parernt_node = p_parent;
 				block_node->statements.push_back(_continue);
 			} break;
 
@@ -194,6 +199,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use return outside a function", Vect2i());
 				}
 				ptr<ControlFlowNode> _return = new_node<ControlFlowNode>(ControlFlowNode::RETURN);
+				_return->parernt_node = p_parent;
 				block_node->statements.push_back(_return);
 			} break;
 
@@ -221,6 +227,7 @@ ptr<Parser::ControlFlowNode> Parser::_parse_if_block(const ptr<BlockNode>& p_par
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_IF);
 
 	ptr<ControlFlowNode> if_block = new_node<ControlFlowNode>(ControlFlowNode::IF);
+	if_block->parernt_node = p_parent;
 	ptr<Node> cond = _parse_expression(p_parent, false);
 	if_block->args.push_back(cond);
 
@@ -239,6 +246,7 @@ ptr<Parser::ControlFlowNode> Parser::_parse_if_block(const ptr<BlockNode>& p_par
 		switch (tk->type) {
 			case Token::KWORD_IF: {
 				if_block->body_else = new_node<BlockNode>();
+				if_block->body->parernt_node = p_parent;
 				if_block->body_else->statements.push_back(_parse_if_block(p_parent));
 			} break;
 			case Token::BRACKET_LCUR: {

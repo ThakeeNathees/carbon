@@ -27,17 +27,21 @@
 #include "core/carbon.h"
 using namespace carbon;
 
+// TODO: define RUN_TESTS from build system.
 #if DEBUG_BUILD
-#include "tests/carbon_tests.h"
-#endif // DEBUG_BUILD
+#define RUN_TESTS
+#endif
 
+#ifdef RUN_TESTS
+#include "tests/carbon_tests.h"
+#endif
 // TODO: VarError -> Error.
 // TODO: Make var submodule to local.
 
 int _main(int argc, char** argv) {
 
 	initialize();
-#if DEBUG_BUILD
+#ifdef RUN_TESTS
 	int res = _test_main(argc, argv);
 	if (res) {
 		Logger::log("\nTests failed. continue? [Y/N] (default:N) ", Logger::VERBOSE, Logger::Color::L_WHITE);

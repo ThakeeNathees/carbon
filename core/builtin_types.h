@@ -50,24 +50,68 @@ public:
 		MAP,
 		//OBJECT, // Object is considered as Native.
 
-		// Native classes.
-		//BUFFER,
-		//FILE,
-		//DYNAMIC_LIBRARY,
 		_TYPE_MAX_,
 	};
 
-	static String get_type_name(Type p_func) {
-		return _type_list[p_func];
+	static String get_type_name(Type p_type) {
+		return _type_list[p_type];
 	}
 
-	static Type get_type_type(const String& p_func) {
+	static Type get_type_type(const String& p_type) {
 		for (const std::pair<Type, String>& pair : _type_list) {
-			if (pair.second == p_func) {
+			if (pair.second == p_type) {
 				return pair.first;
 			}
 		}
 		return BuiltinTypes::UNKNOWN;
+	}
+
+	static var construct(Type p_type, const stdvec<var>& p_args) {
+		switch (p_type) {
+			case _NULL:
+				THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, "null is not callable.");
+			case BOOL:
+				if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected exactly 1 argument.");
+				return p_args[0].operator bool();
+			case INT:
+				if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected exactly 1 argument.");
+				try {
+					return p_args[0].operator int64_t();
+				} catch (VarError& err) {
+					ASSERT(err.get_type() == VarError::INVALID_CASTING);
+					THROW_ERROR(Error::INVALID_CASTING, err.what());
+				}
+			case FLOAT:
+				if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected exactly 1 argument.");
+				try {
+					return p_args[0].operator double();
+				} catch (VarError& err) {
+					ASSERT(err.get_type() == VarError::INVALID_CASTING);
+					THROW_ERROR(Error::INVALID_CASTING, err.what());
+				}
+			case STRING:
+				if (p_args.size() < 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at least 1 argument.");
+				if (p_args.size() == 1) {
+					if (p_args[0].get_type() != var::STRING) THROW_ERROR(Error::INVALID_ARGUMENT, "Expected a string at argument 0.");
+				} else {
+					ASSERT(false); // TODO: parse `String("pi = %f", 3.14);`
+				}
+			case ARRAY: {
+				Array ret;
+				for (size_t i = 0; i < p_args.size(); i++) {
+					ret.append(p_args[i]);
+				}
+				return ret;
+			}
+			case MAP:
+				if (p_args.size() != 0) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected exactly 0 argument.");
+				return Map();
+			default: {
+				ASSERT(false); // TODO: throw internal bug.
+			}
+		}
+
+		MISSED_ENUM_CHECK(BuiltinTypes::Type::_TYPE_MAX_, 8);
 	}
 
 private:

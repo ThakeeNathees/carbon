@@ -57,6 +57,17 @@ int BuiltinFunctions::get_arg_count(BuiltinFunctions::Type p_func) {
 MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
 }
 
+bool BuiltinFunctions::can_const_fold(Type p_func) {
+	switch (p_func) {
+		case Type::PRINT:
+		case Type::INPUT:
+			return false;
+		default:
+			return true;
+	}
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
+}
+
 void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) {
 	switch (p_func) {
 		case Type::PRINT: {
@@ -72,7 +83,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 			r_ret = input;
 		} break;
 		case Type::MATH_MAX: {
-			if (p_args.size() <= 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at least 2 argument.");
+			if (p_args.size() <= 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at least 2 arguments.");
 			var min = p_args[0];
 			for (int i = 1; i < (int)p_args.size(); i++) {
 				if (p_args[i] < min) {
@@ -82,7 +93,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 			r_ret = min;
 		} break;
 		case Type::MATH_MIN: {
-			if (p_args.size() <= 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at least 2 argument.");
+			if (p_args.size() <= 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at least 2 arguments.");
 			var max = p_args[0];
 			for (int i = 1; i < (int)p_args.size(); i++) {
 				if (p_args[i] > max) {

@@ -115,6 +115,7 @@ do {                            \
 } while(false)
 
 #ifdef DEBUG_BUILD
+// TODO: Use debug print library.
 #define DEBUG_PRINT(m_msg)                                                                                        \
 do {                                                                                                              \
 	printf("DEBUG_PRINT: \"%s\" at %s (%s:%i)\n", String("" m_msg).c_str(), __FUNCTION__, __FILE__, __LINE__);    \

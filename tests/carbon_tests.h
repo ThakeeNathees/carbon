@@ -47,6 +47,21 @@ using namespace carbon;
 			Error::get_err_name(m_type).c_str()));																			\
 	} while (false)
 
+#define CHECK_THROWS_VARH_ERR(m_type, m_statement)																			\
+	do {																													\
+		try {																												\
+			m_statement;																									\
+		} catch (VarError& err) {																							\
+			CHECK_MESSAGE(err.get_type() == m_type, String::format("expected error: \"%s\" got \"%s\"\n     msg: %s",		\
+				VarError::get_err_name(m_type).c_str(), VarError::get_err_name(err.get_type()).c_str(), err.what()));       \
+			break;																											\
+		}																													\
+		CHECK_MESSAGE(false, String::format("expected error: \"%s\" but no error has thrown",								\
+			VarError::get_err_name(m_type).c_str()));																		\
+	} while (false)
+
+
+
 int _test_main(int argc, char** argv);
 
 #endif // CARBON_TESTS_H

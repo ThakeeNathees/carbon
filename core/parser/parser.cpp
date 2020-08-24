@@ -105,7 +105,6 @@ void Parser::parse(String p_source, String p_file_path) {
 		}
 
 	} // while true
-
 }
 
 ptr<Parser::FileNode> Parser::_parse_import() {
@@ -128,6 +127,7 @@ ptr<Parser::FileNode> Parser::_parse_import() {
 ptr<Parser::ClassNode> Parser::_parse_class() {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_CLASS);
 	ptr<ClassNode> class_node = new_node<ClassNode>();
+	class_node->parernt_node = file_node;
 
 	parser_context.current_class = class_node.get();
 	class ScopeDestruct {
@@ -163,7 +163,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 		while (true) {
 			const TokenData* base = &tokenizer->next();
 
-			// TODO: base could be builtin class (Object, File)
+			// TODO: base could be native class (Object, File)
 			if (base->type != Token::IDENTIFIER) {
 				THROW_UNEXP_TOKEN("an identifier");
 			}
@@ -243,6 +243,7 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 	ASSERT(p_parent->type == Node::Type::FILE || p_parent->type == Node::Type::CLASS);
 
 	ptr<EnumNode> enum_node = new_node<EnumNode>();
+	enum_node->parernt_node = p_parent;
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER && tk->type != Token::BRACKET_LCUR)
@@ -391,6 +392,7 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_parent) {
 		}
 
 		ptr<VarNode> var_node = new_node<VarNode>();
+		var_node->parernt_node = p_parent;
 		var_node->is_static = _static;
 		var_node->name = tk->identifier;
 
@@ -426,6 +428,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	ASSERT(p_parent->type == Node::Type::FILE || p_parent->type == Node::Type::CLASS);
 
 	ptr<FunctionNode> func_node = new_node<FunctionNode>();
+	func_node->parent_node = p_parent;
 	if (tokenizer->peek(-2, true).type == Token::KWORD_STATIC) {
 		func_node->is_static = true;
 	}

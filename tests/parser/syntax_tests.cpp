@@ -86,11 +86,8 @@ TEST_CASE("[parser_tests]:syntax_test") {
 			default:
 				print("testing");
 		}
-	}	
+	}
 	)", NO_PATH));
-
-
-
 
 
 }
