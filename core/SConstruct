@@ -11,9 +11,12 @@ env_core = cbenv.Clone()
 env_core.SOURCES = [
     File('var.h/var.cpp'),
     Glob('*.cpp'),
+    Glob('parser/*.cpp'),
+    Glob('tokenizer/*.cpp'),
+    Glob('analyzer/*.cpp'),
 ]
 
-Export('env_core')
-SConscript('parser/SConstruct')
+##Export('env_core')
+##SConscript('parser/SConstruct')
 
 cbenv.SOURCES += env_core.SOURCES

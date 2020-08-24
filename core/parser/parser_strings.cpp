@@ -23,7 +23,6 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "tokenizer.h"
 #include "parser.h"
 
 namespace carbon {

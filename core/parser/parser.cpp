@@ -25,6 +25,8 @@
 
 #include "parser.h"
 
+#include "analyzer/analyzer.h"
+
 #define THROW_PREDEFINED(m_what, m_name, m_pos)             \
 	THROW_PARSER_ERR(Error::ALREADY_DEFINED,                \
 	String::format(m_what " named \"%s\" already exists at (line:%i, col:%i)", m_name.c_str(), m_pos.x, m_pos.y), Vect2i())
@@ -336,14 +338,13 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 				if (tk->type == Token::OP_EQ) {
 					tk = &tokenizer->next(); // eat "=".
 					ptr<Node> expr = _parse_expression(enum_node, false);
-					_reduce_expression(expr);
-					if (expr->type != Node::Type::CONST_VALUE || ptrcast<ConstValueNode>(expr)->value.get_type() != var::INT) {
-						THROW_PARSER_ERR(Error::INVALID_TYPE, "enum value must be a constant integer", Vect2i());
-					}
-					next_value = ptrcast<ConstValueNode>(expr)->value.operator int64_t();
-					enum_node->values[token.identifier] = EnumValueNode(next_value++, token.get_pos());
+					//if (expr->type != Node::Type::CONST_VALUE || ptrcast<ConstValueNode>(expr)->value.get_type() != var::INT) {
+					//	THROW_PARSER_ERR(Error::INVALID_TYPE, "enum value must be a constant integer", Vect2i());
+					//}
+					//next_value = ptrcast<ConstValueNode>(expr)->value.operator int64_t();
+					enum_node->values[token.identifier] = EnumValueNode(expr, token.get_pos());
 				} else {
-					enum_node->values[token.identifier] = EnumValueNode(next_value++, token.get_pos());
+					enum_node->values[token.identifier] = EnumValueNode(nullptr, token.get_pos());
 				}
 
 				comma_valid = true;
