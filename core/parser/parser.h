@@ -117,7 +117,7 @@ public:
 		String source;
 		String name; // import name = "path/to/source.cb";
 		stdvec<ptr<FileNode>> imports;
-		stdvec<ptr<VarNode>> vars; // Global vars.
+		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<ClassNode>> classes;
 		ptr<EnumNode> unnamed_enum = nullptr;
@@ -133,13 +133,11 @@ public:
 	struct ClassNode : public Node {
 		String name;
 		stdvec<String> inherits;
-		//String base; // TODO: file_node.file_node.ClassName ??
 		ptr<EnumNode> unnamed_enum = nullptr;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<FunctionNode>> functions;
-		// TODO: implement const.
 		ClassNode() {
 			type = Type::CLASS;
 		}
@@ -189,6 +187,7 @@ public:
 		stdvec<ptr<Node>> statements;
 		// quick reference instead of searching from statement (change to VarNode* maybe).
 		stdvec<ptr<VarNode>> local_vars;
+		stdvec<ptr<ConstNode>> local_const;
 		BlockNode() {
 			type = Type::BLOCK;
 		}
@@ -196,13 +195,34 @@ public:
 
 	struct IdentifierNode : public Node {
 		String name;
-		int arg_index = -1; // For argument identifier.
 		// TODO: declared_block haven't added.
 		BlockNode* declared_block = nullptr; // For search in local vars.
 
-		//ClassNode* _class = nullptr;
-		//VarNode* _var = nullptr;
-		//ConstNode* _const = nullptr;
+		enum IdentifierReference {
+			REF_UNKNOWN,
+			REF_PARAMETER,
+			REF_LOCAL_VAR,
+			REF_LOCAL_CONST,
+			REF_MEMBER_VAR,
+			REF_MEMBER_CONST,
+			REF_ENUM_NAME,
+			REF_ENUM_VALUE,
+			REF_CARBON_CLASS,
+			REF_NATIVE_CLASS,
+			REF_CARBON_FUNCTION,
+			REF_FILE, // import file_ref = "my/file.cb";
+		};
+		IdentifierReference ref = REF_UNKNOWN;
+		union {
+			int param_index;
+			VarNode* _var;
+			ConstNode* _const;
+			EnumValueNode* enum_value;
+			EnumNode* enum_node;
+			ClassNode* _class;
+			FunctionNode* _func;
+			// TODO: REF_FILE
+		};
 
 		IdentifierNode() {
 			type = Type::IDENTIFIER;

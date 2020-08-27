@@ -25,9 +25,24 @@
 
 #include "analyzer.h"
 
-// TODO: implement THROW_ANALYZER_ERROR();
-#define THROW_ANALYZER_ERROR(m_type, m_msg)\
-	THROW_ERROR(m_type, m_msg);
+#define THROW_ANALYZER_ERROR(m_err_type, m_msg, m_pos)                                                                      \
+	do {																													\
+		uint32_t err_len = 1;																								\
+		String token_str = "";																								\
+		if (m_pos.x > 0 && m_pos.y > 0) token_str = parser->tokenizer->get_token_at(m_pos).to_string();						\
+		else token_str = parser->tokenizer->peek(-1, true).to_string();														\
+		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;				\
+		else err_len = (uint32_t)token_str.size();																			\
+																															\
+		if (m_pos.x > 0 && m_pos.y > 0) {																					\
+			String line = file_node->source.get_line(m_pos.x);																\
+			throw Error(m_err_type, m_msg, file_node->path, line, m_pos, err_len)_ERR_ADD_DBG_VARS;							\
+		} else {																											\
+			String line = file_node->source.get_line(parser->tokenizer->get_pos().x);										\
+			throw Error(m_err_type, m_msg, file_node->path, line, parser->tokenizer->peek(-1, true).get_pos(), err_len)		\
+				_ERR_ADD_DBG_VARS;																							\
+		}																													\
+	} while (false)
 	
 
 namespace carbon {
@@ -42,12 +57,13 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 		if (file_node->constants[i]->assignment != nullptr) {
 			_reduce_expression(file_node->constants[i]->assignment);
 			if (file_node->constants[i]->assignment->type != Parser::Node::Type::CONST_VALUE) {
-				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a contant expression.");
+				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a contant expression.", file_node->constants[i]->assignment->pos);
 			}
 			ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(file_node->constants[i]->assignment);
 			if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
 				cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING) {
-				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a constant expression.");
+				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a constant expression.", file_node->constants[i]->assignment->pos);
+
 			}
 			file_node->constants[i]->value = cv->value;
 		}
@@ -57,12 +73,12 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 			if (file_node->classes[i]->constants[j]->assignment != nullptr) {
 				_reduce_expression(file_node->classes[i]->constants[j]->assignment);
 				if (file_node->classes[i]->constants[j]->assignment->type != Parser::Node::Type::CONST_VALUE) {
-					THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a contant expression.");
+					THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a contant expression.", file_node->classes[i]->constants[j]->assignment->pos);
 				}
 				ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(file_node->classes[i]->constants[j]->assignment);
 				if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
 					cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING) {
-					THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a constant expression.");
+					THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a constant expression.", file_node->classes[i]->constants[j]->assignment->pos);
 				}
 				file_node->classes[i]->constants[j]->value = cv->value;
 			}
@@ -74,9 +90,9 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 		for (std::pair<String, Parser::EnumValueNode> pair : file_node->enums[i]->values) {
 			_reduce_expression(pair.second.expr);
 			if (pair.second.expr->type != Parser::Node::Type::CONST_VALUE)
-				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer");
+				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", pair.second.expr->pos);
 			ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(pair.second.expr);
-			if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer");
+			if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", pair.second.expr->pos);
 			pair.second.value = cv->value;
 		}
 	}
@@ -84,9 +100,9 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 		for (std::pair<String, Parser::EnumValueNode> pair : file_node->unnamed_enum->values) {
 			_reduce_expression(pair.second.expr);
 			if (pair.second.expr->type != Parser::Node::Type::CONST_VALUE)
-				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer");
+				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", pair.second.expr->pos);
 			ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(pair.second.expr);
-			if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer");
+			if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", pair.second.expr->pos);
 			pair.second.value = cv->value;
 		}
 	}
@@ -95,10 +111,10 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 		for (size_t j = 0; j < file_node->classes[i]->enums.size(); j++) {
 			for (std::pair<String, Parser::EnumValueNode> pair : file_node->classes[i]->enums[j]->values) {
 				_reduce_expression(pair.second.expr);
-				if (pair.second.expr->type != Parser::Node::Type::CONST_VALUE)
-					THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer");
+				if (pair.second.expr->type != Parser::Node::Type::CONST_VALUE, pair.second.expr->pos)
+					THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", pair.second.expr->pos);
 				ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(pair.second.expr);
-				if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer");
+				if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", pair.second.expr->pos);
 				pair.second.value = cv->value;
 			}
 		}
@@ -106,9 +122,10 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 			for (std::pair<String, Parser::EnumValueNode> pair : file_node->classes[i]->unnamed_enum->values) {
 				_reduce_expression(pair.second.expr);
 				if (pair.second.expr->type != Parser::Node::Type::CONST_VALUE)
-					THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer");
+					THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", pair.second.expr->pos);
 				ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(pair.second.expr);
-				if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer");
+				if (cv->value.get_type() != var::INT)
+					THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", pair.second.expr->pos);
 				pair.second.value = cv->value;
 			}
 		}
@@ -151,11 +168,16 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 
 	switch (p_expr->type) {
 
-		case Parser::Node::Type::BUILTIN_FUNCTION: {
-		} break;
+		// Assigning function to a variable ?
+		case Parser::Node::Type::BUILTIN_TYPE:
+		case Parser::Node::Type::BUILTIN_FUNCTION:
+			break;
 
 		case Parser::Node::Type::IDENTIFIER: {
-			// TODO: 
+			// TODO:
+			// could be parameter, local constant, local var, constant, member var,
+			// class name, native class name, (not builtin class/builtin function name)
+			// function name
 		} break;
 
 		case Parser::Node::Type::ARRAY: {

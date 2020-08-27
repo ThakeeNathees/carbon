@@ -51,9 +51,9 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			expr = new_node<ThisNode>();
 
 		} else if (tk->type == Token::KWORD_SUPER) {
-			// TODO: is constructor static ??
-			if (parser_context.current_class == nullptr || (parser_context.current_func && parser_context.current_func->is_static))
-				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Keyword \"super\" only be used in non-static member function.", Vect2i());
+			// if super is inside class function, it calls the same function in it's base.
+			if (parser_context.current_class == nullptr || (parser_context.current_func))
+				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Keyword \"super\" can only be used in class function.", Vect2i());
 			expr = new_node<SuperNode>();
 
 		} else if (tk->type == Token::VALUE_FLOAT || tk->type == Token::VALUE_INT || tk->type == Token::VALUE_STRING || tk->type == Token::VALUE_BOOL) {
@@ -93,7 +93,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			}
 
 			tk = &tokenizer->next();
-			ASSERT(tk->type == Token::BRACKET_LPARAN); // TODO: throw
+			if (tk->type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
 			stdvec<ptr<Node>> args = _parse_arguments(p_parent);
 			for (size_t i = 0; i < args.size(); i++) {
 				call->args.push_back(args[i]);
@@ -103,27 +103,129 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 		} else if (tk->type == Token::IDENTIFIER) {
 			ptr<IdentifierNode> id = new_node<IdentifierNode>(tk->identifier);
 			id->declared_block = parser_context.current_block;
-			if (parser_context.current_func) {
-				for (int i = 0; i < (int)parser_context.current_func->args.size(); i++) {
-					if (parser_context.current_func->args[i].name == tk->identifier) {
-						id->arg_index = i;
+
+			// Find sreference.
+			do { // do ... while() loop is for jump out from the middle.
+				if (parser_context.current_func) {
+					for (int i = 0; i < (int)parser_context.current_func->args.size(); i++) {
+						if (parser_context.current_func->args[i].name == id->name) {
+							id->ref = IdentifierNode::REF_PARAMETER;
+							id->param_index = i;
+							break;
+						}
+					}
+				}
+				if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+				BlockNode* outer_block = parser_context.current_block;
+				while (outer_block && id->ref != IdentifierNode::REF_UNKNOWN) {
+					for (int i = 0; i < (int)outer_block->local_vars.size(); i++) {
+						if (outer_block->local_vars[i]->name == id->name) {
+							id->ref = IdentifierNode::REF_LOCAL_VAR;
+							id->_var = outer_block->local_vars[i].get();
+							break;
+						}
+					}
+					if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+					for (int i = 0; i < (int)outer_block->local_const.size(); i++) {
+						if (outer_block->local_const[i]->name == id->name) {
+							id->ref = IdentifierNode::REF_LOCAL_CONST;
+							id->_const = outer_block->local_const[i].get();
+							break;
+						}
+					}
+					if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+					if (outer_block->parernt_node->type == Node::Type::BLOCK) {
+						outer_block = ptrcast<BlockNode>(outer_block->parernt_node).get();
+					} else {
+						outer_block = nullptr;
+					}
+				}
+				if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+				if (parser_context.current_class) {
+					for (int i = 0; i < (int)parser_context.current_class->vars.size(); i++) {
+						if (parser_context.current_class->vars[i]->name == id->name) {
+							id->ref = IdentifierNode::REF_MEMBER_VAR;
+							id->_var = parser_context.current_class->vars[i].get();
+							break;
+						}
+					}
+					for (int i = 0; i < (int)parser_context.current_class->constants.size(); i++) {
+						if (parser_context.current_class->constants[i]->name == id->name) {
+							id->ref = IdentifierNode::REF_MEMBER_CONST;
+							id->_const = parser_context.current_class->constants[i].get();
+							break;
+						}
+					}
+					if (parser_context.current_class->unnamed_enum != nullptr) {
+						for (std::pair<String, EnumValueNode> pair : parser_context.current_class->unnamed_enum->values) {
+							if (pair.first == id->name) {
+								id->ref = IdentifierNode::REF_ENUM_VALUE;
+								id->enum_value = &parser_context.current_class->unnamed_enum->values[pair.first];
+								break;
+							}
+						}
+						if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+					}
+					for (int i = 0; i < (int)parser_context.current_class->enums.size(); i++) {
+						if (parser_context.current_class->enums[i]->name == id->name) {
+							id->ref = IdentifierNode::REF_ENUM_NAME;
+							id->enum_node = parser_context.current_class->enums[i].get();
+							break;
+						}
+					}
+				}
+				if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+				if (file_node->unnamed_enum != nullptr) {
+					for (std::pair<String, EnumValueNode> pair : file_node->unnamed_enum->values) {
+						if (pair.first == id->name) {
+							id->ref = IdentifierNode::REF_ENUM_VALUE;
+							id->enum_value = &(file_node->unnamed_enum->values[pair.first]);
+							break;
+						}
+					}
+				}
+				if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+				for (int i = 0; i < (int)file_node->enums.size(); i++) {
+					if (file_node->enums[i]->name == id->name) {
+						id->ref = IdentifierNode::REF_ENUM_NAME;
+						id->enum_node = file_node->enums[i].get();
 						break;
 					}
 				}
-			}
-			BlockNode* outer_block = parser_context.current_block;
-			while (outer_block) {
-				for (int i = 0; i < (int)outer_block->local_vars.size(); i++) {
-					if (outer_block->local_vars[i]->name == tk->identifier) {
-						id->declared_block = outer_block;
+				if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+				for (int i = 0; i < (int)file_node->classes.size(); i++) {
+					if (file_node->classes[i]->name == id->name) {
+						id->ref = IdentifierNode::REF_CARBON_CLASS;
+						id->_class = file_node->classes[i].get();
+						break;
 					}
 				}
-				if (outer_block->parernt_node->type == Node::Type::BLOCK) {
-					outer_block = ptrcast<BlockNode>(outer_block->parernt_node).get();
-				} else {
-					outer_block = nullptr;
+				if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+				for (int i = 0; i < (int)file_node->functions.size(); i++) {
+					if (file_node->functions[i]->name == id->name) {
+						id->ref = IdentifierNode::REF_CARBON_FUNCTION;
+						id->_func = file_node->functions[i].get();
+						break;
+					}
 				}
-			}
+				if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+				if (NativeClasses::is_class_registered(id->name)) {
+					id->ref = IdentifierNode::REF_NATIVE_CLASS;
+					break;
+				}
+
+				// TODO: REF_FILE for import.
+			} while (false);
+
 			expr = id;
 		// } else if (tk->type == Token::BUILTIN_TYPE) { // TODO: String.format(...);
 		} else if (tk->type == Token::BRACKET_LCUR) {

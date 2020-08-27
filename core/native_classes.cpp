@@ -61,9 +61,11 @@ String NativeClasses::get_inheritance(const String& p_class_name) {
 	}
 	return classes[p_class_name.hash()].parent_class_name;
 }
+
 bool NativeClasses::is_class_registered(const String& p_class_name) {
 	return classes[p_class_name.hash()].class_name.size() != 0;
 }
+
 }
 
 
