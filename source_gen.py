@@ -99,6 +99,37 @@ public:
 	virtual var call(stdvec<var>& args) = 0;
 };
 
+// ---------------- MEMBER BIND START --------------------------------------
+class MemberBind : public BindData {
+public:
+	virtual BindData::Type get_type() const { return BindData::MEMBER_VAR; }
+
+	virtual var get(ptr<Object> self) = 0;
+};
+
+template<typename T, typename Class>
+class _MemberBind : public MemberBind {
+	typedef T Class::* member_ptr_t;
+	member_ptr_t member_ptr;
+public:
+	_MemberBind(const char* p_name, const char* p_class_name, member_ptr_t p_member_ptr) {
+		name = p_name;
+		class_name = p_class_name;
+		member_ptr = p_member_ptr;
+	}
+
+	virtual var get(ptr<Object> self) override {
+		return ptrcast<Class>(self).get()->*member_ptr;
+	}
+};
+
+template<typename T, typename Class>
+ptr<MemberBind> _bind_member(const char* p_name, const char* p_class_name, T Class::* p_member_ptr) {
+	T Class::* member_ptr = p_member_ptr;
+	return newptr<_MemberBind<T, Class>>(p_name, p_class_name, member_ptr);
+}
+// ---------------- MEMBER BIND END --------------------------------------
+
 ''')
 	## method pointers
 	for i in range(num):

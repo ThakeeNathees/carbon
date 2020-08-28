@@ -26,13 +26,19 @@
 #ifndef FILE_H
 #define FILE_H
 
-#include "native_classes.h"
+#include "native/native_classes.h"
 #include "buffer.h"
 
 namespace carbon {
 
 class File : public Object {
-	INHERITS_OBJECT(File, Object);
+	REGISTER_CLASS(File, Object) {
+		BIND_METHOD("open", &File::open);
+		BIND_METHOD("read", &File::read);
+		BIND_METHOD("write", &File::write);
+		BIND_METHOD("close", &File::close);
+	}
+
 public:
 
 	enum {
@@ -48,10 +54,7 @@ public:
 	File();
 	~File();
 
-
 	// Methods.
-	static void _bind_data();
-
 	inline bool is_open() const { return _file != NULL; }
 	void open(const String& p_path, int p_mode = DEFAULT);
 	void close();

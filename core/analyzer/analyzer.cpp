@@ -25,6 +25,8 @@
 
 #include "analyzer.h"
 
+// TODO: class variable name can't shadow from base.
+
 #define THROW_ANALYZER_ERROR(m_err_type, m_msg, m_pos)                                                                      \
 	do {																													\
 		uint32_t err_len = 1;																								\

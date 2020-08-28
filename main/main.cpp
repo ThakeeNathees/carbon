@@ -38,28 +38,23 @@ using namespace carbon;
 // TODO: VarError -> Error.
 // TODO: Make var submodule to local.
 
-class MyClass {
-public:
-	int val;
-
-};
-
-template<typename T, typename Class>
-class MemberBind {
-	typedef T Class::* member_ptr;
-public:
-	MemberBind(member_ptr pm) {
-		ptr_member = pm;
+class M : public Object {
+	REGISTER_CLASS(M, Object) {
+		BIND_MEMBER("member", &M::member);
 	}
-	member_ptr ptr_member;
+public:
+	var member;
 };
 
 int _main(int argc, char** argv) {
 
-	int MyClass::* p = &MyClass::val;
-	MemberBind<int, MyClass> mb ( p );
-
 	initialize();
+
+	register_class<M>();
+	var m = newptr<M>();
+	m.cast_to<M>()->member = "testing";
+	printf("%s\n", m.get_member("member").operator String().c_str());
+
 #ifdef RUN_TESTS
 	int res = _test_main(argc, argv);
 	if (res) {

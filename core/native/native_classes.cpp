@@ -71,7 +71,7 @@ bool NativeClasses::is_class_registered(const String& p_class_name) {
 
 namespace varh {
 using namespace carbon;
-#ifdef HAVE_OBJECT_CALL_MAP
+#ifdef _VAR_H_EXTERN_IMPLEMENTATIONS
 // call_method() should call it's parent if method not exists.
 var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p_args) {
 	String class_name = p_self->get_class_name();
@@ -99,8 +99,29 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 	}
 	
 	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no method named \"%s\"", p_self->get_class_name(), method_name.c_str()));
-	return var();
 }
-#endif // HAVE_OBJECT_CALL_MAP
+
+var& Object::get_member(ptr<Object> p_self, const String& p_name) {
+	String class_name = p_self->get_class_name();
+	String member_name = p_name;
+
+	if (!NativeClasses::is_class_registered(class_name)) {
+		THROW_ERROR(Error::NULL_POINTER, String::format("the class \"%s\" isn't registered in native class entries", class_name.c_str()));
+	}
+
+	while (class_name.size() != 0) {
+		ptr<BindData> bind_data = NativeClasses::get_bind_data(class_name, member_name);
+		if (bind_data) {
+			if (bind_data->get_type() == BindData::MEMBER_VAR) {
+				return ptrcast<MemberBind>(bind_data)->get(p_self);
+			}
+			// TODO: static var, static const.
+		}
+		class_name = NativeClasses::get_inheritance(class_name);
+	}
+	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no member named \"%s\"", p_self->get_class_name(), member_name.c_str()));
+}
+
+#endif // _VAR_H_EXTERN_IMPLEMENTATIONS
 
 } // namespace varh

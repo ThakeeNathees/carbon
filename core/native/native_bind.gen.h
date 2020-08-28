@@ -78,7 +78,7 @@ class MemberBind : public BindData {
 public:
 	virtual BindData::Type get_type() const { return BindData::MEMBER_VAR; }
 
-	virtual var get(ptr<Object> self) = 0;
+	virtual var& get(ptr<Object> self) = 0;
 };
 
 template<typename T, typename Class>
@@ -92,7 +92,7 @@ public:
 		member_ptr = p_member_ptr;
 	}
 
-	virtual var get(ptr<Object> self) override {
+	virtual var& get(ptr<Object> self) override {
 		return ptrcast<Class>(self).get()->*member_ptr;
 	}
 };
@@ -122,6 +122,12 @@ using M4 = R(T::*)(a0, a1, a2, a3);
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
 using M5 = R(T::*)(a0, a1, a2, a3, a4);
 
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
+using M6 = R(T::*)(a0, a1, a2, a3, a4, a5);
+
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
+using M7 = R(T::*)(a0, a1, a2, a3, a4, a5, a6);
+
 template<typename R>
 using F0 = R(*)();
 
@@ -139,6 +145,12 @@ using F4 = R(*)(a0, a1, a2, a3);
 
 template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
 using F5 = R(*)(a0, a1, a2, a3, a4);
+
+template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
+using F6 = R(*)(a0, a1, a2, a3, a4, a5);
+
+template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
+using F7 = R(*)(a0, a1, a2, a3, a4, a5, a6);
 
 template<typename T, typename R>
 class _MethodBind_M0 : public MethodBind {
@@ -280,6 +292,54 @@ public:
 			(ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4]); return var();
 		} else {
 			return (ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4]);
+		}
+	}
+};
+
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
+class _MethodBind_M6 : public MethodBind {
+	M6<T, R, a0, a1, a2, a3, a4, a5> method;
+public:
+	_MethodBind_M6(const char* p_name, const char* p_class_name, int p_argc, M6<T, R, a0, a1, a2, a3, a4, a5> p_method) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		method = p_method;
+	}
+	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+		if (args.size() != 6) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("method %s takes 6 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			(ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4], args[5]); return var();
+		} else {
+			return (ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4], args[5]);
+		}
+	}
+};
+
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
+class _MethodBind_M7 : public MethodBind {
+	M7<T, R, a0, a1, a2, a3, a4, a5, a6> method;
+public:
+	_MethodBind_M7(const char* p_name, const char* p_class_name, int p_argc, M7<T, R, a0, a1, a2, a3, a4, a5, a6> p_method) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		method = p_method;
+	}
+	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+		if (args.size() != 7) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("method %s takes 7 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			(ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); return var();
+		} else {
+			return (ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
 		}
 	}
 };
@@ -428,6 +488,54 @@ public:
 	}
 };
 
+template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
+class _StaticFuncBind_F6 : public StaticFuncBind {
+	F6<R, a0, a1, a2, a3, a4, a5> static_func;
+public:
+	_StaticFuncBind_F6(const char* p_name, const char* p_class_name, int p_argc, F6<R, a0, a1, a2, a3, a4, a5> p_func) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		static_func = p_func;
+	}
+	virtual var call(stdvec<var>& args) override {
+		if (args.size() != 6) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("function %s takes 6 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			static_func(args[0], args[1], args[2], args[3], args[4], args[5]); return var();
+		} else {
+			return static_func(args[0], args[1], args[2], args[3], args[4], args[5]);
+		}
+	}
+};
+
+template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
+class _StaticFuncBind_F7 : public StaticFuncBind {
+	F7<R, a0, a1, a2, a3, a4, a5, a6> static_func;
+public:
+	_StaticFuncBind_F7(const char* p_name, const char* p_class_name, int p_argc, F7<R, a0, a1, a2, a3, a4, a5, a6> p_func) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		static_func = p_func;
+	}
+	virtual var call(stdvec<var>& args) override {
+		if (args.size() != 7) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("function %s takes 7 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			static_func(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); return var();
+		} else {
+			return static_func(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+		}
+	}
+};
+
 template<typename T, typename R>
 ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M0<T, R> m) {
 	return newptr<_MethodBind_M0<T, R>>(method_name, p_class_name, 0, m);
@@ -458,6 +566,16 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 	return newptr<_MethodBind_M5<T, R, a0, a1, a2, a3, a4>>(method_name, p_class_name, 5, m);
 }
 
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M6<T, R, a0, a1, a2, a3, a4, a5> m) {
+	return newptr<_MethodBind_M6<T, R, a0, a1, a2, a3, a4, a5>>(method_name, p_class_name, 6, m);
+}
+
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M7<T, R, a0, a1, a2, a3, a4, a5, a6> m) {
+	return newptr<_MethodBind_M7<T, R, a0, a1, a2, a3, a4, a5, a6>>(method_name, p_class_name, 7, m);
+}
+
 template<typename R>
 ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class_name, F0<R> f) {
 	return newptr<_StaticFuncBind_F0<R>>(func_name, p_class_name, 0, f);
@@ -486,6 +604,16 @@ ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class
 template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
 ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class_name, F5<R, a0, a1, a2, a3, a4> f) {
 	return newptr<_StaticFuncBind_F5<R, a0, a1, a2, a3, a4>>(func_name, p_class_name, 5, f);
+}
+
+template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
+ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class_name, F6<R, a0, a1, a2, a3, a4, a5> f) {
+	return newptr<_StaticFuncBind_F6<R, a0, a1, a2, a3, a4, a5>>(func_name, p_class_name, 6, f);
+}
+
+template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
+ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class_name, F7<R, a0, a1, a2, a3, a4, a5, a6> f) {
+	return newptr<_StaticFuncBind_F7<R, a0, a1, a2, a3, a4, a5, a6>>(func_name, p_class_name, 7, f);
 }
 
 

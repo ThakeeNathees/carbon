@@ -28,13 +28,6 @@
 
 namespace carbon {
 
-void File::_bind_data() {
-	BIND_METHOD("open", &File::open);
-	BIND_METHOD("read", &File::read);
-	BIND_METHOD("write", &File::write);
-	BIND_METHOD("close", &File::close);
-}
-
 void File::close() {
 	if (is_open()) {
 		fclose(_file);
