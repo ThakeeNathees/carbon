@@ -147,7 +147,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 			context->current_class = nullptr;
 		}
 	};
-	ScopeDestruct distruct = ScopeDestruct(&parser_context);
+	ScopeDestruct destruct = ScopeDestruct(&parser_context);
 
 	const TokenData* tk = &tokenizer->next();
 
@@ -257,6 +257,19 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 
 	ptr<EnumNode> enum_node = new_node<EnumNode>();
 	enum_node->parernt_node = p_parent;
+
+	parser_context.current_enum = enum_node.get();
+	class ScopeDestruct {
+	public:
+		Parser::ParserContext* context = nullptr;
+		ScopeDestruct(Parser::ParserContext* p_context) {
+			context = p_context;
+		}
+		~ScopeDestruct() {
+			context->current_enum = nullptr;
+		}
+	};
+	ScopeDestruct destruct = ScopeDestruct(&parser_context);
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER && tk->type != Token::BRACKET_LCUR)
@@ -524,7 +537,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 			context->current_func = nullptr;
 		}
 	};
-	ScopeDestruct distruct = ScopeDestruct(&parser_context);
+	ScopeDestruct destruct = ScopeDestruct(&parser_context);
 
 	// TODO: check identifier from import
 	const TokenData* tk = &tokenizer->next();

@@ -43,7 +43,7 @@
 				_ERR_ADD_DBG_VARS;																							\
 		}																													\
 	} while (false)
-	
+
 
 namespace carbon {
 
@@ -51,6 +51,11 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 
 	parser = p_parser;
 	file_node = parser->file_node;
+
+	parser->parser_context.current_class = nullptr;
+	parser->parser_context.current_func = nullptr;
+	parser->parser_context.current_block = nullptr;
+	parser->parser_context.current_enum = nullptr;
 
 	// File/class level constants.
 	for (size_t i = 0; i < file_node->constants.size(); i++) {
@@ -63,12 +68,12 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 			if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
 				cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING) {
 				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a constant expression.", file_node->constants[i]->assignment->pos);
-
 			}
 			file_node->constants[i]->value = cv->value;
 		}
 	}
 	for (size_t i = 0; i < file_node->classes.size(); i++) {
+		parser->parser_context.current_class = file_node->classes[i].get();
 		for (size_t j = 0; j < file_node->classes[i]->constants.size(); j++) {
 			if (file_node->classes[i]->constants[j]->assignment != nullptr) {
 				_reduce_expression(file_node->classes[i]->constants[j]->assignment);
@@ -84,9 +89,11 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 			}
 		}
 	}
+	parser->parser_context.current_class = nullptr;
 
 	// File/class enums/unnamed_enums.
 	for (size_t i = 0; i < file_node->enums.size(); i++) {
+		parser->parser_context.current_enum = file_node->enums[i].get();
 		for (std::pair<String, Parser::EnumValueNode> pair : file_node->enums[i]->values) {
 			_reduce_expression(pair.second.expr);
 			if (pair.second.expr->type != Parser::Node::Type::CONST_VALUE)
@@ -97,6 +104,7 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 		}
 	}
 	if (file_node->unnamed_enum != nullptr) {
+		parser->parser_context.current_enum = file_node->unnamed_enum.get();
 		for (std::pair<String, Parser::EnumValueNode> pair : file_node->unnamed_enum->values) {
 			_reduce_expression(pair.second.expr);
 			if (pair.second.expr->type != Parser::Node::Type::CONST_VALUE)
@@ -106,9 +114,12 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 			pair.second.value = cv->value;
 		}
 	}
+	parser->parser_context.current_enum = nullptr;
 
 	for (size_t i = 0; i < file_node->classes.size(); i++) {
+		parser->parser_context.current_class = file_node->classes[i].get();
 		for (size_t j = 0; j < file_node->classes[i]->enums.size(); j++) {
+			parser->parser_context.current_enum = file_node->classes[i]->enums[j].get();
 			for (std::pair<String, Parser::EnumValueNode> pair : file_node->classes[i]->enums[j]->values) {
 				_reduce_expression(pair.second.expr);
 				if (pair.second.expr->type != Parser::Node::Type::CONST_VALUE, pair.second.expr->pos)
@@ -119,6 +130,7 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 			}
 		}
 		if (file_node->classes[i]->unnamed_enum != nullptr) {
+			parser->parser_context.current_enum = file_node->classes[i]->unnamed_enum.get();
 			for (std::pair<String, Parser::EnumValueNode> pair : file_node->classes[i]->unnamed_enum->values) {
 				_reduce_expression(pair.second.expr);
 				if (pair.second.expr->type != Parser::Node::Type::CONST_VALUE)
@@ -130,6 +142,8 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 			}
 		}
 	}
+	parser->parser_context.current_class = nullptr;
+	parser->parser_context.current_enum = nullptr;
 
 	// File/class level variables.
 	for (size_t i = 0; i < file_node->vars.size(); i++) {
@@ -138,24 +152,32 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 		}
 	}
 	for (size_t i = 0; i < file_node->classes.size(); i++) {
+		parser->parser_context.current_class = file_node->classes[i].get();
 		for (size_t j = 0; j < file_node->classes[i]->vars.size(); j++) {
 			if (file_node->classes[i]->vars[j]->assignment != nullptr) {
 				_reduce_expression(file_node->classes[i]->vars[j]->assignment);
 			}
 		}
 	}
+	parser->parser_context.current_class = nullptr;
 
 	// File level function body.
 	for (size_t i = 0; i < file_node->functions.size(); i++) {
+		parser->parser_context.current_func = file_node->functions[i].get();
 		_reduce_block(file_node->functions[i]->body);
 	}
+	parser->parser_context.current_func = nullptr;
 
 	// Inner class function body.
 	for (size_t i = 0; i < file_node->classes.size(); i++) {
+		parser->parser_context.current_class = file_node->classes[i].get();
 		for (size_t j = 0; j < file_node->classes[i]->functions.size(); j++) {
+			parser->parser_context.current_func = file_node->classes[i]->functions[j].get();
 			_reduce_block(file_node->classes[i]->functions[j]->body);
 		}
 	}
+	parser->parser_context.current_class = nullptr;
+	parser->parser_context.current_func = nullptr;
 }
 
 void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
@@ -174,10 +196,46 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 			break;
 
 		case Parser::Node::Type::IDENTIFIER: {
-			// TODO:
-			// could be parameter, local constant, local var, constant, member var,
-			// class name, native class name, (not builtin class/builtin function name)
-			// function name
+			ptr<Parser::IdentifierNode> id = ptrcast<Parser::IdentifierNode>(p_expr);
+			switch (id->ref) {
+				case Parser::IdentifierNode::REF_UNKNOWN:
+					/* TODO:
+						``` const C1 = C2; const C2 = 1; ```
+						``` enum E { V1 = V2, V2 = 42, } ```
+						in the above case identifier C2 is unknown but it's defined below and haven't reduced yet.
+						So, try again and if found reduce the expression and let it fallthrough, else throw error.
+
+						- OR - find the ref here instead of finding in the parser.
+					*/
+					THROW_ANALYZER_ERROR(Error::NOT_DEFINED, String::format("identifier \"%s\" isn't defined", id->name.c_str()), id->pos);
+				case Parser::IdentifierNode::REF_PARAMETER:
+				case Parser::IdentifierNode::REF_LOCAL_VAR:
+				case Parser::IdentifierNode::REF_MEMBER_VAR:
+					// Can't reduce.
+					break;
+				case Parser::IdentifierNode::REF_LOCAL_CONST:
+				case Parser::IdentifierNode::REF_MEMBER_CONST: {
+					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->_const->value);
+					cv->pos = id->pos; p_expr = cv;
+				} break;
+				case Parser::IdentifierNode::REF_ENUM_NAME:
+					break;
+				case Parser::IdentifierNode::REF_ENUM_VALUE: {
+					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->enum_value->value);
+					cv->pos = id->pos; p_expr = cv;
+				} break;
+				case Parser::IdentifierNode::REF_CARBON_CLASS:
+				case Parser::IdentifierNode::REF_NATIVE_CLASS:
+				case Parser::IdentifierNode::REF_CARBON_FUNCTION:
+				case Parser::IdentifierNode::REF_FILE:
+					// Can't reduce.
+					/* TODO:
+						enum E { V = 42, }
+						var x = E;
+						print(x.V); // should print 42.
+					*/
+					break;
+			}
 		} break;
 
 		case Parser::Node::Type::ARRAY: {
@@ -217,10 +275,12 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 			for (int i = initial_argument; i < (int)op->args.size(); i++) {
 				args.push_back(ptrcast<Parser::ConstValueNode>(op->args[i])->value);
 			}
-#define SET_EXPR_CONST_NODE(m_var)  /* Can't use as a single statement and without a scope in switch case */ \
+#define SET_EXPR_CONST_NODE(m_var)                                                                           \
+do {																										 \
 	ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(m_var);                                \
 	cv->pos = op->pos;										                                                 \
-	p_expr = cv
+	p_expr = cv;																							 \
+} while (false)
 			switch (op->op_type) {
 				case Parser::OperatorNode::OpType::OP_CALL: {
 					// reduce builtin function
@@ -253,22 +313,27 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 								.set_line(file_node->source.get_line(op->pos.x))
 								.set_pos(op->pos)
 								.set_err_len((uint32_t)String(BuiltinTypes::get_type_name(bt->builtin_type)).size())
-								;
+							;
 						}
 						SET_EXPR_CONST_NODE(ret);
 					}
 
 				} break;
 				case Parser::OperatorNode::OpType::OP_INDEX: {
-					ASSERT(op->args.size() == 2); // TODO: throw internal bug
+					if (op->args.size() == 2) THROW_BUG("OP_INDEX operator argument size != 0");
+
 					// TODO:
 					switch (op->args[0]->type) {
 						case Parser::Node::Type::THIS:
+							// this.member_var/.member_func/... return identifier without `this`.
 						case Parser::Node::Type::SUPER:
 						case Parser::Node::Type::BUILTIN_TYPE:
+							// String.CONST_PROP;
 						case Parser::Node::Type::CONST_VALUE:
+							// "str".length();
 						case Parser::Node::Type::IDENTIFIER: {
-
+							// if identifier reference is const/enum name/native type/... it could be reduced to const.
+							// File.READ
 						}
 						default:
 							break;
@@ -299,64 +364,87 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					// supported for assignment.
 				} break;
 
-				case Parser::OperatorNode::OpType::OP_EQEQ: {
+				case Parser::OperatorNode::OpType::OP_EQEQ:
 					SET_EXPR_CONST_NODE(args[0] == args[1]);
-				}
-				case Parser::OperatorNode::OpType::OP_PLUS: {
+					break;
+				case Parser::OperatorNode::OpType::OP_PLUS:
 					SET_EXPR_CONST_NODE(args[0] + args[1]);
-				} break;
-				case Parser::OperatorNode::OpType::OP_MINUS: {
+					break;
+				case Parser::OperatorNode::OpType::OP_MINUS:
 					SET_EXPR_CONST_NODE(args[0] - args[1]);
-				} break;
-				case Parser::OperatorNode::OpType::OP_MUL: {
+					break;
+				case Parser::OperatorNode::OpType::OP_MUL:
 					SET_EXPR_CONST_NODE(args[0] * args[1]);
-				} break;
-				case Parser::OperatorNode::OpType::OP_DIV: {
+					break;
+				case Parser::OperatorNode::OpType::OP_DIV:
 					SET_EXPR_CONST_NODE(args[0] / args[1]);
-				} break;
-				case Parser::OperatorNode::OpType::OP_MOD: {
+					break;
+				case Parser::OperatorNode::OpType::OP_MOD:
 					SET_EXPR_CONST_NODE(args[0] % args[1]);
-				} break;
-				case Parser::OperatorNode::OpType::OP_LT: {
+					break;
+				case Parser::OperatorNode::OpType::OP_LT:
 					SET_EXPR_CONST_NODE(args[0] < args[1]);
-				} break;
-				case Parser::OperatorNode::OpType::OP_GT: {
+					break;
+				case Parser::OperatorNode::OpType::OP_GT:
 					SET_EXPR_CONST_NODE(args[0] > args[1]);
-				} break;
-				case Parser::OperatorNode::OpType::OP_AND: {
+					break;
+				case Parser::OperatorNode::OpType::OP_AND:
 					SET_EXPR_CONST_NODE(args[0].operator bool() && args[1].operator bool());
-				} break;
-				case Parser::OperatorNode::OpType::OP_OR: {
+					break;
+				case Parser::OperatorNode::OpType::OP_OR:
 					SET_EXPR_CONST_NODE(args[0].operator bool() || args[1].operator bool());
-				} break;
-				case Parser::OperatorNode::OpType::OP_NOTEQ: {
+					break;
+				case Parser::OperatorNode::OpType::OP_NOTEQ:
 					SET_EXPR_CONST_NODE(args[0] != args[1]);
-				} break;
-				case Parser::OperatorNode::OpType::OP_BIT_LSHIFT: {
+					break;
+				case Parser::OperatorNode::OpType::OP_BIT_LSHIFT:
 					SET_EXPR_CONST_NODE(args[0].operator int64_t() << args[1].operator int64_t());
-				} break;
-				case Parser::OperatorNode::OpType::OP_BIT_RSHIFT: {
+					 break;
+				case Parser::OperatorNode::OpType::OP_BIT_RSHIFT:
 					SET_EXPR_CONST_NODE(args[0].operator int64_t() >> args[1].operator int64_t());
-				} break;
-				case Parser::OperatorNode::OpType::OP_BIT_OR: {
+					 break;
+				case Parser::OperatorNode::OpType::OP_BIT_OR:
 					SET_EXPR_CONST_NODE(args[0].operator int64_t() | args[1].operator int64_t());
-				} break;
-				case Parser::OperatorNode::OpType::OP_BIT_AND: {
+					 break;
+				case Parser::OperatorNode::OpType::OP_BIT_AND:
 					SET_EXPR_CONST_NODE(args[0].operator int64_t() & args[1].operator int64_t());
-				} break;
-				case Parser::OperatorNode::OpType::OP_BIT_XOR: {
+					 break;
+				case Parser::OperatorNode::OpType::OP_BIT_XOR:
 					SET_EXPR_CONST_NODE(args[0].operator int64_t() ^ args[1].operator int64_t());
-				} break;
+					 break;
 
-
-				case Parser::OperatorNode::OpType::OP_NOT: {
-				} break;
-				case Parser::OperatorNode::OpType::OP_BIT_NOT: {
-				} break;
-				case Parser::OperatorNode::OpType::OP_POSITIVE: {
-				} break;
-				case Parser::OperatorNode::OpType::OP_NEGATIVE: {
-				} break;
+				case Parser::OperatorNode::OpType::OP_NOT:
+					SET_EXPR_CONST_NODE(!args[0].operator bool());
+					break;
+				case Parser::OperatorNode::OpType::OP_BIT_NOT:
+					SET_EXPR_CONST_NODE(~args[0].operator int64_t());
+					break;
+				case Parser::OperatorNode::OpType::OP_POSITIVE:
+					switch (args[0].get_type()) {
+						case var::BOOL:
+						case var::INT:
+						case var::FLOAT: {
+							SET_EXPR_CONST_NODE(args[0]);
+						} break;
+						default:
+							THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
+									String::format("unary operator \"+\" not supported on %s", args[0].get_type_name()), op->pos);
+					}
+					break;
+				case Parser::OperatorNode::OpType::OP_NEGATIVE:
+					switch (args[0].get_type()) {
+						case var::BOOL:
+						case var::INT:
+							SET_EXPR_CONST_NODE(-args[0].operator int64_t());
+							break;
+						case var::FLOAT: 
+							SET_EXPR_CONST_NODE(-args[0].operator double());
+							break;
+						default:
+							THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
+								String::format("unary operator \"+\" not supported on %s", args[0].get_type_name()), op->pos);
+					}
+					break;
 
 				default: {
 					ASSERT(false); // TODO: throw internal bug.

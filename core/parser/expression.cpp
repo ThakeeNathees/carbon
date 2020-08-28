@@ -170,12 +170,39 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 						}
 						if (id->ref != IdentifierNode::REF_UNKNOWN) break;
 					}
+					if (parser_context.current_enum != nullptr) {
+						for (std::pair<String, EnumValueNode> pair : parser_context.current_enum->values) {
+							if (pair.first == id->name) {
+								id->ref = IdentifierNode::REF_ENUM_VALUE;
+								id->enum_value = &parser_context.current_enum->values[pair.first];
+								break;
+							}
+						}
+					}
 					for (int i = 0; i < (int)parser_context.current_class->enums.size(); i++) {
 						if (parser_context.current_class->enums[i]->name == id->name) {
 							id->ref = IdentifierNode::REF_ENUM_NAME;
 							id->enum_node = parser_context.current_class->enums[i].get();
 							break;
 						}
+					}
+				}
+				if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+				for (int i = 0; i < (int)file_node->vars.size(); i++) {
+					if (file_node->vars[i]->name == id->name) {
+						id->ref = IdentifierNode::REF_MEMBER_VAR;
+						id->_var = file_node->vars[i].get();
+						break;
+					}
+				}
+				if (id->ref != IdentifierNode::REF_UNKNOWN) break;
+
+				for (int i = 0; i < (int)file_node->constants.size(); i++) {
+					if (file_node->constants[i]->name == id->name) {
+						id->ref = IdentifierNode::REF_MEMBER_CONST;
+						id->_const = file_node->constants[i].get();
+						break;
 					}
 				}
 				if (id->ref != IdentifierNode::REF_UNKNOWN) break;

@@ -38,7 +38,26 @@ using namespace carbon;
 // TODO: VarError -> Error.
 // TODO: Make var submodule to local.
 
+class MyClass {
+public:
+	int val;
+
+};
+
+template<typename T, typename Class>
+class MemberBind {
+	typedef T Class::* member_ptr;
+public:
+	MemberBind(member_ptr pm) {
+		ptr_member = pm;
+	}
+	member_ptr ptr_member;
+};
+
 int _main(int argc, char** argv) {
+
+	int MyClass::* p = &MyClass::val;
+	MemberBind<int, MyClass> mb ( p );
 
 	initialize();
 #ifdef RUN_TESTS

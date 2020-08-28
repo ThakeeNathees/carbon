@@ -68,6 +68,7 @@ public:
 		STATIC_FUNC,
 		MEMBER_VAR,
 		STATIC_VAR,
+		STATIC_CONST,
 		// TODO: enum, const, ...
 	};
 	virtual Type get_type() const = 0;

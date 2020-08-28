@@ -479,6 +479,7 @@ private:
 		ClassNode* current_class = nullptr;
 		FunctionNode* current_func = nullptr;
 		BlockNode* current_block = nullptr;
+		EnumNode* current_enum = nullptr;
 	};
 
 	// Methods.

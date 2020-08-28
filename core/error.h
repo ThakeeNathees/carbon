@@ -82,6 +82,7 @@ public:
 		SYNTAX_ERROR,
 		UNEXPECTED_EOF,
 		ALREADY_DEFINED,
+		NOT_DEFINED,
 
 		// Runtime errors.
 		NOT_IMPLEMENTED,
