@@ -33,7 +33,8 @@
 #define BIND_STATIC_FUNC(m_name, m_func) NativeClasses::bind_data(_bind_static_func(m_name, get_class_name_s(), m_func))
 #define BIND_STATIC_FUNC_VA(m_name, m_func) NativeClasses::bind_data(_bind_va_static_func(m_name, get_class_name_s(), m_func))
 #define BIND_MEMBER(m_name, m_member) NativeClasses::bind_data(_bind_member(m_name, get_class_name_s(), m_member))
-
+#define BIND_STATIC_MEMBER(m_name, m_member) NativeClasses::bind_data(_bind_static_member(m_name, get_class_name_s(), m_member))
+#define BIND_CONST(m_name, m_const) NativeClasses::bind_data(_bind_static_const(m_name, get_class_name_s(), m_const))
 
 namespace carbon {
 

@@ -69,7 +69,7 @@ public:
 		MEMBER_VAR,
 		STATIC_VAR,
 		STATIC_CONST,
-		// TODO: enum, const, ...
+		// TODO: enum.
 	};
 	virtual Type get_type() const = 0;
 	virtual const char* get_name() const { return name; }
@@ -103,13 +103,12 @@ public:
 class MemberBind : public BindData {
 public:
 	virtual BindData::Type get_type() const { return BindData::MEMBER_VAR; }
-
-	virtual var get(ptr<Object> self) = 0;
+	virtual var& get(ptr<Object> self) = 0;
 };
 
-template<typename T, typename Class>
+template<typename Class>
 class _MemberBind : public MemberBind {
-	typedef T Class::* member_ptr_t;
+	typedef var Class::* member_ptr_t;
 	member_ptr_t member_ptr;
 public:
 	_MemberBind(const char* p_name, const char* p_class_name, member_ptr_t p_member_ptr) {
@@ -118,17 +117,65 @@ public:
 		member_ptr = p_member_ptr;
 	}
 
-	virtual var get(ptr<Object> self) override {
+	virtual var& get(ptr<Object> self) override {
 		return ptrcast<Class>(self).get()->*member_ptr;
 	}
 };
 
-template<typename T, typename Class>
-ptr<MemberBind> _bind_member(const char* p_name, const char* p_class_name, T Class::* p_member_ptr) {
-	T Class::* member_ptr = p_member_ptr;
-	return newptr<_MemberBind<T, Class>>(p_name, p_class_name, member_ptr);
+template<typename Class>
+ptr<MemberBind> _bind_member(const char* p_name, const char* p_class_name, var Class::* p_member_ptr) {
+	var Class::* member_ptr = p_member_ptr;
+	return newptr<_MemberBind<Class>>(p_name, p_class_name, member_ptr);
 }
-// ---------------- MEMBER BIND END --------------------------------------
+// ------------------------------------------------------------------------
+
+
+// ---------------- STATIC MEMBER BIND START ------------------------------
+class StaticMemberBind : public BindData {
+	var* member = nullptr;
+public:
+	virtual BindData::Type get_type() const { return BindData::STATIC_VAR; }
+
+	StaticMemberBind(const char* p_name, const char* p_class_name, var* p_member) {
+		name = p_name;
+		class_name = p_class_name;
+		member = p_member;
+	}
+	virtual var& get() { return *member; }
+};
+
+inline ptr<StaticMemberBind> _bind_static_member(const char* p_name, const char* p_class_name, var* p_member) {
+	return newptr<StaticMemberBind>(p_name, p_class_name, p_member);
+}
+// ------------------------------------------------------------------------
+
+// ---------------- STATIC CONST BIND START ------------------------------
+class ConstantBind : public BindData {
+public:
+	virtual BindData::Type get_type() const { return BindData::STATIC_CONST; }
+	virtual var get() = 0;
+};
+
+template<typename T>
+class _ConstantBind : public ConstantBind {
+	T* _const = nullptr;
+public:
+	_ConstantBind(const char* p_name, const char* p_class_name, T* p_const) {
+		name = p_name;
+		class_name = p_class_name;
+		_const = p_const;
+	}
+
+	virtual var get() override {
+		return *_const;
+	}
+};
+
+template<typename T>
+ptr<ConstantBind> _bind_static_const(const char* p_name, const char* p_class_name, T* p_const) {
+	return newptr<_ConstantBind<T>>(p_name, p_class_name, p_const);
+}
+// ------------------------------------------------------------------------
 
 ''')
 	## method pointers
@@ -279,4 +326,5 @@ ptr<StaticFuncBind> _bind_va_static_func(const char* func_name, const char* p_cl
 	f.close()
 
 if __name__ == '__main__':
-	generage_method_calls('core/native_bind.gen.h', 8)
+	generage_method_calls('core/native/native_bind.gen.h', 8)
+	print("[source gen] native bind source generated!");

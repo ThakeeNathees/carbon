@@ -68,6 +68,11 @@ bool NativeClasses::is_class_registered(const String& p_class_name) {
 
 }
 
+// TODO: split the call_method, get_member into 2 functions such that 
+// first one  : it finds and returns the bind data (find_bind_data())
+// second one : it'll call from the bind data.
+// It'll be needed when it needs to be check the bind data type manually
+// before calling/getting it.
 
 namespace varh {
 using namespace carbon;
@@ -114,8 +119,15 @@ var& Object::get_member(ptr<Object> p_self, const String& p_name) {
 		if (bind_data) {
 			if (bind_data->get_type() == BindData::MEMBER_VAR) {
 				return ptrcast<MemberBind>(bind_data)->get(p_self);
+			} else if (bind_data->get_type() == BindData::STATIC_VAR) {
+				return ptrcast<StaticMemberBind>(bind_data)->get();
+			} else if (bind_data->get_type() == BindData::STATIC_CONST) {
+				THROW_ERROR(Error::INVALID_GET_INDEX, String::format("constant named \"%s\" on type \"%s\" cannot be accessed non statically",
+					member_name.c_str(), p_self->get_class_name()));
+			} else {
+				THROW_ERROR(Error::INVALID_GET_INDEX,
+					String::format("attribute named \"%s\" on type \"%s\" is not a property", member_name.c_str(), p_self->get_class_name()));
 			}
-			// TODO: static var, static const.
 		}
 		class_name = NativeClasses::get_inheritance(class_name);
 	}

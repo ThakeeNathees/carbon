@@ -130,7 +130,7 @@ var File::read() {
 
 void File::write(const var& p_what) {
 	if (mode & BINARY) {
-		if (p_what.get_type() != var::OBJECT || p_what.get_class_name() != Buffer::get_class_name_s()) {
+		if (p_what.get_type() != var::OBJECT || p_what.get_type_name() != Buffer::get_class_name_s()) {
 			// TODO: throw.
 		}
 		return write_bytes(ptrcast<Buffer>(p_what.operator ptr<Object>()));

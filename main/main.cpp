@@ -38,22 +38,9 @@ using namespace carbon;
 // TODO: VarError -> Error.
 // TODO: Make var submodule to local.
 
-class M : public Object {
-	REGISTER_CLASS(M, Object) {
-		BIND_MEMBER("member", &M::member);
-	}
-public:
-	var member;
-};
-
 int _main(int argc, char** argv) {
 
 	initialize();
-
-	register_class<M>();
-	var m = newptr<M>();
-	m.cast_to<M>()->member = "testing";
-	printf("%s\n", m.get_member("member").operator String().c_str());
 
 #ifdef RUN_TESTS
 	int res = _test_main(argc, argv);
