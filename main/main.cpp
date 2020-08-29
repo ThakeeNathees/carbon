@@ -41,6 +41,9 @@ using namespace carbon;
 int _main(int argc, char** argv) {
 
 	initialize();
+
+	auto x = NativeClasses::get_bind_data("File", "READ");
+
 #ifdef RUN_TESTS
 	int res = _test_main(argc, argv);
 	if (res) {

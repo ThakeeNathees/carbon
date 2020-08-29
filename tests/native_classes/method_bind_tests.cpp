@@ -1,54 +1,60 @@
 #include "tests/carbon_tests.h"
 
 class A : public Object {
-	INHERITS_OBJECT(A, Object);
+	REGISTER_CLASS(A, Object) {
+		BIND_STATIC_FUNC("A_static_func", &A::A_static_func);
+		BIND_METHOD("A_virtual_func", &A::A_virtual_func);
+
+		BIND_MEMBER("member", &A::member);
+		BIND_STATIC_MEMBER("static_member", &A::static_member);
+		BIND_CONST("_const", &A::_const);
+	}
 public:
 	static int A_static_func() { return 1; }
 	virtual int A_virtual_func() { return 2; }
-	static void _bind_data() {
-		BIND_STATIC_FUNC("A_static_func", &A::A_static_func);
-		BIND_METHOD("A_virtual_func", &A::A_virtual_func);
-	}
+
+	var member = Array(1, "2", 3.0);
+	static var static_member;
+	static const int _const;
 };
+var A::static_member = "static member";
+const int A::_const = 42;
 
 class B1 : public A {
-	INHERITS_OBJECT(B1, A);
-public:
-	static int A_static_func() { return 3; }
-	virtual int A_virtual_func() override { return 4; }
-	static void _bind_data() {
+	REGISTER_CLASS(B1, A) {
 		BIND_STATIC_FUNC("A_static_func", &B1::A_static_func);
 		BIND_METHOD("A_virtual_func", &B1::A_virtual_func);
 	}
+public:
+	static int A_static_func() { return 3; }
+	virtual int A_virtual_func() override { return 4; }
 };
 class B2 : public A {
-	INHERITS_OBJECT(B2, A);
-public:
-	static String B2_static_func() { return "B2-static"; }
-	void B2_member_func(const String& p_str) {}
-	static void _bind_data() {
+	REGISTER_CLASS(B2, A) {
 		BIND_STATIC_FUNC("B2_static_func", &B2::B2_static_func);
 		BIND_METHOD("B2_member_func", &B2::B2_member_func);
 	}
+public:
+	static String B2_static_func() { return "B2-static"; }
+	void B2_member_func(const String& p_str) {}
 };
 
 class C : public B2 {
-	INHERITS_OBJECT(C, B2);
-public:
-	var C_member_func(var v) { return v; }
-	static void _bind_data() {
+	REGISTER_CLASS(C, B2) {
 		BIND_METHOD("C_member_func", &C::C_member_func);
 	}
+public:
+	var C_member_func(var v) { return v; }
 };
 /////////////////////////////////////////////////////////////////
 
 static void register_classes() {
 	static bool registered = false;
 	if (registered) return;
-	A::_register_class();
-	B1::_register_class();
-	B2::_register_class();
-	C::_register_class();
+	register_class<A>();
+	register_class<B1>();
+	register_class<B2>();
+	register_class<C>();
 	registered = true;
 }
 
@@ -65,6 +71,20 @@ TEST_CASE("[native_classes]:method_bind+") {
 	r = a.call_method("A_virtual_func");
 	REQUIRE(r.get_type() == var::INT);
 	CHECK(r.operator int() == 2);
+
+	{
+		CHECK(a.get_member("member").operator Array() == Array(1, "2", 3.0));
+		ptr<BindData> bd = NativeClasses::get_bind_data(a.get_type_name(), "static_member");
+		REQUIRE(bd != nullptr);
+		REQUIRE(bd->get_type() == BindData::STATIC_VAR);
+		CHECK(ptrcast<StaticMemberBind>(bd)->get() == "static member");
+	}
+	{
+		ptr<BindData> bd = NativeClasses::find_bind_data(c.get_type_name(), "_const");
+		REQUIRE(bd != nullptr);
+		REQUIRE(bd->get_type() == BindData::STATIC_CONST);
+		CHECK(ptrcast<ConstantBind>(bd)->get() == 42);
+	}
 
 	r = b1.call_method("A_virtual_func");
 	REQUIRE(r.get_type() == var::INT);

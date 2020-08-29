@@ -28,13 +28,6 @@
 
 namespace carbon {
 
-void File::_bind_data() {
-	BIND_METHOD("open", &File::open);
-	BIND_METHOD("read", &File::read);
-	BIND_METHOD("write", &File::write);
-	BIND_METHOD("close", &File::close);
-}
-
 void File::close() {
 	if (is_open()) {
 		fclose(_file);
@@ -137,7 +130,7 @@ var File::read() {
 
 void File::write(const var& p_what) {
 	if (mode & BINARY) {
-		if (p_what.get_type() != var::OBJECT || p_what.get_class_name() != Buffer::get_class_name_s()) {
+		if (p_what.get_type() != var::OBJECT || p_what.get_type_name() != Buffer::get_class_name_s()) {
 			// TODO: throw.
 		}
 		return write_bytes(ptrcast<Buffer>(p_what.operator ptr<Object>()));

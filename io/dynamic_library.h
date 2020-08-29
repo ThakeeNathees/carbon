@@ -26,7 +26,7 @@
 #ifndef DYNAMIC_LYBRARY_H
 #define DYNAMIC_LYBRARY_H
 
-#include "native_classes.h"
+#include "native/native_classes.h"
 
 #ifdef PLATFORM_WINDOWS
 #include "dlfcn-win32/dlfcn.h"
@@ -65,14 +65,13 @@ static int _visit(DynamicLibrary* p_lib, const String& p_func_name, var* p_arg0,
 }};
 
 class DynamicLibrary : public Object {
-	INHERITS_OBJECT(DynamicLibrary, Object);
-public:
-	static void _bind_data() {
+	REGISTER_CLASS(DynamicLibrary, Object) {
 		BIND_METHOD("open", &DynamicLibrary::open);
 		BIND_METHOD_VA("call", &DynamicLibrary::_call_va_args);
 		BIND_METHOD("close", &DynamicLibrary::close);
 	}
 
+public:
 	// Methods.
 	void open(const String& p_lib_name) {
 		if (handle) {

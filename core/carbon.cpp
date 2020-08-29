@@ -27,13 +27,13 @@ namespace carbon {
 
 void initialize() {
 	// Register native classes,
-	NativeClasses::set_inheritance(Object::get_class_name_s(), "");
-	Object::_bind_data();
+	register_class<Object>();
 
-	File::_register_class();
-	Buffer::_register_class();
-	OS::_register_class();
-	DynamicLibrary::_register_class();
+	// io
+	register_class<File>();
+	register_class<Buffer>();
+	register_class<OS>();
+	register_class<DynamicLibrary>();
 }
 
 }

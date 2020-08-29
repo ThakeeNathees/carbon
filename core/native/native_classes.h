@@ -32,8 +32,19 @@
 #define BIND_METHOD_VA(m_name, m_method) NativeClasses::bind_data(_bind_va_method(m_name, get_class_name_s(), m_method))
 #define BIND_STATIC_FUNC(m_name, m_func) NativeClasses::bind_data(_bind_static_func(m_name, get_class_name_s(), m_func))
 #define BIND_STATIC_FUNC_VA(m_name, m_func) NativeClasses::bind_data(_bind_va_static_func(m_name, get_class_name_s(), m_func))
+#define BIND_MEMBER(m_name, m_member) NativeClasses::bind_data(_bind_member(m_name, get_class_name_s(), m_member))
+#define BIND_STATIC_MEMBER(m_name, m_member) NativeClasses::bind_data(_bind_static_member(m_name, get_class_name_s(), m_member))
+#define BIND_CONST(m_name, m_const) NativeClasses::bind_data(_bind_static_const(m_name, get_class_name_s(), m_const))
+#define BIND_ENUM(m_name, ...) NativeClasses::bind_data(_bind_enum(m_name, get_class_name_s(), __VA_ARGS__));
+#define BIND_ENUM_VALUE(m_name, m_value) NativeClasses::bind_data(newptr<EnumValueBind>(m_name, get_class_name_s(), m_value));
 
-
+/* BIND_ENUM(m_name, ...) usage:
+	BIND_ENUM("MyEnum", {
+		{ "V1", MyEnum::V1 },
+		{ "V2", MyEnum::V2 },
+		{ "V3", MyEnum::V3 },
+	});
+*/
 
 namespace carbon {
 
@@ -50,6 +61,7 @@ private:
 public:
 	static void bind_data(ptr<BindData> p_bind_data);
 	static ptr<BindData> get_bind_data(const String& cls, const String& attrib);
+	static ptr<BindData> find_bind_data(const String& cls, const String& attrib);
 	static void set_inheritance(const String& p_class_name, const String& p_parent_class_name);
 	static String get_inheritance(const String& p_class_name);
 	static bool is_class_registered(const String& p_class_name);

@@ -25,6 +25,8 @@ LICENSE = '''\
 //------------------------------------------------------------------------------
 '''
 
+## TODO: throw error with __FILE__, __LINE__, __FUNCTION__ in bind data.
+
 HEADER_GUARD = 'NATIVE_BIND_GEN_H'
 
 ## template<typename T, typename R, typename a0, ...>
@@ -68,7 +70,9 @@ public:
 		STATIC_FUNC,
 		MEMBER_VAR,
 		STATIC_VAR,
-		// TODO: enum, const, ...
+		STATIC_CONST,
+		ENUM,
+		ENUM_VALUE,
 	};
 	virtual Type get_type() const = 0;
 	virtual const char* get_name() const { return name; }
@@ -97,6 +101,124 @@ public:
 
 	virtual var call(stdvec<var>& args) = 0;
 };
+
+// ---------------- MEMBER BIND START --------------------------------------
+class MemberBind : public BindData {
+public:
+	virtual BindData::Type get_type() const { return BindData::MEMBER_VAR; }
+	virtual var& get(ptr<Object> self) = 0;
+};
+
+template<typename Class>
+class _MemberBind : public MemberBind {
+	typedef var Class::* member_ptr_t;
+	member_ptr_t member_ptr;
+public:
+	_MemberBind(const char* p_name, const char* p_class_name, member_ptr_t p_member_ptr) {
+		name = p_name;
+		class_name = p_class_name;
+		member_ptr = p_member_ptr;
+	}
+
+	virtual var& get(ptr<Object> self) override {
+		return ptrcast<Class>(self).get()->*member_ptr;
+	}
+};
+
+template<typename Class>
+ptr<MemberBind> _bind_member(const char* p_name, const char* p_class_name, var Class::* p_member_ptr) {
+	var Class::* member_ptr = p_member_ptr;
+	return newptr<_MemberBind<Class>>(p_name, p_class_name, member_ptr);
+}
+// ------------------------------------------------------------------------
+
+
+// ---------------- STATIC MEMBER BIND START ------------------------------
+class StaticMemberBind : public BindData {
+	var* member = nullptr;
+public:
+	virtual BindData::Type get_type() const { return BindData::STATIC_VAR; }
+
+	StaticMemberBind(const char* p_name, const char* p_class_name, var* p_member) {
+		name = p_name;
+		class_name = p_class_name;
+		member = p_member;
+	}
+	virtual var& get() { return *member; }
+};
+
+inline ptr<StaticMemberBind> _bind_static_member(const char* p_name, const char* p_class_name, var* p_member) {
+	return newptr<StaticMemberBind>(p_name, p_class_name, p_member);
+}
+// ------------------------------------------------------------------------
+
+// ---------------- STATIC CONST BIND START ------------------------------
+class ConstantBind : public BindData {
+public:
+	virtual BindData::Type get_type() const { return BindData::STATIC_CONST; }
+	virtual var get() = 0;
+};
+
+template<typename T>
+class _ConstantBind : public ConstantBind {
+	T* _const = nullptr;
+public:
+	_ConstantBind(const char* p_name, const char* p_class_name, T* p_const) {
+		name = p_name;
+		class_name = p_class_name;
+		_const = p_const;
+	}
+
+	virtual var get() override {
+		return *_const;
+	}
+};
+
+template<typename T>
+ptr<ConstantBind> _bind_static_const(const char* p_name, const char* p_class_name, T* p_const) {
+	return newptr<_ConstantBind<T>>(p_name, p_class_name, p_const);
+}
+// ------------------------------------------------------------------------
+
+// ---------------- ENUM BIND START ------------------------------
+
+class EnumBind : public BindData {
+	stdvec<std::pair<String, int64_t>> values;
+public:
+	EnumBind(const char* p_name, const char* p_class_name, const stdvec<std::pair<String, int64_t>>& p_values) {
+		name = p_name;
+		class_name = p_class_name;
+		values = p_values;
+	}
+	virtual BindData::Type get_type() const { return BindData::ENUM; }
+	int64_t get(const String& p_value_name) const {
+		for (int i = 0; i < (int)values.size(); i++) {
+			if (values[i].first == p_value_name) {
+				return values[i].second;
+			}
+		}
+		throw Error(Error::INVALID_GET_INDEX,
+			String::format("value \\"%s\\" isn't exists on enum \\"%s\\"", p_value_name.c_str(), name)
+		);
+	}
+};
+inline ptr<EnumBind> _bind_enum(const char* p_name, const char* p_class_name, const stdvec<std::pair<String, int64_t>>& p_values) {
+	return newptr<EnumBind>(p_name, p_class_name, p_values);
+}
+
+class EnumValueBind : public BindData {
+	int64_t value;
+public:
+	EnumValueBind(const char* p_name, const char* p_class_name, int64_t p_value) {
+		name = p_name;
+		class_name = p_class_name;
+		value = p_value;
+	}
+	virtual BindData::Type get_type() const { return BindData::ENUM_VALUE; }
+	int64_t get() { return value; }
+};
+
+// -----------------------------------------------------------------------
 
 ''')
 	## method pointers
@@ -247,4 +369,5 @@ ptr<StaticFuncBind> _bind_va_static_func(const char* func_name, const char* p_cl
 	f.close()
 
 if __name__ == '__main__':
-	generage_method_calls('core/native_bind.gen.h', 8)
+	generage_method_calls('core/native/native_bind.gen.h', 8)
+	print("[source gen] native bind source generated!");

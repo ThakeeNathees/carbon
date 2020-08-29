@@ -78,6 +78,7 @@ static const char* _error_names[Error::_ERROR_MAX_] = {
 	"SYNTAX_ERROR",
 	"UNEXPECTED_EOF",
 	"ALREADY_DEFINED",
+	"NOT_DEFINED",
 	"NOT_IMPLEMENTED",
 	"NULL_POINTER",
 	"ZERO_DIVISION",
@@ -93,7 +94,7 @@ static const char* _error_names[Error::_ERROR_MAX_] = {
 	"INTERNAL_BUG",
 	//_ERROR_MAX_
 };
-MISSED_ENUM_CHECK(Error::Type::_ERROR_MAX_, 18);
+MISSED_ENUM_CHECK(Error::Type::_ERROR_MAX_, 19);
 
 String Error::get_err_name(Error::Type p_type) {
 	return _error_names[p_type];

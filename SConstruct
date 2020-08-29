@@ -13,7 +13,7 @@ def USER_DATA(env):
 	
 	env.SOURCES  = [
 		'main/main_%s.cpp' % env['platform'],
-	    'main/main.cpp'
+		'main/main.cpp'
 	]
 	env.SCONSCRIPTS = [
 		'thirdparty/SConstruct',
@@ -21,11 +21,23 @@ def USER_DATA(env):
 		'core/SConstruct',
 		'os/SConstruct',
 	]
+	env.Append(CPPDEFINES=['_VAR_H_EXTERN_IMPLEMENTATIONS'])
+
 	if env['target'] == 'debug':
-		env.SCONSCRIPTS.append(
-			'tests/SConstruct',
-		)
+		env.Append(CPPDEFINES=['DEBUG_BUILD'])
+		env.SCONSCRIPTS += [ 'tests/SConstruct' ]
+	else:
+		env.Append(CPPDEFINES=['RELEASE_BUILD'])
+
+	## Generate scripts.
+	if not os.path.exists('core/native/native_bind.gen.h'):
+		import source_gen
+		## TODO: change it to SCONS.BUILDER() <-- to detect file changes also.
+		source_gen.generage_method_calls('core/native/native_bind.gen.h', 6)
+
+
 	env.Append(CPPPATH=[Dir("./")])
+
 
 #################################################################################################
 
@@ -111,14 +123,6 @@ elif cbenv['platform'] == "windows":
 		cbenv.Append(CPPDEFINES=['NDEBUG'])
 		cbenv.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
 
-## debug macro for all platforms
-if cbenv['target'] == 'debug':
-    cbenv.Append(CPPDEFINES=['DEBUG_BUILD'])
-else:
-    cbenv.Append(CPPDEFINES=['RELEASE_BUILD'])
-    
-cbenv.Append(CPPDEFINES=['_VAR_H_EXTERN_IMPLEMENTATIONS'])
-
 ## --------------------------------------------------------------------------------
 
 ## no_verbose function is from : https://github.com/godotengine/godot/blob/master/methods.py
@@ -178,12 +182,6 @@ def no_verbose(sys, cbenv):
 	cbenv.Append(JAVACCOMSTR=[java_compile_source_message])
 if not cbenv['build_verbose']:
 	no_verbose(sys, cbenv)
-
-## generate scripts
-import source_gen
-if not os.path.exists('core/native_bind.gen.h'): 
-	## TODO: change it to SCONS.BUILDER() <-- to detect file changes also.
-	source_gen.generage_method_calls('core/native_bind.gen.h', 6)
 
 ## update user data
 USER_DATA(cbenv)

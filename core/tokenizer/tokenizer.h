@@ -27,7 +27,7 @@
 #define TOKENIZER_H
 
 #include "core.h"
-#include "native_classes.h"
+#include "native/native_classes.h"
 #include "builtin_functions.h"
 #include "builtin_types.h"
 

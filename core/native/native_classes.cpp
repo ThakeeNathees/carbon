@@ -47,6 +47,16 @@ ptr<BindData> NativeClasses::get_bind_data(const String& cls, const String& attr
 	return classes[cls.hash()].bind_data[attrib.hash()];
 }
 
+ptr<BindData> NativeClasses::find_bind_data(const String& cls, const String& attrib) {
+	String class_name = cls;
+	while (class_name.size() != 0) {
+		ptr<BindData> bind_data = NativeClasses::get_bind_data(class_name, attrib);
+		if (bind_data != nullptr) return bind_data;
+		class_name = NativeClasses::get_inheritance(class_name);
+	}
+	return nullptr;
+}
+
 void NativeClasses::set_inheritance(const String& p_class_name, const String& p_parent_class_name) {
 	if (classes[p_class_name.hash()].class_name.size() != 0) {
 		THROW_ERROR(Error::ALREADY_DEFINED, String::format("class \"%s\" already exists on NativeClasses entries", p_class_name));
@@ -68,10 +78,9 @@ bool NativeClasses::is_class_registered(const String& p_class_name) {
 
 }
 
-
 namespace varh {
 using namespace carbon;
-#ifdef HAVE_OBJECT_CALL_MAP
+#ifdef _VAR_H_EXTERN_IMPLEMENTATIONS
 // call_method() should call it's parent if method not exists.
 var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p_args) {
 	String class_name = p_self->get_class_name();
@@ -81,26 +90,54 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 		THROW_ERROR(Error::NULL_POINTER, String::format("the class \"%s\" isn't registered in native class entries", class_name.c_str()));
 	}
 
-	while (class_name.size() != 0) {
-		ptr<BindData> bind_data = NativeClasses::get_bind_data(class_name, method_name);
-		if (bind_data) {
-			if (bind_data->get_type() == BindData::METHOD) {
-				return ptrcast<MethodBind>(bind_data)->call(p_self, p_args);
-
-			} else if (bind_data->get_type() == BindData::STATIC_FUNC) {
-				return ptrcast<StaticFuncBind>(bind_data)->call(p_args);
-
-			} else {
-				THROW_ERROR(Error::INVALID_GET_INDEX,
-					String::format("attribute named \"%s\" on type \"%s\" is not callable", method_name.c_str(), p_self->get_class_name()));
-			}
+	ptr<BindData> bind_data = NativeClasses::find_bind_data(class_name, p_name);
+	if (bind_data) {
+		if (bind_data->get_type() == BindData::METHOD) {
+			return ptrcast<MethodBind>(bind_data)->call(p_self, p_args);
+	
+		} else if (bind_data->get_type() == BindData::STATIC_FUNC) {
+			return ptrcast<StaticFuncBind>(bind_data)->call(p_args);
+	
+		} else {
+			THROW_ERROR(Error::INVALID_GET_INDEX,
+				String::format("attribute named \"%s\" on type \"%s\" is not callable", method_name.c_str(), p_self->get_class_name()));
 		}
-		class_name = NativeClasses::get_inheritance(class_name);
 	}
 	
 	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no method named \"%s\"", p_self->get_class_name(), method_name.c_str()));
-	return var();
 }
-#endif // HAVE_OBJECT_CALL_MAP
+
+// TODO: implement var get_member(), void set_member() so that no need for the var&
+
+var& Object::get_member(ptr<Object> p_self, const String& p_name) {
+	String class_name = p_self->get_class_name();
+	String member_name = p_name;
+
+	if (!NativeClasses::is_class_registered(class_name)) {
+		THROW_ERROR(Error::NULL_POINTER, String::format("the class \"%s\" isn't registered in native class entries", class_name.c_str()));
+	}
+	
+	ptr<BindData> bind_data = NativeClasses::find_bind_data(class_name, member_name);
+	if (bind_data) {
+		if (bind_data->get_type() == BindData::MEMBER_VAR) {
+			return ptrcast<MemberBind>(bind_data)->get(p_self);
+		} else if (bind_data->get_type() == BindData::STATIC_VAR) {
+			return ptrcast<StaticMemberBind>(bind_data)->get();
+
+		} else if (bind_data->get_type() == BindData::STATIC_CONST) {
+			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("constant named \"%s\" on type \"%s\" cannot be accessed non statically", member_name.c_str(), p_self->get_class_name()));
+
+		} else if (bind_data->get_type() == BindData::ENUM_VALUE) {
+			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("enum value named \"%s\" on type \"%s\" cannot be accessed non statically", member_name.c_str(), p_self->get_class_name()));
+
+		} else {
+			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("attribute named \"%s\" on type \"%s\" is not a property", member_name.c_str(), p_self->get_class_name()));
+		}
+	}
+	
+	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no member named \"%s\"", p_self->get_class_name(), member_name.c_str()));
+}
+
+#endif // _VAR_H_EXTERN_IMPLEMENTATIONS
 
 } // namespace varh

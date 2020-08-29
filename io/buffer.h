@@ -26,14 +26,14 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "native_classes.h"
+#include "native/native_classes.h"
 
 namespace carbon {
 
 class Buffer : public Object {
-	INHERITS_OBJECT(Buffer, Object);
+	REGISTER_CLASS(Buffer, Object) {}
+
 public:
-	static void _bind_data(){}
 
 	Buffer() {}
 	Buffer(size_t p_size) { alloc(p_size); }

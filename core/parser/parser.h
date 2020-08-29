@@ -78,9 +78,9 @@ public:
 			IDENTIFIER,
 			VAR,
 			CONST,
-			CONST_VALUE,
-			ARRAY,
-			MAP,   // <-- TODO: should be literal map ?
+			CONST_VALUE, // evaluvated to compile time constants ex: "str", 3.14, Array(1, 2), ...
+			ARRAY,       // literal array ex: {1, 2}
+			MAP,         // <-- TODO: should be literal map ?
 			THIS,
 			SUPER,
 			BUILTIN_FUNCTION,
@@ -114,9 +114,9 @@ public:
 
 	struct FileNode : public Node {
 		String path;
-		String source;
-		String name; // import name = "path/to/source.cb";
-		stdvec<ptr<FileNode>> imports;
+		String source;		
+
+		// stdvec<std::pair<String, CarbonByteCode>> imports; // pairs of name and byte code.
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<ClassNode>> classes;
@@ -132,12 +132,26 @@ public:
 
 	struct ClassNode : public Node {
 		String name;
-		stdvec<String> inherits;
-		ptr<EnumNode> unnamed_enum = nullptr;
+
+		enum BaseType {
+			NO_BASE,
+			BASE_LOCAL,
+			BASE_EXTERN
+		};
+		BaseType base_type = NO_BASE;
+		String base_file;
+		String base_class;
+
+		ClassNode* base_local = nullptr;
+		// TODO: ptr<CarbonByteCode> base_binary;
+		// CarbonByteCode will be the compiled version of FileNode
+
+		ptr<EnumNode> unnamed_enum;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<FunctionNode>> functions;
+		// TODO: FileNode* constructor.
 		ClassNode() {
 			type = Type::CLASS;
 		}
@@ -146,6 +160,7 @@ public:
 	struct EnumValueNode {
 		Vect2i pos = Vect2i(-1, -1);
 		ptr<Node> expr;
+		bool is_reduced = false;
 		int64_t value = 0;
 		EnumValueNode() {}
 		EnumValueNode(ptr<Node> p_expr, Vect2i p_pos) {
@@ -175,6 +190,7 @@ public:
 	struct FunctionNode : public Node {
 		String name;
 		bool is_static = false;
+		bool has_return = false;
 		stdvec<ArgumentNode> args;
 		ptr<BlockNode> body;
 		ptr<Node> parent_node;
@@ -401,7 +417,9 @@ public:
 			_CF_MAX_,
 		};
 		struct SwitchCase {
-			ptr<Node> value; // TODO: any 2 values can't be same.
+			Vect2i pos;
+			ptr<Node> expr;
+			int64_t value;
 			ptr<BlockNode> body;
 			bool default_case = false;
 		};
@@ -410,6 +428,12 @@ public:
 		ptr<BlockNode> body;
 		ptr<BlockNode> body_else;
 		stdvec<SwitchCase> switch_cases;
+		
+		ControlFlowNode* break_continue;
+		FunctionNode* _return;
+		bool has_break = false;
+		bool has_continue = false;
+
 		ControlFlowNode() {
 			type = Type::CONTROL_FLOW;
 		}
@@ -479,6 +503,10 @@ private:
 		ClassNode* current_class = nullptr;
 		FunctionNode* current_func = nullptr;
 		BlockNode* current_block = nullptr;
+		EnumNode* current_enum = nullptr;
+
+		ControlFlowNode* current_break = nullptr;
+		ControlFlowNode* current_continue = nullptr;
 	};
 
 	// Methods.
@@ -490,7 +518,7 @@ private:
 		return ret;
 	}
 
-	ptr<FileNode> _parse_import(); // TODO: must return codegen.
+	void _parse_import(); // TODO: should return ptr<CarbonByteCode>
 	ptr<ClassNode> _parse_class();
 	ptr<EnumNode> _parse_enum(ptr<Node> p_parent);
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent);

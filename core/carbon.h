@@ -35,13 +35,19 @@
 #include "core/analyzer/analyzer.h"
 
 // native imports
-#include "native_classes.h"
+#include "native/native_classes.h"
 #include "io/logger.h"
 #include "io/file.h"
 #include "io/dynamic_library.h"
 #include "os/os.h"
 
 namespace carbon {
+
+template<typename T>
+void register_class() {
+	NativeClasses::set_inheritance(T::get_class_name_s(), T::get_parent_class_name_s());
+	T::_bind_data();
+}
 
 void initialize();
 
