@@ -4,11 +4,21 @@ class A : public Object {
 	REGISTER_CLASS(A, Object) {
 		BIND_STATIC_FUNC("A_static_func", &A::A_static_func);
 		BIND_METHOD("A_virtual_func", &A::A_virtual_func);
+
+		BIND_MEMBER("member", &A::member);
+		BIND_STATIC_MEMBER("static_member", &A::static_member);
+		BIND_CONST("_const", &A::_const);
 	}
 public:
 	static int A_static_func() { return 1; }
 	virtual int A_virtual_func() { return 2; }
+
+	var member = Array(1, "2", 3.0);
+	static var static_member;
+	static const int _const;
 };
+var A::static_member = "static member";
+const int A::_const = 42;
 
 class B1 : public A {
 	REGISTER_CLASS(B1, A) {
@@ -61,6 +71,20 @@ TEST_CASE("[native_classes]:method_bind+") {
 	r = a.call_method("A_virtual_func");
 	REQUIRE(r.get_type() == var::INT);
 	CHECK(r.operator int() == 2);
+
+	{
+		CHECK(a.get_member("member").operator Array() == Array(1, "2", 3.0));
+		ptr<BindData> bd = NativeClasses::get_bind_data(a.get_type_name(), "static_member");
+		REQUIRE(bd != nullptr);
+		REQUIRE(bd->get_type() == BindData::STATIC_VAR);
+		CHECK(ptrcast<StaticMemberBind>(bd)->get() == "static member");
+	}
+	{
+		ptr<BindData> bd = NativeClasses::find_bind_data(c.get_type_name(), "_const");
+		REQUIRE(bd != nullptr);
+		REQUIRE(bd->get_type() == BindData::STATIC_CONST);
+		CHECK(ptrcast<ConstantBind>(bd)->get() == 42);
+	}
 
 	r = b1.call_method("A_virtual_func");
 	REQUIRE(r.get_type() == var::INT);

@@ -78,9 +78,9 @@ public:
 			IDENTIFIER,
 			VAR,
 			CONST,
-			CONST_VALUE,
-			ARRAY,
-			MAP,   // <-- TODO: should be literal map ?
+			CONST_VALUE, // evaluvated to compile time constants ex: "str", 3.14, Array(1, 2), ...
+			ARRAY,       // literal array ex: {1, 2}
+			MAP,         // <-- TODO: should be literal map ?
 			THIS,
 			SUPER,
 			BUILTIN_FUNCTION,
@@ -146,6 +146,7 @@ public:
 	struct EnumValueNode {
 		Vect2i pos = Vect2i(-1, -1);
 		ptr<Node> expr;
+		bool is_reduced = false;
 		int64_t value = 0;
 		EnumValueNode() {}
 		EnumValueNode(ptr<Node> p_expr, Vect2i p_pos) {
@@ -175,6 +176,7 @@ public:
 	struct FunctionNode : public Node {
 		String name;
 		bool is_static = false;
+		bool has_return = false;
 		stdvec<ArgumentNode> args;
 		ptr<BlockNode> body;
 		ptr<Node> parent_node;
@@ -401,7 +403,9 @@ public:
 			_CF_MAX_,
 		};
 		struct SwitchCase {
-			ptr<Node> value; // TODO: any 2 values can't be same.
+			Vect2i pos;
+			ptr<Node> expr;
+			int64_t value;
 			ptr<BlockNode> body;
 			bool default_case = false;
 		};
@@ -410,6 +414,12 @@ public:
 		ptr<BlockNode> body;
 		ptr<BlockNode> body_else;
 		stdvec<SwitchCase> switch_cases;
+		
+		ControlFlowNode* break_continue;
+		FunctionNode* _return;
+		bool has_break = false;
+		bool has_continue = false;
+
 		ControlFlowNode() {
 			type = Type::CONTROL_FLOW;
 		}
@@ -480,6 +490,9 @@ private:
 		FunctionNode* current_func = nullptr;
 		BlockNode* current_block = nullptr;
 		EnumNode* current_enum = nullptr;
+
+		ControlFlowNode* current_break = nullptr;
+		ControlFlowNode* current_continue = nullptr;
 	};
 
 	// Methods.

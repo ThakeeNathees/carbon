@@ -51,6 +51,7 @@ private:
 public:
 	static void bind_data(ptr<BindData> p_bind_data);
 	static ptr<BindData> get_bind_data(const String& cls, const String& attrib);
+	static ptr<BindData> find_bind_data(const String& cls, const String& attrib);
 	static void set_inheritance(const String& p_class_name, const String& p_parent_class_name);
 	static String get_inheritance(const String& p_class_name);
 	static bool is_class_registered(const String& p_class_name);
