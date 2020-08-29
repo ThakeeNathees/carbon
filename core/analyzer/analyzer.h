@@ -47,7 +47,8 @@ private:
 		return ret;
 	}
 
-	void _resolve_constant(ptr<Parser::ConstNode>& p_const);
+	void _resolve_inheritance(Parser::ClassNode* p_class);
+	void _resolve_constant(Parser::ConstNode* p_const);
 	void _resolve_enumvalue(Parser::EnumValueNode& p_enumvalue);
 
 	void _reduce_expression(ptr<Parser::Node>& p_expr);

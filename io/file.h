@@ -32,7 +32,15 @@
 namespace carbon {
 
 class File : public Object {
+
 	REGISTER_CLASS(File, Object) {
+		BIND_ENUM_VALUE("READ", READ);
+		BIND_ENUM_VALUE("WRITE", WRITE);
+		BIND_ENUM_VALUE("APPEND", APPEND);
+		BIND_ENUM_VALUE("BINARY", BINARY);
+		BIND_ENUM_VALUE("EXTRA", EXTRA);
+		BIND_ENUM_VALUE("DEFAULT", DEFAULT);
+
 		BIND_METHOD("open", &File::open);
 		BIND_METHOD("read", &File::read);
 		BIND_METHOD("write", &File::write);

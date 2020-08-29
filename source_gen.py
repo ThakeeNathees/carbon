@@ -25,6 +25,8 @@ LICENSE = '''\
 //------------------------------------------------------------------------------
 '''
 
+## TODO: throw error with __FILE__, __LINE__, __FUNCTION__ in bind data.
+
 HEADER_GUARD = 'NATIVE_BIND_GEN_H'
 
 ## template<typename T, typename R, typename a0, ...>
@@ -69,7 +71,8 @@ public:
 		MEMBER_VAR,
 		STATIC_VAR,
 		STATIC_CONST,
-		// TODO: enum.
+		ENUM,
+		ENUM_VALUE,
 	};
 	virtual Type get_type() const = 0;
 	virtual const char* get_name() const { return name; }
@@ -176,6 +179,46 @@ ptr<ConstantBind> _bind_static_const(const char* p_name, const char* p_class_nam
 	return newptr<_ConstantBind<T>>(p_name, p_class_name, p_const);
 }
 // ------------------------------------------------------------------------
+
+// ---------------- ENUM BIND START ------------------------------
+
+class EnumBind : public BindData {
+	stdvec<std::pair<String, int64_t>> values;
+public:
+	EnumBind(const char* p_name, const char* p_class_name, const stdvec<std::pair<String, int64_t>>& p_values) {
+		name = p_name;
+		class_name = p_class_name;
+		values = p_values;
+	}
+	virtual BindData::Type get_type() const { return BindData::ENUM; }
+	int64_t get(const String& p_value_name) const {
+		for (int i = 0; i < (int)values.size(); i++) {
+			if (values[i].first == p_value_name) {
+				return values[i].second;
+			}
+		}
+		throw Error(Error::INVALID_GET_INDEX,
+			String::format("value \\"%s\\" isn't exists on enum \\"%s\\"", p_value_name.c_str(), name)
+		);
+	}
+};
+inline ptr<EnumBind> _bind_enum(const char* p_name, const char* p_class_name, const stdvec<std::pair<String, int64_t>>& p_values) {
+	return newptr<EnumBind>(p_name, p_class_name, p_values);
+}
+
+class EnumValueBind : public BindData {
+	int64_t value;
+public:
+	EnumValueBind(const char* p_name, const char* p_class_name, int64_t p_value) {
+		name = p_name;
+		class_name = p_class_name;
+		value = p_value;
+	}
+	virtual BindData::Type get_type() const { return BindData::ENUM_VALUE; }
+	int64_t get() { return value; }
+};
+
+// -----------------------------------------------------------------------
 
 ''')
 	## method pointers

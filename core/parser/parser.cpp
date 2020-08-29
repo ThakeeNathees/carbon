@@ -65,7 +65,7 @@ void Parser::parse(String p_source, String p_file_path) {
 			case  Token::_EOF:
 				return;
 			case Token::KWORD_IMPORT: {
-				file_node->imports.push_back(_parse_import());
+				// TODO: file_node->imports.push_back(_parse_import());
 				break;
 			}
 			case Token::KWORD_CLASS: {
@@ -114,21 +114,19 @@ void Parser::parse(String p_source, String p_file_path) {
 	} // while true
 }
 
-ptr<Parser::FileNode> Parser::_parse_import() {
+void Parser::_parse_import() {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_IMPORT);
 	ptr<FileNode> import_file = new_node<FileNode>();
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
-	// TODO: check identifier
-	import_file->name = tk->identifier;
 
 	if (tokenizer->next().type != Token::OP_EQ) THROW_UNEXP_TOKEN("symbol \"=\"");
 	tk = &tokenizer->next();
 	if (tk->type != Token::VALUE_STRING) THROW_UNEXP_TOKEN("string path to source");
 	// TODO:
 
-	return import_file;
+	return; // TODO:
 }
 
 ptr<Parser::ClassNode> Parser::_parse_class() {
@@ -150,10 +148,8 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 	ScopeDestruct destruct = ScopeDestruct(&parser_context);
 
 	const TokenData* tk = &tokenizer->next();
-
-	if (tk->type != Token::IDENTIFIER) {
-		THROW_UNEXP_TOKEN("an identifier");
-	}
+	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+	
 	// TODO: check identifier from import.
 	THROW_IF_NAME_DEFINED(file_node, "a class", tk->identifier, classes);
 	THROW_IF_NAME_DEFINED(file_node, "a variable", tk->identifier, vars);
@@ -165,30 +161,30 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 	class_node->name = tk->identifier;
 
 	tk = &tokenizer->next();
-
 	if (tk->type == Token::SYM_COLLON) {
 
-		while (true) {
-			const TokenData* base = &tokenizer->next();
-
-			// TODO: base could be native class (Object, File)
-			if (base->type != Token::IDENTIFIER) {
-				THROW_UNEXP_TOKEN("an identifier");
-			}
-			// TODO: check identifier predefined.
-			class_node->inherits.push_back(base->identifier);
-
-			base = &tokenizer->peek();
-			if (base->type == Token::SYM_DOT) tokenizer->next(); // eat "."
-			else break;			
-		}
+		tk = &tokenizer->next();
+		if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+		class_node->base_class = tk->identifier;
 
 		tk = &tokenizer->next();
+		if (tk->type == Token::SYM_DOT) {
+			tk = &tokenizer->next();
+			if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+
+			class_node->base_file = class_node->base_class;
+			class_node->base_class = tk->identifier;
+			class_node->base_type = ClassNode::BASE_EXTERN;
+			ASSERT(false); // TODO: inherits a binary base.
+
+			tk = &tokenizer->next();
+		} else {
+			if (class_node->base_class == class_node->name) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "", tokenizer->peek(-2, true).get_pos());
+			class_node->base_type = ClassNode::BASE_LOCAL;
+		}
 	}
 
-	if (tk->type != Token::BRACKET_LCUR) {
-		THROW_UNEXP_TOKEN("symbol \"{\"");
-	}
+	if (tk->type != Token::BRACKET_LCUR) THROW_UNEXP_TOKEN("symbol \"{\"");
 	
 	while (true) {
 		const TokenData& token = tokenizer->next();
@@ -507,7 +503,6 @@ ptr<Parser::ConstNode> Parser::_parse_const(ptr<Node> p_parent) {
 	tk = &tokenizer->next();
 	if (tk->type != Token::OP_EQ) THROW_UNEXP_TOKEN("symbol \"=\"");
 	ptr<Node> expr = _parse_expression(p_parent, false);
-	//_reduce_expression(expr); TODO: reduce after all are parsed.
 	const_node->assignment = expr;
 
 	tk = &tokenizer->next();
@@ -739,12 +734,15 @@ static void print_class_node(Parser::ClassNode* p_class, int p_indent) {
 	PRINT_INDENT(p_indent);
 	PRINT_COLOR(TokenData(Token::KWORD_CLASS).to_string().c_str(), KEYWORD_COLOR);
 	PRINT_COLOR((String(" ") + p_class->name).c_str(), TYPE_COLOR);
-	if (p_class->inherits.size() != 0) {
+	if (p_class->base_type != Parser::ClassNode::NO_BASE) {
 		printf(" inherits ");
-		for (int i = 0; i < (int)p_class->inherits.size(); i++) {
-			if (i > 0) printf(".");
-			PRINT_COLOR(p_class->inherits[i].c_str(), TYPE_COLOR);
-		} 
+		if (p_class->base_type == Parser::ClassNode::BASE_LOCAL) {
+			PRINT_COLOR(p_class->base_class.c_str(), TYPE_COLOR);
+		} else { // BASE_EXTERN
+			PRINT_COLOR(p_class->base_file.c_str(), TYPE_COLOR);
+			printf(".");
+			PRINT_COLOR(p_class->base_class.c_str(), TYPE_COLOR);
+		}
 	}
 	printf("\n");
 

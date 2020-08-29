@@ -107,6 +107,8 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no method named \"%s\"", p_self->get_class_name(), method_name.c_str()));
 }
 
+// TODO: implement var get_member(), void set_member() so that no need for the var&
+
 var& Object::get_member(ptr<Object> p_self, const String& p_name) {
 	String class_name = p_self->get_class_name();
 	String member_name = p_name;
@@ -121,12 +123,15 @@ var& Object::get_member(ptr<Object> p_self, const String& p_name) {
 			return ptrcast<MemberBind>(bind_data)->get(p_self);
 		} else if (bind_data->get_type() == BindData::STATIC_VAR) {
 			return ptrcast<StaticMemberBind>(bind_data)->get();
+
 		} else if (bind_data->get_type() == BindData::STATIC_CONST) {
-			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("constant named \"%s\" on type \"%s\" cannot be accessed non statically",
-				member_name.c_str(), p_self->get_class_name()));
+			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("constant named \"%s\" on type \"%s\" cannot be accessed non statically", member_name.c_str(), p_self->get_class_name()));
+
+		} else if (bind_data->get_type() == BindData::ENUM_VALUE) {
+			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("enum value named \"%s\" on type \"%s\" cannot be accessed non statically", member_name.c_str(), p_self->get_class_name()));
+
 		} else {
-			THROW_ERROR(Error::INVALID_GET_INDEX,
-				String::format("attribute named \"%s\" on type \"%s\" is not a property", member_name.c_str(), p_self->get_class_name()));
+			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("attribute named \"%s\" on type \"%s\" is not a property", member_name.c_str(), p_self->get_class_name()));
 		}
 	}
 	

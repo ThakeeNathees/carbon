@@ -35,6 +35,16 @@
 #define BIND_MEMBER(m_name, m_member) NativeClasses::bind_data(_bind_member(m_name, get_class_name_s(), m_member))
 #define BIND_STATIC_MEMBER(m_name, m_member) NativeClasses::bind_data(_bind_static_member(m_name, get_class_name_s(), m_member))
 #define BIND_CONST(m_name, m_const) NativeClasses::bind_data(_bind_static_const(m_name, get_class_name_s(), m_const))
+#define BIND_ENUM(m_name, ...) NativeClasses::bind_data(_bind_enum(m_name, get_class_name_s(), __VA_ARGS__));
+#define BIND_ENUM_VALUE(m_name, m_value) NativeClasses::bind_data(newptr<EnumValueBind>(m_name, get_class_name_s(), m_value));
+
+/* BIND_ENUM(m_name, ...) usage:
+	BIND_ENUM("MyEnum", {
+		{ "V1", MyEnum::V1 },
+		{ "V2", MyEnum::V2 },
+		{ "V3", MyEnum::V3 },
+	});
+*/
 
 namespace carbon {
 

@@ -114,9 +114,9 @@ public:
 
 	struct FileNode : public Node {
 		String path;
-		String source;
-		String name; // import name = "path/to/source.cb";
-		stdvec<ptr<FileNode>> imports;
+		String source;		
+
+		// stdvec<std::pair<String, CarbonByteCode>> imports; // pairs of name and byte code.
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<ClassNode>> classes;
@@ -132,12 +132,26 @@ public:
 
 	struct ClassNode : public Node {
 		String name;
-		stdvec<String> inherits;
-		ptr<EnumNode> unnamed_enum = nullptr;
+
+		enum BaseType {
+			NO_BASE,
+			BASE_LOCAL,
+			BASE_EXTERN
+		};
+		BaseType base_type = NO_BASE;
+		String base_file;
+		String base_class;
+
+		ClassNode* base_local = nullptr;
+		// TODO: ptr<CarbonByteCode> base_binary;
+		// CarbonByteCode will be the compiled version of FileNode
+
+		ptr<EnumNode> unnamed_enum;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<FunctionNode>> functions;
+		// TODO: FileNode* constructor.
 		ClassNode() {
 			type = Type::CLASS;
 		}
@@ -504,7 +518,7 @@ private:
 		return ret;
 	}
 
-	ptr<FileNode> _parse_import(); // TODO: must return codegen.
+	void _parse_import(); // TODO: should return ptr<CarbonByteCode>
 	ptr<ClassNode> _parse_class();
 	ptr<EnumNode> _parse_enum(ptr<Node> p_parent);
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent);
