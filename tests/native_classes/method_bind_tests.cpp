@@ -74,12 +74,15 @@ TEST_CASE("[native_classes]:method_bind+") {
 
 	{
 		CHECK(a.get_member("member").operator Array() == Array(1, "2", 3.0));
+
+		CHECK(a.get_member("static_member").operator String() == "static member");
 		ptr<BindData> bd = NativeClasses::get_bind_data(a.get_type_name(), "static_member");
 		REQUIRE(bd != nullptr);
 		REQUIRE(bd->get_type() == BindData::STATIC_VAR);
 		CHECK(ptrcast<StaticMemberBind>(bd)->get() == "static member");
 	}
 	{
+		CHECK(c.get_member("_const") == 42);
 		ptr<BindData> bd = NativeClasses::find_bind_data(c.get_type_name(), "_const");
 		REQUIRE(bd != nullptr);
 		REQUIRE(bd->get_type() == BindData::STATIC_CONST);
