@@ -19,5 +19,7 @@ TEST_CASE("[parser_tests]:var.h_test") {
 	CHECK(v[-2] == "2");
 	CHECK(v == var(Array(1, "2", 3.14)));
 
+	CHECK(v.call_method("at", 0) == 1);
+
 	// TODO: v.call_method("append", 10);
 }

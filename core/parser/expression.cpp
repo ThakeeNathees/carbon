@@ -405,7 +405,7 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 			}
 
 			if (p_expr[(size_t)next_op + 1].get_expr()->type == Node::Type::OPERATOR) {
-				if (OperatorNode::is_assignment(ptrcast<OperatorNode>(p_expr[(size_t)next_op - 1].get_expr())->op_type)) {
+				if (OperatorNode::is_assignment(ptrcast<OperatorNode>(p_expr[(size_t)next_op + 1].get_expr())->op_type)) {
 					Vect2i pos = ptrcast<OperatorNode>(p_expr[(size_t)next_op + 1].get_expr())->pos;
 					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", Vect2i(pos.x, pos.y));
 				}

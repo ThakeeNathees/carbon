@@ -195,26 +195,50 @@ public:
 template<typename T, typename R>
 using M0 = R(T::*)();
 
+template<typename T, typename R>
+using M0_c = R(T::*)() const;
+
 template<typename T, typename R, typename a0>
 using M1 = R(T::*)(a0);
+
+template<typename T, typename R, typename a0>
+using M1_c = R(T::*)(a0) const;
 
 template<typename T, typename R, typename a0, typename a1>
 using M2 = R(T::*)(a0, a1);
 
+template<typename T, typename R, typename a0, typename a1>
+using M2_c = R(T::*)(a0, a1) const;
+
 template<typename T, typename R, typename a0, typename a1, typename a2>
 using M3 = R(T::*)(a0, a1, a2);
+
+template<typename T, typename R, typename a0, typename a1, typename a2>
+using M3_c = R(T::*)(a0, a1, a2) const;
 
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3>
 using M4 = R(T::*)(a0, a1, a2, a3);
 
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3>
+using M4_c = R(T::*)(a0, a1, a2, a3) const;
+
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
 using M5 = R(T::*)(a0, a1, a2, a3, a4);
+
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
+using M5_c = R(T::*)(a0, a1, a2, a3, a4) const;
 
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
 using M6 = R(T::*)(a0, a1, a2, a3, a4, a5);
 
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
+using M6_c = R(T::*)(a0, a1, a2, a3, a4, a5) const;
+
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
 using M7 = R(T::*)(a0, a1, a2, a3, a4, a5, a6);
+
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
+using M7_c = R(T::*)(a0, a1, a2, a3, a4, a5, a6) const;
 
 template<typename R>
 using F0 = R(*)();
@@ -264,11 +288,59 @@ public:
 	}
 };
 
+template<typename T, typename R>
+class _MethodBind_M0_c : public MethodBind {
+	M0_c<T, R> method;
+public:
+	_MethodBind_M0_c(const char* p_name, const char* p_class_name, int p_argc, M0_c<T, R> p_method) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		method = p_method;
+	}
+	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+		if (args.size() != 0) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("method %s takes 0 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			(ptrcast<T>(self).get()->*method)(); return var();
+		} else {
+			return (ptrcast<T>(self).get()->*method)();
+		}
+	}
+};
+
 template<typename T, typename R, typename a0>
 class _MethodBind_M1 : public MethodBind {
 	M1<T, R, a0> method;
 public:
 	_MethodBind_M1(const char* p_name, const char* p_class_name, int p_argc, M1<T, R, a0> p_method) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		method = p_method;
+	}
+	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+		if (args.size() != 1) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("method %s takes 1 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			(ptrcast<T>(self).get()->*method)(args[0]); return var();
+		} else {
+			return (ptrcast<T>(self).get()->*method)(args[0]);
+		}
+	}
+};
+
+template<typename T, typename R, typename a0>
+class _MethodBind_M1_c : public MethodBind {
+	M1_c<T, R, a0> method;
+public:
+	_MethodBind_M1_c(const char* p_name, const char* p_class_name, int p_argc, M1_c<T, R, a0> p_method) {
 		name = p_name;
 		class_name = p_class_name;
 		argc = p_argc;
@@ -312,11 +384,59 @@ public:
 	}
 };
 
+template<typename T, typename R, typename a0, typename a1>
+class _MethodBind_M2_c : public MethodBind {
+	M2_c<T, R, a0, a1> method;
+public:
+	_MethodBind_M2_c(const char* p_name, const char* p_class_name, int p_argc, M2_c<T, R, a0, a1> p_method) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		method = p_method;
+	}
+	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+		if (args.size() != 2) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("method %s takes 2 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			(ptrcast<T>(self).get()->*method)(args[0], args[1]); return var();
+		} else {
+			return (ptrcast<T>(self).get()->*method)(args[0], args[1]);
+		}
+	}
+};
+
 template<typename T, typename R, typename a0, typename a1, typename a2>
 class _MethodBind_M3 : public MethodBind {
 	M3<T, R, a0, a1, a2> method;
 public:
 	_MethodBind_M3(const char* p_name, const char* p_class_name, int p_argc, M3<T, R, a0, a1, a2> p_method) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		method = p_method;
+	}
+	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+		if (args.size() != 3) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("method %s takes 3 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			(ptrcast<T>(self).get()->*method)(args[0], args[1], args[2]); return var();
+		} else {
+			return (ptrcast<T>(self).get()->*method)(args[0], args[1], args[2]);
+		}
+	}
+};
+
+template<typename T, typename R, typename a0, typename a1, typename a2>
+class _MethodBind_M3_c : public MethodBind {
+	M3_c<T, R, a0, a1, a2> method;
+public:
+	_MethodBind_M3_c(const char* p_name, const char* p_class_name, int p_argc, M3_c<T, R, a0, a1, a2> p_method) {
 		name = p_name;
 		class_name = p_class_name;
 		argc = p_argc;
@@ -360,11 +480,59 @@ public:
 	}
 };
 
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3>
+class _MethodBind_M4_c : public MethodBind {
+	M4_c<T, R, a0, a1, a2, a3> method;
+public:
+	_MethodBind_M4_c(const char* p_name, const char* p_class_name, int p_argc, M4_c<T, R, a0, a1, a2, a3> p_method) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		method = p_method;
+	}
+	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+		if (args.size() != 4) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("method %s takes 4 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			(ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3]); return var();
+		} else {
+			return (ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3]);
+		}
+	}
+};
+
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
 class _MethodBind_M5 : public MethodBind {
 	M5<T, R, a0, a1, a2, a3, a4> method;
 public:
 	_MethodBind_M5(const char* p_name, const char* p_class_name, int p_argc, M5<T, R, a0, a1, a2, a3, a4> p_method) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		method = p_method;
+	}
+	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+		if (args.size() != 5) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("method %s takes 5 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			(ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4]); return var();
+		} else {
+			return (ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4]);
+		}
+	}
+};
+
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
+class _MethodBind_M5_c : public MethodBind {
+	M5_c<T, R, a0, a1, a2, a3, a4> method;
+public:
+	_MethodBind_M5_c(const char* p_name, const char* p_class_name, int p_argc, M5_c<T, R, a0, a1, a2, a3, a4> p_method) {
 		name = p_name;
 		class_name = p_class_name;
 		argc = p_argc;
@@ -408,11 +576,59 @@ public:
 	}
 };
 
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
+class _MethodBind_M6_c : public MethodBind {
+	M6_c<T, R, a0, a1, a2, a3, a4, a5> method;
+public:
+	_MethodBind_M6_c(const char* p_name, const char* p_class_name, int p_argc, M6_c<T, R, a0, a1, a2, a3, a4, a5> p_method) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		method = p_method;
+	}
+	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+		if (args.size() != 6) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("method %s takes 6 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			(ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4], args[5]); return var();
+		} else {
+			return (ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4], args[5]);
+		}
+	}
+};
+
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
 class _MethodBind_M7 : public MethodBind {
 	M7<T, R, a0, a1, a2, a3, a4, a5, a6> method;
 public:
 	_MethodBind_M7(const char* p_name, const char* p_class_name, int p_argc, M7<T, R, a0, a1, a2, a3, a4, a5, a6> p_method) {
+		name = p_name;
+		class_name = p_class_name;
+		argc = p_argc;
+		method = p_method;
+	}
+	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+		if (args.size() != 7) {
+			throw Error(Error::INVALID_ARG_COUNT, 
+				String::format("method %s takes 7 arguments but %i was given", get_name(), (int)args.size())
+			);
+		}
+		if constexpr (std::is_same_v<R, void>) {
+			(ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4], args[5], args[6]); return var();
+		} else {
+			return (ptrcast<T>(self).get()->*method)(args[0], args[1], args[2], args[3], args[4], args[5], args[6]);
+		}
+	}
+};
+
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
+class _MethodBind_M7_c : public MethodBind {
+	M7_c<T, R, a0, a1, a2, a3, a4, a5, a6> method;
+public:
+	_MethodBind_M7_c(const char* p_name, const char* p_class_name, int p_argc, M7_c<T, R, a0, a1, a2, a3, a4, a5, a6> p_method) {
 		name = p_name;
 		class_name = p_class_name;
 		argc = p_argc;
@@ -629,9 +845,19 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 	return newptr<_MethodBind_M0<T, R>>(method_name, p_class_name, 0, m);
 }
 
+template<typename T, typename R>
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M0_c<T, R> m) {
+	return newptr<_MethodBind_M0_c<T, R>>(method_name, p_class_name, 0, m);
+}
+
 template<typename T, typename R, typename a0>
 ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M1<T, R, a0> m) {
 	return newptr<_MethodBind_M1<T, R, a0>>(method_name, p_class_name, 1, m);
+}
+
+template<typename T, typename R, typename a0>
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M1_c<T, R, a0> m) {
+	return newptr<_MethodBind_M1_c<T, R, a0>>(method_name, p_class_name, 1, m);
 }
 
 template<typename T, typename R, typename a0, typename a1>
@@ -639,9 +865,19 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 	return newptr<_MethodBind_M2<T, R, a0, a1>>(method_name, p_class_name, 2, m);
 }
 
+template<typename T, typename R, typename a0, typename a1>
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M2_c<T, R, a0, a1> m) {
+	return newptr<_MethodBind_M2_c<T, R, a0, a1>>(method_name, p_class_name, 2, m);
+}
+
 template<typename T, typename R, typename a0, typename a1, typename a2>
 ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M3<T, R, a0, a1, a2> m) {
 	return newptr<_MethodBind_M3<T, R, a0, a1, a2>>(method_name, p_class_name, 3, m);
+}
+
+template<typename T, typename R, typename a0, typename a1, typename a2>
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M3_c<T, R, a0, a1, a2> m) {
+	return newptr<_MethodBind_M3_c<T, R, a0, a1, a2>>(method_name, p_class_name, 3, m);
 }
 
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3>
@@ -649,9 +885,19 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 	return newptr<_MethodBind_M4<T, R, a0, a1, a2, a3>>(method_name, p_class_name, 4, m);
 }
 
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3>
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M4_c<T, R, a0, a1, a2, a3> m) {
+	return newptr<_MethodBind_M4_c<T, R, a0, a1, a2, a3>>(method_name, p_class_name, 4, m);
+}
+
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
 ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M5<T, R, a0, a1, a2, a3, a4> m) {
 	return newptr<_MethodBind_M5<T, R, a0, a1, a2, a3, a4>>(method_name, p_class_name, 5, m);
+}
+
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M5_c<T, R, a0, a1, a2, a3, a4> m) {
+	return newptr<_MethodBind_M5_c<T, R, a0, a1, a2, a3, a4>>(method_name, p_class_name, 5, m);
 }
 
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
@@ -659,9 +905,19 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 	return newptr<_MethodBind_M6<T, R, a0, a1, a2, a3, a4, a5>>(method_name, p_class_name, 6, m);
 }
 
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M6_c<T, R, a0, a1, a2, a3, a4, a5> m) {
+	return newptr<_MethodBind_M6_c<T, R, a0, a1, a2, a3, a4, a5>>(method_name, p_class_name, 6, m);
+}
+
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
 ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M7<T, R, a0, a1, a2, a3, a4, a5, a6> m) {
 	return newptr<_MethodBind_M7<T, R, a0, a1, a2, a3, a4, a5, a6>>(method_name, p_class_name, 7, m);
+}
+
+template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M7_c<T, R, a0, a1, a2, a3, a4, a5, a6> m) {
+	return newptr<_MethodBind_M7_c<T, R, a0, a1, a2, a3, a4, a5, a6>>(method_name, p_class_name, 7, m);
 }
 
 template<typename R>
