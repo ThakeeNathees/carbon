@@ -103,13 +103,10 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 				String::format("attribute named \"%s\" on type \"%s\" is not callable", method_name.c_str(), p_self->get_class_name()));
 		}
 	}
-	
 	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no method named \"%s\"", p_self->get_class_name(), method_name.c_str()));
 }
 
-// TODO: implement var get_member(), void set_member() so that no need for the var&
-
-var& Object::get_member(ptr<Object> p_self, const String& p_name) {
+var Object::get_member(ptr<Object> p_self, const String& p_name) {
 	String class_name = p_self->get_class_name();
 	String member_name = p_name;
 
@@ -123,18 +120,41 @@ var& Object::get_member(ptr<Object> p_self, const String& p_name) {
 			return ptrcast<MemberBind>(bind_data)->get(p_self);
 		} else if (bind_data->get_type() == BindData::STATIC_VAR) {
 			return ptrcast<StaticMemberBind>(bind_data)->get();
-
 		} else if (bind_data->get_type() == BindData::STATIC_CONST) {
-			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("constant named \"%s\" on type \"%s\" cannot be accessed non statically", member_name.c_str(), p_self->get_class_name()));
-
+			return ptrcast<ConstantBind>(bind_data)->get();
 		} else if (bind_data->get_type() == BindData::ENUM_VALUE) {
-			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("enum value named \"%s\" on type \"%s\" cannot be accessed non statically", member_name.c_str(), p_self->get_class_name()));
+			return ptrcast<EnumValueBind>(bind_data)->get();
 
 		} else {
 			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("attribute named \"%s\" on type \"%s\" is not a property", member_name.c_str(), p_self->get_class_name()));
 		}
 	}
-	
+	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no member named \"%s\"", p_self->get_class_name(), member_name.c_str()));
+}
+
+void Object::set_member(ptr<Object> p_self, const String& p_name, var& p_value) {
+	String class_name = p_self->get_class_name();
+	String member_name = p_name;
+
+	if (!NativeClasses::is_class_registered(class_name)) {
+		THROW_ERROR(Error::NULL_POINTER, String::format("the class \"%s\" isn't registered in native class entries", class_name.c_str()));
+	}
+
+	ptr<BindData> bind_data = NativeClasses::find_bind_data(class_name, member_name);
+	if (bind_data) {
+		if (bind_data->get_type() == BindData::MEMBER_VAR) {
+			ptrcast<MemberBind>(bind_data)->get(p_self) = p_value;
+		} else if (bind_data->get_type() == BindData::STATIC_VAR) {
+			ptrcast<StaticMemberBind>(bind_data)->get() = p_value;
+
+		} else if (bind_data->get_type() == BindData::STATIC_CONST) {
+			THROW_ERROR(Error::INVALID_TYPE, "can't assign a value to constant named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name());
+		} else if (bind_data->get_type() == BindData::ENUM_VALUE) {
+			THROW_ERROR(Error::INVALID_TYPE, "can't assign a value to enum value named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name());
+		} else {
+			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("attribute named \"%s\" on type \"%s\" is not a property", member_name.c_str(), p_self->get_class_name()));
+		}
+	}
 	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no member named \"%s\"", p_self->get_class_name(), member_name.c_str()));
 }
 
