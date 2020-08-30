@@ -66,7 +66,7 @@ static int _visit(DynamicLibrary* p_lib, const String& p_func_name, var* p_arg0,
 
 class DynamicLibrary : public Object {
 	REGISTER_CLASS(DynamicLibrary, Object) {
-		BIND_METHOD("open", &DynamicLibrary::open);
+		BIND_METHOD("open", &DynamicLibrary::open, PARAMS("lib_name"));
 		BIND_METHOD_VA("call", &DynamicLibrary::_call_va_args);
 		BIND_METHOD("close", &DynamicLibrary::close);
 	}

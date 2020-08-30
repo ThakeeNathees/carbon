@@ -41,9 +41,9 @@ class File : public Object {
 		BIND_ENUM_VALUE("EXTRA",  EXTRA);
 		//BIND_ENUM_VALUE("DEFAULT", DEFAULT);
 
-		BIND_METHOD("open",  &File::open);
+		BIND_METHOD("open",  &File::open,  PARAMS("path", "mode"), DEFVALUES(DEFAULT));
 		BIND_METHOD("read",  &File::read);
-		BIND_METHOD("write", &File::write);
+		BIND_METHOD("write", &File::write, PARAMS("what"));
 		BIND_METHOD("close", &File::close);
 	}
 

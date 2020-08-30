@@ -122,9 +122,9 @@ var Object::get_member(ptr<Object> p_self, const String& p_name) {
 	ptr<BindData> bind_data = NativeClasses::find_bind_data(class_name, member_name);
 	if (bind_data) {
 		if (bind_data->get_type() == BindData::MEMBER_VAR) {
-			return ptrcast<MemberBind>(bind_data)->get(p_self);
+			return ptrcast<PropertyBind>(bind_data)->get(p_self);
 		} else if (bind_data->get_type() == BindData::STATIC_VAR) {
-			return ptrcast<StaticMemberBind>(bind_data)->get();
+			return ptrcast<StaticPropertyBind>(bind_data)->get();
 		} else if (bind_data->get_type() == BindData::STATIC_CONST) {
 			return ptrcast<ConstantBind>(bind_data)->get();
 		} else if (bind_data->get_type() == BindData::ENUM_VALUE) {
@@ -148,9 +148,9 @@ void Object::set_member(ptr<Object> p_self, const String& p_name, var& p_value) 
 	ptr<BindData> bind_data = NativeClasses::find_bind_data(class_name, member_name);
 	if (bind_data) {
 		if (bind_data->get_type() == BindData::MEMBER_VAR) {
-			ptrcast<MemberBind>(bind_data)->get(p_self) = p_value;
+			ptrcast<PropertyBind>(bind_data)->get(p_self) = p_value;
 		} else if (bind_data->get_type() == BindData::STATIC_VAR) {
-			ptrcast<StaticMemberBind>(bind_data)->get() = p_value;
+			ptrcast<StaticPropertyBind>(bind_data)->get() = p_value;
 
 		} else if (bind_data->get_type() == BindData::STATIC_CONST) {
 			THROW_ERROR(Error::INVALID_TYPE, String::format("can't assign a value to constant named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name()));
