@@ -81,6 +81,11 @@ bool NativeClasses::is_class_registered(const String& p_class_name) {
 namespace varh {
 using namespace carbon;
 #ifdef _VAR_H_EXTERN_IMPLEMENTATIONS
+void Object::_bind_data() {
+	BIND_METHOD("get_class_name", &Object::get_class_name);
+	BIND_METHOD("get_parent_class_name", &Object::get_parent_class_name);
+}
+
 // call_method() should call it's parent if method not exists.
 var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p_args) {
 	String class_name = p_self->get_class_name();
@@ -148,9 +153,9 @@ void Object::set_member(ptr<Object> p_self, const String& p_name, var& p_value) 
 			ptrcast<StaticMemberBind>(bind_data)->get() = p_value;
 
 		} else if (bind_data->get_type() == BindData::STATIC_CONST) {
-			THROW_ERROR(Error::INVALID_TYPE, "can't assign a value to constant named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name());
+			THROW_ERROR(Error::INVALID_TYPE, String::format("can't assign a value to constant named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name()));
 		} else if (bind_data->get_type() == BindData::ENUM_VALUE) {
-			THROW_ERROR(Error::INVALID_TYPE, "can't assign a value to enum value named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name());
+			THROW_ERROR(Error::INVALID_TYPE, String::format("can't assign a value to enum value named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name()));
 		} else {
 			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("attribute named \"%s\" on type \"%s\" is not a property", member_name.c_str(), p_self->get_class_name()));
 		}

@@ -38,11 +38,10 @@ using namespace carbon;
 // TODO: VarError -> Error.
 // TODO: Make var submodule to local.
 
+
 int _main(int argc, char** argv) {
 
 	initialize();
-
-	auto x = NativeClasses::get_bind_data("File", "READ");
 
 #ifdef RUN_TESTS
 	int res = _test_main(argc, argv);

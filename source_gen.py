@@ -225,6 +225,8 @@ public:
 	for i in range(num):
 		write_template_symbol(f, i, True) ## template<...>
 		f.write(f'\nusing M{i} = R(T::*)({get_args_symbol(i, False)});\n\n')
+		write_template_symbol(f, i, True) ## template<...>
+		f.write(f'\nusing M{i}_c = R(T::*)({get_args_symbol(i, False)}) const;\n\n')
 
 	## function pointers
 	for i in range(num):
@@ -233,12 +235,11 @@ public:
 
 	## class class _MethodBind_M{i}
 	for i in range(num):
-		write_template_symbol(f, i, True)
-		f.write(f'''\n\
-class _MethodBind_M{i} : public MethodBind {{
-	M{i}<T, R{get_args_symbol(i, True)}> method;
+		method_bind_body = f'''\n\
+class _MethodBind_M{i}$_c$ : public MethodBind {{
+	M{i}$_c$<T, R{get_args_symbol(i, True)}> method;
 public:
-	_MethodBind_M{i}(const char* p_name, const char* p_class_name, int p_argc, M{i}<T, R{get_args_symbol(i, True)}> p_method) {{
+	_MethodBind_M{i}$_c$(const char* p_name, const char* p_class_name, int p_argc, M{i}$_c$<T, R{get_args_symbol(i, True)}> p_method) {{
 		name = p_name;
 		class_name = p_class_name;
 		argc = p_argc;
@@ -258,7 +259,11 @@ public:
 	}}
 }};
 
-''')
+'''
+		write_template_symbol(f, i, True)
+		f.write(method_bind_body.replace("$_c$",  ""))
+		write_template_symbol(f, i, True)
+		f.write(method_bind_body.replace("$_c$",  "_c"))
 	## class class _StaticFuncBind_F{i}
 	for i in range(num):
 		write_template_symbol(f, i, False)
@@ -290,13 +295,16 @@ public:
 
 	## _bind_method()
 	for i in range(num):
-		write_template_symbol(f, i, True)
-		f.write(f'''\n\
-ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M{i}<T, R{get_args_symbol(i, True)}> m) {{
-	return newptr<_MethodBind_M{i}<T, R{get_args_symbol(i, True)}>>(method_name, p_class_name, {i}, m);
+		method_bind_func = f'''\n\
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M{i}$_c$<T, R{get_args_symbol(i, True)}> m) {{
+	return newptr<_MethodBind_M{i}$_c$<T, R{get_args_symbol(i, True)}>>(method_name, p_class_name, {i}, m);
 }}
 
-''')
+'''
+		write_template_symbol(f, i, True)
+		f.write(method_bind_func.replace("$_c$", ""))
+		write_template_symbol(f, i, True)
+		f.write(method_bind_func.replace("$_c$", "_c"))
 
 	## _bind_func()
 	for i in range(num):
