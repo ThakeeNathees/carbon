@@ -29,6 +29,36 @@ LICENSE = '''\
 
 HEADER_GUARD = 'NATIVE_BIND_GEN_H'
 
+DEFINE_DECLARE_VAR_TYPE = '''\
+
+template<typename T> struct is_shared_ptr : std::false_type {};
+template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};
+
+#define DECLARE_VAR_TYPE(m_var_type, m_T)                                                                                     \\
+	VarTypeInfo m_var_type;																						              \\
+	if constexpr (std::is_same<m_T, void>::value) {																              \\
+		m_var_type = var::_NULL;																				              \\
+	} else if constexpr (std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, bool>::value) {              \\
+		m_var_type = var::BOOL;																					              \\
+	} else if constexpr (std::numeric_limits<m_T>::is_integer) {												              \\
+		m_var_type = var::INT;																					              \\
+	} else if constexpr (std::is_floating_point<m_T>::value) {													              \\
+		m_var_type = var::FLOAT;																				              \\
+	} else if constexpr (std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, String>::value ||            \\
+			std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, const char*>::value) {			          \\
+		m_var_type = var::STRING;																				              \\
+	} else if constexpr (std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, Array>::value) {             \\
+		m_var_type = var::ARRAY;																				              \\
+	} else if constexpr (std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, Map>::value) {               \\
+		m_var_type = var::MAP;																					              \\
+	} else if constexpr (std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, var>::value) {               \\
+		m_var_type = var::VAR;																					              \\
+	} else if constexpr (is_shared_ptr<m_T>::value) {																	      \\
+		m_var_type = { var::OBJECT, std::remove_reference<std::remove_const<m_T>::type::element_type::get_class_name_s() };   \\
+	}
+
+'''
+
 ## template<typename T, typename R, typename a0, ...>
 def write_template_symbol(f, i, include_T):
 	f.write('template<%stypename R'%( 'typename T, ' if include_T else '' ))
@@ -56,7 +86,7 @@ def generage_method_calls(path, num):
 	f.write('\n// !!! AUTO GENERATED DO NOT EDIT !!!\n\n')
 	f.write(f'#ifndef {HEADER_GUARD}\n#define {HEADER_GUARD}\n\n')
 	f.write('namespace carbon {\n\n')
-
+	f.write(DEFINE_DECLARE_VAR_TYPE)
 	f.write('''\
 
 class BindData {
@@ -83,6 +113,7 @@ public:
 class MethodBind : public BindData {
 protected:
 	int argc = 0;
+	ptr<MethodInfo> mi;
 
 public:
 	virtual BindData::Type get_type() const { return BindData::METHOD; }
@@ -94,6 +125,7 @@ public:
 class StaticFuncBind : public BindData {
 protected:
 	int argc;
+	ptr<MethodInfo> mi;
 
 public:
 	virtual BindData::Type get_type()   const { return BindData::STATIC_FUNC; }
@@ -103,21 +135,25 @@ public:
 };
 
 // ---------------- MEMBER BIND START --------------------------------------
-class MemberBind : public BindData {
+class PropertyBind : public BindData {
+protected:
+	ptr<PropertyInfo> pi;
 public:
 	virtual BindData::Type get_type() const { return BindData::MEMBER_VAR; }
 	virtual var& get(ptr<Object> self) = 0;
 };
 
 template<typename Class>
-class _MemberBind : public MemberBind {
+class _PropertyBind : public PropertyBind {
+protected:
 	typedef var Class::* member_ptr_t;
 	member_ptr_t member_ptr;
 public:
-	_MemberBind(const char* p_name, const char* p_class_name, member_ptr_t p_member_ptr) {
+	_PropertyBind(const char* p_name, const char* p_class_name, member_ptr_t p_member_ptr, ptr<PropertyInfo> p_pi) {
 		name = p_name;
 		class_name = p_class_name;
 		member_ptr = p_member_ptr;
+		pi = p_pi;
 	}
 
 	virtual var& get(ptr<Object> self) override {
@@ -126,34 +162,38 @@ public:
 };
 
 template<typename Class>
-ptr<MemberBind> _bind_member(const char* p_name, const char* p_class_name, var Class::* p_member_ptr) {
+ptr<PropertyBind> _bind_member(const char* p_name, const char* p_class_name, var Class::* p_member_ptr, const var& p_value = var()) {
 	var Class::* member_ptr = p_member_ptr;
-	return newptr<_MemberBind<Class>>(p_name, p_class_name, member_ptr);
+	return newptr<_PropertyBind<Class>>(p_name, p_class_name, member_ptr, newptr<PropertyInfo>(p_name, var::VAR, p_value));
 }
 // ------------------------------------------------------------------------
 
 
 // ---------------- STATIC MEMBER BIND START ------------------------------
-class StaticMemberBind : public BindData {
+class StaticPropertyBind : public BindData {
 	var* member = nullptr;
+	ptr<PropertyInfo> pi;
 public:
 	virtual BindData::Type get_type() const { return BindData::STATIC_VAR; }
 
-	StaticMemberBind(const char* p_name, const char* p_class_name, var* p_member) {
+	StaticPropertyBind(const char* p_name, const char* p_class_name, var* p_member, ptr<PropertyInfo> p_pi) {
 		name = p_name;
 		class_name = p_class_name;
 		member = p_member;
+		pi = p_pi;
 	}
 	virtual var& get() { return *member; }
 };
 
-inline ptr<StaticMemberBind> _bind_static_member(const char* p_name, const char* p_class_name, var* p_member) {
-	return newptr<StaticMemberBind>(p_name, p_class_name, p_member);
+inline ptr<StaticPropertyBind> _bind_static_member(const char* p_name, const char* p_class_name, var* p_member) {
+	return newptr<StaticPropertyBind>(p_name, p_class_name, p_member, newptr<PropertyInfo>(p_name, var::VAR, *p_member));
 }
 // ------------------------------------------------------------------------
 
 // ---------------- STATIC CONST BIND START ------------------------------
 class ConstantBind : public BindData {
+protected:
+	ptr<PropertyInfo> pi;
 public:
 	virtual BindData::Type get_type() const { return BindData::STATIC_CONST; }
 	virtual var get() = 0;
@@ -163,10 +203,11 @@ template<typename T>
 class _ConstantBind : public ConstantBind {
 	T* _const = nullptr;
 public:
-	_ConstantBind(const char* p_name, const char* p_class_name, T* p_const) {
+	_ConstantBind(const char* p_name, const char* p_class_name, T* p_const, ptr<PropertyInfo> p_pi) {
 		name = p_name;
 		class_name = p_class_name;
 		_const = p_const;
+		pi = p_pi;
 	}
 
 	virtual var get() override {
@@ -176,43 +217,44 @@ public:
 
 template<typename T>
 ptr<ConstantBind> _bind_static_const(const char* p_name, const char* p_class_name, T* p_const) {
-	return newptr<_ConstantBind<T>>(p_name, p_class_name, p_const);
+	DECLARE_VAR_TYPE(datatype, T);
+	return newptr<_ConstantBind<T>>(p_name, p_class_name, p_const, newptr<PropertyInfo>(p_name, datatype, *p_const));
 }
 // ------------------------------------------------------------------------
 
 // ---------------- ENUM BIND START ------------------------------
 
 class EnumBind : public BindData {
-	stdvec<std::pair<String, int64_t>> values;
+	ptr<EnumInfo> ei;
 public:
-	EnumBind(const char* p_name, const char* p_class_name, const stdvec<std::pair<String, int64_t>>& p_values) {
+	EnumBind(const char* p_name, const char* p_class_name, ptr<EnumInfo> p_ei) {
 		name = p_name;
 		class_name = p_class_name;
-		values = p_values;
+		ei = p_ei;
 	}
 	virtual BindData::Type get_type() const { return BindData::ENUM; }
 	int64_t get(const String& p_value_name) const {
-		for (int i = 0; i < (int)values.size(); i++) {
-			if (values[i].first == p_value_name) {
-				return values[i].second;
+		for (int i = 0; i < (int)ei->get_values().size(); i++) {
+			if (ei->get_values()[i].first == p_value_name) {
+				return ei->get_values()[i].second;
 			}
 		}
-		throw Error(Error::INVALID_GET_INDEX,
-			String::format("value \\"%s\\" isn't exists on enum \\"%s\\"", p_value_name.c_str(), name)
-		);
+		throw Error(Error::INVALID_GET_INDEX, String::format("value \\"%s\\" isn't exists on enum \\"%s\\"", p_value_name.c_str(), name));
 	}
 };
 inline ptr<EnumBind> _bind_enum(const char* p_name, const char* p_class_name, const stdvec<std::pair<String, int64_t>>& p_values) {
-	return newptr<EnumBind>(p_name, p_class_name, p_values);
+	return newptr<EnumBind>(p_name, p_class_name, newptr<EnumInfo>(p_name, p_values));
 }
 
 class EnumValueBind : public BindData {
+	ptr<EnumValueInfo> evi;
 	int64_t value;
 public:
-	EnumValueBind(const char* p_name, const char* p_class_name, int64_t p_value) {
+	EnumValueBind(const char* p_name, const char* p_class_name, int64_t p_value, ptr<EnumValueInfo> p_evi) {
 		name = p_name;
 		class_name = p_class_name;
 		value = p_value;
+		evi = newptr<EnumValueInfo>(p_name, p_value);
 	}
 	virtual BindData::Type get_type() const { return BindData::ENUM_VALUE; }
 	int64_t get() { return value; }
@@ -238,20 +280,31 @@ public:
 		method_bind_body = f'''\n\
 class _MethodBind_M{i}$_c$ : public MethodBind {{
 	M{i}$_c$<T, R{get_args_symbol(i, True)}> method;
+	ptr<MethodInfo> mi;
 public:
-	_MethodBind_M{i}$_c$(const char* p_name, const char* p_class_name, int p_argc, M{i}$_c$<T, R{get_args_symbol(i, True)}> p_method) {{
+	_MethodBind_M{i}$_c$(const char* p_name, const char* p_class_name, int p_argc, M{i}$_c$<T, R{get_args_symbol(i, True)}> p_method, ptr<MethodInfo> p_mi) {{
 		name = p_name;
 		class_name = p_class_name;
 		argc = p_argc;
 		method = p_method;
+		mi = p_mi;
 	}}
 	virtual var call(ptr<Object> self, stdvec<var>& args) override {{
-		if (args.size() != {i}) {{
-			throw Error(Error::INVALID_ARG_COUNT, 
-				String::format("method %s takes {i} arguments but %i was given", get_name(), (int)args.size())
-			);
+
+		int default_arg_count = mi->get_default_arg_count();
+		int args_given = (int)args.size();
+		if (args_given + default_arg_count < {i}) {{ /* Args not enough. */
+			if (default_arg_count == 0) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected at exactly {i} argument(s).");
+			else THROW_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", {i} - default_arg_count));
+		}} else if (args_given > {i}) {{ /* More args proveded.	*/
+			if (default_arg_count == 0) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected at exactly {i} argument(s).");
+			else THROW_ERROR(Error::INVALID_ARG_COUNT, String::format( "expected minimum of %i argument(s) and maximum of {i} argument(s).", {i} - default_arg_count));
 		}}
-		if constexpr (std::is_same_v<R, void>) {{
+		for (int i = {i} - args_given; i > 0 ; i--) {{
+			args.push_back(mi->get_default_args()[default_arg_count - i]);
+		}}
+
+		if constexpr (std::is_same<R, void>::value) {{
 			(ptrcast<T>(self).get()->*method)({get_args_call_symbol(i)}); return var();
 		}} else {{
 			return (ptrcast<T>(self).get()->*method)({get_args_call_symbol(i)});
@@ -270,20 +323,31 @@ public:
 		f.write(f'''\n\
 class _StaticFuncBind_F{i} : public StaticFuncBind {{
 	F{i}<R{get_args_symbol(i, True)}> static_func;
+	ptr<MethodInfo> mi;
 public:
-	_StaticFuncBind_F{i}(const char* p_name, const char* p_class_name, int p_argc, F{i}<R{get_args_symbol(i, True)}> p_func) {{
+	_StaticFuncBind_F{i}(const char* p_name, const char* p_class_name, int p_argc, F{i}<R{get_args_symbol(i, True)}> p_func, ptr<MethodInfo> p_mi) {{
 		name = p_name;
 		class_name = p_class_name;
 		argc = p_argc;
 		static_func = p_func;
+		mi = p_mi;
 	}}
 	virtual var call(stdvec<var>& args) override {{
-		if (args.size() != {i}) {{
-			throw Error(Error::INVALID_ARG_COUNT, 
-				String::format("function %s takes {i} arguments but %i was given", get_name(), (int)args.size())
-			);
+
+		int default_arg_count = mi->get_default_arg_count();
+		int args_given = (int)args.size();
+		if (args_given + default_arg_count < {i}) {{ /* Args not enough. */
+			if (default_arg_count == 0) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected at exactly {i} argument(s).");
+			else THROW_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", {i} - default_arg_count));
+		}} else if (args_given > {i}) {{ /* More args proveded.	*/
+			if (default_arg_count == 0) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected at exactly {i} argument(s).");
+			else THROW_ERROR(Error::INVALID_ARG_COUNT, String::format( "expected minimum of %i argument(s) and maximum of {i} argument(s).", {i} - default_arg_count));
 		}}
-		if constexpr (std::is_same_v<R, void>) {{
+		for (int i = {i} - args_given; i > 0 ; i--) {{
+			args.push_back(mi->get_default_args()[default_arg_count - i]);
+		}}
+
+		if constexpr (std::is_same<R, void>::value) {{
 			static_func({get_args_call_symbol(i)}); return var();
 		}} else {{
 			return static_func({get_args_call_symbol(i)});
@@ -296,8 +360,12 @@ public:
 	## _bind_method()
 	for i in range(num):
 		method_bind_func = f'''\n\
-ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M{i}$_c$<T, R{get_args_symbol(i, True)}> m) {{
-	return newptr<_MethodBind_M{i}$_c$<T, R{get_args_symbol(i, True)}>>(method_name, p_class_name, {i}, m);
+ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, M{i}$_c$<T, R{get_args_symbol(i, True)}> m,
+		{' '.join([ "const String& name%s,"%j for j in range(i)])} stdvec<var> default_args = {{}}) {{
+		{' '.join(["DECLARE_VAR_TYPE(vt%s, a%s);"%(j, j) for j in range(i)])}
+		DECLARE_VAR_TYPE(ret, R);
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>({', '.join(["name%s"%j for j in range(i)])} ), make_vector<VarTypeInfo>({', '.join(["vt%s"%j for j in range(i)])}), ret, false, default_args, {i} );
+	return newptr<_MethodBind_M{i}$_c$<T, R{get_args_symbol(i, True)}>>(method_name, p_class_name, {i}, m, mi);
 }}
 
 '''
@@ -310,8 +378,12 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 	for i in range(num):
 		write_template_symbol(f, i, False)
 		f.write(f'''\n\
-ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class_name, F{i}<R{get_args_symbol(i, True)}> f) {{
-	return newptr<_StaticFuncBind_F{i}<R{get_args_symbol(i, True)}>>(func_name, p_class_name, {i}, f);
+ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class_name, F{i}<R{get_args_symbol(i, True)}> f,
+		{' '.join([ "const String& name%s,"%j for j in range(i)])} stdvec<var> default_args = {{}}) {{
+		{' '.join(["DECLARE_VAR_TYPE(vt%s, a%s);"%(j, j) for j in range(i)])}
+		DECLARE_VAR_TYPE(ret, R);
+		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_vector<String>({', '.join(["name%s"%j for j in range(i)])} ), make_vector<VarTypeInfo>({', '.join(["vt%s"%j for j in range(i)])}), ret, true, default_args, {i} );
+	return newptr<_StaticFuncBind_F{i}<R{get_args_symbol(i, True)}>>(func_name, p_class_name, {i}, f, mi);
 }}
 
 ''')
@@ -327,15 +399,17 @@ using FVA = R(*)(stdvec<var>&);
 template<typename T, typename R>
 class _MethodBind_MVA : public MethodBind {
 	MVA<T, R> method;
+	ptr<MethodInfo> mi;
 public:
-	_MethodBind_MVA(const char* p_name, const char* p_class_name, MVA<T, R> p_method) {
+	_MethodBind_MVA(const char* p_name, const char* p_class_name, MVA<T, R> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
 		class_name = p_class_name;
 		argc = -1;
 		method = p_method;
+		mi = p_mi;
 	}
 	virtual var call(ptr<Object> self, stdvec<var>& args) override {
-		if constexpr (std::is_same_v<R, void>) {
+		if constexpr (std::is_same<R, void>::value) {
 			(ptrcast<T>(self).get()->*method)(args); return var();
 		} else {
 			return (ptrcast<T>(self).get()->*method)(args);
@@ -346,15 +420,17 @@ public:
 template<typename R>
 class _StaticFuncBind_FVA : public StaticFuncBind {
 	FVA<R> static_func;
+	ptr<MethodInfo> mi;
 public:
-	_StaticFuncBind_FVA(const char* p_name, const char* p_class_name, FVA<R> p_func) {
+	_StaticFuncBind_FVA(const char* p_name, const char* p_class_name, FVA<R> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
 		class_name = p_class_name;
 		argc = -1;
 		static_func = p_func;
+		mi = p_mi;
 	}
 	virtual var call(stdvec<var>& args) override {
-		if constexpr (std::is_same_v<R, void>) {
+		if constexpr (std::is_same<R, void>::value) {
 			static_func(args); return var();
 		} else {
 			return static_func(args);
@@ -364,14 +440,18 @@ public:
 
 template<typename T, typename R>
 ptr<MethodBind> _bind_va_method(const char* method_name, const char* p_class_name, MVA<T, R> m) {
-	return newptr<_MethodBind_MVA<T, R>>(method_name, p_class_name, m);
+	DECLARE_VAR_TYPE(ret, R);
+	ptr<MethodInfo> mi = newptr<MethodInfo>( method_name, make_vector<String>(), make_vector<VarTypeInfo>(), ret, false, var::vector(), -1);
+	return newptr<_MethodBind_MVA<T, R>>(method_name, p_class_name, m, mi);
 }
 
 template<typename R>
 ptr<StaticFuncBind> _bind_va_static_func(const char* func_name, const char* p_class_name, FVA<R> f) {
-	return newptr<_StaticFuncBind_FVA<R>>(func_name, p_class_name, f);
+	DECLARE_VAR_TYPE(ret, R);
+	ptr<MethodInfo> mi = newptr<MethodInfo>( func_name, make_vector<String>(), make_vector<VarTypeInfo>(), ret, true, var::vector(), -1);
+	return newptr<_StaticFuncBind_FVA<R>>(func_name, p_class_name, f, mi);
 }
-	''')
+''')
 	f.write('} // namespace\n\n')
 	f.write(f'#endif // {HEADER_GUARD}\n')
 	f.close()

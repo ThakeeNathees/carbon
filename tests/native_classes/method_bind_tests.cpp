@@ -32,7 +32,7 @@ public:
 class B2 : public A {
 	REGISTER_CLASS(B2, A) {
 		BIND_STATIC_FUNC("B2_static_func", &B2::B2_static_func);
-		BIND_METHOD("B2_member_func", &B2::B2_member_func);
+		BIND_METHOD("B2_member_func", &B2::B2_member_func, PARAMS("str"));
 	}
 public:
 	static String B2_static_func() { return "B2-static"; }
@@ -41,10 +41,12 @@ public:
 
 class C : public B2 {
 	REGISTER_CLASS(C, B2) {
-		BIND_METHOD("C_member_func", &C::C_member_func);
+		BIND_METHOD("C_member_func", &C::C_member_func, PARAMS("v"));
+		BIND_METHOD("C_default_arg_func", &C::C_default_arg_func, PARAMS("a0", "a1", "a2"), DEFVALUES(3.14, "defval"));
 	}
 public:
 	var C_member_func(var v) { return v; }
+	void C_default_arg_func(int a0, double a1 = 3.14, String a2 = "defarg") { }
 };
 /////////////////////////////////////////////////////////////////
 
@@ -79,7 +81,7 @@ TEST_CASE("[native_classes]:method_bind+") {
 		ptr<BindData> bd = NativeClasses::get_bind_data(a.get_type_name(), "static_member");
 		REQUIRE(bd != nullptr);
 		REQUIRE(bd->get_type() == BindData::STATIC_VAR);
-		CHECK(ptrcast<StaticMemberBind>(bd)->get() == "static member");
+		CHECK(ptrcast<StaticPropertyBind>(bd)->get() == "static member");
 	}
 	{
 		CHECK(c.get_member("_const") == 42);
@@ -114,6 +116,12 @@ TEST_CASE("[native_classes]:method_bind+") {
 	CHECK(r.operator Array()[0].operator int() == 1);
 	CHECK(r.operator Array()[1].operator double() == 2.1);
 	CHECK(r.operator Array()[2].to_string() == "test");
+
+	// default value tests
+	c.call_method("C_default_arg_func", 42);
+	c.call_method("C_default_arg_func", 42, 3.14);
+	c.call_method("C_default_arg_func", 42, 3.14, "str");
+	CHECK_THROWS(c.call_method("C_default_arg_func", 42, "invalid type")); // INVALID TYPE.
 
 	// built in types ///////////////////
 
