@@ -66,6 +66,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 				tokenizer->next(); // ear "const"
 				ptr<ConstNode> _const = _parse_const(block_node);
 				block_node->local_const.push_back(_const);
+				block_node->statements.push_back(_const);
 			} break;
 
 			// Ignore.

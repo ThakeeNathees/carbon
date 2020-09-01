@@ -55,12 +55,35 @@ TEST_CASE("[parser_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = V2, V2 = 2, }");
 	CHECK_NOTHROW__ANALYZE("enum { V1 = V2, V2 = V3, V3 = 3}");
 
+	CHECK_NOTHROW__ANALYZE("const C = \"string\".hash();");
+	CHECK_NOTHROW__ANALYZE("const C = \"string\".size();");
+	CHECK_NOTHROW__ANALYZE("const C = \"3.14\".to_float();");
+	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3].append(42)[-1];");
+	CHECK_NOTHROW__ANALYZE("const C = [1, [2, 3]].pop()[-1];");
+
+	// mapped index
+	CHECK_NOTHROW__ANALYZE("const C = \"string\"[0];");
+	CHECK_NOTHROW__ANALYZE("const C = \"string\"[-1];");
+	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3][0];");
+
+
 	// indexing reduced at compile time.
 	CHECK_NOTHROW__ANALYZE("enum E { V = 42 } const C = E.V;");
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = C, V2 = 42 } const C = E.V2;");
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = C, V2 = 42, V3 = 1 } const C = E.V2 + E.V3;");
 	CHECK_NOTHROW__ANALYZE("class Name { enum E { V = 42 } } const C = Name.E.V;");
 	CHECK_NOTHROW__ANALYZE("class Name { enum E { V = C } } const C = 42;");
-	//CHECK_NOTHROW__ANALYZE("class ClassName { enum E {V = 42,} func fn(arg) { this.E.V; } }");
+
+	CHECK_NOTHROW__ANALYZE("class ClassName { enum E { V = 42 } func fn(arg) { const C = this.E.V; } }");
+	CHECK_NOTHROW__ANALYZE(R"(
+		class A {
+			func fn() { const A_C = B.E.V + B.B_C1; }
+		}
+		class B {
+			const B_C1 = 2; // TODO: implement 0b10101, 0xc0ffee
+			const B_C2 = 8;
+			enum E { V = B_C1 & B_C2 }
+		}
+	)");
 	
 }

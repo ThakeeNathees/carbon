@@ -226,6 +226,8 @@ public:
 			REF_CARBON_CLASS,
 			REF_NATIVE_CLASS,
 			REF_CARBON_FUNCTION,
+
+			// TODO: Binary version of all above.
 			REF_FILE, // import file_ref = "my/file.cb";
 		};
 		IdentifierReference ref = REF_UNKNOWN;

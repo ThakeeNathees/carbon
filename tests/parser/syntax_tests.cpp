@@ -8,7 +8,7 @@ TEST_CASE("[parser_tests]:syntax_test") {
 	CHECK_NOTHROW(parser.parse("var v1; var v2 = 2; var v3 = 3, v4 = 4, v5 = 5;", NO_PATH));
 	CHECK_NOTHROW(parser.parse("var v1 = \"string\";", NO_PATH));
 	CHECK_NOTHROW(parser.parse("var v1 = 1 + 2 * ((3 / 4) - (5 + 6));", NO_PATH));
-	CHECK_NOTHROW(parser.parse("var v1 = {1, 2, 3}.append(Array(4, 5, 6));", NO_PATH));
+	CHECK_NOTHROW(parser.parse("var v1 = [1, 2, 3].append(Array(4, 5, 6));", NO_PATH));
 
 	CHECK_NOTHROW(parser.parse("const x = 1;", NO_PATH));
 
@@ -18,7 +18,6 @@ TEST_CASE("[parser_tests]:syntax_test") {
 	CHECK_NOTHROW(parser.parse("enum { V1 }", NO_PATH));
 	CHECK_NOTHROW(parser.parse("enum { V1, }", NO_PATH));
 	CHECK_NOTHROW(parser.parse("enum En { V1, V2 = 1 , V3 = 0, }", NO_PATH));
-	// TODO: reduce expr: CHECK_NOTHROW(parser.parse("enum { V1, V2 = 1 * (2 + 3), V3 }", NO_PATH));
 
 	// functions.
 	CHECK_NOTHROW(parser.parse("func fn(){}", NO_PATH));
