@@ -107,6 +107,19 @@ void Parser::parse(String p_source, String p_file_path) {
 			case Token::SYM_SEMI_COLLON: 
 			case Token::VALUE_STRING:
 				break;
+
+			case Token::IDENTIFIER: {
+				ptr<OperatorNode> call = new_node<OperatorNode>(OperatorNode::OpType::OP_CALL);
+				BuiltinFunctions::Type builtin_func = BuiltinFunctions::get_func_type(token.identifier);
+				if (builtin_func != BuiltinFunctions::UNKNOWN && BuiltinFunctions::is_compiletime(builtin_func)) {
+					call->args.push_back(new_node<BuiltinFunctionNode>(builtin_func));
+					if (tokenizer->next().type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
+					stdvec<ptr<Node>> args = _parse_arguments(file_node);
+					for (size_t i = 0; i < args.size(); i++) call->args.push_back(args[i]);
+					file_node->compiletime_functions.push_back(call);
+					break;
+				}
+			} // [[fallthrough]]
 			default:
 				THROW_UNEXP_TOKEN("");
 		}
@@ -241,6 +254,18 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 				class_node->constants.push_back(_const);
 			} break;
 
+			case Token::IDENTIFIER: {
+				ptr<OperatorNode> call = new_node<OperatorNode>(OperatorNode::OpType::OP_CALL);
+				BuiltinFunctions::Type builtin_func = BuiltinFunctions::get_func_type(token.identifier);
+				if (builtin_func != BuiltinFunctions::UNKNOWN && BuiltinFunctions::is_compiletime(builtin_func)) {
+					call->args.push_back(new_node<BuiltinFunctionNode>(builtin_func));
+					if (tokenizer->next().type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
+					stdvec<ptr<Node>> args = _parse_arguments(class_node);
+					for (size_t i = 0; i < args.size(); i++) call->args.push_back(args[i]);
+					class_node->compiletime_functions.push_back(call);
+					break;
+				}
+			} // [[fallthrough]]
 			default: {
 				THROW_UNEXP_TOKEN("");
 			}

@@ -27,9 +27,6 @@
 
 namespace carbon {
 
-
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
-
 String BuiltinFunctions::get_func_name(BuiltinFunctions::Type p_func) {
 	return _func_list[p_func];
 }
@@ -45,6 +42,11 @@ BuiltinFunctions::Type BuiltinFunctions::get_func_type(const String& p_func) {
 
 int BuiltinFunctions::get_arg_count(BuiltinFunctions::Type p_func) {
 	switch (p_func) {
+		case Type::__ASSERT:
+			return 1;
+		case Type::__FUNC:
+		case Type::__LINE:
+		case Type::__FILE:
 		case Type::PRINT:
 		case Type::INPUT:
 		case Type::MATH_MAX:
@@ -54,7 +56,7 @@ int BuiltinFunctions::get_arg_count(BuiltinFunctions::Type p_func) {
 			return 2;
 	}
 	return 0;
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 10);
 }
 
 bool BuiltinFunctions::can_const_fold(Type p_func) {
@@ -65,24 +67,46 @@ bool BuiltinFunctions::can_const_fold(Type p_func) {
 		default:
 			return true;
 	}
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 10);
+}
+
+bool BuiltinFunctions::is_compiletime(Type p_func) {
+	switch (p_func) {
+		case __ASSERT:
+		case __FUNC:
+		case __LINE:
+		case __FILE:
+			return true;
+		default:
+			return false;
+	}
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 10);
 }
 
 // TODO: change this to return r_ret for consistancy.
 void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) {
 	switch (p_func) {
+
+		case Type::__ASSERT:
+		case Type::__FUNC:
+		case Type::__LINE:
+		case Type::__FILE:
+			THROW_ERROR(Error::INTERNAL_BUG, "the compile time func should be called by the analyzer.");
+
 		case Type::PRINT: {
 			for (int i = 0; i < (int)p_args.size(); i++) {
 				printf("%s", p_args[i].operator String().c_str());
 			}
 			printf("\n");
 		} break;
+
 		case Type::INPUT: {
 			// Not safe to use scanf() possibly lead to buffer overflow.
 			String input;
 			std::cin >> input;
 			r_ret = input;
 		} break;
+
 		case Type::MATH_MAX: {
 			if (p_args.size() <= 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at least 2 arguments.");
 			var min = p_args[0];
@@ -93,6 +117,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 			}
 			r_ret = min;
 		} break;
+
 		case Type::MATH_MIN: {
 			if (p_args.size() <= 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at least 2 arguments.");
 			var max = p_args[0];
@@ -103,6 +128,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 			}
 			r_ret = max;
 		} break;
+
 		case Type::MATH_POW: {
 			if (p_args.size() != 2) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected exactly 2 arguments.");
 			if (p_args[0].get_type() != var::INT && p_args[1].get_type() != var::FLOAT)
@@ -113,7 +139,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) 
 		} break;
 
 	}
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 10);
 }
 
 }

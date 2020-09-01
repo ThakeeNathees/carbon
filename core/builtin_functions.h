@@ -35,6 +35,12 @@ public:
 	enum Type {
 		UNKNOWN,
 
+		// __compiletime_functions.
+		__ASSERT,
+		__FUNC,
+		__LINE,
+		__FILE,
+
 		PRINT,
 		INPUT,
 
@@ -50,8 +56,8 @@ public:
 	static Type get_func_type(const String& p_func); // returns UNKNOWN if not valid 
 	static int get_arg_count(Type p_func); // returns -1 if variadic.
 	static bool can_const_fold(Type p_func);
+	static bool is_compiletime(Type p_func);
 	static void call(Type p_func, const stdvec<var>& p_args, var& r_ret);
-
 
 private:
 	static stdmap<Type, String> _func_list;

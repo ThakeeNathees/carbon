@@ -302,17 +302,20 @@ MISSED_ENUM_CHECK(Parser::ControlFlowNode::_CF_MAX_, 7);
 
 
 stdmap<BuiltinFunctions::Type, String> BuiltinFunctions::_func_list = {
-	//{ "", BuiltinFunctions::UNKNOWN },
-	//{ "", BuiltinFunctions::_FUNC_MAX_ },
 
-	{ BuiltinFunctions::PRINT,    "print" },
-	{ BuiltinFunctions::INPUT,    "input" },
-	{ BuiltinFunctions::MATH_MIN, "min"   },
-	{ BuiltinFunctions::MATH_MAX, "max"   },
-	{ BuiltinFunctions::MATH_POW, "pow"   },
+	{ BuiltinFunctions::__ASSERT,  "__assert" },
+	{ BuiltinFunctions::__FUNC,    "__func"   },
+	{ BuiltinFunctions::__LINE,    "__line"   },
+	{ BuiltinFunctions::__FILE,    "__file"   },
+
+	{ BuiltinFunctions::PRINT,     "print"    },
+	{ BuiltinFunctions::INPUT,     "input"    },
+	{ BuiltinFunctions::MATH_MIN,  "min"      },
+	{ BuiltinFunctions::MATH_MAX,  "max"      },
+	{ BuiltinFunctions::MATH_POW,  "pow"      },
 
 };
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 10);
 
 stdmap<BuiltinTypes::Type, String> BuiltinTypes::_type_list = {
 	//{ "", BuiltinTypes::UNKNOWN    },

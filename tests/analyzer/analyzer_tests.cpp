@@ -1,17 +1,6 @@
 
 #include "tests/carbon_tests.h"
 
-#define CHECK_THROWS_VARH__ANALYZE(m_type, m_source)            \
-do {												            \
-	parser->parse(m_source, NO_PATH);				            \
-	CHECK_THROWS_VARH_ERR(m_type, analyzer.analyze(parser));    \
-} while(false)
-
-#define CHECK_THROWS_CARBON__ANALYZE(m_type, m_source)          \
-do {												            \
-	parser->parse(m_source, NO_PATH);				            \
-	CHECK_THROWS_CARBON_ERR(m_type, analyzer.analyze(parser));  \
-} while(false)
 
 #define CHECK_NOTHROW__ANALYZE(m_source)                       \
 do {														   \
@@ -22,24 +11,6 @@ do {														   \
 TEST_CASE("[parser_tests]:analyzer_test") {
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
-
-	CHECK_THROWS_VARH__ANALYZE(VarError::OPERATOR_NOT_SUPPORTED, "var x = 1 + \"1\";");
-	CHECK_THROWS_VARH__ANALYZE(VarError::OPERATOR_NOT_SUPPORTED, "var x = 1 / \"1\";");
-	CHECK_THROWS_VARH__ANALYZE(VarError::OPERATOR_NOT_SUPPORTED, "var x = 1 / \"1\";");
-	CHECK_THROWS_VARH__ANALYZE(VarError::ZERO_DIVISION, "var x = 1 / 0;");
-	CHECK_THROWS_VARH__ANALYZE(VarError::ZERO_DIVISION, "var x = 1 / 0.00;");
-
-	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_TYPE, "const C = Array();");
-	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_TYPE, "enum { A = 3.14 };");
-
-	CHECK_THROWS_CARBON__ANALYZE(Error::NOT_DEFINED, "const C = identifier;");
-	CHECK_THROWS_CARBON__ANALYZE(Error::NOT_DEFINED, "var v = identifier;");
-	CHECK_THROWS_CARBON__ANALYZE(Error::NOT_DEFINED, "enum { VAL = identifier, }");
-	CHECK_THROWS_CARBON__ANALYZE(Error::NOT_DEFINED, "func fn() { var x = identifier; }");
-	// TODO: implement fix the error types, may need to implement more types.
-	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_TYPE, "class C1 : C2 {} class C2 : C1 {}");
-	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_TYPE, "const C1 = C2; const C2 = C1;");
-
 
 	// to test if they are cleaned and optimized.
 	CHECK_NOTHROW__ANALYZE("func fn(arg) { \"literal\"; arg; Array(1, 2); }");
@@ -61,11 +32,21 @@ TEST_CASE("[parser_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3].append(42)[-1];");
 	CHECK_NOTHROW__ANALYZE("const C = [1, [2, 3]].pop()[-1];");
 
-	// mapped index
+	// mapped index.
 	CHECK_NOTHROW__ANALYZE("const C = \"string\"[0];");
 	CHECK_NOTHROW__ANALYZE("const C = \"string\"[-1];");
 	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3][0];");
+	CHECK_NOTHROW__ANALYZE("const C = {\"key\":\"value\"}[\"key\"];");
 
+	// compiletime functions.
+	CHECK_NOTHROW__ANALYZE("__assert(true);");
+	CHECK_NOTHROW__ANALYZE("__assert(!false);");
+	CHECK_NOTHROW__ANALYZE("__assert(__line() == 1);");
+	CHECK_NOTHROW__ANALYZE("__assert(__file() == \"" NO_PATH "\");");
+	CHECK_NOTHROW__ANALYZE("func fn() { __assert(__func() == \"fn\"); }");
+	CHECK_NOTHROW__ANALYZE("class Aclass { func fn() { __assert(__func() == \"Aclass.fn\"); } }");
+	CHECK_NOTHROW__ANALYZE("enum E { V = 1 } __assert(E.V == 1);");
+	CHECK_NOTHROW__ANALYZE("const C = __file();");
 
 	// indexing reduced at compile time.
 	CHECK_NOTHROW__ANALYZE("enum E { V = 42 } const C = E.V;");
@@ -73,6 +54,9 @@ TEST_CASE("[parser_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = C, V2 = 42, V3 = 1 } const C = E.V2 + E.V3;");
 	CHECK_NOTHROW__ANALYZE("class Name { enum E { V = 42 } } const C = Name.E.V;");
 	CHECK_NOTHROW__ANALYZE("class Name { enum E { V = C } } const C = 42;");
+
+	CHECK_NOTHROW__ANALYZE("enum E {V = 42} var arr  = [ E.V ];");
+	CHECK_NOTHROW__ANALYZE("enum E {V = 42} var dict = { \"E.V\":E.V };");
 
 	CHECK_NOTHROW__ANALYZE("class ClassName { enum E { V = 42 } func fn(arg) { const C = this.E.V; } }");
 	CHECK_NOTHROW__ANALYZE(R"(
@@ -86,4 +70,14 @@ TEST_CASE("[parser_tests]:analyzer_test") {
 		}
 	)");
 	
+	// switch case.
+	CHECK_NOTHROW__ANALYZE(R"(
+		func fn(arg) {
+			switch (arg) {
+				case "str1".hash(): break;
+				case "str2".hash(): break;
+				default: break;
+			}
+		}
+	)");
 }

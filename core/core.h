@@ -129,8 +129,7 @@ do {                                                                            
 #define ASSERT(m_cond)                                                                                       \
 	do {                                                                                                     \
 		if (!(m_cond)) {                                                                                     \
-			printf("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond));  \
-			throw Error(Error::INTERNAL_BUG);                                                                \
+			THROW_ERROR(Error::INTERNAL_BUG, String::format("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond)));  \
 		}                                                                                                    \
 	} while (false)
 
@@ -170,6 +169,10 @@ do {                                                                            
 
 namespace carbon {
 typedef char byte_t;
+
+template<typename T, typename... Targs>
+stdvec<T> make_stdvec(Targs... p_args) { return { p_args... }; }
+
 }
 
 // for windows dll define CARBON_DLL, CARBON_DLL_EXPORT

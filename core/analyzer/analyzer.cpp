@@ -108,6 +108,12 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 	parser->parser_context.current_class = nullptr;
 	parser->parser_context.current_enum = nullptr;
 
+	// call compile time functions.
+	_resolve_compiletime_funcs(file_node->compiletime_functions);
+	for (size_t i = 0; i < file_node->classes.size(); i++) {
+		_resolve_compiletime_funcs(file_node->classes[i]->compiletime_functions);
+	}
+
 	// File/class level variables.
 	for (size_t i = 0; i < file_node->vars.size(); i++) {
 		if (file_node->vars[i]->assignment != nullptr) {
@@ -141,6 +147,47 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 	}
 	parser->parser_context.current_class = nullptr;
 	parser->parser_context.current_func = nullptr;
+}
+
+var Analyzer::_call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var>& args) {
+	switch (p_func->func) {
+		case BuiltinFunctions::__ASSERT: {
+			if (args.size() != 1) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "Expected exactly 1 argument.", p_func->pos);
+			if (!args[0].operator bool()) THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "assertion failed.", p_func->pos);
+		} break;
+		case BuiltinFunctions::__FUNC: {
+			if (!parser->parser_context.current_func) THROW_ANALYZER_ERROR(Error::SYNTAX_ERROR, "__func() must be called inside a function", p_func->pos);
+			if (parser->parser_context.current_class) return parser->parser_context.current_class->name + "." + parser->parser_context.current_func->name;
+			else  return parser->parser_context.current_func->name;
+		} break;
+		case BuiltinFunctions::__LINE: {
+			return p_func->pos.x;
+		} break;
+		case BuiltinFunctions::__FILE: {
+			return parser->file_node->path;
+		} break;
+		default:
+			ASSERT(false);
+	}
+	return var();
+}
+
+void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::OperatorNode>>& p_funcs) {
+	for (int i = 0; i < (int)p_funcs.size(); i++) {
+		ASSERT(p_funcs[i]->op_type == Parser::OperatorNode::OP_CALL);
+		ptr<Parser::OperatorNode> op = p_funcs[i];
+		ASSERT(op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION);
+		Parser::BuiltinFunctionNode* bf = ptrcast<Parser::BuiltinFunctionNode>(op->args[0]).get();
+		stdvec<var> args;
+		for (int j = 1; j < (int)op->args.size(); j++) {
+			_reduce_expression(op->args[j]);
+			if (op->args[j]->type != Parser::Node::Type::CONST_VALUE) {
+				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->args[j]->pos);
+			}
+			args.push_back(ptrcast<Parser::ConstValueNode>(op->args[j])->value);
+		}
+		_call_compiletime_func(bf, args);
+	}
 }
 
 void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
@@ -415,32 +462,72 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 
 		case Parser::Node::Type::MAP: {
 			ptr<Parser::MapNode> map = ptrcast<Parser::MapNode>(p_expr);
+			bool all_const = true;
 			for (int i = 0; i < (int)map->elements.size(); i++) {
 				_reduce_expression(map->elements[i].key);
-				// TODO: key should be hashable.
+				// TODO: if key is const value and two keys are the same throw error.
+				if (map->elements[i].key->type == Parser::Node::Type::CONST_VALUE) {
+					var& key_v = ptrcast<Parser::ConstValueNode>(map->elements[i].key)->value;
+
+					switch (key_v.get_type()) { // TODO: implement is_hashable() in var. what if null as key?
+						case var::BOOL:
+						case var::INT:
+						case var::FLOAT:
+						case var::STRING:
+						case var::VECT2F:
+						case var::VECT2I:
+						case var::VECT3F:
+						case var::VECT3I:
+							break;
+						default: //_NULL, ARRAY, MAP, OBJECT:
+							THROW_ANALYZER_ERROR(Error::INVALID_TYPE, String::format("unhasnable type %s used as map key", key_v.get_type_name().c_str()), map->pos);
+					}
+				}
 				_reduce_expression(map->elements[i].value);
+
+				if (map->elements[i].key->type != Parser::Node::Type::CONST_VALUE || map->elements[i].value->type != Parser::Node::Type::CONST_VALUE) {
+					all_const = false;
+				}
 			}
-			// TODO: if all const -> do like arr.
+			if (all_const) {
+				Map map_value;
+				for (int i = 0; i < (int)map->elements.size(); i++) {
+					var& _key = ptrcast<Parser::ConstValueNode>(map->elements[i].key)->value;
+					var& _val = ptrcast<Parser::ConstValueNode>(map->elements[i].value)->value;
+					map_value[_key] = _val;
+				}
+				ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(map_value);
+				cv->pos = p_expr->pos; p_expr = cv;
+			}
 		} break;
 
 		case Parser::Node::Type::OPERATOR: {
 			ptr<Parser::OperatorNode> op = ptrcast<Parser::OperatorNode>(p_expr);
 
+			// TODO: instead of checking operator type and casting everywhere, implmemnt IndexingNode, CallNode, ...
+
 			bool all_const = true;
-			if (op->op_type != Parser::OperatorNode::OP_INDEX && op->op_type != Parser::OperatorNode::OP_CALL) {
-				for (int i = 0; i < (int)op->args.size(); i++) {
-					if (i == 0 && (op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION || op->args[0]->type == Parser::Node::Type::BUILTIN_TYPE)) {
-						// _don't_reduce_expression();
-						continue;
-					} else {
-						_reduce_expression(op->args[i]);
+			for (int i = 0; i < (int)op->args.size(); i++) {
+				if (i == 0 && (op->op_type == Parser::OperatorNode::OP_CALL) && (op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION || op->args[0]->type == Parser::Node::Type::BUILTIN_TYPE)) {
+					// _don't_reduce_expression__and_could_be_all_const();
+					continue;
+				} else {
+					// don't_reduce();
+					if (i != 0 && op->op_type == Parser::OperatorNode::OP_INDEX) continue;
+					if (i == 1 && op->op_type == Parser::OperatorNode::OP_CALL) {
+						if (op->args[0]->type != Parser::Node::Type::BUILTIN_FUNCTION && op->args[0]->type != Parser::Node::Type::BUILTIN_TYPE) {
+							// args[0] : call on identifier, const_value, ... if UNKNOWN compiler is not sure if it's called on self or static func.
+							// args[1] : method name -> ignore here and reduce on base.
+							// args[2...] : method arguments.
+							continue;
+						}
 					}
-					if (op->args[i]->type != Parser::Node::Type::CONST_VALUE) {
-						all_const = false;
-					}
+					
+					_reduce_expression(op->args[i]);
 				}
-			} else {
-				_reduce_expression(op->args[0]);
+				if (op->args[i]->type != Parser::Node::Type::CONST_VALUE) {
+					all_const = false;
+				}
 			}
 
 #define GET_ARGS(m_initial_arg)														  \
@@ -451,7 +538,6 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 
 #define SET_EXPR_CONST_NODE(m_var)                                                    \
 do {                                                                                  \
-	GET_ARGS(0);                                                                      \
 	ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(m_var);         \
 	cv->pos = op->pos;                                                                \
 	p_expr = cv;                                                                      \
@@ -459,22 +545,32 @@ do {                                                                            
 
 			switch (op->op_type) {
 				case Parser::OperatorNode::OpType::OP_CALL: {
+
+					if (op->args[0]->type == Parser::Node::Type::IDENTIFIER) {
+						ASSERT(false && "TODO: resolve op->args[1] <-- method name.");
+					}
+
 					// reduce builtin function
 					if ((op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION) && all_const) {
 						ptr<Parser::BuiltinFunctionNode> bf = ptrcast<Parser::BuiltinFunctionNode>(op->args[0]);
 						if (BuiltinFunctions::can_const_fold(bf->func)) {
-							try {
-								var ret;
-								GET_ARGS(1);
-								BuiltinFunctions::call(bf->func, args, ret);
+							GET_ARGS(1);
+							if (BuiltinFunctions::is_compiletime(bf->func)) {
+								var ret = _call_compiletime_func(bf.get(), args);
 								SET_EXPR_CONST_NODE(ret);
-							} catch (Error& err) {
-								throw err
-									.set_file(file_node->path)
-									.set_line(file_node->source.get_line(op->pos.x))
-									.set_pos(op->pos)
-									.set_err_len((uint32_t)String(BuiltinFunctions::get_func_name(bf->func)).size())
-								;
+							} else {
+								try {
+									var ret;
+									BuiltinFunctions::call(bf->func, args, ret);
+									SET_EXPR_CONST_NODE(ret);
+								} catch (Error& err) {
+									throw err
+										.set_file(file_node->path)
+										.set_line(file_node->source.get_line(op->pos.x))
+										.set_pos(op->pos)
+										.set_err_len((uint32_t)String(BuiltinFunctions::get_func_name(bf->func)).size())
+									;
+								}
 							}
 						}
 					}
@@ -502,14 +598,10 @@ do {                                                                            
 							GET_ARGS(2); // 0 : const value, 1: name, ... args.
 							var ret = ptrcast<Parser::ConstValueNode>(op->args[0])->value.call_method(ptrcast<Parser::IdentifierNode>(op->args[1])->name, args);
 							SET_EXPR_CONST_NODE(ret);
-						} catch (VarError& err) {
-							ASSERT(false); // TODO;
+						} catch (.../*VarError& err*/) {
+							ASSERT(false && "TODO: catch and throw var error as cb error");
 						}
 					}
-
-					// TODO: if base type is
-					//		this       : it could be removed, super?
-					//		identifier : maybe some optimizations possible.
 
 				} break;
 
@@ -581,7 +673,7 @@ do {                                                                            
 									} catch (VarError& err) {
 										THROW_ANALYZER_ERROR(Error::INVALID_GET_INDEX, err.what(), id->pos);
 									}
-									ASSERT(false); // TODO: there isn't any contant value currently support attribute access and most probably in the future.
+									ASSERT(false && "there isn't any contant value currently support attribute access and most probably in the future");
 								} break;
 
 								case Parser::IdentifierNode::REF_ENUM_NAME: {
@@ -657,14 +749,14 @@ do {                                                                            
 								} break;
 
 								case Parser::IdentifierNode::REF_NATIVE_CLASS: {
-									// TODO:
+									ASSERT(false && "TODO:");
 								} break;
 
 								case Parser::IdentifierNode::REF_CARBON_FUNCTION:
 									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED, "function object doesn't support attribute access.", id->pos);
 
 								case Parser::IdentifierNode::REF_FILE: { // TODO: change the name.
-									// TODO:
+									ASSERT(false && "TODO:");
 								} break;
 
 								// TODO: REF binary version of everything above.
@@ -685,9 +777,8 @@ do {                                                                            
 							GET_ARGS(1);
 							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->value.__get_mapped(args[0]));
 							cv->pos = base->pos; p_expr = cv;
-						} catch (VarError& err) {
-							ASSERT(false); // throw Error;
-							throw err; // for now, (use for compiler warning).
+						} catch (.../*VarError& err*/) {
+							ASSERT(false && "TODO: var error to carbon error");
 						}
 					}
 				} break;
@@ -833,7 +924,6 @@ do {                                                                            
 		default: {
 			ASSERT(false); // ???
 		}
-
 	}
 }
 
@@ -853,10 +943,6 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode*
 		}
 	};
 	ScopeDestruct destruct = ScopeDestruct(&parser->parser_context, p_parent_block);
-
-	// to remove the unused statements like just an identifier, literals,
-	// constants inside a block (could be removed safely), this, self, etc.
-	//stdvec<int> remove_statements;
 
 	for (int i = 0; i < (int)p_block->statements.size(); i++) {
 		switch (p_block->statements[i]->type) {
@@ -981,6 +1067,23 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode*
 					} break;
 				}
 			} break;
+		} // statement switch ends.
+
+	}
+
+	for (int i = 0; i < (int)p_block->statements.size(); i++) {
+		// remove all local constant statments. no need anymore.
+		if (p_block->statements[i]->type == Parser::Node::Type::CONST)
+			p_block->statements.erase(p_block->statements.begin() + i--);
+
+		// remove all compile time functions.
+		else if (p_block->statements[i]->type == Parser::Node::Type::OPERATOR) {
+			Parser::OperatorNode* op = ptrcast<Parser::OperatorNode>(p_block->statements[i]).get();
+			if (op->op_type == Parser::OperatorNode::OP_CALL && op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION) {
+				if (BuiltinFunctions::is_compiletime(ptrcast<Parser::BuiltinFunctionNode>(op->args[0])->func)) {
+					p_block->statements.erase(p_block->statements.begin() + i--);
+				}
+			}
 		}
 	}
 }

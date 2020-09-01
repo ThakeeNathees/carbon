@@ -123,6 +123,7 @@ public:
 		ptr<EnumNode> unnamed_enum = nullptr;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<FunctionNode>> functions;
+		stdvec<ptr<OperatorNode>> compiletime_functions;
 
 		FileNode() {
 			type = Type::FILE;
@@ -151,6 +152,8 @@ public:
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<FunctionNode>> functions;
+
+		stdvec<ptr<OperatorNode>> compiletime_functions;
 		// TODO: FileNode* constructor.
 		ClassNode() {
 			type = Type::CLASS;
@@ -293,6 +296,8 @@ public:
 		struct Pair {
 			ptr<Node> key;
 			ptr<Node> value;
+			Pair() {}
+			Pair(ptr<Node>& p_key, ptr<Node>& p_value) { key = p_key; value = p_value; }
 		};
 		stdvec<Pair> elements;
 		MapNode() {
