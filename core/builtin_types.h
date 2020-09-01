@@ -99,7 +99,7 @@ public:
 			case ARRAY: {
 				Array ret;
 				for (size_t i = 0; i < p_args.size(); i++) {
-					ret.append(p_args[i]);
+					ret.push_back(p_args[i]);
 				}
 				return ret;
 			}

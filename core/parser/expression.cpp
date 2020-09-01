@@ -54,6 +54,9 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			// if super is inside class function, it calls the same function in it's base.
 			if (parser_context.current_class == nullptr || (parser_context.current_func))
 				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Keyword \"super\" can only be used in class function.", Vect2i());
+			if (parser_context.current_class->base_type == ClassNode::NO_BASE) {
+				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Invalid use of \"super\". Can only used inside classes with a base type.", Vect2i());
+			}
 			expr = new_node<SuperNode>();
 
 		} else if (tk->type == Token::VALUE_FLOAT || tk->type == Token::VALUE_INT || tk->type == Token::VALUE_STRING || tk->type == Token::VALUE_BOOL) {
@@ -105,8 +108,10 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			id->declared_block = parser_context.current_block;
 
 			expr = id;
-		// } else if (tk->type == Token::BUILTIN_TYPE) { // TODO: String.format(...);
-		} else if (tk->type == Token::BRACKET_LCUR) {
+		} else if (tk->type == Token::BUILTIN_TYPE) {
+			// TODO: String.format(...);
+			ASSERT(false);
+		} else if (tk->type == Token::BRACKET_LSQ) {
 			// No literal for dictionary.
 			ptr<ArrayNode> arr = new_node<ArrayNode>();
 			bool done = false;
@@ -125,8 +130,8 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 						}
 						comma_valid = false;
 						break;
-					case Token::BRACKET_RCUR:
-						tk = &tokenizer->next(); // eat '}'
+					case Token::BRACKET_RSQ:
+						tk = &tokenizer->next(); // eat ']'
 						done = true;
 						break;
 					default:
@@ -162,7 +167,8 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 					call->args.push_back(expr);
 					call->args.push_back(new_node<IdentifierNode>(tk->identifier));
 					tk = &tokenizer->next();
-					call->args = _parse_arguments(p_parent);
+					stdvec<ptr<Node>> args = _parse_arguments(p_parent);
+					for (int i = 0; i < (int)args.size(); i++) call->args.push_back(args[i]);
 
 					expr = call;
 

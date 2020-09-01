@@ -160,6 +160,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 
 	class_node->name = tk->identifier;
 
+	// Inheritance.
 	tk = &tokenizer->next();
 	if (tk->type == Token::SYM_COLLON) {
 
@@ -181,7 +182,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 		} else {
 			if (class_node->base_class == class_node->name) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "", tokenizer->peek(-2, true).get_pos());
 			class_node->base_type = ClassNode::BASE_LOCAL;
-		}
+		} // TODO: what if inherits a builtin type like Array, Map, String, ...
 	}
 
 	if (tk->type != Token::BRACKET_LCUR) THROW_UNEXP_TOKEN("symbol \"{\"");

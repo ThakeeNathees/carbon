@@ -59,7 +59,6 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 	parser->parser_context.current_block = nullptr;
 	parser->parser_context.current_enum = nullptr;
 
-	// TODO: resolve inheritance.
 	for (int i = 0; i < (int)file_node->classes.size(); i++) {
 		_resolve_inheritance(file_node->classes[i].get());
 	}
@@ -397,18 +396,31 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 
 		case Parser::Node::Type::ARRAY: {
 			ptr<Parser::ArrayNode> arr = ptrcast<Parser::ArrayNode>(p_expr);
+			bool all_const = true;
 			for (int i = 0; i < (int)arr->elements.size(); i++) {
 				_reduce_expression(arr->elements[i]);
+				if (arr->elements[i]->type != Parser::Node::Type::CONST_VALUE) {
+					all_const = false;
+				}
+			}
+			if (all_const) {
+				Array arr_value;
+				for (int i = 0; i < (int)arr->elements.size(); i++) {
+					arr_value.push_back(ptrcast<Parser::ConstValueNode>(arr->elements[i])->value);
+				}
+				ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(arr_value);
+				cv->pos = p_expr->pos; p_expr = cv;
 			}
 		} break;
 
-		case Parser::Node::Type::MAP: { // TODO: no literal for map.
+		case Parser::Node::Type::MAP: {
 			ptr<Parser::MapNode> map = ptrcast<Parser::MapNode>(p_expr);
 			for (int i = 0; i < (int)map->elements.size(); i++) {
 				_reduce_expression(map->elements[i].key);
 				// TODO: key should be hashable.
 				_reduce_expression(map->elements[i].value);
 			}
+			// TODO: if all const -> do like arr.
 		} break;
 
 		case Parser::Node::Type::OPERATOR: {
@@ -431,26 +443,31 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				_reduce_expression(op->args[0]);
 			}
 
-			stdvec<var> args;
-			int initial_argument = (op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION || op->args[0]->type == Parser::Node::Type::BUILTIN_TYPE) ? 1 : 0;
-			for (int i = initial_argument; i < (int)op->args.size(); i++) {
-				args.push_back(ptrcast<Parser::ConstValueNode>(op->args[i])->value);
-			}
-#define SET_EXPR_CONST_NODE(m_var)                                                                           \
-do {																										 \
-	ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(m_var);                                \
-	cv->pos = op->pos;										                                                 \
-	p_expr = cv;																							 \
+#define GET_ARGS(m_initial_arg)														  \
+	stdvec<var> args;																  \
+	for (int i = m_initial_arg; i < (int)op->args.size(); i++) {					  \
+		args.push_back(ptrcast<Parser::ConstValueNode>(op->args[i])->value);		  \
+	}
+
+#define SET_EXPR_CONST_NODE(m_var)                                                    \
+do {                                                                                  \
+	GET_ARGS(0);                                                                      \
+	ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(m_var);         \
+	cv->pos = op->pos;                                                                \
+	p_expr = cv;                                                                      \
 } while (false)
+
 			switch (op->op_type) {
 				case Parser::OperatorNode::OpType::OP_CALL: {
 					// reduce builtin function
 					if ((op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION) && all_const) {
 						ptr<Parser::BuiltinFunctionNode> bf = ptrcast<Parser::BuiltinFunctionNode>(op->args[0]);
 						if (BuiltinFunctions::can_const_fold(bf->func)) {
-							var ret;
 							try {
+								var ret;
+								GET_ARGS(1);
 								BuiltinFunctions::call(bf->func, args, ret);
+								SET_EXPR_CONST_NODE(ret);
 							} catch (Error& err) {
 								throw err
 									.set_file(file_node->path)
@@ -459,15 +476,15 @@ do {																										 \
 									.set_err_len((uint32_t)String(BuiltinFunctions::get_func_name(bf->func)).size())
 								;
 							}
-							SET_EXPR_CONST_NODE(ret);
 						}
 					}
 					// reduce builtin type construction
 					if ((op->args[0]->type == Parser::Node::Type::BUILTIN_TYPE) && all_const) {
 						ptr<Parser::BuiltinTypeNode> bt = ptrcast<Parser::BuiltinTypeNode>(op->args[0]);
-						var ret;
 						try {
-							ret = BuiltinTypes::construct(bt->builtin_type, args);
+							GET_ARGS(1);
+							var ret = BuiltinTypes::construct(bt->builtin_type, args);
+							SET_EXPR_CONST_NODE(ret);
 						} catch (Error& err) {
 							throw err
 								.set_file(file_node->path)
@@ -476,11 +493,22 @@ do {																										 \
 								.set_err_len((uint32_t)String(BuiltinTypes::get_type_name(bt->builtin_type)).size())
 							;
 						}
-						SET_EXPR_CONST_NODE(ret);
+					}
+
+					if (op->args[0]->type == Parser::Node::Type::CONST_VALUE && all_const) {
+						try {
+							ASSERT(op->args.size() >= 2);
+							ASSERT(op->args[1]->type == Parser::Node::Type::IDENTIFIER);
+							GET_ARGS(2); // 0 : const value, 1: name, ... args.
+							var ret = ptrcast<Parser::ConstValueNode>(op->args[0])->value.call_method(ptrcast<Parser::IdentifierNode>(op->args[1])->name, args);
+							SET_EXPR_CONST_NODE(ret);
+						} catch (VarError& err) {
+							ASSERT(false); // TODO;
+						}
 					}
 
 					// TODO: if base type is
-					//		this: it could be removed, super?
+					//		this       : it could be removed, super?
 					//		identifier : maybe some optimizations possible.
 
 				} break;
@@ -491,27 +519,49 @@ do {																										 \
 
 					ptr<Parser::IdentifierNode> id = ptrcast<Parser::IdentifierNode>(op->args[1]);
 
-					// TODO:
 					switch (op->args[0]->type) {
+						case Parser::Node::Type::BUILTIN_TYPE: // used in: Vect2.ZERO;
+							break;
+						case Parser::Node::Type::CONST_VALUE: {
+							Parser::ConstValueNode* base = ptrcast<Parser::ConstValueNode>(op->args[0]).get();
+							try {
+								ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->value.get_member(id->name));
+								cv->pos = id->pos; p_expr = cv;
+							} catch (VarError& err) {
+								if (err.get_type() == VarError::NULL_POINTER) {
+									THROW_ANALYZER_ERROR(Error::NULL_POINTER, "", op->pos);
+								} else if (err.get_type() == VarError::INVALID_GET_NAME) {
+									THROW_ANALYZER_ERROR(Error::INVALID_GET_INDEX, String::format("Name \"%s\" is not exists on base %s", id->name.c_str(), base->value.get_type_name().c_str()), op->pos);
+								} else {
+									ASSERT(false);
+								}
+							}
+						} break;
 						case Parser::Node::Type::THIS:
-							// need to implement a function which to search from base. and base is current_class here.
-							// TODO: check in constants.
-							// TODO: check in enum name, unnamed enums.
-							// TODO: check in variables, static variables.
-							// TODO: also check in functions, static function for better error message.
-							// set expr to identifier node with the name of `base + "." + "attrib"`
-							break;
 						case Parser::Node::Type::SUPER:
-							// Same as above.
-							break;
-						case Parser::Node::Type::BUILTIN_TYPE:
-							// Vect2.ZERO;
-							break;
-						case Parser::Node::Type::CONST_VALUE:
-							// TODO: should be invalid (no compile time constants support attribute access).
-							break;
 						case Parser::Node::Type::IDENTIFIER: {
-							Parser::IdentifierNode* base = ptrcast<Parser::IdentifierNode>(op->args[0]).get();
+
+							Parser::IdentifierNode* base;
+							ptr<Parser::IdentifierNode> _keep_alive;
+
+							if (op->args[0]->type == Parser::Node::Type::THIS) {
+								_keep_alive = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->name);
+								_keep_alive->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
+								_keep_alive->_class = parser->parser_context.current_class;
+								base = _keep_alive.get();
+							} else if (op->args[0]->type == Parser::Node::Type::SUPER) {
+								if (parser->parser_context.current_class->base_type == Parser::ClassNode::BASE_LOCAL) {
+									_keep_alive = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->base_local->name);
+									_keep_alive->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
+									_keep_alive->_class = parser->parser_context.current_class->base_local;
+									base = _keep_alive.get();
+								} else if (parser->parser_context.current_class->base_type == Parser::ClassNode::BASE_EXTERN) {
+									ASSERT(false); // TODO:
+								}
+							} else {
+								base = ptrcast<Parser::IdentifierNode>(op->args[0]).get();
+							}
+
 							switch (base->ref) {
 								case Parser::IdentifierNode::REF_UNKNOWN: {
 									THROW_ERROR(Error::INTERNAL_BUG, "base can't be unknown.");
@@ -605,15 +655,19 @@ do {																										 \
 										id->name.c_str(), base->name.c_str()), id->pos);
 
 								} break;
+
 								case Parser::IdentifierNode::REF_NATIVE_CLASS: {
 									// TODO:
 								} break;
+
 								case Parser::IdentifierNode::REF_CARBON_FUNCTION:
 									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED, "function object doesn't support attribute access.", id->pos);
-								case Parser::IdentifierNode::REF_FILE: {
+
+								case Parser::IdentifierNode::REF_FILE: { // TODO: change the name.
 									// TODO:
 								} break;
 
+								// TODO: REF binary version of everything above.
 							}
 						}
 						default:
@@ -621,8 +675,21 @@ do {																										 \
 							// RUNTIME.
 					}
 				} break;
+
 				case Parser::OperatorNode::OpType::OP_INDEX_MAPPED: {
-					// Can't reduce at compile time.
+					if (op->args[0]->type == Parser::Node::Type::CONST_VALUE) {
+
+						Parser::ConstValueNode* base = ptrcast<Parser::ConstValueNode>(op->args[0]).get();
+						ASSERT(base->value.get_type() != var::OBJECT); // Objects can't be const value.
+						try {
+							GET_ARGS(1);
+							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->value.__get_mapped(args[0]));
+							cv->pos = base->pos; p_expr = cv;
+						} catch (VarError& err) {
+							ASSERT(false); // throw Error;
+							throw err; // for now, (use for compiler warning).
+						}
+					}
 				} break;
 
 			/***************** BINARY AND UNARY OPERATORS  *****************/
@@ -669,91 +736,92 @@ do {																										 \
 						THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "can't assign anything to map literal", op->args[0]->pos);
 					}
 				} break;
-
-				case Parser::OperatorNode::OpType::OP_EQEQ:
-					SET_EXPR_CONST_NODE(args[0] == args[1]);
-					break;
-				case Parser::OperatorNode::OpType::OP_PLUS:
-					SET_EXPR_CONST_NODE(args[0] + args[1]);
-					break;
-				case Parser::OperatorNode::OpType::OP_MINUS:
-					SET_EXPR_CONST_NODE(args[0] - args[1]);
-					break;
-				case Parser::OperatorNode::OpType::OP_MUL:
-					SET_EXPR_CONST_NODE(args[0] * args[1]);
-					break;
-				case Parser::OperatorNode::OpType::OP_DIV:
-					SET_EXPR_CONST_NODE(args[0] / args[1]);
-					break;
-				case Parser::OperatorNode::OpType::OP_MOD:
-					SET_EXPR_CONST_NODE(args[0] % args[1]);
-					break;
-				case Parser::OperatorNode::OpType::OP_LT:
-					SET_EXPR_CONST_NODE(args[0] < args[1]);
-					break;
-				case Parser::OperatorNode::OpType::OP_GT:
-					SET_EXPR_CONST_NODE(args[0] > args[1]);
-					break;
-				case Parser::OperatorNode::OpType::OP_AND:
-					SET_EXPR_CONST_NODE(args[0].operator bool() && args[1].operator bool());
-					break;
-				case Parser::OperatorNode::OpType::OP_OR:
-					SET_EXPR_CONST_NODE(args[0].operator bool() || args[1].operator bool());
-					break;
-				case Parser::OperatorNode::OpType::OP_NOTEQ:
-					SET_EXPR_CONST_NODE(args[0] != args[1]);
-					break;
-				case Parser::OperatorNode::OpType::OP_BIT_LSHIFT:
-					SET_EXPR_CONST_NODE(args[0].operator int64_t() << args[1].operator int64_t());
-					 break;
-				case Parser::OperatorNode::OpType::OP_BIT_RSHIFT:
-					SET_EXPR_CONST_NODE(args[0].operator int64_t() >> args[1].operator int64_t());
-					 break;
-				case Parser::OperatorNode::OpType::OP_BIT_OR:
-					SET_EXPR_CONST_NODE(args[0].operator int64_t() | args[1].operator int64_t());
-					 break;
-				case Parser::OperatorNode::OpType::OP_BIT_AND:
-					SET_EXPR_CONST_NODE(args[0].operator int64_t() & args[1].operator int64_t());
-					 break;
-				case Parser::OperatorNode::OpType::OP_BIT_XOR:
-					SET_EXPR_CONST_NODE(args[0].operator int64_t() ^ args[1].operator int64_t());
-					 break;
-
-				case Parser::OperatorNode::OpType::OP_NOT:
-					SET_EXPR_CONST_NODE(!args[0].operator bool());
-					break;
-				case Parser::OperatorNode::OpType::OP_BIT_NOT:
-					SET_EXPR_CONST_NODE(~args[0].operator int64_t());
-					break;
-				case Parser::OperatorNode::OpType::OP_POSITIVE:
-					switch (args[0].get_type()) {
-						case var::BOOL:
-						case var::INT:
-						case var::FLOAT: {
-							SET_EXPR_CONST_NODE(args[0]);
-						} break;
-						default:
-							THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
-									String::format("unary operator \"+\" not supported on %s", args[0].get_type_name()), op->pos);
-					}
-					break;
-				case Parser::OperatorNode::OpType::OP_NEGATIVE:
-					switch (args[0].get_type()) {
-						case var::BOOL:
-						case var::INT:
-							SET_EXPR_CONST_NODE(-args[0].operator int64_t());
+				default: { // Remaining binary/unary operators.
+					if (!all_const) break;
+					GET_ARGS(0);
+					switch (op->op_type) {
+						case Parser::OperatorNode::OpType::OP_EQEQ:
+							SET_EXPR_CONST_NODE(args[0] == args[1]);
 							break;
-						case var::FLOAT: 
-							SET_EXPR_CONST_NODE(-args[0].operator double());
+						case Parser::OperatorNode::OpType::OP_PLUS:
+							SET_EXPR_CONST_NODE(args[0] + args[1]);
 							break;
-						default:
-							THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
-								String::format("unary operator \"+\" not supported on %s", args[0].get_type_name()), op->pos);
-					}
-					break;
+						case Parser::OperatorNode::OpType::OP_MINUS:
+							SET_EXPR_CONST_NODE(args[0] - args[1]);
+							break;
+						case Parser::OperatorNode::OpType::OP_MUL:
+							SET_EXPR_CONST_NODE(args[0] * args[1]);
+							break;
+						case Parser::OperatorNode::OpType::OP_DIV:
+							SET_EXPR_CONST_NODE(args[0] / args[1]);
+							break;
+						case Parser::OperatorNode::OpType::OP_MOD:
+							SET_EXPR_CONST_NODE(args[0] % args[1]);
+							break;
+						case Parser::OperatorNode::OpType::OP_LT:
+							SET_EXPR_CONST_NODE(args[0] < args[1]);
+							break;
+						case Parser::OperatorNode::OpType::OP_GT:
+							SET_EXPR_CONST_NODE(args[0] > args[1]);
+							break;
+						case Parser::OperatorNode::OpType::OP_AND:
+							SET_EXPR_CONST_NODE(args[0].operator bool() && args[1].operator bool());
+							break;
+						case Parser::OperatorNode::OpType::OP_OR:
+							SET_EXPR_CONST_NODE(args[0].operator bool() || args[1].operator bool());
+							break;
+						case Parser::OperatorNode::OpType::OP_NOTEQ:
+							SET_EXPR_CONST_NODE(args[0] != args[1]);
+							break;
+						case Parser::OperatorNode::OpType::OP_BIT_LSHIFT:
+							SET_EXPR_CONST_NODE(args[0].operator int64_t() << args[1].operator int64_t());
+							break;
+						case Parser::OperatorNode::OpType::OP_BIT_RSHIFT:
+							SET_EXPR_CONST_NODE(args[0].operator int64_t() >> args[1].operator int64_t());
+							break;
+						case Parser::OperatorNode::OpType::OP_BIT_OR:
+							SET_EXPR_CONST_NODE(args[0].operator int64_t() | args[1].operator int64_t());
+							break;
+						case Parser::OperatorNode::OpType::OP_BIT_AND:
+							SET_EXPR_CONST_NODE(args[0].operator int64_t() & args[1].operator int64_t());
+							break;
+						case Parser::OperatorNode::OpType::OP_BIT_XOR:
+							SET_EXPR_CONST_NODE(args[0].operator int64_t() ^ args[1].operator int64_t());
+							break;
 
-				default: {
-					THROW_ERROR(Error::INTERNAL_BUG, "");
+						case Parser::OperatorNode::OpType::OP_NOT:
+							SET_EXPR_CONST_NODE(!args[0].operator bool());
+							break;
+						case Parser::OperatorNode::OpType::OP_BIT_NOT:
+							SET_EXPR_CONST_NODE(~args[0].operator int64_t());
+							break;
+						case Parser::OperatorNode::OpType::OP_POSITIVE:
+							switch (args[0].get_type()) {
+								case var::BOOL:
+								case var::INT:
+								case var::FLOAT: {
+									SET_EXPR_CONST_NODE(args[0]);
+								} break;
+								default:
+									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
+										String::format("unary operator \"+\" not supported on %s", args[0].get_type_name()), op->pos);
+							}
+							break;
+						case Parser::OperatorNode::OpType::OP_NEGATIVE:
+							switch (args[0].get_type()) {
+								case var::BOOL:
+								case var::INT:
+									SET_EXPR_CONST_NODE(-args[0].operator int64_t());
+									break;
+								case var::FLOAT:
+									SET_EXPR_CONST_NODE(-args[0].operator double());
+									break;
+								default:
+									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
+										String::format("unary operator \"+\" not supported on %s", args[0].get_type_name()), op->pos);
+							}
+							break;
+					}
 				}
 				MISSED_ENUM_CHECK(Parser::OperatorNode::OpType::_OP_MAX_, 36);
 			}

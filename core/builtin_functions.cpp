@@ -68,6 +68,7 @@ bool BuiltinFunctions::can_const_fold(Type p_func) {
 MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 6);
 }
 
+// TODO: change this to return r_ret for consistancy.
 void BuiltinFunctions::call(Type p_func, const stdvec<var>& p_args, var& r_ret) {
 	switch (p_func) {
 		case Type::PRINT: {
