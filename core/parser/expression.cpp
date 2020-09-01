@@ -111,8 +111,8 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 		} else if (tk->type == Token::BUILTIN_TYPE) {
 			// TODO: String.format(...);
 			ASSERT(false);
+
 		} else if (tk->type == Token::BRACKET_LSQ) {
-			// No literal for dictionary.
 			ptr<ArrayNode> arr = new_node<ArrayNode>();
 			bool done = false;
 			bool comma_valid = false;
@@ -143,6 +143,39 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 				}
 			}
 			expr = arr;
+
+		} else if (tk->type == Token::BRACKET_LCUR) {
+			ptr<MapNode> map = new_node<MapNode>();
+			bool done = false;
+			bool comma_valid = false;
+			while (!done) {
+				tk = &tokenizer->peek();
+				switch (tk->type) {
+					case Token::_EOF:
+						tk = &tokenizer->next(); // eat eof
+						THROW_UNEXP_TOKEN("");
+						break;
+					case Token::SYM_COMMA:
+						tk = &tokenizer->next(); // eat comma
+						if (!comma_valid) THROW_UNEXP_TOKEN("");
+						comma_valid = false;
+						break;
+					case Token::BRACKET_RCUR:
+						tk = &tokenizer->next(); // eat '}'
+						done = true;
+						break;
+					default:
+						if (comma_valid) THROW_UNEXP_TOKEN("symbol \",\"");
+
+						ptr<Node> key = _parse_expression(p_parent, false);
+						tk = &tokenizer->next();
+						if (tk->type != Token::SYM_COLLON) THROW_UNEXP_TOKEN("symbol \":\"");
+						ptr<Node> value = _parse_expression(p_parent, false);
+						map->elements.push_back( Parser::MapNode::Pair(key, value) );
+						comma_valid = true;
+				}
+			}
+			expr = map;
 		} else {
 			THROW_UNEXP_TOKEN("");
 		}
@@ -156,9 +189,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			if (tk->type == Token::SYM_DOT) {
 				tk = &tokenizer->next(1);
 
-				if (tk->type != Token::IDENTIFIER) {
-					THROW_UNEXP_TOKEN("");
-				}
+				if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("");
 
 				// call
 				if (tokenizer->peek().type == Token::BRACKET_LPARAN) {

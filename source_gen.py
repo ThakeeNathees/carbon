@@ -364,7 +364,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		{' '.join([ "const String& name%s,"%j for j in range(i)])} stdvec<var> default_args = {{}}) {{
 		{' '.join(["DECLARE_VAR_TYPE(vt%s, a%s);"%(j, j) for j in range(i)])}
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>({', '.join(["name%s"%j for j in range(i)])} ), make_vector<VarTypeInfo>({', '.join(["vt%s"%j for j in range(i)])}), ret, false, default_args, {i} );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>({', '.join(["name%s"%j for j in range(i)])} ), make_stdvec<VarTypeInfo>({', '.join(["vt%s"%j for j in range(i)])}), ret, false, default_args, {i} );
 	return newptr<_MethodBind_M{i}$_c$<T, R{get_args_symbol(i, True)}>>(method_name, p_class_name, {i}, m, mi);
 }}
 
@@ -382,7 +382,7 @@ ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class
 		{' '.join([ "const String& name%s,"%j for j in range(i)])} stdvec<var> default_args = {{}}) {{
 		{' '.join(["DECLARE_VAR_TYPE(vt%s, a%s);"%(j, j) for j in range(i)])}
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_vector<String>({', '.join(["name%s"%j for j in range(i)])} ), make_vector<VarTypeInfo>({', '.join(["vt%s"%j for j in range(i)])}), ret, true, default_args, {i} );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_stdvec<String>({', '.join(["name%s"%j for j in range(i)])} ), make_stdvec<VarTypeInfo>({', '.join(["vt%s"%j for j in range(i)])}), ret, true, default_args, {i} );
 	return newptr<_StaticFuncBind_F{i}<R{get_args_symbol(i, True)}>>(func_name, p_class_name, {i}, f, mi);
 }}
 
@@ -441,14 +441,14 @@ public:
 template<typename T, typename R>
 ptr<MethodBind> _bind_va_method(const char* method_name, const char* p_class_name, MVA<T, R> m) {
 	DECLARE_VAR_TYPE(ret, R);
-	ptr<MethodInfo> mi = newptr<MethodInfo>( method_name, make_vector<String>(), make_vector<VarTypeInfo>(), ret, false, var::vector(), -1);
+	ptr<MethodInfo> mi = newptr<MethodInfo>( method_name, make_stdvec<String>(), make_stdvec<VarTypeInfo>(), ret, false, make_stdvec<var>(), -1);
 	return newptr<_MethodBind_MVA<T, R>>(method_name, p_class_name, m, mi);
 }
 
 template<typename R>
 ptr<StaticFuncBind> _bind_va_static_func(const char* func_name, const char* p_class_name, FVA<R> f) {
 	DECLARE_VAR_TYPE(ret, R);
-	ptr<MethodInfo> mi = newptr<MethodInfo>( func_name, make_vector<String>(), make_vector<VarTypeInfo>(), ret, true, var::vector(), -1);
+	ptr<MethodInfo> mi = newptr<MethodInfo>( func_name, make_stdvec<String>(), make_stdvec<VarTypeInfo>(), ret, true, make_stdvec<var>(), -1);
 	return newptr<_StaticFuncBind_FVA<R>>(func_name, p_class_name, f, mi);
 }
 ''')

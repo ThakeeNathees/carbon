@@ -65,6 +65,7 @@ TEST_CASE("[parser_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("const C = \"string\"[0];");
 	CHECK_NOTHROW__ANALYZE("const C = \"string\"[-1];");
 	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3][0];");
+	CHECK_NOTHROW__ANALYZE("const C = {\"key\":\"value\"}[\"keyA\"];");
 
 
 	// indexing reduced at compile time.
@@ -73,6 +74,9 @@ TEST_CASE("[parser_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = C, V2 = 42, V3 = 1 } const C = E.V2 + E.V3;");
 	CHECK_NOTHROW__ANALYZE("class Name { enum E { V = 42 } } const C = Name.E.V;");
 	CHECK_NOTHROW__ANALYZE("class Name { enum E { V = C } } const C = 42;");
+
+	CHECK_NOTHROW__ANALYZE("enum E {V = 42} var arr  = [ E.V ];");
+	CHECK_NOTHROW__ANALYZE("enum E {V = 42} var dict = { \"E.V\":E.V };");
 
 	CHECK_NOTHROW__ANALYZE("class ClassName { enum E { V = 42 } func fn(arg) { const C = this.E.V; } }");
 	CHECK_NOTHROW__ANALYZE(R"(

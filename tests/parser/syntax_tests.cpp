@@ -10,7 +10,16 @@ TEST_CASE("[parser_tests]:syntax_test") {
 	CHECK_NOTHROW(parser.parse("var v1 = 1 + 2 * ((3 / 4) - (5 + 6));", NO_PATH));
 	CHECK_NOTHROW(parser.parse("var v1 = [1, 2, 3].append(Array(4, 5, 6));", NO_PATH));
 
-	CHECK_NOTHROW(parser.parse("const x = 1;", NO_PATH));
+	// arrays and maps.
+	CHECK_NOTHROW(parser.parse("var arr = [];", NO_PATH));
+	CHECK_NOTHROW(parser.parse("var arr = [1, \"2\", 3.14, 4,];", NO_PATH));
+	CHECK_NOTHROW(parser.parse("var arr = [1, \"2\", 3.14, 4];", NO_PATH));
+	CHECK_NOTHROW(parser.parse("var arr = [1, [], [[]], Array(Map())];", NO_PATH));
+	CHECK_NOTHROW(parser.parse("var arr = [ [\"testing\"[0]], [42].pop() ];", NO_PATH));
+	CHECK_NOTHROW(parser.parse("var dict = { \"key\":\"value\", 1:2, \"3\":Array(), };", NO_PATH));
+	CHECK_NOTHROW(parser.parse("var dict = {};", NO_PATH));
+	CHECK_NOTHROW(parser.parse("var dict = {0:{},};", NO_PATH));
+	CHECK_NOTHROW(parser.parse("var dict = {0:{ 1:2, }};", NO_PATH));
 
 	// enums.
 	CHECK_NOTHROW(parser.parse("enum { }", NO_PATH));

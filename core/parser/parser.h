@@ -293,6 +293,8 @@ public:
 		struct Pair {
 			ptr<Node> key;
 			ptr<Node> value;
+			Pair() {}
+			Pair(ptr<Node>& p_key, ptr<Node>& p_value) { key = p_key; value = p_value; }
 		};
 		stdvec<Pair> elements;
 		MapNode() {

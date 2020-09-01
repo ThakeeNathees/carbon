@@ -61,7 +61,7 @@ class Aclass : public Object {
 
 
 #define DEFVAL(m_val) m_val
-#define DEFVALUES(...) var::vector(__VA_ARGS__)
+#define DEFVALUES(...) make_stdvec<var>(__VA_ARGS__)
 #define PARAMS(...) __VA_ARGS__
 
 #define BIND_METHOD(m_name, m_method, ...)    NativeClasses::bind_data(_bind_method(m_name, get_class_name_s(), m_method, __VA_ARGS__))

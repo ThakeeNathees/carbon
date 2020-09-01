@@ -1148,7 +1148,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		 stdvec<var> default_args = {}) {
 		
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>( ), make_vector<VarTypeInfo>(), ret, false, default_args, 0 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>( ), make_stdvec<VarTypeInfo>(), ret, false, default_args, 0 );
 	return newptr<_MethodBind_M0<T, R>>(method_name, p_class_name, 0, m, mi);
 }
 
@@ -1157,7 +1157,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		 stdvec<var> default_args = {}) {
 		
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>( ), make_vector<VarTypeInfo>(), ret, false, default_args, 0 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>( ), make_stdvec<VarTypeInfo>(), ret, false, default_args, 0 );
 	return newptr<_MethodBind_M0_c<T, R>>(method_name, p_class_name, 0, m, mi);
 }
 
@@ -1166,7 +1166,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0 ), make_vector<VarTypeInfo>(vt0), ret, false, default_args, 1 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0 ), make_stdvec<VarTypeInfo>(vt0), ret, false, default_args, 1 );
 	return newptr<_MethodBind_M1<T, R, a0>>(method_name, p_class_name, 1, m, mi);
 }
 
@@ -1175,7 +1175,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0 ), make_vector<VarTypeInfo>(vt0), ret, false, default_args, 1 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0 ), make_stdvec<VarTypeInfo>(vt0), ret, false, default_args, 1 );
 	return newptr<_MethodBind_M1_c<T, R, a0>>(method_name, p_class_name, 1, m, mi);
 }
 
@@ -1184,7 +1184,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1 ), make_vector<VarTypeInfo>(vt0, vt1), ret, false, default_args, 2 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1 ), make_stdvec<VarTypeInfo>(vt0, vt1), ret, false, default_args, 2 );
 	return newptr<_MethodBind_M2<T, R, a0, a1>>(method_name, p_class_name, 2, m, mi);
 }
 
@@ -1193,7 +1193,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1 ), make_vector<VarTypeInfo>(vt0, vt1), ret, false, default_args, 2 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1 ), make_stdvec<VarTypeInfo>(vt0, vt1), ret, false, default_args, 2 );
 	return newptr<_MethodBind_M2_c<T, R, a0, a1>>(method_name, p_class_name, 2, m, mi);
 }
 
@@ -1202,7 +1202,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, const String& name2, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1, name2 ), make_vector<VarTypeInfo>(vt0, vt1, vt2), ret, false, default_args, 3 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1, name2 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2), ret, false, default_args, 3 );
 	return newptr<_MethodBind_M3<T, R, a0, a1, a2>>(method_name, p_class_name, 3, m, mi);
 }
 
@@ -1211,7 +1211,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, const String& name2, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1, name2 ), make_vector<VarTypeInfo>(vt0, vt1, vt2), ret, false, default_args, 3 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1, name2 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2), ret, false, default_args, 3 );
 	return newptr<_MethodBind_M3_c<T, R, a0, a1, a2>>(method_name, p_class_name, 3, m, mi);
 }
 
@@ -1220,7 +1220,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, const String& name2, const String& name3, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1, name2, name3 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3), ret, false, default_args, 4 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1, name2, name3 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3), ret, false, default_args, 4 );
 	return newptr<_MethodBind_M4<T, R, a0, a1, a2, a3>>(method_name, p_class_name, 4, m, mi);
 }
 
@@ -1229,7 +1229,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, const String& name2, const String& name3, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1, name2, name3 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3), ret, false, default_args, 4 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1, name2, name3 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3), ret, false, default_args, 4 );
 	return newptr<_MethodBind_M4_c<T, R, a0, a1, a2, a3>>(method_name, p_class_name, 4, m, mi);
 }
 
@@ -1238,7 +1238,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, const String& name2, const String& name3, const String& name4, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3); DECLARE_VAR_TYPE(vt4, a4);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1, name2, name3, name4 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4), ret, false, default_args, 5 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1, name2, name3, name4 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4), ret, false, default_args, 5 );
 	return newptr<_MethodBind_M5<T, R, a0, a1, a2, a3, a4>>(method_name, p_class_name, 5, m, mi);
 }
 
@@ -1247,7 +1247,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, const String& name2, const String& name3, const String& name4, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3); DECLARE_VAR_TYPE(vt4, a4);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1, name2, name3, name4 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4), ret, false, default_args, 5 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1, name2, name3, name4 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4), ret, false, default_args, 5 );
 	return newptr<_MethodBind_M5_c<T, R, a0, a1, a2, a3, a4>>(method_name, p_class_name, 5, m, mi);
 }
 
@@ -1256,7 +1256,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, const String& name2, const String& name3, const String& name4, const String& name5, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3); DECLARE_VAR_TYPE(vt4, a4); DECLARE_VAR_TYPE(vt5, a5);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1, name2, name3, name4, name5 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5), ret, false, default_args, 6 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1, name2, name3, name4, name5 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5), ret, false, default_args, 6 );
 	return newptr<_MethodBind_M6<T, R, a0, a1, a2, a3, a4, a5>>(method_name, p_class_name, 6, m, mi);
 }
 
@@ -1265,7 +1265,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, const String& name2, const String& name3, const String& name4, const String& name5, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3); DECLARE_VAR_TYPE(vt4, a4); DECLARE_VAR_TYPE(vt5, a5);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1, name2, name3, name4, name5 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5), ret, false, default_args, 6 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1, name2, name3, name4, name5 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5), ret, false, default_args, 6 );
 	return newptr<_MethodBind_M6_c<T, R, a0, a1, a2, a3, a4, a5>>(method_name, p_class_name, 6, m, mi);
 }
 
@@ -1274,7 +1274,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, const String& name2, const String& name3, const String& name4, const String& name5, const String& name6, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3); DECLARE_VAR_TYPE(vt4, a4); DECLARE_VAR_TYPE(vt5, a5); DECLARE_VAR_TYPE(vt6, a6);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1, name2, name3, name4, name5, name6 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5, vt6), ret, false, default_args, 7 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1, name2, name3, name4, name5, name6 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5, vt6), ret, false, default_args, 7 );
 	return newptr<_MethodBind_M7<T, R, a0, a1, a2, a3, a4, a5, a6>>(method_name, p_class_name, 7, m, mi);
 }
 
@@ -1283,7 +1283,7 @@ ptr<MethodBind> _bind_method(const char* method_name, const char* p_class_name, 
 		const String& name0, const String& name1, const String& name2, const String& name3, const String& name4, const String& name5, const String& name6, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3); DECLARE_VAR_TYPE(vt4, a4); DECLARE_VAR_TYPE(vt5, a5); DECLARE_VAR_TYPE(vt6, a6);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_vector<String>(name0, name1, name2, name3, name4, name5, name6 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5, vt6), ret, false, default_args, 7 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(method_name, make_stdvec<String>(name0, name1, name2, name3, name4, name5, name6 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5, vt6), ret, false, default_args, 7 );
 	return newptr<_MethodBind_M7_c<T, R, a0, a1, a2, a3, a4, a5, a6>>(method_name, p_class_name, 7, m, mi);
 }
 
@@ -1292,7 +1292,7 @@ ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class
 		 stdvec<var> default_args = {}) {
 		
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_vector<String>( ), make_vector<VarTypeInfo>(), ret, true, default_args, 0 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_stdvec<String>( ), make_stdvec<VarTypeInfo>(), ret, true, default_args, 0 );
 	return newptr<_StaticFuncBind_F0<R>>(func_name, p_class_name, 0, f, mi);
 }
 
@@ -1301,7 +1301,7 @@ ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class
 		const String& name0, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_vector<String>(name0 ), make_vector<VarTypeInfo>(vt0), ret, true, default_args, 1 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_stdvec<String>(name0 ), make_stdvec<VarTypeInfo>(vt0), ret, true, default_args, 1 );
 	return newptr<_StaticFuncBind_F1<R, a0>>(func_name, p_class_name, 1, f, mi);
 }
 
@@ -1310,7 +1310,7 @@ ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class
 		const String& name0, const String& name1, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_vector<String>(name0, name1 ), make_vector<VarTypeInfo>(vt0, vt1), ret, true, default_args, 2 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_stdvec<String>(name0, name1 ), make_stdvec<VarTypeInfo>(vt0, vt1), ret, true, default_args, 2 );
 	return newptr<_StaticFuncBind_F2<R, a0, a1>>(func_name, p_class_name, 2, f, mi);
 }
 
@@ -1319,7 +1319,7 @@ ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class
 		const String& name0, const String& name1, const String& name2, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_vector<String>(name0, name1, name2 ), make_vector<VarTypeInfo>(vt0, vt1, vt2), ret, true, default_args, 3 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_stdvec<String>(name0, name1, name2 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2), ret, true, default_args, 3 );
 	return newptr<_StaticFuncBind_F3<R, a0, a1, a2>>(func_name, p_class_name, 3, f, mi);
 }
 
@@ -1328,7 +1328,7 @@ ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class
 		const String& name0, const String& name1, const String& name2, const String& name3, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_vector<String>(name0, name1, name2, name3 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3), ret, true, default_args, 4 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_stdvec<String>(name0, name1, name2, name3 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3), ret, true, default_args, 4 );
 	return newptr<_StaticFuncBind_F4<R, a0, a1, a2, a3>>(func_name, p_class_name, 4, f, mi);
 }
 
@@ -1337,7 +1337,7 @@ ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class
 		const String& name0, const String& name1, const String& name2, const String& name3, const String& name4, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3); DECLARE_VAR_TYPE(vt4, a4);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_vector<String>(name0, name1, name2, name3, name4 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4), ret, true, default_args, 5 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_stdvec<String>(name0, name1, name2, name3, name4 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4), ret, true, default_args, 5 );
 	return newptr<_StaticFuncBind_F5<R, a0, a1, a2, a3, a4>>(func_name, p_class_name, 5, f, mi);
 }
 
@@ -1346,7 +1346,7 @@ ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class
 		const String& name0, const String& name1, const String& name2, const String& name3, const String& name4, const String& name5, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3); DECLARE_VAR_TYPE(vt4, a4); DECLARE_VAR_TYPE(vt5, a5);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_vector<String>(name0, name1, name2, name3, name4, name5 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5), ret, true, default_args, 6 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_stdvec<String>(name0, name1, name2, name3, name4, name5 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5), ret, true, default_args, 6 );
 	return newptr<_StaticFuncBind_F6<R, a0, a1, a2, a3, a4, a5>>(func_name, p_class_name, 6, f, mi);
 }
 
@@ -1355,7 +1355,7 @@ ptr<StaticFuncBind> _bind_static_func(const char* func_name, const char* p_class
 		const String& name0, const String& name1, const String& name2, const String& name3, const String& name4, const String& name5, const String& name6, stdvec<var> default_args = {}) {
 		DECLARE_VAR_TYPE(vt0, a0); DECLARE_VAR_TYPE(vt1, a1); DECLARE_VAR_TYPE(vt2, a2); DECLARE_VAR_TYPE(vt3, a3); DECLARE_VAR_TYPE(vt4, a4); DECLARE_VAR_TYPE(vt5, a5); DECLARE_VAR_TYPE(vt6, a6);
 		DECLARE_VAR_TYPE(ret, R);
-		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_vector<String>(name0, name1, name2, name3, name4, name5, name6 ), make_vector<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5, vt6), ret, true, default_args, 7 );
+		ptr<MethodInfo> mi = newptr<MethodInfo>(func_name, make_stdvec<String>(name0, name1, name2, name3, name4, name5, name6 ), make_stdvec<VarTypeInfo>(vt0, vt1, vt2, vt3, vt4, vt5, vt6), ret, true, default_args, 7 );
 	return newptr<_StaticFuncBind_F7<R, a0, a1, a2, a3, a4, a5, a6>>(func_name, p_class_name, 7, f, mi);
 }
 
@@ -1411,14 +1411,14 @@ public:
 template<typename T, typename R>
 ptr<MethodBind> _bind_va_method(const char* method_name, const char* p_class_name, MVA<T, R> m) {
 	DECLARE_VAR_TYPE(ret, R);
-	ptr<MethodInfo> mi = newptr<MethodInfo>( method_name, make_vector<String>(), make_vector<VarTypeInfo>(), ret, false, var::vector(), -1);
+	ptr<MethodInfo> mi = newptr<MethodInfo>( method_name, make_stdvec<String>(), make_stdvec<VarTypeInfo>(), ret, false, make_stdvec<var>(), -1);
 	return newptr<_MethodBind_MVA<T, R>>(method_name, p_class_name, m, mi);
 }
 
 template<typename R>
 ptr<StaticFuncBind> _bind_va_static_func(const char* func_name, const char* p_class_name, FVA<R> f) {
 	DECLARE_VAR_TYPE(ret, R);
-	ptr<MethodInfo> mi = newptr<MethodInfo>( func_name, make_vector<String>(), make_vector<VarTypeInfo>(), ret, true, var::vector(), -1);
+	ptr<MethodInfo> mi = newptr<MethodInfo>( func_name, make_stdvec<String>(), make_stdvec<VarTypeInfo>(), ret, true, make_stdvec<var>(), -1);
 	return newptr<_StaticFuncBind_FVA<R>>(func_name, p_class_name, f, mi);
 }
 } // namespace

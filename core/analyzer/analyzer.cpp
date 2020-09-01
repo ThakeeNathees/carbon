@@ -415,12 +415,43 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 
 		case Parser::Node::Type::MAP: {
 			ptr<Parser::MapNode> map = ptrcast<Parser::MapNode>(p_expr);
+			bool all_const = true;
 			for (int i = 0; i < (int)map->elements.size(); i++) {
 				_reduce_expression(map->elements[i].key);
-				// TODO: key should be hashable.
+				// TODO: if key is const value and two keys are the same throw error.
+				if (map->elements[i].key->type == Parser::Node::Type::CONST_VALUE) {
+					var& key_v = ptrcast<Parser::ConstValueNode>(map->elements[i].key)->value;
+
+					switch (key_v.get_type()) { // TODO: implement is_hashable() in var. what if null as key?
+						case var::BOOL:
+						case var::INT:
+						case var::FLOAT:
+						case var::STRING:
+						case var::VECT2F:
+						case var::VECT2I:
+						case var::VECT3F:
+						case var::VECT3I:
+							break;
+						default: //_NULL, ARRAY, MAP, OBJECT:
+							THROW_ANALYZER_ERROR(Error::INVALID_TYPE, String::format("unhasnable type %s used as map key", key_v.get_type_name().c_str()), map->pos);
+					}
+				}
 				_reduce_expression(map->elements[i].value);
+
+				if (map->elements[i].key->type != Parser::Node::Type::CONST_VALUE || map->elements[i].value->type != Parser::Node::Type::CONST_VALUE) {
+					all_const = false;
+				}
 			}
-			// TODO: if all const -> do like arr.
+			if (all_const) {
+				Map map_value;
+				for (int i = 0; i < (int)map->elements.size(); i++) {
+					var& _key = ptrcast<Parser::ConstValueNode>(map->elements[i].key)->value;
+					var& _val = ptrcast<Parser::ConstValueNode>(map->elements[i].value)->value;
+					map_value[_key] = _val;
+				}
+				ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(map_value);
+				cv->pos = p_expr->pos; p_expr = cv;
+			}
 		} break;
 
 		case Parser::Node::Type::OPERATOR: {
@@ -502,14 +533,12 @@ do {                                                                            
 							GET_ARGS(2); // 0 : const value, 1: name, ... args.
 							var ret = ptrcast<Parser::ConstValueNode>(op->args[0])->value.call_method(ptrcast<Parser::IdentifierNode>(op->args[1])->name, args);
 							SET_EXPR_CONST_NODE(ret);
-						} catch (VarError& err) {
-							ASSERT(false); // TODO;
+						} catch (.../*VarError& err*/) {
+							ASSERT(false && "TODO: catch and throw var error as cb error");
 						}
 					}
 
-					// TODO: if base type is
-					//		this       : it could be removed, super?
-					//		identifier : maybe some optimizations possible.
+					// TODO: check against function signature.
 
 				} break;
 
@@ -581,7 +610,7 @@ do {                                                                            
 									} catch (VarError& err) {
 										THROW_ANALYZER_ERROR(Error::INVALID_GET_INDEX, err.what(), id->pos);
 									}
-									ASSERT(false); // TODO: there isn't any contant value currently support attribute access and most probably in the future.
+									ASSERT(false && "there isn't any contant value currently support attribute access and most probably in the future");
 								} break;
 
 								case Parser::IdentifierNode::REF_ENUM_NAME: {
@@ -657,14 +686,14 @@ do {                                                                            
 								} break;
 
 								case Parser::IdentifierNode::REF_NATIVE_CLASS: {
-									// TODO:
+									ASSERT(false && "TODO:");
 								} break;
 
 								case Parser::IdentifierNode::REF_CARBON_FUNCTION:
 									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED, "function object doesn't support attribute access.", id->pos);
 
 								case Parser::IdentifierNode::REF_FILE: { // TODO: change the name.
-									// TODO:
+									ASSERT(false && "TODO:");
 								} break;
 
 								// TODO: REF binary version of everything above.
@@ -685,9 +714,8 @@ do {                                                                            
 							GET_ARGS(1);
 							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->value.__get_mapped(args[0]));
 							cv->pos = base->pos; p_expr = cv;
-						} catch (VarError& err) {
-							ASSERT(false); // throw Error;
-							throw err; // for now, (use for compiler warning).
+						} catch (.../*VarError& err*/) {
+							ASSERT(false && "TODO: var error to carbon error");
 						}
 					}
 				} break;
@@ -833,7 +861,6 @@ do {                                                                            
 		default: {
 			ASSERT(false); // ???
 		}
-
 	}
 }
 
@@ -853,10 +880,6 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode*
 		}
 	};
 	ScopeDestruct destruct = ScopeDestruct(&parser->parser_context, p_parent_block);
-
-	// to remove the unused statements like just an identifier, literals,
-	// constants inside a block (could be removed safely), this, self, etc.
-	//stdvec<int> remove_statements;
 
 	for (int i = 0; i < (int)p_block->statements.size(); i++) {
 		switch (p_block->statements[i]->type) {
