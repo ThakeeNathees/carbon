@@ -152,11 +152,11 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 var Analyzer::_call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var>& args) {
 	switch (p_func->func) {
 		case BuiltinFunctions::__ASSERT: {
-			if (args.size() != 1) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "Expected exactly 1 argument.", p_func->pos);
-			if (!args[0].operator bool()) THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "assertion failed.", p_func->pos);
+			if (args.size() != 1) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.", p_func->pos);
+			if (!args[0].operator bool()) THROW_ANALYZER_ERROR(Error::ASSERTION, "assertion failed.", p_func->pos);
 		} break;
 		case BuiltinFunctions::__FUNC: {
-			if (!parser->parser_context.current_func) THROW_ANALYZER_ERROR(Error::SYNTAX_ERROR, "__func() must be called inside a function", p_func->pos);
+			if (!parser->parser_context.current_func) THROW_ANALYZER_ERROR(Error::SYNTAX_ERROR, "__func() must be called inside a function.", p_func->pos);
 			if (parser->parser_context.current_class) return parser->parser_context.current_class->name + "." + parser->parser_context.current_func->name;
 			else  return parser->parser_context.current_func->name;
 		} break;
@@ -182,7 +182,7 @@ void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::OperatorNode>
 		for (int j = 1; j < (int)op->args.size(); j++) {
 			_reduce_expression(op->args[j]);
 			if (op->args[j]->type != Parser::Node::Type::CONST_VALUE) {
-				THROW_ANALYZER_ERROR(Error::INVALID_TYPE, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->args[j]->pos);
+				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->args[j]->pos);
 			}
 			args.push_back(ptrcast<Parser::ConstValueNode>(op->args[j])->value);
 		}
@@ -207,7 +207,7 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 					Parser::ClassNode* base = p_class->base_local;
 					while (base) {
 						if (base == p_class)
-							THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "cyclic inheritance. class inherits itself isn't allowed", p_class->pos);
+							THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "cyclic inheritance. class inherits itself isn't allowed.", p_class->pos);
 						base = base->base_local;
 					}
 					break;
@@ -227,12 +227,12 @@ void Analyzer::_resolve_constant(Parser::ConstNode* p_const) {
 	ASSERT(p_const->assignment != nullptr);
 	_reduce_expression(p_const->assignment);
 	if (p_const->assignment->type != Parser::Node::Type::CONST_VALUE) {
-		THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a contant expression.", p_const->assignment->pos);
+		THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a contant expression.", p_const->assignment->pos);
 	}
 	ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(p_const->assignment);
 	if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
 		cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING) {
-		THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "Expected a constant expression.", p_const->assignment->pos);
+		THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a constant expression.", p_const->assignment->pos);
 	}
 	p_const->value = cv->value;
 }
@@ -243,9 +243,9 @@ void Analyzer::_resolve_enumvalue(Parser::EnumValueNode& p_enumvalue) {
 
 	_reduce_expression(p_enumvalue.expr);
 	if (p_enumvalue.expr->type != Parser::Node::Type::CONST_VALUE)
-		THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", p_enumvalue.expr->pos);
+		THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "enum value must be a constant integer.", p_enumvalue.expr->pos);
 	ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(p_enumvalue.expr);
-	if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", p_enumvalue.expr->pos);
+	if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "enum value must be a constant integer.", p_enumvalue.expr->pos);
 	p_enumvalue.value = cv->value;
 }
 
@@ -425,7 +425,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 
 			switch (id->ref) {
 				case Parser::IdentifierNode::REF_UNKNOWN:
-					THROW_ANALYZER_ERROR(Error::NOT_DEFINED, String::format("identifier \"%s\" isn't defined", id->name.c_str()), id->pos);
+					THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("identifier \"%s\" isn't defined.", id->name.c_str()), id->pos);
 				case Parser::IdentifierNode::REF_LOCAL_CONST:
 				case Parser::IdentifierNode::REF_MEMBER_CONST: {
 					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->_const->value);
@@ -480,7 +480,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 						case var::VECT3I:
 							break;
 						default: //_NULL, ARRAY, MAP, OBJECT:
-							THROW_ANALYZER_ERROR(Error::INVALID_TYPE, String::format("unhasnable type %s used as map key", key_v.get_type_name().c_str()), map->pos);
+							THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("unhasnable type %s used as map key.", key_v.get_type_name().c_str()), map->pos);
 					}
 				}
 				_reduce_expression(map->elements[i].value);
@@ -622,8 +622,8 @@ do {                                                                            
 							} catch (VarError& err) {
 								if (err.get_type() == VarError::NULL_POINTER) {
 									THROW_ANALYZER_ERROR(Error::NULL_POINTER, "", op->pos);
-								} else if (err.get_type() == VarError::INVALID_GET_NAME) {
-									THROW_ANALYZER_ERROR(Error::INVALID_GET_INDEX, String::format("Name \"%s\" is not exists on base %s", id->name.c_str(), base->value.get_type_name().c_str()), op->pos);
+								} else if (err.get_type() == VarError::ATTRIBUTE_ERROR) {
+									THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("name \"%s\" isn't exists on base %s.", id->name.c_str(), base->value.get_type_name().c_str()), op->pos);
 								} else {
 									ASSERT(false);
 								}
@@ -656,7 +656,7 @@ do {                                                                            
 
 							switch (base->ref) {
 								case Parser::IdentifierNode::REF_UNKNOWN: {
-									THROW_ERROR(Error::INTERNAL_BUG, "base can't be unknown.");
+									THROW_BUG("base can't be unknown.");
 								} break;
 
 								case Parser::IdentifierNode::REF_PARAMETER:
@@ -671,7 +671,7 @@ do {                                                                            
 									try {
 										base->_const->value.get_member(id->name);
 									} catch (VarError& err) {
-										THROW_ANALYZER_ERROR(Error::INVALID_GET_INDEX, err.what(), id->pos);
+										THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, err.what(), id->pos);
 									}
 									ASSERT(false && "there isn't any contant value currently support attribute access and most probably in the future");
 								} break;
@@ -690,7 +690,7 @@ do {                                                                            
 								} break;
 
 								case Parser::IdentifierNode::REF_ENUM_VALUE:
-									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED, "enum value doesn't support attribute access", id->pos);
+									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED, "enum value doesn't support attribute access.", id->pos);
 
 								case Parser::IdentifierNode::REF_CARBON_CLASS: {
 									for (int i = 0; i < (int)base->_class->constants.size(); i++) {
@@ -732,7 +732,7 @@ do {                                                                            
 									for (int i = 0; i < (int)base->_class->vars.size(); i++) {
 										if (base->_class->vars[i]->name == id->name) {
 											if (!base->_class->vars[i]->is_static) {
-												THROW_ANALYZER_ERROR(Error::INVALID_GET_INDEX, String::format("non-static members can only be accessed from instances.").c_str(), id->pos);
+												THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("non-static members can only be accessed from instances.").c_str(), id->pos);
 											}
 											id->ref = Parser::IdentifierNode::REF_MEMBER_VAR;
 											id->_var = base->_class->vars[i].get();
@@ -743,7 +743,7 @@ do {                                                                            
 									if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
 
 									// TODO: also check in functions, static function for better error message.
-									THROW_ANALYZER_ERROR(Error::INVALID_GET_INDEX, String::format("attribute \"%s\" isn't exists in base \"%s\"",
+									THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".",
 										id->name.c_str(), base->name.c_str()), id->pos);
 
 								} break;
@@ -813,18 +813,18 @@ do {                                                                            
 							case Parser::IdentifierNode::REF_NATIVE_CLASS:
 							case Parser::IdentifierNode::REF_CARBON_FUNCTION:
 							case Parser::IdentifierNode::REF_FILE:
-								THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "invalid assignment (only assignment on variables/parameters are valid).", op->args[0]->pos);
+								THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "invalid assignment (only assignment on variables/parameters are valid).", op->args[0]->pos);
 						}
 					} else if (op->args[0]->type == Parser::Node::Type::THIS) {
-						THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "can't assign anything to \"this\"", op->args[0]->pos);
+						THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to \"this\".", op->args[0]->pos);
 					} else if (op->args[0]->type == Parser::Node::Type::SUPER) {
-						THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "can't assign anything to \"super\"", op->args[0]->pos);
+						THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to \"super\".", op->args[0]->pos);
 					} else if (op->args[0]->type == Parser::Node::Type::CONST_VALUE) {
-						THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "can't assign anything to constant values", op->args[0]->pos);
+						THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to constant values.", op->args[0]->pos);
 					} else if (op->args[0]->type == Parser::Node::Type::ARRAY) {
-						THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "can't assign anything to array literal", op->args[0]->pos);
+						THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to array literal.", op->args[0]->pos);
 					} else if (op->args[0]->type == Parser::Node::Type::MAP) {
-						THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "can't assign anything to map literal", op->args[0]->pos);
+						THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to map literal.", op->args[0]->pos);
 					}
 				} break;
 				default: { // Remaining binary/unary operators.
@@ -895,7 +895,7 @@ do {                                                                            
 								} break;
 								default:
 									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
-										String::format("unary operator \"+\" not supported on %s", args[0].get_type_name()), op->pos);
+										String::format("unary operator \"+\" not supported on %s.", args[0].get_type_name()), op->pos);
 							}
 							break;
 						case Parser::OperatorNode::OpType::OP_NEGATIVE:
@@ -909,7 +909,7 @@ do {                                                                            
 									break;
 								default:
 									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
-										String::format("unary operator \"+\" not supported on %s", args[0].get_type_name()), op->pos);
+										String::format("unary operator \"+\" not supported on %s.", args[0].get_type_name()), op->pos);
 							}
 							break;
 					}
@@ -952,7 +952,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode*
 			case Parser::Node::Type::ENUM:
 			case Parser::Node::Type::FUNCTION:
 			case Parser::Node::Type::BLOCK:
-				THROW_ERROR(Error::INTERNAL_BUG, "");
+				THROW_BUG("invalid statement type in analyzer.");
 
 			case Parser::Node::Type::IDENTIFIER: {
 				_reduce_expression(p_block->statements[i]); // to check if the identifier exists.
@@ -987,7 +987,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode*
 
 			case Parser::Node::Type::BUILTIN_FUNCTION:
 			case Parser::Node::Type::BUILTIN_TYPE:
-				THROW_ERROR(Error::INTERNAL_BUG, "");
+				THROW_BUG("invalid statement type in analyzer."); // TODO: check what throws : `func fn() { String; }`
 				break;
 
 			case Parser::Node::Type::OPERATOR: {
@@ -1015,15 +1015,15 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode*
 						for (int j = 0; j < (int)cf_node->switch_cases.size(); j++) {
 							_reduce_expression(cf_node->switch_cases[j].expr);
 							if (cf_node->switch_cases[j].expr->type != Parser::Node::Type::CONST_VALUE)
-								THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", cf_node->switch_cases[j].expr->pos);
+								THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "enum value must be a constant integer.", cf_node->switch_cases[j].expr->pos);
 							ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(cf_node->switch_cases[j].expr);
 							if (cv->value.get_type() != var::INT)
-								THROW_ANALYZER_ERROR(Error::INVALID_TYPE, "enum value must be a constant integer", cf_node->switch_cases[j].expr->pos);
+								THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "enum value must be a constant integer.", cf_node->switch_cases[j].expr->pos);
 							cf_node->switch_cases[j].value = cv->value;
 
 							for (int _j = 0; _j < j; _j++) {
 								if (cf_node->switch_cases[_j].value == cf_node->switch_cases[j].value) {
-									THROW_ANALYZER_ERROR(Error::INVALID_ARGUMENT, String::format("case value %lli has already defined at line %lli", 
+									THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("case value %lli has already defined at line %lli.",
 										cf_node->switch_cases[j].value, cf_node->switch_cases[_j].pos.y), cf_node->switch_cases[j].pos);
 								}
 							}

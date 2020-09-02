@@ -133,7 +133,7 @@ void Tokenizer::_eat_const_value(const var& p_value, int p_eat_size) {
 			tk.type = Token::VALUE_FLOAT;
 			break;
 		default:
-			THROW_TOKENIZE_ERROR(Error::INTERNAL_BUG, "Internal Bug: Report!");
+			THROW_BUG("invalid switch case.");
 			break;
 	}
 
@@ -271,7 +271,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 			}
 			// case '/': { } // already hadled
 			case '\\':
-				THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "Invalid character '\\'");
+				THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "invalid character '\\'.");
 				break;
 			case '%': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_MOD_EQ, 2);
@@ -330,10 +330,10 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 					if (GET_CHAR(0) == '\\') {
 						_eat_escape(str);
 					} else if (GET_CHAR(0) == 0) {
-						THROW_TOKENIZE_ERROR(Error::UNEXPECTED_EOF, ""); // TODO: Error message.
+						THROW_TOKENIZE_ERROR(Error::UNEXPECTED_EOF, "unexpected EOF while parsing String."); // TODO: Error message.
 						break;
 					} else if(GET_CHAR(0) == '\n'){
-						THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "Unexpected EOL while parsing string");
+						THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "unexpected EOL while parsing String.");
 						break;
 					} else {
 						str += GET_CHAR(0);
@@ -346,7 +346,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 				break;
 			}
 			case '\'':
-				THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "Invalid character '\\''.");
+				THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "invalid character '\\''.");
 				break;
 			default: {
 				
@@ -382,7 +382,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 					}
 
 					// "1." parsed as 1.0 which should be error.
-					if (num[num.size() - 1] == '.') THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "Invalid numeric value.");
+					if (num[num.size() - 1] == '.') THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "invalid numeric value.");
 
 					__const_val_token_len = (int)num.size();
 					if (is_float)
@@ -408,7 +408,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 					break;
 				}
 
-				DEBUG_BREAK(); // TODO: Unknown character.
+				THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, String::format("unknown character '%c' in parsing.", GET_CHAR(0)));
 
 			} // default case
 

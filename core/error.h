@@ -49,21 +49,21 @@
 #define _ERR_ADD_DBG_VARS 
 #endif
 
-#define THROW_INVALID_INDEX(m_size, m_ind)                                                            \
-if (m_ind < 0 || m_size <= m_ind) {                                                                   \
-	throw Error(Error::INVALID_INDEX, String::format("Index %s = %lli is out of bounds (%s = %lli)",  \
-		STRINGIFY(m_size), m_size, STRINGIFY(m_ind), m_ind))_ERR_ADD_DBG_VARS;                        \
+#define THROW_INVALID_INDEX(m_size, m_ind)                                                               \
+if (m_ind < 0 || m_size <= m_ind) {                                                                      \
+	throw Error(Error::INVALID_INDEX, String::format("index %s = %lli is out of bounds (%s = %lli).",    \
+		STRINGIFY(m_size), m_size, STRINGIFY(m_ind), m_ind))_ERR_ADD_DBG_VARS;                           \
 } else ((void)0)
 
-#define THROW_IF_NULLPTR(m_ptr)                                                                       \
-if (m_ptr == nullptr){                                                                                \
-	throw Error(Error::NULL_POINTER, String::format("The pointer \"%s\" is null", STRINGIFY(m_ptr)))  \
-	_ERR_ADD_DBG_VARS;                                                                                \
+#define THROW_IF_NULLPTR(m_ptr)                                                                           \
+if (m_ptr == nullptr){                                                                                    \
+	throw Error(Error::INVALID_INDEX, String::format("the pointer \"%s\" is null.", STRINGIFY(m_ptr)))    \
+	_ERR_ADD_DBG_VARS;                                                                                    \
 } else ((void)0)
 
 
 #define THROW_ERROR(m_type, m_msg) throw Error(m_type, m_msg)_ERR_ADD_DBG_VARS
-#define THROW_BUG(m_msg) THROW_ERROR(Error::INTERNAL_BUG, m_msg)
+#define THROW_BUG(m_msg) THROW_ERROR(Error::BUG, m_msg)
 
 #include "var.h/_var.h"
 using namespace varh;
@@ -74,35 +74,24 @@ class Error : public std::exception {
 public:
 	enum Type {
 		OK = 0,
+		BUG,
 
-		// Warnings. (warnings are basically errors and throws if flag set unless ignored)
-		WARNING_NAME_PREDEFINED,
-
-		// Compiletime errors.
-		SYNTAX_ERROR,
-		UNEXPECTED_EOF,
-		ALREADY_DEFINED,
-		NOT_DEFINED,
-
-		// Runtime errors.
-		NOT_IMPLEMENTED,
-
+		// VAR ERRORS ////////////////
 		NULL_POINTER,
-		ZERO_DIVISION,
-
-		INVALID_INDEX,     // arr[-1]
-		INVALID_GET_INDEX, // o.attrib
-		INVALID_CASTING,
-		INVALID_ARGUMENT,
-		INVALID_TYPE,
-		INVALID_ARG_COUNT,
 		OPERATOR_NOT_SUPPORTED,
+		NOT_IMPLEMENTED,
+		ZERO_DIVISION,
+		TYPE_ERROR,
+		ATTRIBUTE_ERROR,
+		INVALID_ARG_COUNT,
+		INVALID_INDEX,
+		//////////////////////////////
 
+		SYNTAX_ERROR,
+		ASSERTION,
+		UNEXPECTED_EOF,
+		NAME_ERROR, // already defined, not defined.
 		IO_ERROR,
-		IO_INVALID_OPERATORN,
-
-		// for debugging
-		INTERNAL_BUG,
 
 		_ERROR_MAX_,
 	};

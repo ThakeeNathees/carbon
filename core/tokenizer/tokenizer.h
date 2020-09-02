@@ -154,7 +154,7 @@ public:
 	const void tokenize(const String& p_source, const String& p_source_path = "<PATH-NOT-SET>");
 
 	const TokenData& next(int p_offset = 0) { 
-		if (token_ptr + p_offset >= (int)tokens.size()) { throw Error(Error::INVALID_INDEX); }
+		if (token_ptr + p_offset >= (int)tokens.size()) { THROW_BUG("invalid index."); }
 		token_ptr += p_offset;
 		cur_line = tokens[token_ptr].line; cur_col = tokens[token_ptr].col;
 		return tokens[token_ptr++];
@@ -176,7 +176,7 @@ public:
 				return tokens[i];
 			}
 		}
-		THROW_TOKENIZE_ERROR(Error::INTERNAL_BUG, "TokenData::get_token_at() called with invalid position.");
+		THROW_TOKENIZE_ERROR(Error::BUG, "TokenData::get_token_at() called with invalid position.");
 	}
 
 	static const char* get_token_name(Token p_tk);

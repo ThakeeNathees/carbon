@@ -116,7 +116,7 @@ String TokenData::to_string() const {
 
 		case Token::_TK_MAX_: return "<_TK_MAX_>";
 	}
-	THROW_ERROR(Error::INTERNAL_BUG, String::format("enum(%i) missed in TokenData::to_string()", (int)type));
+	THROW_BUG(String::format("missed enum in switch case."));
 MISSED_ENUM_CHECK(Token::_TK_MAX_, 75);
 }
 

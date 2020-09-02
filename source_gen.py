@@ -239,7 +239,7 @@ public:
 				return ei->get_values()[i].second;
 			}
 		}
-		throw Error(Error::INVALID_GET_INDEX, String::format("value \\"%s\\" isn't exists on enum \\"%s\\"", p_value_name.c_str(), name));
+		throw Error(Error::R_ATTRIBUTE_ERROR, String::format("value \\"%s\\" isn't exists on enum %s.", p_value_name.c_str(), name));
 	}
 };
 inline ptr<EnumBind> _bind_enum(const char* p_name, const char* p_class_name, const stdvec<std::pair<String, int64_t>>& p_values) {

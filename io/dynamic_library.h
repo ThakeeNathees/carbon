@@ -75,19 +75,19 @@ public:
 	// Methods.
 	void open(const String& p_lib_name) {
 		if (handle) {
-			THROW_ERROR(Error::IO_INVALID_OPERATORN, "lib already opened (close before reopening).");
+			THROW_ERROR(Error::IO_ERROR, "lib already opened (close before reopening).");
 		}
 		handle = dlopen(p_lib_name.c_str(), RTLD_LAZY);
 		if (!handle) { /* fail to load the library */
-			THROW_ERROR(Error::IO_ERROR, String::format("%s", dlerror()));
+			THROW_ERROR(Error::IO_ERROR, String::format("failed to load lib : %s.", dlerror()));
 		}
 		lib_name = p_lib_name;
 	}
 
 	int _call_va_args(stdvec<var>& p_args) {
-		if (p_args.size() == 0) THROW_ERROR(Error::INVALID_ARG_COUNT, "p_args.size() is 0, need at least 1 as the function name");
-		if (p_args[0].get_type() != var::STRING) // TODO: better error msg
-			THROW_ERROR(Error::INVALID_ARGUMENT, "first argument of call() must be string (name of the function)");
+		if (p_args.size() == 0) THROW_ERROR(Error::INVALID_ARG_COUNT, "argument is 0, need at least 1 as the function name.");
+		if (p_args[0].get_type() != var::STRING)
+			THROW_ERROR(Error::TYPE_ERROR, "first argument of call() must be string (name of the function).");
 		const String& func = p_args[0];
 		switch ((int)(p_args.size()-1)) {
 			case 0: return _call(func.c_str());
@@ -148,7 +148,7 @@ private:
 	int _call(const char* p_func_name, T... p_args) {
 
 		if (!handle) {
-			THROW_ERROR(Error::IO_INVALID_OPERATORN, "handle was NULL");
+			THROW_ERROR(Error::IO_ERROR, "handle was NULL.");
 		}
 
 		typedef int(*func_ptr)(T...);
@@ -158,7 +158,7 @@ private:
 
 		if (!fp) { /* no such symbol */
 			dlclose(handle);
-			THROW_ERROR(Error::IO_ERROR, String::format("%s", dlerror()));
+			THROW_ERROR(Error::IO_ERROR, String::format("%s.", dlerror()));
 		}
 
 		int ret = fp(p_args...);

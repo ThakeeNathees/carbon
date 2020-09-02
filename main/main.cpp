@@ -38,7 +38,6 @@ using namespace carbon;
 // TODO: VarError -> Error.
 // TODO: Make var submodule to local.
 
-
 int _main(int argc, char** argv) {
 
 	initialize();

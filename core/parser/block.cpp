@@ -166,7 +166,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 					if (tokenizer->peek().type == Token::KWORD_VAR) {
 						tokenizer->next(); // eat "var"
 						stdvec<ptr<VarNode>> vars = _parse_var(block_node);
-						if (vars.size() > 1) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "multiple assignment not allowed here", vars[1]->pos);
+						if (vars.size() > 1) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "multiple assignment not allowed here.", vars[1]->pos);
 						for_block->args.push_back(vars[0]);
 					} else {
 						for_block->args.push_back(_parse_expression(block_node, true));
@@ -204,7 +204,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 
 			case Token::KWORD_BREAK: {
 				tk = &tokenizer->next(); // eat "break"
-				if (!parser_context.current_break) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use break outside a loop/switch", tk->get_pos());
+				if (!parser_context.current_break) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use break outside a loop/switch.", tk->get_pos());
 				ptr<ControlFlowNode> _break = new_node<ControlFlowNode>(ControlFlowNode::BREAK);
 				_break->break_continue = parser_context.current_break;
 				parser_context.current_break->has_break = true;
@@ -214,7 +214,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 
 			case Token::KWORD_CONTINUE: {
 				tk = &tokenizer->next(); // eat "continue"
-				if (!parser_context.current_continue) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use break outside a loop", tk->get_pos());
+				if (!parser_context.current_continue) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use break outside a loop.", tk->get_pos());
 				ptr<ControlFlowNode> _continue = new_node<ControlFlowNode>(ControlFlowNode::CONTINUE);
 				_continue->break_continue = parser_context.current_continue;
 				parser_context.current_continue->has_continue = true;
@@ -224,7 +224,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 
 			case Token::KWORD_RETURN: {
 				tk = &tokenizer->next(); // eat "return"
-				if (!parser_context.current_func) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use return outside a function", tk->get_pos());
+				if (!parser_context.current_func) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use return outside a function.", tk->get_pos());
 				ptr<ControlFlowNode> _return = new_node<ControlFlowNode>(ControlFlowNode::RETURN);
 				_return->parernt_node = p_parent;
 				_return->_return = parser_context.current_func;
