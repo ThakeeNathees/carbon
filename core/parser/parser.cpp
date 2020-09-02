@@ -28,7 +28,7 @@
 #include "analyzer/analyzer.h"
 
 #define THROW_PREDEFINED(m_what, m_name, m_pos)             \
-	THROW_PARSER_ERR(Error::ALREADY_DEFINED,                \
+	THROW_PARSER_ERR(Error::NAME_ERROR,                     \
 	String::format(m_what " named \"%s\" already exists at (line:%i, col:%i)", m_name.c_str(), m_pos.x, m_pos.y), Vect2i())
 
 #define THROW_IF_NAME_DEFINED(m_parent, m_what, m_identifier, m_members)                                 \
@@ -590,12 +590,10 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 			if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
 			for (int i = 0; i < (int)func_node->args.size(); i++) {
 				if (func_node->args[i].name == tk->identifier) {
-				THROW_PARSER_ERR(Error::ALREADY_DEFINED, 
-					String::format("identifier \"%s\" already defined in arguments", tk->identifier.c_str()), Vect2i());
-
+				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("identifier \"%s\" already defined in arguments", tk->identifier.c_str()), Vect2i());
 				}
 			}
-			// TODO: identifier shadow check. ??
+			// TODO: warning: identifier shadow check. ??
 			func_node->args.push_back(ArgumentNode(tk->identifier, tk->get_pos()));
 
 			tk = &tokenizer->next();

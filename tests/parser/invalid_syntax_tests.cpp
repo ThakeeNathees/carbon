@@ -39,27 +39,27 @@ TEST_CASE("[parser_tests]:invalid_syntax_test") {
 	CHECK_THROWS_CARBON_ERR(Error::SYNTAX_ERROR, parser.parse("var v1 = {1 2};", NO_PATH));
 
 	// predefined name
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("func name() {}  class name {}", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("func name() {}  var name;", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("func name() {}  enum name {};", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("func name() {}  func name() {};", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("class name {}   var name;", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("class name {}   func name() {};", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("class name {}   class name {};", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("var name;       func name() {};", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("var name;       class name {};", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("var name;       enum name {};", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("enum name {};   enum name {};", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("enum name {};   class name {};", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("enum {ENUM_NAME,};  class ENUM_NAME {};", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse("func fn(arg_name) { var arg_name; }", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse(R"(
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("func name() {}  class name {}", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("func name() {}  var name;", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("func name() {}  enum name {};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("func name() {}  func name() {};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("class name {}   var name;", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("class name {}   func name() {};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("class name {}   class name {};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("var name;       func name() {};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("var name;       class name {};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("var name;       enum name {};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("enum name {};   enum name {};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("enum name {};   class name {};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("enum {ENUM_NAME,};  class ENUM_NAME {};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse("func fn(arg_name) { var arg_name; }", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse(R"(
 		class Aclass {
 			enum { ENUM_NAME = 0 }
 			static func ENUM_NAME(){}
 		}
 	)", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::ALREADY_DEFINED, parser.parse(R"(
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, parser.parse(R"(
 		func f() {
 			var x;
 			while (false) {

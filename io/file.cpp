@@ -38,11 +38,11 @@ void File::close() {
 }
 
 void File::open(const String& p_path, int p_mode) {
-	if (p_mode < READ || (p_mode > (READ | WRITE | APPEND | BINARY | EXTRA))) THROW_ERROR(Error::IO_INVALID_OPERATORN, "invalid mode flag set in file");
+	if (p_mode < READ || (p_mode > (READ | WRITE | APPEND | BINARY | EXTRA))) THROW_ERROR(Error::IO_ERROR, "invalid mode flag set in file.");
 
 	// TODO: print given combination.
-	if ((p_mode & READ) && (p_mode & WRITE) && (p_mode & APPEND)) THROW_ERROR(Error::IO_INVALID_OPERATORN, "invalid combination of flags (WRITE & APPEND) in file");
-	if (!(p_mode & READ) && !(p_mode & WRITE) && !(p_mode & APPEND)) THROW_ERROR(Error::IO_INVALID_OPERATORN, "invalid combination of flags (WRITE & APPEND) in file");
+	if ((p_mode & READ) && (p_mode & WRITE) && (p_mode & APPEND)) THROW_ERROR(Error::IO_ERROR, "invalid combination of flags (WRITE & APPEND) in file.");
+	if (!(p_mode & READ) && !(p_mode & WRITE) && !(p_mode & APPEND)) THROW_ERROR(Error::IO_ERROR, "invalid combination of flags (WRITE & APPEND) in file.");
 
 	path = p_path;
 	mode = p_mode;
@@ -71,7 +71,7 @@ void File::open(const String& p_path, int p_mode) {
 	_file = fopen(path.c_str(), _strmode.c_str());
 	
 	if (_file == NULL) {
-		THROW_ERROR(Error::IO_ERROR, String::format("can't open file at \"%s\"", path.c_str()));
+		THROW_ERROR(Error::IO_ERROR, String::format("can't open file at \"%s\".", path.c_str()));
 	}
 }
 
@@ -83,7 +83,7 @@ long File::size() {
 }
 
 String File::read_text() {
-	if (!is_open()) THROW_ERROR(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
+	if (!is_open()) THROW_ERROR(Error::IO_ERROR, "can't read on a closed file.");
 	// TODO: check if in read mode.
 
 	long _file_size = size();
@@ -99,13 +99,13 @@ String File::read_text() {
 }
 
 void File::write_text(const String& p_text) {
-	if (!is_open()) THROW_ERROR(Error::IO_INVALID_OPERATORN, "can't write on a closed file");
+	if (!is_open()) THROW_ERROR(Error::IO_ERROR, "can't write on a closed file.");
 	// TODO: check if in write mode.
 	fprintf(_file, p_text.c_str());
 }
 
 ptr<Buffer> File::read_bytes() {
-	if (!is_open()) THROW_ERROR(Error::IO_INVALID_OPERATORN, "can't read on a closed file");
+	if (!is_open()) THROW_ERROR(Error::IO_ERROR, "can't read on a closed file.");
 
 	long file_size = size();
 	ptr<Buffer> buff = newptr<Buffer>(file_size);
@@ -115,7 +115,7 @@ ptr<Buffer> File::read_bytes() {
 }
 
 void File::write_bytes(const ptr<Buffer>& p_bytes) {
-	if (!is_open()) THROW_ERROR(Error::IO_INVALID_OPERATORN, "can't write on a closed file");
+	if (!is_open()) THROW_ERROR(Error::IO_ERROR, "can't write on a closed file.");
 	// TODO: check if in write mode.
 	fwrite(p_bytes->front(), sizeof(byte_t), p_bytes->size(), _file);
 }

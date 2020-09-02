@@ -36,8 +36,8 @@ void NativeClasses::bind_data(ptr<BindData> p_bind_data) {
 	ClassEntries& entries = classes[class_name.hash()];
 
 	if (entries.bind_data[data_name.hash()] != nullptr) {
-		THROW_ERROR(Error::ALREADY_DEFINED, 
-			String::format("entry \"%s\" already exists on class \"%s\"", p_bind_data->get_name(), p_bind_data->get_class_name())
+		THROW_ERROR(Error::NAME_ERROR, 
+			String::format("entry \"%s\" already exists on class \"%s\".", p_bind_data->get_name(), p_bind_data->get_class_name())
 		);
 	}
 	entries.bind_data[data_name.hash()] = p_bind_data;
@@ -59,7 +59,7 @@ ptr<BindData> NativeClasses::find_bind_data(const String& cls, const String& att
 
 void NativeClasses::set_inheritance(const String& p_class_name, const String& p_parent_class_name) {
 	if (classes[p_class_name.hash()].class_name.size() != 0) {
-		THROW_ERROR(Error::ALREADY_DEFINED, String::format("class \"%s\" already exists on NativeClasses entries", p_class_name));
+		THROW_ERROR(Error::NAME_ERROR, String::format("class \"%s\" already exists on NativeClasses entries.", p_class_name));
 	}
 	classes[p_class_name.hash()].class_name = p_class_name;
 	classes[p_class_name.hash()].parent_class_name = p_parent_class_name;
@@ -67,7 +67,7 @@ void NativeClasses::set_inheritance(const String& p_class_name, const String& p_
 
 String NativeClasses::get_inheritance(const String& p_class_name) {
 	if (classes[p_class_name.hash()].class_name.size() == 0) {
-		THROW_ERROR(Error::NULL_POINTER, String::format("the class \"%s\" isn't registered in native class entries", p_class_name.c_str()));
+		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
 	}
 	return classes[p_class_name.hash()].parent_class_name;
 }
@@ -92,7 +92,7 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 	String method_name = p_name;
 
 	if (!NativeClasses::is_class_registered(class_name)) {
-		THROW_ERROR(Error::NULL_POINTER, String::format("the class \"%s\" isn't registered in native class entries", class_name.c_str()));
+		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", class_name.c_str()));
 	}
 
 	ptr<BindData> bind_data = NativeClasses::find_bind_data(class_name, p_name);
@@ -104,11 +104,11 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 			return ptrcast<StaticFuncBind>(bind_data)->call(p_args);
 	
 		} else {
-			THROW_ERROR(Error::INVALID_GET_INDEX,
-				String::format("attribute named \"%s\" on type \"%s\" is not callable", method_name.c_str(), p_self->get_class_name()));
+			THROW_ERROR(Error::TYPE_ERROR,
+				String::format("attribute named \"%s\" on type %s is not callable.", method_name.c_str(), p_self->get_class_name()));
 		}
 	}
-	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no method named \"%s\"", p_self->get_class_name(), method_name.c_str()));
+	THROW_ERROR(Error::NAME_ERROR, String::format("type %s has no method named \"%s\".", p_self->get_class_name(), method_name.c_str()));
 }
 
 var Object::get_member(ptr<Object> p_self, const String& p_name) {
@@ -116,7 +116,7 @@ var Object::get_member(ptr<Object> p_self, const String& p_name) {
 	String member_name = p_name;
 
 	if (!NativeClasses::is_class_registered(class_name)) {
-		THROW_ERROR(Error::NULL_POINTER, String::format("the class \"%s\" isn't registered in native class entries", class_name.c_str()));
+		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", class_name.c_str()));
 	}
 	
 	ptr<BindData> bind_data = NativeClasses::find_bind_data(class_name, member_name);
@@ -131,10 +131,10 @@ var Object::get_member(ptr<Object> p_self, const String& p_name) {
 			return ptrcast<EnumValueBind>(bind_data)->get();
 
 		} else {
-			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("attribute named \"%s\" on type \"%s\" is not a property", member_name.c_str(), p_self->get_class_name()));
+			THROW_ERROR(Error::TYPE_ERROR, String::format("attribute named \"%s\" on type %s is not a property.", member_name.c_str(), p_self->get_class_name()));
 		}
 	}
-	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no member named \"%s\"", p_self->get_class_name(), member_name.c_str()));
+	THROW_ERROR(Error::NAME_ERROR, String::format("type %s has no member named \"%s\"", p_self->get_class_name(), member_name.c_str()));
 }
 
 void Object::set_member(ptr<Object> p_self, const String& p_name, var& p_value) {
@@ -142,7 +142,7 @@ void Object::set_member(ptr<Object> p_self, const String& p_name, var& p_value) 
 	String member_name = p_name;
 
 	if (!NativeClasses::is_class_registered(class_name)) {
-		THROW_ERROR(Error::NULL_POINTER, String::format("the class \"%s\" isn't registered in native class entries", class_name.c_str()));
+		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", class_name.c_str()));
 	}
 
 	ptr<BindData> bind_data = NativeClasses::find_bind_data(class_name, member_name);
@@ -153,14 +153,14 @@ void Object::set_member(ptr<Object> p_self, const String& p_name, var& p_value) 
 			ptrcast<StaticPropertyBind>(bind_data)->get() = p_value;
 
 		} else if (bind_data->get_type() == BindData::STATIC_CONST) {
-			THROW_ERROR(Error::INVALID_TYPE, String::format("can't assign a value to constant named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name()));
+			THROW_ERROR(Error::TYPE_ERROR, String::format("can't assign a value to constant named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name()));
 		} else if (bind_data->get_type() == BindData::ENUM_VALUE) {
-			THROW_ERROR(Error::INVALID_TYPE, String::format("can't assign a value to enum value named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name()));
+			THROW_ERROR(Error::TYPE_ERROR, String::format("can't assign a value to enum value named \"%s\" on type \"%s\".", member_name.c_str(), p_self->get_class_name()));
 		} else {
-			THROW_ERROR(Error::INVALID_GET_INDEX, String::format("attribute named \"%s\" on type \"%s\" is not a property", member_name.c_str(), p_self->get_class_name()));
+			THROW_ERROR(Error::TYPE_ERROR, String::format("attribute named \"%s\" on type \"%s\" is not a property.", member_name.c_str(), p_self->get_class_name()));
 		}
 	}
-	THROW_ERROR(Error::INVALID_GET_INDEX, String::format("type \"%s\" has no member named \"%s\"", p_self->get_class_name(), member_name.c_str()));
+	THROW_ERROR(Error::NAME_ERROR, String::format("type %s has no member named \"%s\".", p_self->get_class_name(), member_name.c_str()));
 }
 
 #endif // _VAR_H_EXTERN_IMPLEMENTATIONS

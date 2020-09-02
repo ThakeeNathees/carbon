@@ -140,7 +140,7 @@ TEST_CASE("[native_classes]:method_bind-") {
 	var b2 = newptr<B2>();
 	register_classes();
 
-	CHECK_THROWS_CARBON_ERR(Error::INVALID_GET_INDEX, c.call_method("blah blah..."));
+	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, c.call_method("blah blah..."));
 	CHECK_THROWS_CARBON_ERR(Error::INVALID_ARG_COUNT, c.call_method("C_member_func"));
 
 	// TODO: var error -> carbon error : invalid type casting.

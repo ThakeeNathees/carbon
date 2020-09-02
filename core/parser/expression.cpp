@@ -47,15 +47,15 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 
 		} else if (tk->type == Token::KWORD_THIS) {
 			if (parser_context.current_class == nullptr || (parser_context.current_func && parser_context.current_func->is_static))
-				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Keyword \"this\" only be used in non-static member function.", Vect2i());
+				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "keyword \"this\" only be used in non-static member function.", Vect2i());
 			expr = new_node<ThisNode>();
 
 		} else if (tk->type == Token::KWORD_SUPER) {
 			// if super is inside class function, it calls the same function in it's base.
 			if (parser_context.current_class == nullptr || (parser_context.current_func))
-				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Keyword \"super\" can only be used in class function.", Vect2i());
+				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "keyword \"super\" can only be used in class function.", Vect2i());
 			if (parser_context.current_class->base_type == ClassNode::NO_BASE) {
-				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Invalid use of \"super\". Can only used inside classes with a base type.", Vect2i());
+				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "invalid use of \"super\". Can only used inside classes with a base type.", Vect2i());
 			}
 			expr = new_node<SuperNode>();
 
@@ -293,7 +293,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 	ptr<Node> op_tree = _build_operator_tree(expressions);
 	if (op_tree->type == Node::Type::OPERATOR) {
 		if (!p_allow_assign && OperatorNode::is_assignment(ptrcast<OperatorNode>(op_tree)->op_type)) {
-			THROW_PARSER_ERR(Error::SYNTAX_ERROR, "assignment is not allowed inside expression", op_tree->pos);
+			THROW_PARSER_ERR(Error::SYNTAX_ERROR, "assignment is not allowed inside expression.", op_tree->pos);
 		}
 	}
 	return op_tree;
@@ -415,7 +415,7 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 			int next_expr = next_op;
 			while (p_expr[next_expr].is_op()) {
 				if (++next_expr == p_expr.size()) {
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "expected an expression", Vect2i());
+					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "expected an expression.", Vect2i());
 				}
 			}
 
@@ -437,14 +437,14 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 			if (p_expr[(size_t)next_op - 1].get_expr()->type == Node::Type::OPERATOR) {
 				if (OperatorNode::is_assignment(ptrcast<OperatorNode>(p_expr[(size_t)next_op - 1].get_expr())->op_type)) {
 					Vect2i pos = ptrcast<OperatorNode>(p_expr[(size_t)next_op - 1].get_expr())->pos;
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", Vect2i(pos.x, pos.y));
+					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "unexpected assignment.", Vect2i(pos.x, pos.y));
 				}
 			}
 
 			if (p_expr[(size_t)next_op + 1].get_expr()->type == Node::Type::OPERATOR) {
 				if (OperatorNode::is_assignment(ptrcast<OperatorNode>(p_expr[(size_t)next_op + 1].get_expr())->op_type)) {
 					Vect2i pos = ptrcast<OperatorNode>(p_expr[(size_t)next_op + 1].get_expr())->pos;
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "Unexpected assignment.", Vect2i(pos.x, pos.y));
+					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "unexpected assignment.", Vect2i(pos.x, pos.y));
 				}
 			}
 
