@@ -33,7 +33,7 @@ void File::close() {
 		fclose(_file);
 		_file = NULL;
 	} else {
-		// TODO: Warn here.
+		// TODO: Warn here ??
 	}
 }
 
@@ -84,8 +84,8 @@ long File::size() {
 
 String File::read_text() {
 	if (!is_open()) THROW_ERROR(Error::IO_ERROR, "can't read on a closed file.");
-	// TODO: check if in read mode.
-
+	if (!(mode & READ) && !(mode & EXTRA)) THROW_ERROR(Error::IO_ERROR, "opened file mode isn't supported for reading.");
+	if (mode & BINARY) THROW_ERROR(Error::IO_ERROR, "opened file mode is binary not supported for text.");
 	long _file_size = size();
 	if (_file_size == 0) return String();
 	
@@ -100,13 +100,14 @@ String File::read_text() {
 
 void File::write_text(const String& p_text) {
 	if (!is_open()) THROW_ERROR(Error::IO_ERROR, "can't write on a closed file.");
-	// TODO: check if in write mode.
+	if (!(mode & WRITE) && !(mode & APPEND) && !(mode & EXTRA)) THROW_ERROR(Error::IO_ERROR, "opened file mode isn't supported for writing.");
 	fprintf(_file, p_text.c_str());
 }
 
 ptr<Buffer> File::read_bytes() {
 	if (!is_open()) THROW_ERROR(Error::IO_ERROR, "can't read on a closed file.");
-
+	if (!(mode & READ) && !(mode & EXTRA)) THROW_ERROR(Error::IO_ERROR, "opened file mode isn't supported for reading.");
+	if (!(mode & BINARY)) THROW_ERROR(Error::IO_ERROR, "opened file mode is text not supported for binary.");
 	long file_size = size();
 	ptr<Buffer> buff = newptr<Buffer>(file_size);
 	fseek(_file, 0, SEEK_SET);
@@ -116,7 +117,7 @@ ptr<Buffer> File::read_bytes() {
 
 void File::write_bytes(const ptr<Buffer>& p_bytes) {
 	if (!is_open()) THROW_ERROR(Error::IO_ERROR, "can't write on a closed file.");
-	// TODO: check if in write mode.
+	if (!(mode & WRITE) && !(mode & APPEND) && !(mode & EXTRA)) THROW_ERROR(Error::IO_ERROR, "opened file mode isn't supported for writing.");
 	fwrite(p_bytes->front(), sizeof(byte_t), p_bytes->size(), _file);
 }
 
@@ -131,21 +132,30 @@ var File::read() {
 void File::write(const var& p_what) {
 	if (mode & BINARY) {
 		if (p_what.get_type() != var::OBJECT || p_what.get_type_name() != Buffer::get_class_name_s()) {
-			// TODO: throw.
+			THROW_ERROR(Error::TYPE_ERROR, String::format("expected type %s at argument 0.", Buffer::get_class_name_s()));
 		}
 		return write_bytes(ptrcast<Buffer>(p_what.operator ptr<Object>()));
 	} else {
 		if (p_what.get_type() != var::STRING) {
-			// TODO: throw.
+			THROW_ERROR(Error::TYPE_ERROR, String::format("expected type %s at argument 0.", var::get_type_name_s(var::STRING)));
 		}
 		return write_text(p_what.to_string());
 	}
 }
 
-File::File() {}
+File::File(const String& p_path, int p_mode) {
+	path = p_path;
+	if (path.size() != 0) open(path, p_mode);
+}
 
 File::~File() {
 	close();
+}
+
+void File::_File(ptr<Object> p_self, const String& p_path, int p_mode) {
+	File* file = ptrcast<File>(p_self).get();
+	file->path = p_path;
+	if (file->path.size() != 0) file->open(file->path, p_mode);
 }
 
 }

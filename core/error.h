@@ -50,7 +50,7 @@
 #endif
 
 #define THROW_INVALID_INDEX(m_size, m_ind)                                                               \
-if (m_ind < 0 || m_size <= m_ind) {                                                                      \
+if (m_ind < 0 || m_size <= (size_t)m_ind) {                                                              \
 	throw Error(Error::INVALID_INDEX, String::format("index %s = %lli is out of bounds (%s = %lli).",    \
 		STRINGIFY(m_size), m_size, STRINGIFY(m_ind), m_ind))_ERR_ADD_DBG_VARS;                           \
 } else ((void)0)

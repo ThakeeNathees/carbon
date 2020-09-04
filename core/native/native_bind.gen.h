@@ -38,23 +38,23 @@ template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {
 	VarTypeInfo m_var_type;																						              \
 	if constexpr (std::is_same<m_T, void>::value) {																              \
 		m_var_type = var::_NULL;																				              \
-	} else if constexpr (std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, bool>::value) {              \
+	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, bool>::value) {              \
 		m_var_type = var::BOOL;																					              \
 	} else if constexpr (std::numeric_limits<m_T>::is_integer) {												              \
 		m_var_type = var::INT;																					              \
 	} else if constexpr (std::is_floating_point<m_T>::value) {													              \
 		m_var_type = var::FLOAT;																				              \
-	} else if constexpr (std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, String>::value ||            \
-			std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, const char*>::value) {			          \
+	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, String>::value ||            \
+			std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, const char*>::value) {			          \
 		m_var_type = var::STRING;																				              \
-	} else if constexpr (std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, Array>::value) {             \
+	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, Array>::value) {             \
 		m_var_type = var::ARRAY;																				              \
-	} else if constexpr (std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, Map>::value) {               \
+	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, Map>::value) {               \
 		m_var_type = var::MAP;																					              \
-	} else if constexpr (std::is_same<std::remove_reference<std::remove_const<m_T>::type>::type, var>::value) {               \
+	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, var>::value) {               \
 		m_var_type = var::VAR;																					              \
 	} else if constexpr (is_shared_ptr<m_T>::value) {																	      \
-		m_var_type = { var::OBJECT, std::remove_reference<std::remove_const<m_T>::type::element_type::get_class_name_s() };   \
+		m_var_type = { var::OBJECT, m_T::element_type::get_class_name_s() };                                                  \
 	}
 
 
@@ -89,6 +89,7 @@ public:
 	virtual int get_argc() const { return argc; }
 
 	virtual var call(ptr<Object> self, stdvec<var>& args) = 0;
+	const MethodInfo* get_method_info() const { return mi.get(); }
 };
 
 class StaticFuncBind : public BindData {
@@ -101,6 +102,7 @@ public:
 	virtual int get_argc()              const { return argc; }
 
 	virtual var call(stdvec<var>& args) = 0;
+	const MethodInfo* get_method_info() const { return mi.get(); }
 };
 
 // ---------------- MEMBER BIND START --------------------------------------
@@ -306,7 +308,6 @@ using F7 = R(*)(a0, a1, a2, a3, a4, a5, a6);
 template<typename T, typename R>
 class _MethodBind_M0 : public MethodBind {
 	M0<T, R> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M0(const char* p_name, const char* p_class_name, int p_argc, M0<T, R> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -341,7 +342,6 @@ public:
 template<typename T, typename R>
 class _MethodBind_M0_c : public MethodBind {
 	M0_c<T, R> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M0_c(const char* p_name, const char* p_class_name, int p_argc, M0_c<T, R> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -376,7 +376,6 @@ public:
 template<typename T, typename R, typename a0>
 class _MethodBind_M1 : public MethodBind {
 	M1<T, R, a0> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M1(const char* p_name, const char* p_class_name, int p_argc, M1<T, R, a0> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -411,7 +410,6 @@ public:
 template<typename T, typename R, typename a0>
 class _MethodBind_M1_c : public MethodBind {
 	M1_c<T, R, a0> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M1_c(const char* p_name, const char* p_class_name, int p_argc, M1_c<T, R, a0> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -446,7 +444,6 @@ public:
 template<typename T, typename R, typename a0, typename a1>
 class _MethodBind_M2 : public MethodBind {
 	M2<T, R, a0, a1> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M2(const char* p_name, const char* p_class_name, int p_argc, M2<T, R, a0, a1> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -481,7 +478,6 @@ public:
 template<typename T, typename R, typename a0, typename a1>
 class _MethodBind_M2_c : public MethodBind {
 	M2_c<T, R, a0, a1> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M2_c(const char* p_name, const char* p_class_name, int p_argc, M2_c<T, R, a0, a1> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -516,7 +512,6 @@ public:
 template<typename T, typename R, typename a0, typename a1, typename a2>
 class _MethodBind_M3 : public MethodBind {
 	M3<T, R, a0, a1, a2> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M3(const char* p_name, const char* p_class_name, int p_argc, M3<T, R, a0, a1, a2> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -551,7 +546,6 @@ public:
 template<typename T, typename R, typename a0, typename a1, typename a2>
 class _MethodBind_M3_c : public MethodBind {
 	M3_c<T, R, a0, a1, a2> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M3_c(const char* p_name, const char* p_class_name, int p_argc, M3_c<T, R, a0, a1, a2> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -586,7 +580,6 @@ public:
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3>
 class _MethodBind_M4 : public MethodBind {
 	M4<T, R, a0, a1, a2, a3> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M4(const char* p_name, const char* p_class_name, int p_argc, M4<T, R, a0, a1, a2, a3> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -621,7 +614,6 @@ public:
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3>
 class _MethodBind_M4_c : public MethodBind {
 	M4_c<T, R, a0, a1, a2, a3> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M4_c(const char* p_name, const char* p_class_name, int p_argc, M4_c<T, R, a0, a1, a2, a3> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -656,7 +648,6 @@ public:
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
 class _MethodBind_M5 : public MethodBind {
 	M5<T, R, a0, a1, a2, a3, a4> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M5(const char* p_name, const char* p_class_name, int p_argc, M5<T, R, a0, a1, a2, a3, a4> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -691,7 +682,6 @@ public:
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
 class _MethodBind_M5_c : public MethodBind {
 	M5_c<T, R, a0, a1, a2, a3, a4> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M5_c(const char* p_name, const char* p_class_name, int p_argc, M5_c<T, R, a0, a1, a2, a3, a4> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -726,7 +716,6 @@ public:
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
 class _MethodBind_M6 : public MethodBind {
 	M6<T, R, a0, a1, a2, a3, a4, a5> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M6(const char* p_name, const char* p_class_name, int p_argc, M6<T, R, a0, a1, a2, a3, a4, a5> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -761,7 +750,6 @@ public:
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
 class _MethodBind_M6_c : public MethodBind {
 	M6_c<T, R, a0, a1, a2, a3, a4, a5> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M6_c(const char* p_name, const char* p_class_name, int p_argc, M6_c<T, R, a0, a1, a2, a3, a4, a5> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -796,7 +784,6 @@ public:
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
 class _MethodBind_M7 : public MethodBind {
 	M7<T, R, a0, a1, a2, a3, a4, a5, a6> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M7(const char* p_name, const char* p_class_name, int p_argc, M7<T, R, a0, a1, a2, a3, a4, a5, a6> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -831,7 +818,6 @@ public:
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
 class _MethodBind_M7_c : public MethodBind {
 	M7_c<T, R, a0, a1, a2, a3, a4, a5, a6> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_M7_c(const char* p_name, const char* p_class_name, int p_argc, M7_c<T, R, a0, a1, a2, a3, a4, a5, a6> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -866,7 +852,6 @@ public:
 template<typename R>
 class _StaticFuncBind_F0 : public StaticFuncBind {
 	F0<R> static_func;
-	ptr<MethodInfo> mi;
 public:
 	_StaticFuncBind_F0(const char* p_name, const char* p_class_name, int p_argc, F0<R> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -901,7 +886,6 @@ public:
 template<typename R, typename a0>
 class _StaticFuncBind_F1 : public StaticFuncBind {
 	F1<R, a0> static_func;
-	ptr<MethodInfo> mi;
 public:
 	_StaticFuncBind_F1(const char* p_name, const char* p_class_name, int p_argc, F1<R, a0> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -936,7 +920,6 @@ public:
 template<typename R, typename a0, typename a1>
 class _StaticFuncBind_F2 : public StaticFuncBind {
 	F2<R, a0, a1> static_func;
-	ptr<MethodInfo> mi;
 public:
 	_StaticFuncBind_F2(const char* p_name, const char* p_class_name, int p_argc, F2<R, a0, a1> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -971,7 +954,6 @@ public:
 template<typename R, typename a0, typename a1, typename a2>
 class _StaticFuncBind_F3 : public StaticFuncBind {
 	F3<R, a0, a1, a2> static_func;
-	ptr<MethodInfo> mi;
 public:
 	_StaticFuncBind_F3(const char* p_name, const char* p_class_name, int p_argc, F3<R, a0, a1, a2> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -1006,7 +988,6 @@ public:
 template<typename R, typename a0, typename a1, typename a2, typename a3>
 class _StaticFuncBind_F4 : public StaticFuncBind {
 	F4<R, a0, a1, a2, a3> static_func;
-	ptr<MethodInfo> mi;
 public:
 	_StaticFuncBind_F4(const char* p_name, const char* p_class_name, int p_argc, F4<R, a0, a1, a2, a3> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -1041,7 +1022,6 @@ public:
 template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
 class _StaticFuncBind_F5 : public StaticFuncBind {
 	F5<R, a0, a1, a2, a3, a4> static_func;
-	ptr<MethodInfo> mi;
 public:
 	_StaticFuncBind_F5(const char* p_name, const char* p_class_name, int p_argc, F5<R, a0, a1, a2, a3, a4> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -1076,7 +1056,6 @@ public:
 template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
 class _StaticFuncBind_F6 : public StaticFuncBind {
 	F6<R, a0, a1, a2, a3, a4, a5> static_func;
-	ptr<MethodInfo> mi;
 public:
 	_StaticFuncBind_F6(const char* p_name, const char* p_class_name, int p_argc, F6<R, a0, a1, a2, a3, a4, a5> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -1111,7 +1090,6 @@ public:
 template<typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
 class _StaticFuncBind_F7 : public StaticFuncBind {
 	F7<R, a0, a1, a2, a3, a4, a5, a6> static_func;
-	ptr<MethodInfo> mi;
 public:
 	_StaticFuncBind_F7(const char* p_name, const char* p_class_name, int p_argc, F7<R, a0, a1, a2, a3, a4, a5, a6> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -1369,7 +1347,6 @@ using FVA = R(*)(stdvec<var>&);
 template<typename T, typename R>
 class _MethodBind_MVA : public MethodBind {
 	MVA<T, R> method;
-	ptr<MethodInfo> mi;
 public:
 	_MethodBind_MVA(const char* p_name, const char* p_class_name, MVA<T, R> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -1385,12 +1362,12 @@ public:
 			return (ptrcast<T>(self).get()->*method)(args);
 		}
 	}
+	const MethodInfo* get_method_info() const { return mi.get(); }
 };
 
 template<typename R>
 class _StaticFuncBind_FVA : public StaticFuncBind {
 	FVA<R> static_func;
-	ptr<MethodInfo> mi;
 public:
 	_StaticFuncBind_FVA(const char* p_name, const char* p_class_name, FVA<R> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -1406,6 +1383,7 @@ public:
 			return static_func(args);
 		}
 	}
+	const MethodInfo* get_method_info() const { return mi.get(); }
 };
 
 template<typename T, typename R>

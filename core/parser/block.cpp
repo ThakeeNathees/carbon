@@ -225,6 +225,11 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 			case Token::KWORD_RETURN: {
 				tk = &tokenizer->next(); // eat "return"
 				if (!parser_context.current_func) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use return outside a function.", tk->get_pos());
+				if (parser_context.current_class && parser_context.current_class->constructor) {
+					if (parser_context.current_class->constructor == parser_context.current_func) {
+						THROW_PARSER_ERR(Error::SYNTAX_ERROR, "constructor can't return anything.", tk->get_pos());
+					}
+				}
 				ptr<ControlFlowNode> _return = new_node<ControlFlowNode>(ControlFlowNode::RETURN);
 				_return->parernt_node = p_parent;
 				_return->_return = parser_context.current_func;

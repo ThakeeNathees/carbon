@@ -308,7 +308,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				}
 				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
 
-				if (parser->parser_context.current_class) {
+				if (parser->parser_context.current_class) { // TODO: abstract this and search in parent classes too.
 					for (int i = 0; i < (int)parser->parser_context.current_class->vars.size(); i++) {
 						if (parser->parser_context.current_class->vars[i]->name == id->name) {
 							id->ref = Parser::IdentifierNode::REF_MEMBER_VAR;
@@ -435,9 +435,10 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->enum_value->value);
 					cv->pos = id->pos; p_expr = cv;
 				} break;
-				default:
-					// TODO: if the identnfier is just a function name it could be removed with a warning.
-					break; // variable, parameter, function name, ...
+				default: { // variable, parameter, function name, ...
+					p_expr = id;
+					break;
+				}
 			}
 		} break;
 
@@ -513,9 +514,10 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					continue;
 				} else {
 					// don't_reduce();
-					if (i != 0 && op->op_type == Parser::OperatorNode::OP_INDEX) continue;
-					if (i == 1 && op->op_type == Parser::OperatorNode::OP_CALL) {
-						if (op->args[0]->type != Parser::Node::Type::BUILTIN_FUNCTION && op->args[0]->type != Parser::Node::Type::BUILTIN_TYPE) {
+					if (i != 0 && op->op_type == Parser::OperatorNode::OP_INDEX) continue;  // don't_reduce_attribute_on_base();
+					if (op->op_type == Parser::OperatorNode::OP_CALL) {                     // don't_reduce_method_name_on_base();
+						if (i == 0 && op->args[0]->type == Parser::Node::Type::UNKNOWN) continue; // don't_reduce_unknown_base(); could be this or super.
+						if (i == 1 && op->args[0]->type != Parser::Node::Type::BUILTIN_FUNCTION && op->args[0]->type != Parser::Node::Type::BUILTIN_TYPE) {
 							// args[0] : call on identifier, const_value, ... if UNKNOWN compiler is not sure if it's called on self or static func.
 							// args[1] : method name -> ignore here and reduce on base.
 							// args[2...] : method arguments.
@@ -546,61 +548,146 @@ do {                                                                            
 			switch (op->op_type) {
 				case Parser::OperatorNode::OpType::OP_CALL: {
 
-					if (op->args[0]->type == Parser::Node::Type::IDENTIFIER) {
-						ASSERT(false && "TODO: resolve op->args[1] <-- method name.");
-					}
-
 					// reduce builtin function
-					if ((op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION) && all_const) {
-						ptr<Parser::BuiltinFunctionNode> bf = ptrcast<Parser::BuiltinFunctionNode>(op->args[0]);
-						if (BuiltinFunctions::can_const_fold(bf->func)) {
-							GET_ARGS(1);
-							if (BuiltinFunctions::is_compiletime(bf->func)) {
-								var ret = _call_compiletime_func(bf.get(), args);
-								SET_EXPR_CONST_NODE(ret);
-							} else {
-								try {
-									var ret;
-									BuiltinFunctions::call(bf->func, args, ret);
+					if (op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION) {
+						if (all_const) {
+							ptr<Parser::BuiltinFunctionNode> bf = ptrcast<Parser::BuiltinFunctionNode>(op->args[0]);
+							if (BuiltinFunctions::can_const_fold(bf->func)) {
+								GET_ARGS(1);
+								if (BuiltinFunctions::is_compiletime(bf->func)) {
+									var ret = _call_compiletime_func(bf.get(), args);
 									SET_EXPR_CONST_NODE(ret);
-								} catch (Error& err) {
-									throw err
-										.set_file(file_node->path)
-										.set_line(file_node->source.get_line(op->pos.x))
-										.set_pos(op->pos)
-										.set_err_len((uint32_t)String(BuiltinFunctions::get_func_name(bf->func)).size())
-									;
+								} else {
+									try {
+										var ret;
+										BuiltinFunctions::call(bf->func, args, ret);
+										SET_EXPR_CONST_NODE(ret);
+									} catch (Error& err) {
+										throw err
+											.set_file(file_node->path)
+											.set_line(file_node->source.get_line(op->pos.x))
+											.set_pos(op->pos)
+											.set_err_len((uint32_t)String(BuiltinFunctions::get_func_name(bf->func)).size())
+											;
+									}
 								}
 							}
 						}
-					}
-					// reduce builtin type construction
-					if ((op->args[0]->type == Parser::Node::Type::BUILTIN_TYPE) && all_const) {
-						ptr<Parser::BuiltinTypeNode> bt = ptrcast<Parser::BuiltinTypeNode>(op->args[0]);
-						try {
-							GET_ARGS(1);
-							var ret = BuiltinTypes::construct(bt->builtin_type, args);
-							SET_EXPR_CONST_NODE(ret);
-						} catch (Error& err) {
-							throw err
-								.set_file(file_node->path)
-								.set_line(file_node->source.get_line(op->pos.x))
-								.set_pos(op->pos)
-								.set_err_len((uint32_t)String(BuiltinTypes::get_type_name(bt->builtin_type)).size())
-							;
-						}
-					}
 
-					if (op->args[0]->type == Parser::Node::Type::CONST_VALUE && all_const) {
-						try {
-							ASSERT(op->args.size() >= 2);
-							ASSERT(op->args[1]->type == Parser::Node::Type::IDENTIFIER);
-							GET_ARGS(2); // 0 : const value, 1: name, ... args.
-							var ret = ptrcast<Parser::ConstValueNode>(op->args[0])->value.call_method(ptrcast<Parser::IdentifierNode>(op->args[1])->name, args);
-							SET_EXPR_CONST_NODE(ret);
-						} catch (.../*VarError& err*/) {
-							ASSERT(false && "TODO: catch and throw var error as cb error");
+					// reduce builtin type construction
+					} else if (op->args[0]->type == Parser::Node::Type::BUILTIN_TYPE) {
+						if (all_const) {
+							ptr<Parser::BuiltinTypeNode> bt = ptrcast<Parser::BuiltinTypeNode>(op->args[0]);
+							try {
+								GET_ARGS(1);
+								var ret = BuiltinTypes::construct(bt->builtin_type, args);
+								SET_EXPR_CONST_NODE(ret);
+							} catch (Error& err) {
+								throw err
+									.set_file(file_node->path)
+									.set_line(file_node->source.get_line(op->pos.x))
+									.set_pos(op->pos)
+									.set_err_len((uint32_t)String(BuiltinTypes::get_type_name(bt->builtin_type)).size())
+									;
+							}
 						}
+
+					// base const value.
+					} else if (op->args[0]->type == Parser::Node::Type::CONST_VALUE) {
+						if (all_const) {
+							try {
+								ASSERT(op->args.size() >= 2);
+								ASSERT(op->args[1]->type == Parser::Node::Type::IDENTIFIER);
+								GET_ARGS(2); // 0 : const value, 1: name, ... args.
+								var ret = ptrcast<Parser::ConstValueNode>(op->args[0])->value.call_method(ptrcast<Parser::IdentifierNode>(op->args[1])->name, args);
+								SET_EXPR_CONST_NODE(ret);
+							} catch (.../*VarError& err*/) {
+								ASSERT(false && "TODO: catch and throw var error as cb error");
+							}
+						}
+
+					// call on this, super, super.super ...
+					} else if (op->args[0]->type == Parser::Node::Type::UNKNOWN) {
+						ASSERT(op->args.size() >= 2);
+						_reduce_expression(op->args[1]);
+						ASSERT(op->args[1]->type == Parser::Node::Type::IDENTIFIER);
+						Parser::IdentifierNode* id = ptrcast<Parser::IdentifierNode>(op->args[1]).get();
+						switch (id->ref) {
+
+							// call `__call` method on the variable.
+							case Parser::IdentifierNode::REF_PARAMETER:
+							case Parser::IdentifierNode::REF_LOCAL_VAR:
+							case Parser::IdentifierNode::REF_MEMBER_VAR: {
+								ptr<Parser::IdentifierNode> __call = newptr<Parser::IdentifierNode>("__call");
+								__call->pos = id->pos;
+								op->args[0] = op->args[1];
+								op->args[1] = __call;
+							} break;
+
+							// check arguments.
+							case Parser::IdentifierNode::REF_CARBON_FUNCTION: {
+								// TODO: implement default arguments.
+								if (op->args.size() - 2 != id->_func->args.size())
+									THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", (int)id->_func->args.size()), id->pos);
+							} break;
+
+							// call constructor.
+							case Parser::IdentifierNode::REF_CARBON_CLASS: {
+								if (id->_class->constructor) {
+									// TODO: default arguments.
+									if (op->args.size() - 2 != id->_class->constructor->args.size()) {
+										THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", (int)id->_class->constructor->args.size()), id->pos);
+									}
+								} else {
+									if (op->args.size() - 2 != 0)
+										THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "default constructor takes exactly 0 argument.", id->pos);
+								}
+							} break;
+
+							case Parser::IdentifierNode::REF_NATIVE_CLASS: {
+								ASSERT(NativeClasses::is_class_registered(id->name));
+								const StaticFuncBind* initializer = NativeClasses::get_initializer(id->name);
+								if (initializer) {
+									// check arg counts.
+									int argc = initializer->get_method_info()->get_arg_count() - 1; // -1 for self argument.
+									int argc_default = initializer->get_method_info()->get_default_arg_count();
+									int argc_given = (int) op->args.size() - 2;
+									if (argc_given + argc_default < argc) {
+										if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+										else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
+									} else if (argc_given > argc) {
+										if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+										else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
+									}
+									// check arg types.
+									const stdvec<VarTypeInfo>& arg_types = initializer->get_method_info()->get_arg_types();
+									for (int i = 2; i < op->args.size(); i++) {
+										if (op->args[i]->type == Parser::Node::Type::CONST_VALUE) {
+											var value = ptrcast<Parser::ConstValueNode>(op->args[i])->value;
+											if (value.get_type() != arg_types[i - 2 + 1].type) // +1 for skip self argument.
+												THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(arg_types[i - 2].type), i-2), op->args[i-2]->pos);
+										}
+									}
+								} else {
+									if (op->args.size() - 2 != 0)
+										THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "default constructor takes exactly 0 argument.", id->pos);
+								}
+							} break;
+
+							// invalid.
+							//case Parser::IdentifierNode::REF_ENUM_NAME:
+							//case Parser::IdentifierNode::REF_ENUM_VALUE:
+							//case Parser::IdentifierNode::REF_FILE:
+							//case Parser::IdentifierNode::REF_LOCAL_CONST:
+							//case Parser::IdentifierNode::REF_MEMBER_CONST:
+							default: {
+								THROW_ERROR(Error::TYPE_ERROR, String::format("attribute \"%s\" is not callable.", id->name.c_str()));
+							}
+						}
+
+					} else {
+						ASSERT(false && "TODO: resolve op->args[1] on base op->args[0].");
+
 					}
 
 				} break;

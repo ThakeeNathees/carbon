@@ -31,19 +31,25 @@
 namespace carbon {
 
 class Buffer : public Object {
-	REGISTER_CLASS(Buffer, Object) {}
+	REGISTER_CLASS(Buffer, Object) {
+		BIND_STATIC_FUNC("Buffer", &Buffer::_Buffer, PARAMS("self", "size"), DEFVALUES(0));
+		BIND_METHOD("alloc", &Buffer::alloc, PARAMS("size"));
+		BIND_METHOD("size", &Buffer::size);
+	}
 
 public:
 
-	Buffer() {}
-	Buffer(size_t p_size) { alloc(p_size); }
+	Buffer(size_t p_size = 0) { alloc(p_size); }
+	static void _Buffer(ptr<Object> self, int64_t p_size = 0) { ptrcast<Buffer>(self)->alloc(p_size); }
 
 	// Methods.
 	void alloc(size_t p_size) {
 		_buffer = ptr<byte_t[]>(new byte_t[p_size]);
 		_size = p_size;
 	}
+
 	byte_t* front() { return _buffer.get(); }
+
 	size_t size() const { return _size; }
 
 	byte_t& operator[](size_t p_index) {
@@ -53,6 +59,23 @@ public:
 	const byte_t& operator[](size_t p_index) const {
 		THROW_INVALID_INDEX(_size, p_index);
 		return _buffer.get()[p_index];
+	}
+
+	// operators
+	virtual var __get_mapped(const var& p_key) const override {
+		if (p_key.get_type() != var::INT) THROW_ERROR(Error::TYPE_ERROR, "expected an integer as key.");
+		int64_t key = p_key.operator int64_t();
+		THROW_INVALID_INDEX(_size, key);
+		return (int64_t)_buffer.get()[key];
+	}
+	virtual void __set_mapped(const var& p_key, const var& p_value) override {
+		if (p_key.get_type() != var::INT) THROW_ERROR(Error::TYPE_ERROR, "expected an integer as key.");
+		if (p_value.get_type() != var::INT) THROW_ERROR(Error::TYPE_ERROR, "expected an integer as value.");
+		int64_t key = p_key.operator int64_t();
+		int64_t value = p_value.operator int64_t();
+		if (value < 0 || 0xff < value) THROW_ERROR(Error::TYPE_ERROR, String::format("integer value %lli is invalid for a buffer byte of range 0 - 0xff", value));
+		THROW_INVALID_INDEX(_size, key);
+		_buffer.get()[key] = (byte_t)value;
 	}
 
 protected:

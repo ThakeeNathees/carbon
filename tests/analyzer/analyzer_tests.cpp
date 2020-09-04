@@ -80,4 +80,16 @@ TEST_CASE("[parser_tests]:analyzer_test") {
 			}
 		}
 	)");
+
+
+	// function signature
+	CHECK_NOTHROW__ANALYZE("func f() { } func g() { f(); } ");
+	CHECK_NOTHROW__ANALYZE("func f(a0, a1) { } func g() { f(1, 2); } ");
+	//CHECK_NOTHROW__ANALYZE("class Class { static func f() { } } func g() { Class.f(); } "); // remove static for failure test.
+
+	CHECK_NOTHROW__ANALYZE("var file = File();");
+	CHECK_NOTHROW__ANALYZE("var file = File(\"the/path/to/file.txt\");");
+	CHECK_NOTHROW__ANALYZE("var buffer = Buffer();");
+	CHECK_NOTHROW__ANALYZE("var buffer = Buffer(1000);");
+
 }

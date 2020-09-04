@@ -580,6 +580,9 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	}
 
 	func_node->name = tk->identifier;
+	if (parser_context.current_class && parser_context.current_class->name == tk->identifier) {
+		parser_context.current_class->constructor = func_node.get();
+	}
 
 	tk = &tokenizer->next();
 	if (tk->type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");

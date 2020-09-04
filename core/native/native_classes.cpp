@@ -40,6 +40,15 @@ void NativeClasses::bind_data(ptr<BindData> p_bind_data) {
 			String::format("entry \"%s\" already exists on class \"%s\".", p_bind_data->get_name(), p_bind_data->get_class_name())
 		);
 	}
+	// check initializer.
+	if (class_name == data_name) {
+		if (p_bind_data->get_type() != BindData::STATIC_FUNC)
+			THROW_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" can't be the same as type name.", data_name.c_str()));
+		const MethodInfo* mi = ptrcast<StaticFuncBind>(p_bind_data)->get_method_info();
+		if (mi->get_return_type().type != var::_NULL) THROW_ERROR(Error::TYPE_ERROR, "constructor initializer must not return anything.");
+		if (mi->get_arg_count() < 1 || mi->get_arg_types()[0].type != var::OBJECT) THROW_ERROR(Error::TYPE_ERROR, "constructor initializer must take the instance as the first argument.");
+		entries.__initializer = ptrcast<StaticFuncBind>(p_bind_data).get();		
+	}
 	entries.bind_data[data_name.hash()] = p_bind_data;
 }
 
@@ -58,22 +67,39 @@ ptr<BindData> NativeClasses::find_bind_data(const String& cls, const String& att
 }
 
 void NativeClasses::set_inheritance(const String& p_class_name, const String& p_parent_class_name) {
-	if (classes[p_class_name.hash()].class_name.size() != 0) {
+	if (is_class_registered(p_class_name))
 		THROW_ERROR(Error::NAME_ERROR, String::format("class \"%s\" already exists on NativeClasses entries.", p_class_name));
-	}
+
 	classes[p_class_name.hash()].class_name = p_class_name;
 	classes[p_class_name.hash()].parent_class_name = p_parent_class_name;
 }
 
+void NativeClasses::set_constructor(const String& p_class_name, __constructor_f p__constructor) {
+	if (!is_class_registered(p_class_name))
+		THROW_ERROR(Error::NAME_ERROR, String::format("class \"%s\" not registered on NativeClasses entries.", p_class_name));
+	classes[p_class_name.hash()].__constructor = p__constructor;
+}
+
 String NativeClasses::get_inheritance(const String& p_class_name) {
-	if (classes[p_class_name.hash()].class_name.size() == 0) {
-		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
-	}
+	if (classes[p_class_name.hash()].class_name.size() == 0)
+		THROW_ERROR(Error::NAME_ERROR, String::format("class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
 	return classes[p_class_name.hash()].parent_class_name;
 }
 
 bool NativeClasses::is_class_registered(const String& p_class_name) {
 	return classes[p_class_name.hash()].class_name.size() != 0;
+}
+
+ptr<Object> NativeClasses::construct(const String& p_class_name) {
+	if (!is_class_registered(p_class_name))
+		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
+	return classes[p_class_name.hash()].__constructor();
+}
+
+const StaticFuncBind* NativeClasses::get_initializer(const String& p_class_name) {
+	if (!is_class_registered(p_class_name))
+		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
+	return classes[p_class_name.hash()].__initializer;
 }
 
 }

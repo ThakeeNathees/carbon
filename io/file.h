@@ -34,6 +34,8 @@ namespace carbon {
 class File : public Object {
 
 	REGISTER_CLASS(File, Object) {
+		BIND_STATIC_FUNC("File", &File::_File, PARAMS("self", "path", "mode"), DEFVALUES("", DEFAULT));
+
 		BIND_ENUM_VALUE("READ",   READ);
 		BIND_ENUM_VALUE("WRITE",  WRITE);
 		BIND_ENUM_VALUE("APPEND", APPEND);
@@ -48,7 +50,6 @@ class File : public Object {
 	}
 
 public:
-
 	enum {
 		READ   = 1 << 0, // "r"
 		WRITE  = 1 << 1, // "w"
@@ -59,8 +60,9 @@ public:
 		DEFAULT = APPEND | EXTRA,
 	};
 
-	File();
+	File(const String& p_path = "", int p_mode = DEFAULT);
 	~File();
+	static void _File(ptr<Object> p_self, const String& p_path = "", int p_mode = DEFAULT);
 
 	// Methods.
 	inline bool is_open() const { return _file != NULL; }

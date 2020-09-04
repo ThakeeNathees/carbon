@@ -168,7 +168,7 @@ do {                                                                            
 	} while (false)
 
 namespace carbon {
-typedef char byte_t;
+typedef unsigned char byte_t;
 
 template<typename T, typename... Targs>
 stdvec<T> make_stdvec(Targs... p_args) { return { p_args... }; }

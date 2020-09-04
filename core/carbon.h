@@ -46,6 +46,7 @@ namespace carbon {
 template<typename T>
 void register_class() {
 	NativeClasses::set_inheritance(T::get_class_name_s(), T::get_parent_class_name_s());
+	NativeClasses::set_constructor(T::get_class_name_s(), &T::__constructor);
 	T::_bind_data();
 }
 

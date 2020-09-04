@@ -144,6 +144,7 @@ public:
 		String base_class;
 
 		ClassNode* base_local = nullptr;
+		FunctionNode* constructor = nullptr;
 		// TODO: ptr<CarbonByteCode> base_binary;
 		// CarbonByteCode will be the compiled version of FileNode
 
@@ -235,7 +236,7 @@ public:
 		};
 		IdentifierReference ref = REF_UNKNOWN;
 		union {
-			int param_index;
+			int param_index = 0;
 			VarNode* _var;
 			ConstNode* _const;
 			EnumValueNode* enum_value;

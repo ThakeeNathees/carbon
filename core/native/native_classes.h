@@ -76,11 +76,14 @@ class Aclass : public Object {
 
 
 namespace carbon {
+		typedef ptr<Object>(*__constructor_f)();
 
 class NativeClasses {
 	struct ClassEntries {
 		String class_name;
 		String parent_class_name;
+		__constructor_f __constructor = nullptr;
+		const StaticFuncBind* __initializer = nullptr;
 		stdhashtable<size_t, ptr<BindData>> bind_data;
 	};
 
@@ -89,11 +92,16 @@ private:
 
 public:
 	static void bind_data(ptr<BindData> p_bind_data);
-	static ptr<BindData> get_bind_data(const String& cls, const String& attrib);
-	static ptr<BindData> find_bind_data(const String& cls, const String& attrib);
 	static void set_inheritance(const String& p_class_name, const String& p_parent_class_name);
+	static void set_constructor(const String& p_class_name, __constructor_f p__constructor);
+
+	static ptr<BindData> get_bind_data(const String& p_class_name, const String& attrib);
+	static ptr<BindData> find_bind_data(const String& p_class_name, const String& attrib);
 	static String get_inheritance(const String& p_class_name);
 	static bool is_class_registered(const String& p_class_name);
+
+	static ptr<Object> construct(const String& p_class_name);
+	static const StaticFuncBind* get_initializer(const String& p_class_name);
 };
 
 }

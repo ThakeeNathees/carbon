@@ -9,11 +9,11 @@ debug/
 __pycache__/
 .vs/
 .vscode/
-Carbon.sln
-Carbon.vcxproj
-Carbon.vcxproj.filters
-Carbon.vcxproj.user
-
+carbon.sln
+carbon.vcxproj
+carbon.vcxproj.filters
+carbon.vcxproj.user
+*.obj.enc
 
 # Prerequisites
 *.d

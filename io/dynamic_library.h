@@ -66,6 +66,8 @@ static int _visit(DynamicLibrary* p_lib, const String& p_func_name, var* p_arg0,
 
 class DynamicLibrary : public Object {
 	REGISTER_CLASS(DynamicLibrary, Object) {
+		BIND_STATIC_FUNC("DynamicLibrary", &DynamicLibrary::_DynamicLibrary, PARAMS("self", "path"), DEFVALUES(""));
+
 		BIND_METHOD("open", &DynamicLibrary::open, PARAMS("lib_name"));
 		BIND_METHOD_VA("call", &DynamicLibrary::_call_va_args);
 		BIND_METHOD("close", &DynamicLibrary::close);
@@ -97,7 +99,7 @@ public:
 			case 4: return  call(func, p_args[1], p_args[2], p_args[3], p_args[4]);
 			case 5: return  call(func, p_args[1], p_args[2], p_args[3], p_args[4], p_args[5]);
 			default:
-				THROW_ERROR(Error::INVALID_ARG_COUNT, "dynamic library call argument count must be less than 5");
+				THROW_ERROR(Error::INVALID_ARG_COUNT, "dynamic library call argument count must be less than 5.");
 		}
 	}
 
@@ -130,12 +132,15 @@ public:
 		}
 	}
 
-	DynamicLibrary(){}
-	DynamicLibrary(const char* p_lib_name) {
-		open(p_lib_name);
+	DynamicLibrary(const String& p_lib_name = nullptr) {
+		if (p_lib_name.size() != 0) open(p_lib_name);
 	}
 	~DynamicLibrary(){
 		close();
+	}
+	static void _DynamicLibrary(ptr<Object> p_self, const String& p_lib_name = "") {
+		DynamicLibrary* self = ptrcast<DynamicLibrary>(p_self).get();
+		if (p_lib_name.size() != 0) self->open(p_lib_name.c_str());
 	}
 
 protected:
