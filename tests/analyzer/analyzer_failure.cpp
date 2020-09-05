@@ -13,7 +13,7 @@ do {												            \
 	CHECK_THROWS_CARBON_ERR(m_type, analyzer.analyze(parser));  \
 } while(false)
 
-TEST_CASE("[parser_tests]:analyzer_failure") {
+TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
 

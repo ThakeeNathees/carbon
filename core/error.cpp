@@ -84,9 +84,9 @@ static const char* _error_names[Error::_ERROR_MAX_] = {
 	"INVALID_ARGUMENT_COUNT",
 	"INVALID_INDEX",
 	"SYNTAX_ERROR",
+	"ASSERTION",
 	"UNEXPECTED_EOF",
-	"ALREADY_DEFINED",
-	"NOT_DEFINED",
+	"NAME_ERROR",
 	"IO_ERROR",
 	//_ERROR_MAX_
 };

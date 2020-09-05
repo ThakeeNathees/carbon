@@ -1,0 +1,11 @@
+
+// Newman-Conway Sequence: 1 1 2 2 3 4 4 4 5 6 7 7 ...
+// P(n) = P(P(n - 1)) + P(n - P(n - 1)) 
+
+func sequence(n) {
+	if (n == 1 || n == 2)
+		return 1;
+	else
+		return sequence(sequence(n - 1))
+				+ sequence(n - sequence(n - 1)); 
+}

@@ -280,7 +280,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
 
 				Parser::BlockNode* outer_block = parser->parser_context.current_block;
-				while (outer_block && id->ref != Parser::IdentifierNode::REF_UNKNOWN) {
+				while (outer_block && id->ref == Parser::IdentifierNode::REF_UNKNOWN) {
 					for (int i = 0; i < (int)outer_block->local_vars.size(); i++) {
 						if (outer_block->local_vars[i]->name == id->name) {
 							id->ref = Parser::IdentifierNode::REF_LOCAL_VAR;
@@ -681,13 +681,111 @@ do {                                                                            
 							//case Parser::IdentifierNode::REF_LOCAL_CONST:
 							//case Parser::IdentifierNode::REF_MEMBER_CONST:
 							default: {
-								THROW_ERROR(Error::TYPE_ERROR, String::format("attribute \"%s\" is not callable.", id->name.c_str()));
+								THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("attribute \"%s\" is not callable.", id->name.c_str()), id->pos);
 							}
 						}
 
 					} else {
-						ASSERT(false && "TODO: resolve op->args[1] on base op->args[0].");
+						ASSERT(op->args[1]->type == Parser::Node::Type::IDENTIFIER);
+						Parser::IdentifierNode* id = ptrcast<Parser::IdentifierNode>(op->args[1]).get();
 
+						switch (op->args[0]->type) {
+							case Parser::Node::Type::IDENTIFIER: {
+								Parser::IdentifierNode* base = ptrcast<Parser::IdentifierNode>(op->args[0]).get();
+								switch (base->ref) {
+									case Parser::IdentifierNode::REF_PARAMETER:
+									case Parser::IdentifierNode::REF_LOCAL_VAR:
+									case Parser::IdentifierNode::REF_MEMBER_VAR: {
+									} break;
+
+									case Parser::IdentifierNode::REF_LOCAL_CONST:
+									case Parser::IdentifierNode::REF_MEMBER_CONST: {
+										// TODO: add has_method, has_member, ... in var.h and check here.
+										//       const value isn't object -> no need to check in native calsses.
+										// check argument type, count.
+										bool _all_const = true;
+										for (int i = 2; i < (int)op->args.size(); i++) {
+											if (op->args[i]->type != Parser::Node::Type::CONST_VALUE) {
+												_all_const = false;
+												break;
+											}
+										}
+										if (_all_const) {
+											try {
+												GET_ARGS(2);
+												var ret = base->_const->value.call_method(id->name, args);
+												SET_EXPR_CONST_NODE(ret);
+											} catch (...) {
+												ASSERT(false && "catch var error.");
+											}
+										}
+									} break;
+
+									case Parser::IdentifierNode::REF_CARBON_CLASS: {
+										// TODO: implement ClassNode::get_member(const String& p_name);
+									} break;
+
+									case Parser::IdentifierNode::REF_NATIVE_CLASS: {
+										
+										BindData* bd = NativeClasses::get_bind_data(base->name, id->name).get();
+										if (!bd) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" does not exists on base %s.", id->name.c_str(), base->name.c_str()), id->pos);
+										switch (bd->get_type()) {
+											case BindData::STATIC_FUNC: {
+												// TODO: check if the native func consexpr.
+											} break;
+											case BindData::STATIC_VAR: break; // calls the "__call" at runtime.
+											case BindData::STATIC_CONST: {
+												// TODO: add has_method, has_member, ... in var.h and check here.
+												//       const value isn't object -> no need to check in native calsses.
+												// check argument type, count.
+												bool _all_const = true;
+												for (int i = 2; i < (int)op->args.size(); i++) {
+													if (op->args[i]->type != Parser::Node::Type::CONST_VALUE) {
+														_all_const = false;
+														break;
+													}
+												}
+												if (_all_const) {
+													try {
+														GET_ARGS(2);
+														var ret = base->_const->value.call_method("__call", args);
+														SET_EXPR_CONST_NODE(ret);
+													} catch (...) {
+														ASSERT(false && "catch var error.");
+													}
+												}
+											} break;
+											case BindData::METHOD: THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("can't call non-static method \"%s.%s()\" statically.", base->name.c_str(), id->name.c_str()), id->pos);
+											case BindData::MEMBER_VAR:  THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("can't call non-static member \"%s.%s()\" statically.", base->name.c_str(), id->name.c_str()), id->pos);
+											case BindData::ENUM:  THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("enums (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
+											case BindData::ENUM_VALUE: THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("enum value (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
+										}
+
+									} break;
+
+									//case Parser::IdentifierNode::REF_UNKNOWN:
+									//case Parser::IdentifierNode::REF_ENUM_NAME:
+									//case Parser::IdentifierNode::REF_ENUM_VALUE:
+									//case Parser::IdentifierNode::REF_CARBON_FUNCTION:
+									default: {
+										THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("attribute \"%s\" doesn't support method calls.", base->name.c_str()), base->pos);
+									}
+								}
+							}
+
+							case Parser::Node::Type::CONST_VALUE: // TODO: implement var::has_method, has_member, get_member_info ...
+							case Parser::Node::Type::ARRAY:  // TODO: check in Array.get_member_inf()
+							case Parser::Node::Type::MAP:    //       same as above
+							case Parser::Node::Type::THIS:   // get member from class base.
+							case Parser::Node::Type::SUPER:  // same as above + extern base.
+							case Parser::Node::Type::BUILTIN_TYPE: // static methods.
+							case Parser::Node::Type::OPERATOR:
+								break;
+
+							default: {
+								ASSERT(false && "can't reach here.");
+							}
+						}
 					}
 
 				} break;
@@ -1014,8 +1112,9 @@ do {                                                                            
 	}
 }
 
-void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode* p_parent_block) {
+void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 	
+	Parser::BlockNode* parent_block = parser->parser_context.current_block;
 	parser->parser_context.current_block = p_block.get();
 	class ScopeDestruct {
 	public:
@@ -1029,7 +1128,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode*
 			context->current_block = parent_block;
 		}
 	};
-	ScopeDestruct destruct = ScopeDestruct(&parser->parser_context, p_parent_block);
+	ScopeDestruct destruct = ScopeDestruct(&parser->parser_context, parent_block);
 
 	for (int i = 0; i < (int)p_block->statements.size(); i++) {
 		switch (p_block->statements[i]->type) {
@@ -1088,9 +1187,9 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode*
 						ASSERT(cf_node->args.size() == 1);
 						// TODO: if it's evaluvated to compile time constant true/false it could be optimized/warned.
 						_reduce_expression(cf_node->args[0]);
-						_reduce_block(cf_node->body, p_block.get());
+						_reduce_block(cf_node->body);
 						if (cf_node->body_else != nullptr) {
-							_reduce_block(cf_node->body_else, p_block.get());
+							_reduce_block(cf_node->body_else);
 						}
 					} break;
 
@@ -1115,7 +1214,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode*
 								}
 							}
 
-							_reduce_block(cf_node->switch_cases[j].body, p_block.get());
+							_reduce_block(cf_node->switch_cases[j].body);
 						}
 
 					} break;
@@ -1131,26 +1230,38 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block, Parser::BlockNode*
 								p_block->statements.erase(p_block->statements.begin() + i--);
 							}
 						}
-						_reduce_block(cf_node->body, p_block.get());
+						_reduce_block(cf_node->body);
 					} break;
 
 					case Parser::ControlFlowNode::FOR: {
 						ASSERT(cf_node->args.size() == 3);
+						ASSERT(cf_node->body->statements.size() >= 3); // arguments are in the body.
+
+						// reducing the block reduce the arguments.
+						_reduce_block(cf_node->body);
+
 						// TODO: if it's evaluvated to compile time constant it could be optimized/warned.
-						if (cf_node->args[0] != nullptr) _reduce_expression(cf_node->args[0]);
-						if (cf_node->args[1] != nullptr) _reduce_expression(cf_node->args[1]);
-						if (cf_node->args[2] != nullptr) _reduce_expression(cf_node->args[2]);
+						//if (cf_node->args[0] != nullptr) {
+						//	if (cf_node->args[0]->type == Parser::Node::Type::VAR) {
+						//		_reduce_expression(ptrcast<Parser::VarNode>(cf_node->args[0])->assignment);
+						//	} else {
+						//		_reduce_expression(cf_node->args[0]);
+						//	}
+						//}
+						//if (cf_node->args[1] != nullptr) _reduce_expression(cf_node->args[1]);
+						//if (cf_node->args[2] != nullptr) _reduce_expression(cf_node->args[2]);
 
 						if (cf_node->args[0] == nullptr && cf_node->args[1] == nullptr && cf_node->args[2] == nullptr) {
 							if (!cf_node->has_break) { /* TODO: add warning -> infinit loop */ }
 						}
-						_reduce_block(cf_node->body, p_block.get());
 					} break;
 
 					case Parser::ControlFlowNode::BREAK:
-					case Parser::ControlFlowNode::CONTINUE:
-					case Parser::ControlFlowNode::RETURN: {
+					case Parser::ControlFlowNode::CONTINUE: {
 						ASSERT(cf_node->args.size() == 0);
+					} break;
+					case Parser::ControlFlowNode::RETURN: {
+						ASSERT(cf_node->args.size() <= 1);
 					} break;
 				}
 			} break;

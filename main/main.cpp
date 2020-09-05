@@ -42,23 +42,6 @@ int _main(int argc, char** argv) {
 
 	initialize();
 
-	//ptr<Parser> parser = newptr<Parser>();
-	//Analyzer analyzer;
-	//File file = File("tests/analyzer/test_files/z_function.cb", File::READ);
-	//String source = file.read_text();
-	//try {
-	//	parser->parse(source, file.get_path());
-	//	analyzer.analyze(parser);
-	//} catch (Error& err) {
-	//	Logger::logf_error("ERROR(%s): %s ", Error::get_err_name(err.get_type()).c_str(), err.get_msg().c_str());
-	//	Logger::logf_info("at: (%s:%i)\n", err.get_file().c_str(), err.get_pos().x);
-	//	Logger::log(
-	//		String::format("    at: %s (%s:%i)\n", err.get_dbg_func().c_str(), err.get_dbg_file().c_str(), err.get_dbg_line()).c_str(),
-	//		Logger::ERROR, Logger::Color::L_SKYBLUE
-	//	);
-	//	Logger::logf_info("%s\n%s", err.get_line().c_str(), err.get_line_pos().c_str());
-	//}
-
 #ifdef RUN_TESTS
 	int res = _test_main(argc, argv);
 	if (res) {
