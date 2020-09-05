@@ -197,6 +197,16 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 				} else {
 					for_block->body = _parse_block(block_node, true);
 				}
+
+				for_block->body->statements.insert(for_block->body->statements.begin(), for_block->args[1]); // second statement is the condition.
+				for_block->body->statements.insert(for_block->body->statements.begin(), for_block->args[0]); // first statement is the initialization.
+				for_block->body->statements.push_back(for_block->args[2]);                                   // last statement is counter increment.
+
+				// add loop counter initialization to local vars.
+				if (for_block->args[0] != nullptr && for_block->args[0]->type == Node::Type::VAR) {
+					for_block->body->local_vars.insert(for_block->body->local_vars.begin(), ptrcast<VarNode>(for_block->args[0]));
+				}
+
 				block_node->statements.push_back(for_block);
 				parser_context.current_break = outer_break;
 				parser_context.current_continue = outer_continue;
@@ -231,8 +241,10 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 					}
 				}
 				ptr<ControlFlowNode> _return = new_node<ControlFlowNode>(ControlFlowNode::RETURN);
+				_return->args.push_back(_parse_expression(block_node, true));
 				_return->parernt_node = p_parent;
 				_return->_return = parser_context.current_func;
+				if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
 				parser_context.current_func->has_return = true;
 				block_node->statements.push_back(_return);
 			} break;

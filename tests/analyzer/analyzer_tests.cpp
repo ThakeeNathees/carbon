@@ -8,7 +8,7 @@ do {														   \
 	CHECK_NOTHROW(analyzer.analyze(parser));				   \
 } while (false)
 
-TEST_CASE("[parser_tests]:analyzer_test") {
+TEST_CASE("[analyzer_tests]:analyzer_test") {
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
 

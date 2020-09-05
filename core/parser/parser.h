@@ -79,8 +79,8 @@ public:
 			VAR,
 			CONST,
 			CONST_VALUE, // evaluvated to compile time constants ex: "str", 3.14, Array(1, 2), ...
-			ARRAY,       // literal array ex: {1, 2}
-			MAP,         // <-- TODO: should be literal map ?
+			ARRAY,       // literal array ex: [1, 2, [3]]
+			MAP,         // literal map   ex: { "key":"value", 1:[2, 3] }
 			THIS,
 			SUPER,
 			BUILTIN_FUNCTION,
