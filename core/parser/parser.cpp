@@ -139,7 +139,7 @@ void Parser::_parse_import() {
 	if (tk->type != Token::VALUE_STRING) THROW_UNEXP_TOKEN("string path to source");
 	// TODO:
 
-	return; // TODO:
+	return;
 }
 
 ptr<Parser::ClassNode> Parser::_parse_class() {

@@ -97,8 +97,11 @@ public:
 
 	static ptr<BindData> get_bind_data(const String& p_class_name, const String& attrib);
 	static ptr<BindData> find_bind_data(const String& p_class_name, const String& attrib);
+	static const MemberInfo* get_member_info(const String& p_class_name, const String& attrib);
 	static String get_inheritance(const String& p_class_name);
 	static bool is_class_registered(const String& p_class_name);
+	static const stdvec<const BindData*> get_bind_data_list(const String& p_class_name);
+	static const stdvec<const MemberInfo*> get_member_info_list(const String& p_class_name);
 
 	static ptr<Object> construct(const String& p_class_name);
 	static const StaticFuncBind* get_initializer(const String& p_class_name);

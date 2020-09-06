@@ -129,6 +129,7 @@ do {                                                                            
 #define ASSERT(m_cond)                                                                                       \
 	do {                                                                                                     \
 		if (!(m_cond)) {                                                                                     \
+			DEBUG_BREAK();                                                                                   \
 			THROW_ERROR(Error::BUG, String::format("ASSERTION: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond)));  \
 		}                                                                                                    \
 	} while (false)

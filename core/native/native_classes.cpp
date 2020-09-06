@@ -53,6 +53,8 @@ void NativeClasses::bind_data(ptr<BindData> p_bind_data) {
 }
 
 ptr<BindData> NativeClasses::get_bind_data(const String& cls, const String& attrib) {
+	if (!is_class_registered(cls))
+		THROW_ERROR(Error::NAME_ERROR, String::format("class \"%s\" not registered on NativeClasses entries.", cls.c_str()));
 	return classes[cls.hash()].bind_data[attrib.hash()];
 }
 
@@ -66,9 +68,13 @@ ptr<BindData> NativeClasses::find_bind_data(const String& cls, const String& att
 	return nullptr;
 }
 
+const MemberInfo* NativeClasses::get_member_info(const String& p_class_name, const String& attrib) {
+	return get_bind_data(p_class_name, attrib)->get_member_info();
+}
+
 void NativeClasses::set_inheritance(const String& p_class_name, const String& p_parent_class_name) {
 	if (is_class_registered(p_class_name))
-		THROW_ERROR(Error::NAME_ERROR, String::format("class \"%s\" already exists on NativeClasses entries.", p_class_name));
+		THROW_ERROR(Error::NAME_ERROR, String::format("class \"%s\" already exists on NativeClasses entries.", p_class_name.c_str()));
 
 	classes[p_class_name.hash()].class_name = p_class_name;
 	classes[p_class_name.hash()].parent_class_name = p_parent_class_name;
@@ -76,7 +82,7 @@ void NativeClasses::set_inheritance(const String& p_class_name, const String& p_
 
 void NativeClasses::set_constructor(const String& p_class_name, __constructor_f p__constructor) {
 	if (!is_class_registered(p_class_name))
-		THROW_ERROR(Error::NAME_ERROR, String::format("class \"%s\" not registered on NativeClasses entries.", p_class_name));
+		THROW_ERROR(Error::NAME_ERROR, String::format("class \"%s\" not registered on NativeClasses entries.", p_class_name.c_str()));
 	classes[p_class_name.hash()].__constructor = p__constructor;
 }
 
@@ -100,6 +106,34 @@ const StaticFuncBind* NativeClasses::get_initializer(const String& p_class_name)
 	if (!is_class_registered(p_class_name))
 		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
 	return classes[p_class_name.hash()].__initializer;
+}
+
+const stdvec<const BindData*> NativeClasses::get_bind_data_list(const String& p_class_name) {
+	if (!is_class_registered(p_class_name))
+		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
+	stdvec<const BindData*> ret;
+	stdhashtable<size_t, ptr<BindData>>& bind_data_list = classes[p_class_name.hash()].bind_data;
+	stdhashtable<size_t, ptr<BindData>>::iterator it = bind_data_list.begin();
+	while (it != bind_data_list.end()) {
+		const BindData* bd = (*it).second.get();
+		ret.push_back(bd);
+		it++;
+	}
+	return ret;
+}
+
+const stdvec<const MemberInfo*> NativeClasses::get_member_info_list(const String& p_class_name) {
+	if (!is_class_registered(p_class_name))
+		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
+	stdvec<const MemberInfo*> ret;
+	stdhashtable<size_t, ptr<BindData>>& bind_data_list = classes[p_class_name.hash()].bind_data;
+	stdhashtable<size_t, ptr<BindData>>::iterator it = bind_data_list.begin();
+	while (it != bind_data_list.end()) {
+		const BindData* bd = (*it).second.get();
+		ret.push_back(bd->get_member_info());
+		it++;
+	}
+	return ret;
 }
 
 }
@@ -187,6 +221,16 @@ void Object::set_member(ptr<Object> p_self, const String& p_name, var& p_value) 
 		}
 	}
 	THROW_ERROR(Error::NAME_ERROR, String::format("type %s has no member named \"%s\".", p_self->get_class_name(), member_name.c_str()));
+}
+
+const stdvec<const MemberInfo*> Object::get_member_info_list(const Object* p_instance) {
+	if (p_instance) return NativeClasses::get_member_info_list(p_instance->get_class_name());
+	else return NativeClasses::get_member_info_list(Object::get_class_name_s());
+}
+const MemberInfo* Object::get_member_info(const Object* p_instance, const String& p_member) {
+	if (p_instance) return NativeClasses::get_member_info(p_instance->get_class_name(), p_member);
+	else return NativeClasses::get_member_info(Object::get_class_name_s(), p_member);
+
 }
 
 #endif // _VAR_H_EXTERN_IMPLEMENTATIONS

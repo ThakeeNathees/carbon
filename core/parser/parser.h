@@ -319,7 +319,7 @@ public:
 	};
 
 	struct BuiltinFunctionNode : public Node {
-		BuiltinFunctions::Type func;
+		BuiltinFunctions::Type func = BuiltinFunctions::UNKNOWN;
 		BuiltinFunctionNode() {
 			type = Type::BUILTIN_FUNCTION;
 		}
@@ -330,7 +330,7 @@ public:
 	};
 
 	struct BuiltinTypeNode : public Node {
-		BuiltinTypes::Type builtin_type;
+		BuiltinTypes::Type builtin_type = BuiltinTypes::UNKNOWN;
 		BuiltinTypeNode() {
 			type = Type::BUILTIN_TYPE;
 		}
@@ -340,13 +340,11 @@ public:
 		}
 	};
 
-
-
 	struct OperatorNode : public Node {
 		enum OpType {
-			OP_CALL,
-			OP_INDEX,
-			OP_INDEX_MAPPED,
+			OP_CALL,		 // TODO: make these separate nodes.
+			OP_INDEX,		 // 
+			OP_INDEX_MAPPED, // 
 			
 			OP_EQ,
 			OP_EQEQ,
@@ -437,8 +435,8 @@ public:
 		ptr<BlockNode> body_else;
 		stdvec<SwitchCase> switch_cases;
 		
-		ControlFlowNode* break_continue;
-		FunctionNode* _return;
+		ControlFlowNode* break_continue = nullptr;
+		FunctionNode* _return = nullptr;
 		bool has_break = false;
 		bool has_continue = false;
 
