@@ -26,17 +26,21 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = V2, V2 = 2, }");
 	CHECK_NOTHROW__ANALYZE("enum { V1 = V2, V2 = V3, V3 = 3}");
 
-	CHECK_NOTHROW__ANALYZE("const C = \"string\".hash();");
-	CHECK_NOTHROW__ANALYZE("const C = \"string\".size();");
-	CHECK_NOTHROW__ANALYZE("const C = \"3.14\".to_float();");
-	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3].append(42)[-1];");
-	CHECK_NOTHROW__ANALYZE("const C = [1, [2, 3]].pop()[-1];");
+	CHECK_NOTHROW__ANALYZE("const C = \"string\".hash();            __assert(C == \"string\".hash());");
+	CHECK_NOTHROW__ANALYZE("const C = \"string\".size();            __assert(C == 6);");
+	CHECK_NOTHROW__ANALYZE("const C = \"3.14\".to_float();          __assert(C == 3.14);");
+	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3].append(42)[-1];     __assert(C == 42);");
+	CHECK_NOTHROW__ANALYZE("const C = [1, [2, 3]].pop()[-1];        __assert(C == 3);");
+	CHECK_NOTHROW__ANALYZE("const C = [42].at(0);                   __assert(C == 42);");
 
 	// mapped index.
-	CHECK_NOTHROW__ANALYZE("const C = \"string\"[0];");
-	CHECK_NOTHROW__ANALYZE("const C = \"string\"[-1];");
-	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3][0];");
-	CHECK_NOTHROW__ANALYZE("const C = {\"key\":\"value\"}[\"key\"];");
+	CHECK_NOTHROW__ANALYZE("const C = \"string\"[0];                __assert(C == \"s\");");
+	CHECK_NOTHROW__ANALYZE("const C = \"string\"[-1];               __assert(C == \"g\");");
+	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3][0];                 __assert(C == 1);");
+	CHECK_NOTHROW__ANALYZE("const C = {\"key\":\"value\"}[\"key\"]; __assert(C == \"value\");");
+	CHECK_NOTHROW__ANALYZE("class Aclass { const C = \"string\"; } const C = Aclass.C.hash();");
+
+	CHECK_NOTHROW__ANALYZE("func fn() { String; }"); // will throw warning.
 
 	// compiletime functions.
 	CHECK_NOTHROW__ANALYZE("__assert(true);");
@@ -46,7 +50,7 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("func fn() { __assert(__func() == \"fn\"); }");
 	CHECK_NOTHROW__ANALYZE("class Aclass { func fn() { __assert(__func() == \"Aclass.fn\"); } }");
 	CHECK_NOTHROW__ANALYZE("enum E { V = 1 } __assert(E.V == 1);");
-	CHECK_NOTHROW__ANALYZE("const C = __file();");
+	CHECK_NOTHROW__ANALYZE("const C = __file(); __assert(C == \"" NO_PATH "\")");
 
 	// indexing reduced at compile time.
 	CHECK_NOTHROW__ANALYZE("enum E { V = 42 } const C = E.V;");
@@ -85,11 +89,21 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	// function signature
 	CHECK_NOTHROW__ANALYZE("func f() { } func g() { f(); } ");
 	CHECK_NOTHROW__ANALYZE("func f(a0, a1) { } func g() { f(1, 2); } ");
-	//CHECK_NOTHROW__ANALYZE("class Class { static func f() { } } func g() { Class.f(); } "); // remove static for failure test.
+	CHECK_NOTHROW__ANALYZE("class Class { static func f() { } } func g() { Class.f(); }");
+	//CHECK_NOTHROW__ANALYZE("class Class { func f(){}  func g() { Class.f(); }  }"); // should be valid ??
 
 	CHECK_NOTHROW__ANALYZE("var file = File();");
 	CHECK_NOTHROW__ANALYZE("var file = File(\"the/path/to/file.txt\");");
 	CHECK_NOTHROW__ANALYZE("var buffer = Buffer();");
 	CHECK_NOTHROW__ANALYZE("var buffer = Buffer(1000);");
+
+	// TODO:
+	CHECK_NOTHROW__ANALYZE("func call(f) { f(); } func fn(){ print(\"fn() called.\"); } var tmp = call(fn);");
+	CHECK_NOTHROW__ANALYZE("func f(){} var v = f;");
+	CHECK_NOTHROW__ANALYZE("class Aclass { func f(){} } var v = Aclass.f;");
+	//CHECK_NOTHROW__ANALYZE("func fn() {} var v = fn.get_name();");
+	//CHECK_NOTHROW__ANALYZE("const C = File.READ;");
+
+	// if ref of identifier is func pass it as callable object.
 
 }

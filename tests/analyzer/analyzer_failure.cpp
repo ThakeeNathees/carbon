@@ -37,4 +37,8 @@ TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	// compiletime functions
 	CHECK_THROWS_CARBON__ANALYZE(Error::SYNTAX_ERROR, "__func(); // can't call outside a function");
 	CHECK_THROWS_CARBON__ANALYZE(Error::ASSERTION, "__assert(false);");
+
+
+	CHECK_THROWS_CARBON__ANALYZE(Error::ATTRIBUTE_ERROR, "class Class { func f() {} } func g() { Class.f(); } ");
+	//CHECK_THROWS_CARBON__ANALYZE(Error::ATTRIBUTE_ERROR, "class Class { func f(){}  func g() { f(); }  }");
 }

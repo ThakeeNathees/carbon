@@ -108,6 +108,7 @@ public:
 	virtual const char* get_name() const { return name; }
 	virtual const char* get_class_name() const { return class_name; }
 	virtual int get_argc() const { THROW_BUG("invalid call"); }
+	virtual const MemberInfo* get_member_info() const = 0;
 };
 
 class MethodBind : public BindData {
@@ -121,6 +122,7 @@ public:
 
 	virtual var call(ptr<Object> self, stdvec<var>& args) = 0;
 	const MethodInfo* get_method_info() const { return mi.get(); }
+	const MemberInfo* get_member_info() const override { return mi.get(); }
 };
 
 class StaticFuncBind : public BindData {
@@ -134,6 +136,7 @@ public:
 
 	virtual var call(stdvec<var>& args) = 0;
 	const MethodInfo* get_method_info() const { return mi.get(); }
+	const MemberInfo* get_member_info() const override { return mi.get(); }
 };
 
 // ---------------- MEMBER BIND START --------------------------------------
@@ -143,6 +146,9 @@ protected:
 public:
 	virtual BindData::Type get_type() const { return BindData::MEMBER_VAR; }
 	virtual var& get(ptr<Object> self) = 0;
+
+	const PropertyInfo* get_prop_info() const { return pi.get(); }
+	const MemberInfo* get_member_info() const override { return pi.get(); }
 };
 
 template<typename Class>
@@ -185,6 +191,8 @@ public:
 		pi = p_pi;
 	}
 	virtual var& get() { return *member; }
+	const PropertyInfo* get_prop_info() const { return pi.get(); }
+	const MemberInfo* get_member_info() const override { return pi.get(); }
 };
 
 inline ptr<StaticPropertyBind> _bind_static_member(const char* p_name, const char* p_class_name, var* p_member) {
@@ -199,6 +207,9 @@ protected:
 public:
 	virtual BindData::Type get_type() const { return BindData::STATIC_CONST; }
 	virtual var get() = 0;
+
+	const PropertyInfo* get_prop_info() const { return pi.get(); }
+	const MemberInfo* get_member_info() const override { return pi.get(); }
 };
 
 template<typename T>
@@ -243,6 +254,9 @@ public:
 		}
 		throw Error(Error::ATTRIBUTE_ERROR, String::format("value \\"%s\\" isn't exists on enum %s.", p_value_name.c_str(), name));
 	}
+
+	const EnumInfo* get_enum_info() const { return ei.get(); }
+	const MemberInfo* get_member_info() const override { return ei.get(); }
 };
 inline ptr<EnumBind> _bind_enum(const char* p_name, const char* p_class_name, const stdvec<std::pair<String, int64_t>>& p_values) {
 	return newptr<EnumBind>(p_name, p_class_name, newptr<EnumInfo>(p_name, p_values));
@@ -260,6 +274,9 @@ public:
 	}
 	virtual BindData::Type get_type() const { return BindData::ENUM_VALUE; }
 	int64_t get() { return value; }
+
+	const EnumValueInfo* get_enum_value_info() const { return evi.get(); }
+	const MemberInfo* get_member_info() const override { return evi.get(); }
 };
 
 // -----------------------------------------------------------------------

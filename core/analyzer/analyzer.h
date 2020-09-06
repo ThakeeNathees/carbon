@@ -29,6 +29,27 @@
 #include "core.h"
 #include "parser/parser.h"
 
+
+#define THROW_ANALYZER_ERROR(m_err_type, m_msg, m_pos)                                                                      \
+	do {																													\
+		uint32_t err_len = 1;																								\
+		String token_str = "";																								\
+		if (m_pos.x > 0 && m_pos.y > 0) token_str = parser->tokenizer->get_token_at(m_pos).to_string();						\
+		else token_str = parser->tokenizer->peek(-1, true).to_string();														\
+		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;				\
+		else err_len = (uint32_t)token_str.size();																			\
+																															\
+		if (m_pos.x > 0 && m_pos.y > 0) {																					\
+			String line = file_node->source.get_line(m_pos.x);																\
+			throw Error(m_err_type, m_msg, file_node->path, line, m_pos, err_len)_ERR_ADD_DBG_VARS;							\
+		} else {																											\
+			String line = file_node->source.get_line(parser->tokenizer->get_pos().x);										\
+			throw Error(m_err_type, m_msg, file_node->path, line, parser->tokenizer->peek(-1, true).get_pos(), err_len)		\
+				_ERR_ADD_DBG_VARS;																							\
+		}																													\
+	} while (false)
+
+
 namespace carbon {
 
 class Analyzer {
@@ -46,6 +67,8 @@ private:
 		ptr<T> ret = newptr<T>(p_args...);
 		return ret;
 	}
+
+	Parser::IdentifierNode _get_member(const Parser::ClassNode* p_class, const String& p_name);
 
 	var _call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var>& args);
 	void _resolve_compiletime_funcs(const stdvec<ptr<Parser::OperatorNode>>& p_funcs);

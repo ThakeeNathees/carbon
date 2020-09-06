@@ -41,11 +41,6 @@ public:
 		INT,
 		FLOAT,
 		STRING,
-		// Vectors are not exposed.
-		//VECT2F,
-		//VECT2I,
-		//VECT3F,
-		//VECT3I,
 		ARRAY,
 		MAP,
 		//OBJECT, // Object is considered as Native.
@@ -64,6 +59,20 @@ public:
 			}
 		}
 		return BuiltinTypes::UNKNOWN;
+	}
+
+	constexpr static var::Type get_var_type(Type p_type) {
+		switch (p_type) {
+			case UNKNOWN:
+			case _NULL:  return var::_NULL;
+			case BOOL:   return var::BOOL;
+			case INT:    return var::INT;
+			case FLOAT:  return var::FLOAT;
+			case STRING: return var::STRING;
+			case ARRAY:  return var::ARRAY;
+			case MAP:    return var::MAP;
+		}
+		THROW_BUG("can't reach here.");
 	}
 
 	static var construct(Type p_type, const stdvec<var>& p_args) {
