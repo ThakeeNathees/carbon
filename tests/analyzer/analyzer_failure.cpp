@@ -30,9 +30,16 @@ TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	CHECK_THROWS_CARBON__ANALYZE(Error::NAME_ERROR, "var v = identifier;");
 	CHECK_THROWS_CARBON__ANALYZE(Error::NAME_ERROR, "enum { VAL = identifier, }");
 	CHECK_THROWS_CARBON__ANALYZE(Error::NAME_ERROR, "func fn() { var x = identifier; }");
-	// TODO: implement fix the error types, may need to implement more types.
 	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "class C1 : C2 {} class C2 : C1 {}");
 	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "const C1 = C2; const C2 = C1;");
+
+	// functions and arguments.
+	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_ARG_COUNT, "func f(arg1, arg2 = \"default\"){} func g(){ f(); }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_ARG_COUNT, "func f(arg1, arg2 = \"default\"){} func g(){ f(1, false, -3.14); }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_ARG_COUNT, "func f(arg1 = 1){} class Aclass { func g(){ f(false, true); } }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_ARG_COUNT, "func f(){ var f = File(\"path\", File.WRITE, false); }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "func f(){ var f = File(1); }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "func f(){ var b = Buffer(false); }");
 
 	// compiletime functions
 	CHECK_THROWS_CARBON__ANALYZE(Error::SYNTAX_ERROR, "__func(); // can't call outside a function");

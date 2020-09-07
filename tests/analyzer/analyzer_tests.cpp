@@ -20,6 +20,7 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 
 	// to test if they are cleaned and optimized.
 	CHECK_NOTHROW__ANALYZE("func fn(arg) { \"literal\"; arg; Array(1, 2); }");
+	CHECK_NOTHROW__ANALYZE("func fn() { String; }"); // will throw warning.
 
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = 1 + 2, }");
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = - 2, }");
@@ -39,14 +40,16 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("const C = [1, [2, 3]].pop()[-1];        __assert(C == 3);");
 	CHECK_NOTHROW__ANALYZE("const C = [42].at(0);                   __assert(C == 42);");
 
+	CHECK_NOTHROW__ANALYZE("const C = 1; func fn(a = C){}");
+	CHECK_NOTHROW__ANALYZE("class Aclass { const C = \"str\"; func fn(arg=C){} }");
+	CHECK_NOTHROW__ANALYZE("enum En { V0 = 0b1, V1 = 0b10, V3 = 0b100 } class Aclass{ func fn(arg=En.V2){} }");
+
 	// mapped index.
 	CHECK_NOTHROW__ANALYZE("const C = \"string\"[0];                __assert(C == \"s\");");
 	CHECK_NOTHROW__ANALYZE("const C = \"string\"[-1];               __assert(C == \"g\");");
 	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3][0];                 __assert(C == 1);");
 	CHECK_NOTHROW__ANALYZE("const C = {\"key\":\"value\"}[\"key\"]; __assert(C == \"value\");");
 	CHECK_NOTHROW__ANALYZE("class Aclass { const C = \"string\"; } const C = Aclass.C.hash();");
-
-	CHECK_NOTHROW__ANALYZE("func fn() { String; }"); // will throw warning.
 
 	// compiletime functions.
 	CHECK_NOTHROW__ANALYZE("__assert(true);");
@@ -98,10 +101,7 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("class Class { static func f() { } } func g() { Class.f(); }");
 	//CHECK_NOTHROW__ANALYZE("class Class { func f(){}  func g() { Class.f(); }  }"); // should be valid ??
 
-	CHECK_NOTHROW__ANALYZE("var file = File();");
-	CHECK_NOTHROW__ANALYZE("var file = File(\"the/path/to/file.txt\");");
-	CHECK_NOTHROW__ANALYZE("var buffer = Buffer();");
-	CHECK_NOTHROW__ANALYZE("var buffer = Buffer(1000);");
+	CHECK_NOTHROW__ANALYZE("func fn(arg1, arg2 = 1, arg3 = \"str\"){} func g(){ fn(false); fn(1.0, 2); fn(1, \"str\", true); } ");
 
 	// TODO:
 	CHECK_NOTHROW__ANALYZE("func call(f) { f(); } func fn(){ print(\"fn() called.\"); } var tmp = call(fn);");
@@ -114,5 +114,9 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	// Native classes.
 	CHECK_NOTHROW__ANALYZE("const C = File.READ;");
 	CHECK_NOTHROW__ANALYZE("const OPEN_MODE = File.READ | File.BINARY;");
+	CHECK_NOTHROW__ANALYZE("var file = File();");
+	CHECK_NOTHROW__ANALYZE("var file = File(\"the/path/to/file.txt\");");
+	CHECK_NOTHROW__ANALYZE("var buffer = Buffer();");
+	CHECK_NOTHROW__ANALYZE("var buffer = Buffer(1000);");
 
 }

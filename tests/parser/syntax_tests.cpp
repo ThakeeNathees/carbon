@@ -43,6 +43,9 @@ TEST_CASE("[parser_tests]:syntax_test") {
 	CHECK_NOTHROW(parser.parse("class cls { enum {V1, V2 = 1, } }", NO_PATH));
 	CHECK_NOTHROW(parser.parse("class cls {} class cls2 {}", NO_PATH));
 
+	CHECK_NOTHROW(parser.parse("func fn(arg1, arg2) { print(arg1); }", NO_PATH));
+	CHECK_NOTHROW(parser.parse("func fn(arg1, arg2 = 42) {}", NO_PATH));
+
 	// if statement.
 	CHECK_NOTHROW(parser.parse(R"(
 	func fn() {

@@ -588,20 +588,29 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	if (tk->type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
 	tk = &tokenizer->next();
 
+	bool has_default = false;
 	if (tk->type != Token::BRACKET_RPARAN) {
 		while (true) {
 			if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
 			for (int i = 0; i < (int)func_node->args.size(); i++) {
-				if (func_node->args[i].name == tk->identifier) {
-				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("identifier \"%s\" already defined in arguments", tk->identifier.c_str()), Vect2i());
-				}
+				if (func_node->args[i].name == tk->identifier)
+					THROW_PARSER_ERR(Error::NAME_ERROR, String::format("identifier \"%s\" already defined in arguments", tk->identifier.c_str()), Vect2i());
 			}
-			// TODO: warning: identifier shadow check. ??
-			func_node->args.push_back(ArgumentNode(tk->identifier, tk->get_pos()));
 
+			ParameterNode parameter = ParameterNode(tk->identifier, tk->get_pos());
 			tk = &tokenizer->next();
-			if (tk->type == Token::SYM_COMMA) {
+			if (tk->type == Token::OP_EQ) {
+				has_default = true;
+				parameter.default_value = _parse_expression(p_parent, false);
 				tk = &tokenizer->next();
+			} else {
+				if (has_default)
+					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "default parameter expected.", Vect2i());
+			}
+			func_node->args.push_back(parameter);
+
+			if (tk->type == Token::SYM_COMMA) {
+				tk = &tokenizer->next(); // eat ','
 			} else if (tk->type == Token::BRACKET_RPARAN) {
 				break;
 			} else {

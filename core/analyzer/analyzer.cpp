@@ -110,14 +110,15 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 	}
 	parser->parser_context.current_class = nullptr;
 
-	// File level function body.
+	// File level function.
 	for (size_t i = 0; i < file_node->functions.size(); i++) {
 		parser->parser_context.current_func = file_node->functions[i].get();
+		_resolve_parameters(file_node->functions[i].get());
 		_reduce_block(file_node->functions[i]->body);
 	}
 	parser->parser_context.current_func = nullptr;
 
-	// Inner class function body.
+	// Inner class function.
 	for (size_t i = 0; i < file_node->classes.size(); i++) {
 		parser->parser_context.current_class = file_node->classes[i].get();
 		for (size_t j = 0; j < file_node->classes[i]->functions.size(); j++) {
@@ -262,15 +263,30 @@ void Analyzer::_resolve_constant(Parser::ConstNode* p_const) {
 
 	ASSERT(p_const->assignment != nullptr);
 	_reduce_expression(p_const->assignment);
-	if (p_const->assignment->type != Parser::Node::Type::CONST_VALUE) {
+	if (p_const->assignment->type != Parser::Node::Type::CONST_VALUE)
 		THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a contant expression.", p_const->assignment->pos);
-	}
 	ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(p_const->assignment);
 	if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
 		cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING) {
 		THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a constant expression.", p_const->assignment->pos);
 	}
 	p_const->value = cv->value;
+}
+
+void Analyzer::_resolve_parameters(Parser::FunctionNode* p_func) {
+	for (int i = 0; i < p_func->args.size(); i++) {
+		if (p_func->args[i].default_value != nullptr) {
+			_reduce_expression(p_func->args[i].default_value);
+			if (p_func->args[i].default_value->type != Parser::Node::Type::CONST_VALUE) 
+				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a contant expression.", p_func->args[i].default_value->pos);
+			ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(p_func->args[i].default_value);
+			if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
+				cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING) {
+				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a constant expression.", p_func->args[i].default_value->pos);
+			}
+			p_func->default_parameters.push_back(cv->value);
+		}
+	}
 }
 
 void Analyzer::_resolve_enumvalue(Parser::EnumValueNode& p_enumvalue) {

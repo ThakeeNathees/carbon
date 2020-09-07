@@ -361,17 +361,30 @@ do {                                                                            
 
 							// check arguments.
 							case Parser::IdentifierNode::REF_CARBON_FUNCTION: {
-								// TODO: implement default arguments.
-								if (op->args.size() - 2 != id->_func->args.size())
-									THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", (int)id->_func->args.size()), id->pos);
+								int argc = (int)id->_func->args.size();
+								int argc_default = (int)id->_func->default_parameters.size();
+								int argc_given = (int)op->args.size() - 2;
+								if (argc_given + argc_default < argc) {
+									if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+									else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
+								} else if (argc_given > argc) {
+									if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+									else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
+								}
 							} break;
 
 							// call constructor.
 							case Parser::IdentifierNode::REF_CARBON_CLASS: {
 								if (id->_class->constructor) {
-									// TODO: default arguments.
-									if (op->args.size() - 2 != id->_class->constructor->args.size()) {
-										THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", (int)id->_class->constructor->args.size()), id->pos);
+									int argc = (int)id->_class->constructor->args.size();
+									int argc_default = (int)id->_class->constructor->default_parameters.size();
+									int argc_given = (int)op->args.size() - 2;
+									if (argc_given + argc_default < argc) {
+										if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+										else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
+									} else if (argc_given > argc) {
+										if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+										else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
 									}
 								} else {
 									if (op->args.size() - 2 != 0)
