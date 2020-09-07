@@ -79,28 +79,27 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			}
 			continue;
 		} else if ((tk->type == Token::IDENTIFIER || tk->type == Token::BUILTIN_TYPE) && tokenizer->peek().type == Token::BRACKET_LPARAN) {
-			ptr<OperatorNode> call = new_node<OperatorNode>(OperatorNode::OpType::OP_CALL);
+			ptr<CallNode> call = new_node<CallNode>();
 
 			if (tk->type == Token::IDENTIFIER) {
 				BuiltinFunctions::Type builtin_func = BuiltinFunctions::get_func_type(tk->identifier);
 				if (builtin_func != BuiltinFunctions::UNKNOWN) {
-					call->args.push_back(new_node<BuiltinFunctionNode>(builtin_func));
+					call->base = new_node<BuiltinFunctionNode>(builtin_func);
+					call->method = nullptr;
 				} else {
 					// Identifier node could be builtin class like File(), another static method, ...
 					// will know when reducing.
-					call->args.push_back(new_node<Node>()); // UNKNOWN on may/may-not be self
-					call->args.push_back(new_node<IdentifierNode>(tk->identifier));
+					call->base = new_node<Node>(); // UNKNOWN on may/may-not be self
+					call->method = new_node<IdentifierNode>(tk->identifier);
 				}
 			} else {
-				call->args.push_back(new_node<BuiltinTypeNode>(tk->builtin_type));
+				call->base = new_node<BuiltinTypeNode>(tk->builtin_type);
+				call->method = nullptr;
 			}
 
 			tk = &tokenizer->next();
 			if (tk->type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
-			stdvec<ptr<Node>> args = _parse_arguments(p_parent);
-			for (size_t i = 0; i < args.size(); i++) {
-				call->args.push_back(args[i]);
-			}
+			call->r_args = _parse_arguments(p_parent);
 			expr = call;
 
 		} else if (tk->type == Token::IDENTIFIER) {
@@ -193,29 +192,26 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 
 				// call
 				if (tokenizer->peek().type == Token::BRACKET_LPARAN) {
-					ptr<OperatorNode> call = new_node<OperatorNode>(OperatorNode::OpType::OP_CALL);
+					ptr<CallNode> call = new_node<CallNode>();
 					
-					call->args.push_back(expr);
-					call->args.push_back(new_node<IdentifierNode>(tk->identifier));
+					call->base = expr;
+					call->method = new_node<IdentifierNode>(tk->identifier);
 					tk = &tokenizer->next();
-					stdvec<ptr<Node>> args = _parse_arguments(p_parent);
-					for (int i = 0; i < (int)args.size(); i++) call->args.push_back(args[i]);
-
+					call->r_args = _parse_arguments(p_parent);
 					expr = call;
 
 				// Just indexing.
 				} else {
-					ptr<OperatorNode> ind = new_node<OperatorNode>(OperatorNode::OpType::OP_INDEX);
-
-					ind->args.push_back(expr);
-					ind->args.push_back(new_node<IdentifierNode>(tk->identifier));
+					ptr<IndexNode> ind = new_node<IndexNode>();
+					ind->base = expr;
+					ind->member = new_node<IdentifierNode>(tk->identifier);
 					expr = ind;
 				}
 
 
 			// [mapped_index]
 			} else if (tk->type == Token::BRACKET_LSQ) {
-				ptr<OperatorNode> ind_mapped = new_node<OperatorNode>(OperatorNode::OpType::OP_INDEX_MAPPED);
+				ptr<MappedIndexNode> ind_mapped = new_node<MappedIndexNode>();
 
 				tk = &tokenizer->next();
 				ptr<Node> key = _parse_expression(p_parent, false);
@@ -224,8 +220,8 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 					THROW_UNEXP_TOKEN("symbol \"]\"");
 				}
 
-				ind_mapped->args.push_back(expr);
-				ind_mapped->args.push_back(key);
+				ind_mapped->base = expr;
+				ind_mapped->key = key;
 				expr = ind_mapped;
 
 			} else {
@@ -279,7 +275,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 
 			default: valid = false;
 		}
-		MISSED_ENUM_CHECK(OperatorNode::OpType::_OP_MAX_, 36);
+		MISSED_ENUM_CHECK(OperatorNode::OpType::_OP_MAX_, 33);
 
 		if (valid) {
 			tokenizer->next(); // Eat peeked token.
@@ -379,7 +375,7 @@ int Parser::_get_operator_precedence(OperatorNode::OpType p_op) {
 			ASSERT(false);
 			return -1;
 	}
-	MISSED_ENUM_CHECK(OperatorNode::OpType::_OP_MAX_, 36);
+	MISSED_ENUM_CHECK(OperatorNode::OpType::_OP_MAX_, 33);
 }
 
 ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {

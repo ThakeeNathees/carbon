@@ -209,19 +209,18 @@ var Analyzer::_call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec
 	return var();
 }
 
-void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::OperatorNode>>& p_funcs) {
+void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p_funcs) {
 	for (int i = 0; i < (int)p_funcs.size(); i++) {
-		ASSERT(p_funcs[i]->op_type == Parser::OperatorNode::OP_CALL);
-		ptr<Parser::OperatorNode> op = p_funcs[i];
-		ASSERT(op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION);
-		Parser::BuiltinFunctionNode* bf = ptrcast<Parser::BuiltinFunctionNode>(op->args[0]).get();
+		Parser::CallNode* call = p_funcs[i].get();
+		ASSERT(call->base->type == Parser::Node::Type::BUILTIN_FUNCTION);
+		Parser::BuiltinFunctionNode* bf = ptrcast<Parser::BuiltinFunctionNode>(call->base).get();
 		stdvec<var> args;
-		for (int j = 1; j < (int)op->args.size(); j++) {
-			_reduce_expression(op->args[j]);
-			if (op->args[j]->type != Parser::Node::Type::CONST_VALUE) {
-				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->args[j]->pos);
+		for (int j = 0; j < (int)call->r_args.size(); j++) {
+			_reduce_expression(call->r_args[j]);
+			if (call->r_args[j]->type != Parser::Node::Type::CONST_VALUE) {
+				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->r_args[j]->pos);
 			}
-			args.push_back(ptrcast<Parser::ConstValueNode>(op->args[j])->value);
+			args.push_back(ptrcast<Parser::ConstValueNode>(call->r_args[j])->value);
 		}
 		_call_compiletime_func(bf, args);
 	}
@@ -331,7 +330,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 
 			case Parser::Node::Type::IDENTIFIER: {
 				_reduce_expression(p_block->statements[i]); // to check if the identifier exists.
-				// TODO: just an identifier -> should add a warning and remove the statement.
+				ADD_WARNING(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos);
 				p_block->statements.erase(p_block->statements.begin() + i--);
 			} break;
 
@@ -351,21 +350,25 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 			case Parser::Node::Type::CONST_VALUE:
 			case Parser::Node::Type::ARRAY:
 			case Parser::Node::Type::MAP:
-				// TODO: add warning here.
+				ADD_WARNING(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos);
 				p_block->statements.erase(p_block->statements.begin() + i--);
-			break;
+				break;
 
 			case Parser::Node::Type::THIS:
 			case Parser::Node::Type::SUPER:
-				// TODO: add warning here.
+				ADD_WARNING(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos);
+				p_block->statements.erase(p_block->statements.begin() + i--);
 				break;
 
 			case Parser::Node::Type::BUILTIN_FUNCTION:
 			case Parser::Node::Type::BUILTIN_TYPE:
-				// TODO: add warning here. `func fn() { String; }`
+				ADD_WARNING(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos);
 				p_block->statements.erase(p_block->statements.begin() + i--);
 				break;
 
+			case Parser::Node::Type::CALL:
+			case Parser::Node::Type::INDEX:
+			case Parser::Node::Type::MAPPED_INDEX:
 			case Parser::Node::Type::OPERATOR: {
 				_reduce_expression(p_block->statements[i]);
 			} break;
@@ -373,6 +376,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 			case Parser::Node::Type::CONTROL_FLOW: {
 				ptr<Parser::ControlFlowNode> cf_node = ptrcast<Parser::ControlFlowNode>(p_block->statements[i]);
 				switch (cf_node->cf_type) {
+
 					case Parser::ControlFlowNode::IF: {
 						ASSERT(cf_node->args.size() == 1);
 						// TODO: if it's evaluvated to compile time constant true/false it could be optimized/warned.
@@ -388,7 +392,24 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 						// TODO: if it's evaluvated to compile time constant integer it could be optimized/warned.
 						_reduce_expression(cf_node->args[0]);
 
+						Parser::EnumNode* _switch_enum = nullptr;
+						int _enum_case_count = 0; bool _check_missed_enum = true;
+						if (cf_node->switch_cases.size() > 1 && cf_node->switch_cases[0].expr->type == Parser::Node::Type::IDENTIFIER) {
+							Parser::IdentifierNode* id = ptrcast<Parser::IdentifierNode>(cf_node->switch_cases[0].expr).get();
+							if (id->ref == Parser::IdentifierNode::REF_ENUM_VALUE) {
+								_switch_enum = id->enum_value->_enum;
+							}
+						}
+
 						for (int j = 0; j < (int)cf_node->switch_cases.size(); j++) {
+							if (cf_node->switch_cases[j].default_case) _check_missed_enum = false;
+							if (_check_missed_enum && cf_node->switch_cases[j].expr->type == Parser::Node::Type::IDENTIFIER) {
+								Parser::IdentifierNode* id = ptrcast<Parser::IdentifierNode>(cf_node->switch_cases[j].expr).get();
+								if (id->ref == Parser::IdentifierNode::REF_ENUM_VALUE) {
+									if (id->enum_value->_enum == _switch_enum) _enum_case_count++;
+								} else _check_missed_enum = false;
+							} else _check_missed_enum = false;
+
 							_reduce_expression(cf_node->switch_cases[j].expr);
 							if (cf_node->switch_cases[j].expr->type != Parser::Node::Type::CONST_VALUE)
 								THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "switch case value must be a constant integer.", cf_node->switch_cases[j].expr->pos);
@@ -407,6 +428,10 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 							_reduce_block(cf_node->switch_cases[j].body);
 						}
 
+						if (_check_missed_enum && _enum_case_count != _switch_enum->values.size()) {
+							ADD_WARNING(Warning::MISSED_ENUM_IN_SWITCH, "", cf_node->pos);
+						}
+
 					} break;
 
 					case Parser::ControlFlowNode::WHILE: {
@@ -414,9 +439,11 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 						_reduce_expression(cf_node->args[0]);
 						if (cf_node->args[0]->type == Parser::Node::Type::CONST_VALUE) {
 							if (ptrcast<Parser::ConstValueNode>(cf_node->args[0])->value.operator bool()) {
-								if (!cf_node->has_break) { /* TODO: add warning -> infinite loop */ }
+								if (!cf_node->has_break) {
+									ADD_WARNING(Warning::NON_TERMINATING_LOOP, "", cf_node->args[0]->pos);
+								}
 							} else {
-								// TODO: add warning
+								ADD_WARNING(Warning::UNREACHABLE_CODE, "", cf_node->args[0]->pos);
 								p_block->statements.erase(p_block->statements.begin() + i--);
 							}
 						}
@@ -429,7 +456,9 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 						_reduce_block(cf_node->body);
 						// TODO: if it's evaluvated to compile time constant it could be optimized/warned.
 						if (cf_node->args[0] == nullptr && cf_node->args[1] == nullptr && cf_node->args[2] == nullptr) {
-							if (!cf_node->has_break) { /* TODO: add warning -> infinit loop */ }
+							if (!cf_node->has_break) {
+								ADD_WARNING(Warning::NON_TERMINATING_LOOP, "", cf_node->args[0]->pos);
+							}
 						}
 					} break;
 
@@ -439,6 +468,9 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 					} break;
 					case Parser::ControlFlowNode::RETURN: {
 						ASSERT(cf_node->args.size() <= 1);
+						if (cf_node->args.size() == 1) {
+							_reduce_expression(cf_node->args[0]);
+						}
 					} break;
 				}
 			} break;
@@ -448,14 +480,33 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 
 	for (int i = 0; i < (int)p_block->statements.size(); i++) {
 		// remove all local constant statments. no need anymore.
-		if (p_block->statements[i]->type == Parser::Node::Type::CONST)
+		if (p_block->statements[i]->type == Parser::Node::Type::CONST) {
 			p_block->statements.erase(p_block->statements.begin() + i--);
 
+		} else if (p_block->statements[i]->type == Parser::Node::Type::CONST_VALUE) {
+			ADD_WARNING(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos);
+			p_block->statements.erase(p_block->statements.begin() + i--);
+
+		// remove all statements after return
+		} else if (p_block->statements[i]->type == Parser::Node::Type::CONTROL_FLOW) {
+			Parser::ControlFlowNode* cf = ptrcast<Parser::ControlFlowNode>(p_block->statements[i]).get();
+			if (cf->cf_type == Parser::ControlFlowNode::RETURN) {
+				if (i != p_block->statements.size() - 1) {
+					ADD_WARNING(Warning::UNREACHABLE_CODE, "", p_block->statements[i + 1]->pos);
+					p_block->statements.erase(p_block->statements.begin() + i + 1, p_block->statements.end());
+				}
+			} else if (cf->cf_type == Parser::ControlFlowNode::IF) {
+				if (cf->args[0]->type == Parser::Node::Type::CONST_VALUE && ptrcast<Parser::ConstValueNode>(cf->args[0])->value.operator bool() == false) {
+					ADD_WARNING(Warning::UNREACHABLE_CODE, "", p_block->statements[i + 1]->pos);
+					p_block->statements.erase(p_block->statements.begin() + i--);
+				}
+			}
+
 		// remove all compile time functions.
-		else if (p_block->statements[i]->type == Parser::Node::Type::OPERATOR) {
-			Parser::OperatorNode* op = ptrcast<Parser::OperatorNode>(p_block->statements[i]).get();
-			if (op->op_type == Parser::OperatorNode::OP_CALL && op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION) {
-				if (BuiltinFunctions::is_compiletime(ptrcast<Parser::BuiltinFunctionNode>(op->args[0])->func)) {
+		} else if (p_block->statements[i]->type == Parser::Node::Type::CALL) {
+			Parser::CallNode* call = ptrcast<Parser::CallNode>(p_block->statements[i]).get();
+			if (call->base->type == Parser::Node::Type::BUILTIN_FUNCTION) {
+				if (BuiltinFunctions::is_compiletime(ptrcast<Parser::BuiltinFunctionNode>(call->base)->func)) {
 					p_block->statements.erase(p_block->statements.begin() + i--);
 				}
 			}

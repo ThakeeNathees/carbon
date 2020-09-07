@@ -46,6 +46,30 @@ const char* Error::what() const noexcept {
 }
 #endif // DEBUG_BUILD
 
+Error::Error(const VarError& p_other) {
+#define CASE_ERROR(m_type) case VarError::m_type: type = m_type; break
+	switch (p_other.get_type()) {
+		CASE_ERROR(OK);
+		CASE_ERROR(BUG);
+		CASE_ERROR(NULL_POINTER);
+		CASE_ERROR(OPERATOR_NOT_SUPPORTED);
+		CASE_ERROR(NOT_IMPLEMENTED);
+		CASE_ERROR(ZERO_DIVISION);
+		CASE_ERROR(TYPE_ERROR);
+		CASE_ERROR(ATTRIBUTE_ERROR);
+		CASE_ERROR(INVALID_ARG_COUNT);
+		CASE_ERROR(INVALID_INDEX);
+	}
+
+#if DEBUG_BUILD
+	__dbg_func__ = p_other.get_dbg_func();
+	__dbg_file__ = get_dbg_file();
+	__dbg_line__ = get_dbg_line();
+#endif
+
+	msg = p_other.what();
+
+}
 
 String Error::get_line() const { 
 	return line;
@@ -95,4 +119,19 @@ MISSED_ENUM_CHECK(Error::Type::_ERROR_MAX_, 15);
 String Error::get_err_name(Error::Type p_type) {
 	return _error_names[p_type];
 }
+
+static const char* _warning_names[Warning::_WARNING_MAX_] = {
+	"VARIABLE_SHADOWING",
+	"MISSED_ENUM_IN_SWITCH",
+	"NON_TERMINATING_LOOP",
+	"UNREACHABLE_CODE",
+	"STAND_ALONE_EXPRESSION",
+	//_WARNING_MAX_
+};
+MISSED_ENUM_CHECK(Warning::Type::_WARNING_MAX_, 5);
+
+String Warning::get_warning_name(Warning::Type p_type) {
+	return _warning_names[p_type];
+}
+
 }

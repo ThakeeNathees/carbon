@@ -49,6 +49,25 @@
 		}																													\
 	} while (false)
 
+#define ADD_WARNING(m_type, m_msg, m_pos)                                                                                                                  \
+	do {																																				   \
+		uint32_t err_len = 1;																															   \
+		String token_str = "";																															   \
+		if (m_pos.x > 0 && m_pos.y > 0) token_str = parser->tokenizer->get_token_at(m_pos).to_string();													   \
+		else token_str = parser->tokenizer->peek(-1, true).to_string();																					   \
+		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;											   \
+		else err_len = (uint32_t)token_str.size();																										   \
+																																						   \
+		if (m_pos.x > 0 && m_pos.y > 0) {																												   \
+			String line = file_node->source.get_line(m_pos.x);																							   \
+			warnings.push_back(Warning(m_type, m_msg).set_file(file_node->path).set_line(line).set_pos(m_pos).set_err_len(err_len)_ERR_ADD_DBG_VARS);      \
+		} else {																																		   \
+			String line = file_node->source.get_line(parser->tokenizer->get_pos().x);																	   \
+			warnings.push_back(Warning(m_type, m_msg).set_file(file_node->path).set_line(line).set_pos(parser->tokenizer->peek(-1, true).get_pos())	       \
+				.set_err_len(err_len)_ERR_ADD_DBG_VARS																									   \
+			);																																			   \
+		}																																				   \
+	} while (false)
 
 namespace carbon {
 
@@ -61,6 +80,7 @@ protected:
 private:
 	ptr<Parser> parser;
 	ptr<Parser::FileNode> file_node; // Quick access.
+	stdvec<Warning> warnings;
 
 	template<typename T = Parser::Node, typename... Targs>
 	ptr<T> new_node(Targs... p_args) {
@@ -71,7 +91,7 @@ private:
 	Parser::IdentifierNode _get_member(const Parser::ClassNode* p_class, const String& p_name);
 
 	var _call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var>& args);
-	void _resolve_compiletime_funcs(const stdvec<ptr<Parser::OperatorNode>>& p_funcs);
+	void _resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p_funcs);
 
 	void _resolve_inheritance(Parser::ClassNode* p_class);
 	void _resolve_constant(Parser::ConstNode* p_const);
@@ -80,7 +100,6 @@ private:
 
 	void _reduce_expression(ptr<Parser::Node>& p_expr);
 	void _reduce_block(ptr<Parser::BlockNode> p_block);
-
 };
 
 }

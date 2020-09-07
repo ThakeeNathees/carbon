@@ -18,9 +18,10 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 		__assert((0b10 | 0b100) == 0b110); __assert((0b1110 & 0b1101) == 0b1100); // C++ like operator precedence.
 	)");
 
-	// to test if they are cleaned and optimized.
+	// warnings.
 	CHECK_NOTHROW__ANALYZE("func fn(arg) { \"literal\"; arg; Array(1, 2); }");
-	CHECK_NOTHROW__ANALYZE("func fn() { String; }"); // will throw warning.
+	CHECK_NOTHROW__ANALYZE("func fn() { String; }");
+	CHECK_NOTHROW__ANALYZE("func fn() { return 1; if (false) { return 0; print(); } }");
 
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = 1 + 2, }");
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = - 2, }");
@@ -95,7 +96,8 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	)");
 
 
-	// function signature
+	// function signature // TODO: these may be invalid or not ?? Not sure.
+	CHECK_NOTHROW__ANALYZE("class Class {} var v = Class;");
 	CHECK_NOTHROW__ANALYZE("func f() { } func g() { f(); } ");
 	CHECK_NOTHROW__ANALYZE("func f(a0, a1) { } func g() { f(1, 2); } ");
 	CHECK_NOTHROW__ANALYZE("class Class { static func f() { } } func g() { Class.f(); }");

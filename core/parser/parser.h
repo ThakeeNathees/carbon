@@ -85,6 +85,9 @@ public:
 			SUPER,
 			BUILTIN_FUNCTION,
 			BUILTIN_TYPE,
+			CALL,
+			INDEX,
+			MAPPED_INDEX,
 			OPERATOR,
 			CONTROL_FLOW,
 
@@ -109,6 +112,9 @@ public:
 	struct ConstValueNode;
 	struct ArrayNode;
 	struct MapNode;
+	struct CallNode;
+	struct IndexNode;
+	struct MappedIndexNode;
 	struct OperatorNode;
 	struct ControlFlowNode;
 
@@ -123,7 +129,7 @@ public:
 		ptr<EnumNode> unnamed_enum = nullptr;
 		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<FunctionNode>> functions;
-		stdvec<ptr<OperatorNode>> compiletime_functions;
+		stdvec<ptr<CallNode>> compiletime_functions;
 
 		FileNode() {
 			type = Type::FILE;
@@ -153,9 +159,8 @@ public:
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
 		stdvec<ptr<FunctionNode>> functions;
+		stdvec<ptr<CallNode>> compiletime_functions;
 
-		stdvec<ptr<OperatorNode>> compiletime_functions;
-		// TODO: FileNode* constructor.
 		ClassNode() {
 			type = Type::CLASS;
 		}
@@ -166,10 +171,12 @@ public:
 		ptr<Node> expr;
 		bool is_reduced = false;
 		int64_t value = 0;
+		EnumNode* _enum = nullptr; // if not named enum it'll be nullptr.
 		EnumValueNode() {}
-		EnumValueNode(ptr<Node> p_expr, Vect2i p_pos) {
+		EnumValueNode(ptr<Node> p_expr, Vect2i p_pos, EnumNode* p_enum = nullptr) {
 			pos = p_pos;
 			expr = p_expr;
+			_enum = p_enum;
 		}
 	};
 	struct EnumNode : public Node {
@@ -342,12 +349,33 @@ public:
 		}
 	};
 
+	struct CallNode : public Node {
+		ptr<Node> base;
+		ptr<Node> method; // should be Node (instead of identifier node) for calling reduce expression.
+		stdvec<ptr<Node>> r_args;
+		CallNode() {
+			type = Node::Type::CALL;
+		}
+	};
+
+	struct IndexNode : public Node {
+		ptr<Node> base;
+		ptr<IdentifierNode> member;
+		IndexNode() {
+			type = Node::Type::INDEX;
+		}
+	};
+
+	struct MappedIndexNode : public Node {
+		ptr<Node> base;
+		ptr<Node> key;
+		MappedIndexNode() {
+			type = Node::Type::MAPPED_INDEX;
+		}
+	};
+
 	struct OperatorNode : public Node {
 		enum OpType {
-			OP_CALL,		 // TODO: make these separate nodes.
-			OP_INDEX,		 // 
-			OP_INDEX_MAPPED, // 
-			
 			OP_EQ,
 			OP_EQEQ,
 			OP_PLUS,

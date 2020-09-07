@@ -63,7 +63,7 @@ if (m_ptr == nullptr){                                                          
 
 
 #define THROW_ERROR(m_type, m_msg) throw Error(m_type, m_msg)_ERR_ADD_DBG_VARS
-#define THROW_BUG(m_msg) THROW_ERROR(Error::BUG, m_msg)
+#define THROW_BUG(m_msg) DEBUG_BREAK(); THROW_ERROR(Error::BUG, m_msg)
 
 #include "var.h/_var.h"
 using namespace varh;
@@ -117,6 +117,7 @@ public:
 	Error() {}
 	Error(Type p_type) { type = p_type; }
 	Error(Type p_type, const String& p_msg) { type = p_type; msg = p_msg; }
+	Error(const VarError& p_other);
 
 	Error(Type p_type, const String& p_msg, const Vect2i p_pos, uint32_t p_err_len = 1) { 
 		type = p_type; msg = p_msg; pos = p_pos; err_len = p_err_len; 
@@ -158,8 +159,56 @@ private:
 	mutable String _what;
 };
 
+///// WARNING //////////////////////////////////////////////
+
+class Warning {
+public:
+	enum Type {
+		VARIABLE_SHADOWING,
+		MISSED_ENUM_IN_SWITCH,
+		NON_TERMINATING_LOOP,
+		UNREACHABLE_CODE,
+		STAND_ALONE_EXPRESSION,
+
+		_WARNING_MAX_,
+	};
+
+	Warning(Type p_type) { type = p_type; }
+	Warning(Type p_type, const String& p_msg) { msg = p_msg; type = p_type; }
+
+	static String get_warning_name(Warning::Type p_type);
+
+	Warning& set_file(const String& p_file) { file = p_file;    return *this; }
+	Warning& set_line(const String& p_line) { line = p_line; if (line[line.size() - 1] == '\n') line = line.substr(0, line.size() - 1);    return *this; }
+	Warning& set_pos(const Vect2i& p_pos) { pos = p_pos;      return *this; }
+	Warning& set_err_len(uint32_t p_len) { err_len = p_len;  return *this; }
+
+#if DEBUG_BUILD
+	const String& get_dbg_func() const { return __dbg_func__; }
+	const String& get_dbg_file() const { return __dbg_file__; }
+	int get_dbg_line() const { return __dbg_line__; }
+	Warning& set_deg_variables(const String& p_func, const String& p_file, uint32_t p_line) {
+		__dbg_func__ = p_func;
+		__dbg_file__ = p_file;
+		__dbg_line__ = p_line;
+		return *this;
+	}
+#endif
 
 
+private:
+	Type type;
+	String msg;
+	String file = "<NO-FILE-SET>";
+	String line = "<NO-LINE-SET>";
+	Vect2i pos = Vect2i(-1, -1);
+	uint32_t err_len = 1;
+#if DEBUG_BUILD
+	String __dbg_func__ = "<NO-FUNC-SET>";
+	String __dbg_file__ = "<NO-FILE-SET>";
+	uint32_t __dbg_line__ = 0;
+#endif
+};
 
 
 }

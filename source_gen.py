@@ -30,6 +30,15 @@ LICENSE = '''\
 HEADER_GUARD = 'NATIVE_BIND_GEN_H'
 
 DEFINE_DECLARE_VAR_TYPE = '''\
+#ifdef DEBUG_BUILD
+#	ifdef _MSC_VER
+#		define DEBUG_BREAK() __debugbreak()
+#	else
+#		define DEBUG_BREAK() __builtin_trap()
+#	endif
+#else 
+#	define DEBUG_BREAK()
+#endif
 
 template<typename T> struct is_shared_ptr : std::false_type {};
 template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {};

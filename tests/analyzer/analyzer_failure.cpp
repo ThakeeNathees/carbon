@@ -38,8 +38,8 @@ TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_ARG_COUNT, "func f(arg1, arg2 = \"default\"){} func g(){ f(1, false, -3.14); }");
 	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_ARG_COUNT, "func f(arg1 = 1){} class Aclass { func g(){ f(false, true); } }");
 	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_ARG_COUNT, "func f(){ var f = File(\"path\", File.WRITE, false); }");
-	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "func f(){ var f = File(1); }");
-	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "func f(){ var b = Buffer(false); }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "func f() { var f = File(1); }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "func f() { var b = Buffer(false); }");
 
 	// compiletime functions
 	CHECK_THROWS_CARBON__ANALYZE(Error::SYNTAX_ERROR, "__func(); // can't call outside a function");
