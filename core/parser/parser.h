@@ -497,7 +497,6 @@ private:
 		Vect2i get_pos() const { return pos; }
 		OperatorNode::OpType get_op() const { return op; }
 		ptr<Node>& get_expr() { return expr; }
-
 	private:
 		bool _is_op = true;
 		Vect2i pos;

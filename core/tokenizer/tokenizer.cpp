@@ -44,6 +44,9 @@ namespace carbon {
 #define IS_NUM(c)     \
 ( ('0' <= c && c <= '9') )
 
+#define IS_HEX_CHAR(c) \
+( IS_NUM(c) || ('a' <= c && c <= 'f') || ('A' <= c && c <= 'F') )
+
 #define IS_TEXT(c)    \
 ( (c == '_') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') )
 
@@ -370,22 +373,46 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 				// integer/float value
 				if (IS_NUM(GET_CHAR(0))) {
 					String num = GET_CHAR(0);
+					
+					enum _ReadMode { INT, FLOAT, BIN, HEX };
+					_ReadMode mode = INT;
+					if (GET_CHAR(0) == '0') {
+						if (GET_CHAR(1) == 'b' || GET_CHAR(1) == 'B') mode = BIN;
+						if (GET_CHAR(1) == 'x' || GET_CHAR(1) == 'X') mode = HEX;
+					}
 					EAT_CHAR(1);
-					bool is_float = false;
-					while (IS_NUM(GET_CHAR(0)) || GET_CHAR(0) == '.' ) {
-						if (GET_CHAR(0) == '.' && is_float)
-							break;
-						if (GET_CHAR(0) == '.')
-							is_float = true;
-						num += GET_CHAR(0);
-						EAT_CHAR(1);
+					switch (mode) {
+						case INT: {
+							while (IS_NUM(GET_CHAR(0)) || GET_CHAR(0) == '.') {
+								if (GET_CHAR(0) == '.' && mode == FLOAT)
+									break; // TODO: 3.1.2 <-- should be invalid here.
+								if (GET_CHAR(0) == '.')
+									mode = FLOAT;
+								num += GET_CHAR(0);
+								EAT_CHAR(1);
+							}
+						} break;
+						case BIN: {
+							num += GET_CHAR(0); EAT_CHAR(1); // eat 'b';
+							while (GET_CHAR(0) == '0' || GET_CHAR(0) == '1') {
+								num += GET_CHAR(0);
+								EAT_CHAR(1);
+							}
+						} break;
+						case HEX: {
+							num += GET_CHAR(0); EAT_CHAR(1); // eat 'x';
+							while (IS_HEX_CHAR(GET_CHAR(0))) {
+								num += GET_CHAR(0);
+								EAT_CHAR(1);
+							}
+						} break;
 					}
 
 					// "1." parsed as 1.0 which should be error.
 					if (num[num.size() - 1] == '.') THROW_TOKENIZE_ERROR(Error::SYNTAX_ERROR, "invalid numeric value.");
 
 					__const_val_token_len = (int)num.size();
-					if (is_float)
+					if (mode == FLOAT)
 						_eat_const_value(num.to_float());
 					else
 						_eat_const_value(num.to_int());
