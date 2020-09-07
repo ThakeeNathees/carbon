@@ -71,7 +71,7 @@ private:
 	Parser::IdentifierNode _get_member(const Parser::ClassNode* p_class, const String& p_name);
 
 	var _call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var>& args);
-	void _resolve_compiletime_funcs(const stdvec<ptr<Parser::OperatorNode>>& p_funcs);
+	void _resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p_funcs);
 
 	void _resolve_inheritance(Parser::ClassNode* p_class);
 	void _resolve_constant(Parser::ConstNode* p_const);

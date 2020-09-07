@@ -209,19 +209,18 @@ var Analyzer::_call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec
 	return var();
 }
 
-void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::OperatorNode>>& p_funcs) {
+void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p_funcs) {
 	for (int i = 0; i < (int)p_funcs.size(); i++) {
-		ASSERT(p_funcs[i]->op_type == Parser::OperatorNode::OP_CALL);
-		ptr<Parser::OperatorNode> op = p_funcs[i];
-		ASSERT(op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION);
-		Parser::BuiltinFunctionNode* bf = ptrcast<Parser::BuiltinFunctionNode>(op->args[0]).get();
+		Parser::CallNode* call = p_funcs[i].get();
+		ASSERT(call->base->type == Parser::Node::Type::BUILTIN_FUNCTION);
+		Parser::BuiltinFunctionNode* bf = ptrcast<Parser::BuiltinFunctionNode>(call->base).get();
 		stdvec<var> args;
-		for (int j = 1; j < (int)op->args.size(); j++) {
-			_reduce_expression(op->args[j]);
-			if (op->args[j]->type != Parser::Node::Type::CONST_VALUE) {
-				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->args[j]->pos);
+		for (int j = 0; j < (int)call->r_args.size(); j++) {
+			_reduce_expression(call->r_args[j]);
+			if (call->r_args[j]->type != Parser::Node::Type::CONST_VALUE) {
+				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->r_args[j]->pos);
 			}
-			args.push_back(ptrcast<Parser::ConstValueNode>(op->args[j])->value);
+			args.push_back(ptrcast<Parser::ConstValueNode>(call->r_args[j])->value);
 		}
 		_call_compiletime_func(bf, args);
 	}
@@ -366,6 +365,9 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 				p_block->statements.erase(p_block->statements.begin() + i--);
 				break;
 
+			case Parser::Node::Type::CALL:
+			case Parser::Node::Type::INDEX:
+			case Parser::Node::Type::MAPPED_INDEX:
 			case Parser::Node::Type::OPERATOR: {
 				_reduce_expression(p_block->statements[i]);
 			} break;
@@ -452,10 +454,10 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 			p_block->statements.erase(p_block->statements.begin() + i--);
 
 		// remove all compile time functions.
-		else if (p_block->statements[i]->type == Parser::Node::Type::OPERATOR) {
-			Parser::OperatorNode* op = ptrcast<Parser::OperatorNode>(p_block->statements[i]).get();
-			if (op->op_type == Parser::OperatorNode::OP_CALL && op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION) {
-				if (BuiltinFunctions::is_compiletime(ptrcast<Parser::BuiltinFunctionNode>(op->args[0])->func)) {
+		else if (p_block->statements[i]->type == Parser::Node::Type::CALL) {
+			Parser::CallNode* call = ptrcast<Parser::CallNode>(p_block->statements[i]).get();
+			if (call->base->type == Parser::Node::Type::BUILTIN_FUNCTION) {
+				if (BuiltinFunctions::is_compiletime(ptrcast<Parser::BuiltinFunctionNode>(call->base)->func)) {
 					p_block->statements.erase(p_block->statements.begin() + i--);
 				}
 			}

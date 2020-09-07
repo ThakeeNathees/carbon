@@ -228,19 +228,19 @@ const char* Parser::Node::get_node_type_name(Type p_type) {
 		"SUPER",
 		"BUILTIN_FUNCTION",
 		"BUILTIN_TYPE",
+		"CALL",
+		"INDEX",
+		"MAPPED_INDEX",
 		"OPERATOR",
 		"CONTROL_FLOW",
 		nullptr, // _NODE_MAX_
 	};
 	return type_names[(int)p_type];
-MISSED_ENUM_CHECK(Parser::Node::Type::_NODE_MAX_, 18);
+MISSED_ENUM_CHECK(Parser::Node::Type::_NODE_MAX_, 21);
 }
 
 const char* Parser::OperatorNode::get_op_name(OpType p_op) {
 	static const char* op_names[] = {
-		"OP_CALL",
-		"OP_INDEX",
-		"OP_INDEX_MAPPED",
 
 		"OP_EQ",
 		"OP_EQEQ",
@@ -281,7 +281,7 @@ const char* Parser::OperatorNode::get_op_name(OpType p_op) {
 		nullptr, // _OP_MAX_
 	};
 	return op_names[p_op];
-MISSED_ENUM_CHECK(Parser::OperatorNode::OpType::_OP_MAX_, 36);
+MISSED_ENUM_CHECK(Parser::OperatorNode::OpType::_OP_MAX_, 33);
 }
 
 const char* Parser::ControlFlowNode::get_cftype_name(CfType p_type) {
