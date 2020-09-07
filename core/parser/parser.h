@@ -182,11 +182,12 @@ public:
 		}
 	};
 
-	struct ArgumentNode {
+	struct ParameterNode {
 		Vect2i pos = Vect2i(-1, -1);
 		String name;
-		ArgumentNode() {}
-		ArgumentNode(String p_name, Vect2i p_pos) {
+		ptr<Node> default_value;
+		ParameterNode() {}
+		ParameterNode(String p_name, Vect2i p_pos) {
 			name = p_name;
 			pos = p_pos;
 		}
@@ -195,7 +196,8 @@ public:
 		String name;
 		bool is_static = false;
 		bool has_return = false;
-		stdvec<ArgumentNode> args;
+		stdvec<ParameterNode> args;
+		stdvec<var> default_parameters;
 		ptr<BlockNode> body;
 		ptr<Node> parent_node;
 		FunctionNode() {
@@ -497,7 +499,6 @@ private:
 		Vect2i get_pos() const { return pos; }
 		OperatorNode::OpType get_op() const { return op; }
 		ptr<Node>& get_expr() { return expr; }
-
 	private:
 		bool _is_op = true;
 		Vect2i pos;
