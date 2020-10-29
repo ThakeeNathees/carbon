@@ -132,7 +132,7 @@ public:
 		}
 	}
 
-	DynamicLibrary(const String& p_lib_name = nullptr) {
+	DynamicLibrary(const String& p_lib_name = "") {
 		if (p_lib_name.size() != 0) open(p_lib_name);
 	}
 	~DynamicLibrary(){
@@ -162,7 +162,6 @@ private:
 		fp = (func_ptr) dlsym(handle, p_func_name);
 
 		if (!fp) { /* no such symbol */
-			dlclose(handle);
 			THROW_ERROR(Error::IO_ERROR, String::format("%s.", dlerror()));
 		}
 

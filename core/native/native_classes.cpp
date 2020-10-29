@@ -96,7 +96,7 @@ bool NativeClasses::is_class_registered(const String& p_class_name) {
 	return classes[p_class_name.hash()].class_name.size() != 0;
 }
 
-ptr<Object> NativeClasses::construct(const String& p_class_name) {
+ptr<Object> NativeClasses::_new(const String& p_class_name) {
 	if (!is_class_registered(p_class_name))
 		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
 	return classes[p_class_name.hash()].__constructor();
@@ -106,6 +106,13 @@ const StaticFuncBind* NativeClasses::get_initializer(const String& p_class_name)
 	if (!is_class_registered(p_class_name))
 		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
 	return classes[p_class_name.hash()].__initializer;
+}
+
+ptr<Object> NativeClasses::construct(const String& p_class_name, stdvec<var>& p_args) {
+	ptr<Object> instance = _new(p_class_name);
+	p_args.insert(p_args.begin(), instance);
+	get_initializer(p_class_name)->call(p_args);
+	return instance;
 }
 
 const stdvec<const BindData*> NativeClasses::get_bind_data_list(const String& p_class_name) {

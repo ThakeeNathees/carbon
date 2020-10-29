@@ -40,7 +40,7 @@ void File::close() {
 void File::open(const String& p_path, int p_mode) {
 	if (p_mode < READ || (p_mode > (READ | WRITE | APPEND | BINARY | EXTRA))) THROW_ERROR(Error::IO_ERROR, "invalid mode flag set in file.");
 
-	// TODO: print given combination.
+	// TODO: fix the error message, print given combination.
 	if ((p_mode & READ) && (p_mode & WRITE) && (p_mode & APPEND)) THROW_ERROR(Error::IO_ERROR, "invalid combination of flags (WRITE & APPEND) in file.");
 	if (!(p_mode & READ) && !(p_mode & WRITE) && !(p_mode & APPEND)) THROW_ERROR(Error::IO_ERROR, "invalid combination of flags (WRITE & APPEND) in file.");
 

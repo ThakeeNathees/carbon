@@ -56,6 +56,7 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("__assert(true);");
 	CHECK_NOTHROW__ANALYZE("__assert(!false);");
 	CHECK_NOTHROW__ANALYZE("__assert(__line() == 1);");
+	CHECK_NOTHROW__ANALYZE("const L = __line(); \n__assert(L == 1);");
 	CHECK_NOTHROW__ANALYZE("__assert(__file() == \"" NO_PATH "\");");
 	CHECK_NOTHROW__ANALYZE("func fn() { __assert(__func() == \"fn\"); }");
 	CHECK_NOTHROW__ANALYZE("class Aclass { func fn() { __assert(__func() == \"Aclass.fn\"); } }");
@@ -78,8 +79,8 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 			func fn() { const A_C = B.E.V + B.B_C1; }
 		}
 		class B {
-			const B_C1 = 2; // TODO: implement 0b10101, 0xc0ffee
-			const B_C2 = 8;
+			const B_C1 = 0b10;
+			const B_C2 = 1 << 3;
 			enum E { V = B_C1 & B_C2 }
 		}
 	)");

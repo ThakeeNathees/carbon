@@ -18,18 +18,18 @@ TEST_CASE("[native_classes]:file+") {
 	ptr<Buffer> buff = newptr<Buffer>();
 	buff->alloc(5);
 	for (int i = 0; i < 5; i++) {
-		buff->front()[i] = i;
+		(*buff)[i] = i;
 	}
 	file1.write(buff);
 	buff = nullptr;
 	buff = file1.read().cast_to<Buffer>();
 	for (int i = 0; i < 5; i++) {
-		CHECK(buff->front()[i] == i);
+		CHECK((*buff)[i] == i);
 	}
 	file1.close();
 
 	// bind method test
-	var file2 = newptr<File>();
+	var file2 = NativeClasses::construct("File");
 	file2.call_method("open", TEST_FILE_PATH, File::APPEND);
 	file2.call_method("write", "\nappended by FILE2.");
 	file2.call_method("close");

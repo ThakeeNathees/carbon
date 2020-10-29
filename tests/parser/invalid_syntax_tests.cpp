@@ -36,7 +36,7 @@ TEST_CASE("[parser_tests]:invalid_syntax_test") {
 	CHECK_THROWS_CARBON_ERR(Error::SYNTAX_ERROR, parser.parse("class {}", NO_PATH));
 	CHECK_THROWS_CARBON_ERR(Error::SYNTAX_ERROR, parser.parse("func fn(a)) {}", NO_PATH));
 	CHECK_THROWS_CARBON_ERR(Error::SYNTAX_ERROR, parser.parse("blah_blah", NO_PATH));
-	CHECK_THROWS_CARBON_ERR(Error::SYNTAX_ERROR, parser.parse("var v1 = {1 2};", NO_PATH));
+	CHECK_THROWS_CARBON_ERR(Error::SYNTAX_ERROR, parser.parse("var v1 = [1 2];", NO_PATH));
 	CHECK_THROWS_CARBON_ERR(Error::SYNTAX_ERROR, parser.parse("func fn(arg1, arg2 = 42, arg3) {}", NO_PATH));
 
 	// predefined name

@@ -86,7 +86,7 @@ static void m_func(const char* p_fmt, ...) {            \
 	if (!is_level(LogLevel::m_level)) return;           \
 	va_list args;                                       \
 	va_start(args, p_fmt);                              \
-	singleton->STRCAT2(m_func, _impl) (p_fmt, args);    \
+	singleton->m_func##_impl (p_fmt, args);             \
 	va_end(args);                                       \
 }
 	LOG_METHODS(logf_verbose, VERBOSE)
