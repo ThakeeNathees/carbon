@@ -342,7 +342,6 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 			} break;
 
 			case Parser::Node::Type::CONST: {
-				// TODO: this could be removed after all others are resolved.
 				ptr<Parser::ConstNode> const_node = ptrcast<Parser::ConstNode>(p_block->statements[i]);
 				_resolve_constant(const_node.get());
 			} break;
@@ -370,6 +369,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 			case Parser::Node::Type::INDEX:
 			case Parser::Node::Type::MAPPED_INDEX:
 			case Parser::Node::Type::OPERATOR: {
+				// TODO: if it's reduced to compile time constant it could be removed?
 				_reduce_expression(p_block->statements[i]);
 			} break;
 
@@ -478,6 +478,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 
 	}
 
+	// remove reduced && un-wanted statements.
 	for (int i = 0; i < (int)p_block->statements.size(); i++) {
 		// remove all local constant statments. no need anymore.
 		if (p_block->statements[i]->type == Parser::Node::Type::CONST) {

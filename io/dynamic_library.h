@@ -71,6 +71,8 @@ class DynamicLibrary : public Object {
 		BIND_METHOD("open", &DynamicLibrary::open, PARAMS("lib_name"));
 		BIND_METHOD_VA("call", &DynamicLibrary::_call_va_args);
 		BIND_METHOD("close", &DynamicLibrary::close);
+
+		BIND_METHOD("__call_method", &DynamicLibrary::__call_method, PARAMS("method_name", "args"));
 	}
 
 public:
@@ -86,6 +88,10 @@ public:
 		lib_name = p_lib_name;
 	}
 
+	var __call_method(const String& p_method_name, Array p_args) {
+		p_args.insert(0, p_method_name);
+		return _call_va_args(*p_args.get_data());
+	}
 	int _call_va_args(stdvec<var>& p_args) {
 		if (p_args.size() == 0) THROW_ERROR(Error::INVALID_ARG_COUNT, "argument is 0, need at least 1 as the function name.");
 		if (p_args[0].get_type() != var::STRING)
@@ -132,7 +138,7 @@ public:
 		}
 	}
 
-	DynamicLibrary(const String& p_lib_name = nullptr) {
+	DynamicLibrary(const String& p_lib_name = "") {
 		if (p_lib_name.size() != 0) open(p_lib_name);
 	}
 	~DynamicLibrary(){
@@ -162,7 +168,6 @@ private:
 		fp = (func_ptr) dlsym(handle, p_func_name);
 
 		if (!fp) { /* no such symbol */
-			dlclose(handle);
 			THROW_ERROR(Error::IO_ERROR, String::format("%s.", dlerror()));
 		}
 
@@ -179,7 +184,6 @@ template<typename... Targs>
 static int _visit(DynamicLibrary* p_lib, const String& p_func_name, var* p_nullptr, Targs... p_args) {
 	return p_lib->_call(p_func_name.c_str(), p_args...);
 }};
-
 
 }
 

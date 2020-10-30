@@ -96,7 +96,7 @@ bool NativeClasses::is_class_registered(const String& p_class_name) {
 	return classes[p_class_name.hash()].class_name.size() != 0;
 }
 
-ptr<Object> NativeClasses::construct(const String& p_class_name) {
+ptr<Object> NativeClasses::_new(const String& p_class_name) {
 	if (!is_class_registered(p_class_name))
 		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
 	return classes[p_class_name.hash()].__constructor();
@@ -106,6 +106,13 @@ const StaticFuncBind* NativeClasses::get_initializer(const String& p_class_name)
 	if (!is_class_registered(p_class_name))
 		THROW_ERROR(Error::NAME_ERROR, String::format("the class \"%s\" isn't registered in native class entries.", p_class_name.c_str()));
 	return classes[p_class_name.hash()].__initializer;
+}
+
+ptr<Object> NativeClasses::construct(const String& p_class_name, stdvec<var>& p_args) {
+	ptr<Object> instance = _new(p_class_name);
+	p_args.insert(p_args.begin(), instance);
+	get_initializer(p_class_name)->call(p_args);
+	return instance;
 }
 
 const stdvec<const BindData*> NativeClasses::get_bind_data_list(const String& p_class_name) {
@@ -156,6 +163,11 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 	}
 
 	ptr<BindData> bind_data = NativeClasses::find_bind_data(class_name, p_name);
+	if (!bind_data) {
+		bind_data = NativeClasses::find_bind_data(class_name, __call_method);
+		p_args = { p_name, Array(p_args) };
+	}
+
 	if (bind_data) {
 		if (bind_data->get_type() == BindData::METHOD) {
 			return ptrcast<MethodBind>(bind_data)->call(p_self, p_args);
@@ -168,6 +180,7 @@ var Object::call_method(ptr<Object> p_self, const String& p_name, stdvec<var>& p
 				String::format("attribute named \"%s\" on type %s is not callable.", method_name.c_str(), p_self->get_class_name()));
 		}
 	}
+
 	THROW_ERROR(Error::NAME_ERROR, String::format("type %s has no method named \"%s\".", p_self->get_class_name(), method_name.c_str()));
 }
 

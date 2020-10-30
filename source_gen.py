@@ -129,7 +129,7 @@ public:
 	virtual BindData::Type get_type() const { return BindData::METHOD; }
 	virtual int get_argc() const { return argc; }
 
-	virtual var call(ptr<Object> self, stdvec<var>& args) = 0;
+	virtual var call(ptr<Object> self, stdvec<var>& args) const = 0;
 	const MethodInfo* get_method_info() const { return mi.get(); }
 	const MemberInfo* get_member_info() const override { return mi.get(); }
 };
@@ -143,7 +143,7 @@ public:
 	virtual BindData::Type get_type()   const { return BindData::STATIC_FUNC; }
 	virtual int get_argc()              const { return argc; }
 
-	virtual var call(stdvec<var>& args) = 0;
+	virtual var call(stdvec<var>& args) const = 0;
 	const MethodInfo* get_method_info() const { return mi.get(); }
 	const MemberInfo* get_member_info() const override { return mi.get(); }
 };
@@ -154,7 +154,7 @@ protected:
 	ptr<PropertyInfo> pi;
 public:
 	virtual BindData::Type get_type() const { return BindData::MEMBER_VAR; }
-	virtual var& get(ptr<Object> self) = 0;
+	virtual var& get(ptr<Object> self) const = 0;
 
 	const PropertyInfo* get_prop_info() const { return pi.get(); }
 	const MemberInfo* get_member_info() const override { return pi.get(); }
@@ -173,7 +173,7 @@ public:
 		pi = p_pi;
 	}
 
-	virtual var& get(ptr<Object> self) override {
+	virtual var& get(ptr<Object> self) const override {
 		return ptrcast<Class>(self).get()->*member_ptr;
 	}
 };
@@ -199,7 +199,7 @@ public:
 		member = p_member;
 		pi = p_pi;
 	}
-	virtual var& get() { return *member; }
+	virtual var& get() const { return *member; }
 	const PropertyInfo* get_prop_info() const { return pi.get(); }
 	const MemberInfo* get_member_info() const override { return pi.get(); }
 };
@@ -215,7 +215,7 @@ protected:
 	ptr<PropertyInfo> pi;
 public:
 	virtual BindData::Type get_type() const { return BindData::STATIC_CONST; }
-	virtual var get() = 0;
+	virtual var get() const = 0;
 
 	const PropertyInfo* get_prop_info() const { return pi.get(); }
 	const MemberInfo* get_member_info() const override { return pi.get(); }
@@ -232,7 +232,7 @@ public:
 		pi = p_pi;
 	}
 
-	virtual var get() override {
+	virtual var get() const override {
 		return *_const;
 	}
 };
@@ -282,7 +282,7 @@ public:
 		evi = newptr<EnumValueInfo>(p_name, p_value);
 	}
 	virtual BindData::Type get_type() const { return BindData::ENUM_VALUE; }
-	int64_t get() { return value; }
+	int64_t get() const { return value; }
 
 	const EnumValueInfo* get_enum_value_info() const { return evi.get(); }
 	const MemberInfo* get_member_info() const override { return evi.get(); }
@@ -316,7 +316,7 @@ public:
 		method = p_method;
 		mi = p_mi;
 	}}
-	virtual var call(ptr<Object> self, stdvec<var>& args) override {{
+	virtual var call(ptr<Object> self, stdvec<var>& args) const override {{
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -358,7 +358,7 @@ public:
 		static_func = p_func;
 		mi = p_mi;
 	}}
-	virtual var call(stdvec<var>& args) override {{
+	virtual var call(stdvec<var>& args) const override {{
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -433,7 +433,7 @@ public:
 		method = p_method;
 		mi = p_mi;
 	}
-	virtual var call(ptr<Object> self, stdvec<var>& args) override {
+	virtual var call(ptr<Object> self, stdvec<var>& args) const override {
 		if constexpr (std::is_same<R, void>::value) {
 			(ptrcast<T>(self).get()->*method)(args); return var();
 		} else {
@@ -454,7 +454,7 @@ public:
 		static_func = p_func;
 		mi = p_mi;
 	}
-	virtual var call(stdvec<var>& args) override {
+	virtual var call(stdvec<var>& args) const override {
 		if constexpr (std::is_same<R, void>::value) {
 			static_func(args); return var();
 		} else {

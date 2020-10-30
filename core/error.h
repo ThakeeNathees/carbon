@@ -26,23 +26,6 @@
 #ifndef ERRORS_H
 #define ERRORS_H
 
-
-#define ARG_1(_1,...) _1
-#define ARG_2(_1,_2,...) _2
-#define ARG_3(_1,_2,_3,...) _3
-#define ARG_4(_1,_2,_3,_4,...) _4
-#define ARG_5(_1,_2,_3,_4,_5,...) _5
-#define ARG_6(_1,_2,_3,_4,_5,_6,...) _6
-#define ARG_7(_1,_2,_3,_4,_5,_6,_7,...) _7
-#define ARG_8(_1,_2,_3,_4,_5,_6,_7,_8,...) _8
-#define ARG_9(_1,_2,_3,_4,_5,_6,_7,_8,_9,...) _9
-#define ARG_10(_1,_2,_3,_4,_5,_6,_7,_8,_9,_10,...) _10
-
-#define STRCAT2(m_1, m_2) m_1##m_2
-#define STRCAT3(m_1, m_2, m_3) m_1##m_2##m_3
-#define STRCAT4(m_1, m_2, m_3, m_4) m_1##m_2##m_3##m_4
-#define STRCAT5(m_1, m_2, m_3, m_4, m_5) m_1##m_2##m_3##m_4##m_5
-
 #if DEBUG_BUILD
 #define _ERR_ADD_DBG_VARS .set_deg_variables(__FUNCTION__, __FILE__, __LINE__)
 #else

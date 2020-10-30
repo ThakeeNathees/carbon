@@ -103,8 +103,9 @@ public:
 	static const stdvec<const BindData*> get_bind_data_list(const String& p_class_name);
 	static const stdvec<const MemberInfo*> get_member_info_list(const String& p_class_name);
 
-	static ptr<Object> construct(const String& p_class_name);
+	static ptr<Object> _new(const String& p_class_name);
 	static const StaticFuncBind* get_initializer(const String& p_class_name);
+	static ptr<Object> construct(const String& p_class_name, stdvec<var>& p_args = stdvec<var>());
 };
 
 }
