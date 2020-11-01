@@ -53,10 +53,10 @@ public:
 static void register_classes() {
 	static bool registered = false;
 	if (registered) return;
-	register_class<A>();
-	register_class<B1>();
-	register_class<B2>();
-	register_class<C>();
+	NativeClasses::singleton()->register_class<A>();
+	NativeClasses::singleton()->register_class<B1>();
+	NativeClasses::singleton()->register_class<B2>();
+	NativeClasses::singleton()->register_class<C>();
 	registered = true;
 }
 
@@ -78,14 +78,14 @@ TEST_CASE("[native_classes]:method_bind+") {
 		CHECK(a.get_member("member").operator Array() == Array(1, "2", 3.0));
 
 		CHECK(a.get_member("static_member").operator String() == "static member");
-		ptr<BindData> bd = NativeClasses::get_bind_data(a.get_type_name(), "static_member");
+		ptr<BindData> bd = NativeClasses::singleton()->get_bind_data(a.get_type_name(), "static_member");
 		REQUIRE(bd != nullptr);
 		REQUIRE(bd->get_type() == BindData::STATIC_VAR);
 		CHECK(ptrcast<StaticPropertyBind>(bd)->get() == "static member");
 	}
 	{
 		CHECK(c.get_member("_const") == 42);
-		ptr<BindData> bd = NativeClasses::find_bind_data(c.get_type_name(), "_const");
+		ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(c.get_type_name(), "_const");
 		REQUIRE(bd != nullptr);
 		REQUIRE(bd->get_type() == BindData::STATIC_CONST);
 		CHECK(ptrcast<ConstantBind>(bd)->get() == 42);
@@ -140,8 +140,8 @@ TEST_CASE("[native_classes]:method_bind-") {
 	var b2 = newptr<B2>();
 	register_classes();
 
-	CHECK_THROWS_CARBON_ERR(Error::NAME_ERROR, c.call_method("blah blah..."));
-	CHECK_THROWS_CARBON_ERR(Error::INVALID_ARG_COUNT, c.call_method("C_member_func"));
+	CHECK_THROWS_VARH_ERR(VarError::ATTRIBUTE_ERROR, c.call_method("blah blah..."));
+	CHECK_THROWS_VARH_ERR(VarError::INVALID_ARG_COUNT, c.call_method("C_member_func"));
 
 	// TODO: var error -> carbon error : invalid type casting.
 	//CHECK_THROWS_CARBON_ERR(Error::INVALID_ARG_COUNT, b2.call_method("B2_member_func", 1));
