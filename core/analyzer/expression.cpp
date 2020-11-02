@@ -161,7 +161,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				}
 				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
 
-				if (NativeClasses::is_class_registered(id->name)) {
+				if (NativeClasses::singleton()->is_class_registered(id->name)) {
 					id->ref = Parser::IdentifierNode::REF_NATIVE_CLASS;
 					break;
 				}
@@ -373,8 +373,8 @@ do {                                                                            
 						} break;
 
 						case Parser::IdentifierNode::REF_NATIVE_CLASS: {
-							ASSERT(NativeClasses::is_class_registered(id->name));
-							const StaticFuncBind* initializer = NativeClasses::get_initializer(id->name);
+							ASSERT(NativeClasses::singleton()->is_class_registered(id->name));
+							const StaticFuncBind* initializer = NativeClasses::singleton()->get_initializer(id->name);
 							if (initializer) {
 								// check arg counts.
 								int argc = initializer->get_method_info()->get_arg_count() - 1; // -1 for self argument.
@@ -489,7 +489,7 @@ do {                                                                            
 
 						case Parser::IdentifierNode::REF_NATIVE_CLASS: {
 
-							BindData* bd = NativeClasses::get_bind_data(base->name, id->name).get();
+							BindData* bd = NativeClasses::singleton()->get_bind_data(base->name, id->name).get();
 							if (!bd) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" does not exists on base %s.", id->name.c_str(), base->name.c_str()), id->pos);
 							switch (bd->get_type()) {
 								case BindData::STATIC_FUNC: {
@@ -704,8 +704,8 @@ do {                                                                            
 						} break;
 
 						case Parser::IdentifierNode::REF_NATIVE_CLASS: {
-							ASSERT(NativeClasses::is_class_registered(base->name));
-							BindData* bd = NativeClasses::get_bind_data(base->name, member->name).get();
+							ASSERT(NativeClasses::singleton()->is_class_registered(base->name));
+							BindData* bd = NativeClasses::singleton()->get_bind_data(base->name, member->name).get();
 							if (!bd) THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s.", member->name.c_str(), base->name.c_str()), member->pos);
 							switch (bd->get_type()) {
 								case BindData::METHOD:

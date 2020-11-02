@@ -25,15 +25,17 @@
 
 namespace carbon {
 
-void initialize() {
+void initialize(NativeClasses* p_singleton) {
+	NativeClasses::_set_singleton(p_singleton);
+
 	// Register native classes,
-	register_class<Object>();
+	NativeClasses::singleton()->register_class<Object>();
 
 	// io
-	register_class<File>();
-	register_class<Buffer>();
-	register_class<OS>();
-	register_class<DynamicLibrary>();
+	NativeClasses::singleton()->register_class<File>();
+	NativeClasses::singleton()->register_class<Buffer>();
+	NativeClasses::singleton()->register_class<OS>();
+	NativeClasses::singleton()->register_class<DynamicLibrary>();
 }
 
 }

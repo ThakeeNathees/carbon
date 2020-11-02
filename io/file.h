@@ -26,7 +26,6 @@
 #ifndef FILE_H
 #define FILE_H
 
-#include "native/native_classes.h"
 #include "buffer.h"
 
 namespace carbon {

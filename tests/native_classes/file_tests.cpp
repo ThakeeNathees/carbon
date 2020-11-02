@@ -29,7 +29,7 @@ TEST_CASE("[native_classes]:file+") {
 	file1.close();
 
 	// bind method test
-	var file2 = NativeClasses::construct("File");
+	var file2 = NativeClasses::singleton()->construct("File");
 	file2.call_method("open", TEST_FILE_PATH, File::APPEND);
 	file2.call_method("write", "\nappended by FILE2.");
 	file2.call_method("close");

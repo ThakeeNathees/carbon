@@ -35,12 +35,11 @@ using namespace carbon;
 #ifdef RUN_TESTS
 #include "tests/carbon_tests.h"
 #endif
-// TODO: VarError -> Error.
-// TODO: Make var submodule to local.
+
 
 int _main(int argc, char** argv) {
 
-	initialize();
+	initialize(NativeClasses::singleton());
 
 #ifdef RUN_TESTS
 	int res = _test_main(argc, argv);
@@ -56,5 +55,8 @@ int _main(int argc, char** argv) {
 
 	Logger::log("\nPress enter to exit...", Logger::VERBOSE, Logger::Color::L_SKYBLUE);
 	getchar(); // pause
+
+	NativeClasses::cleanup();
+
 	return 0;
 }

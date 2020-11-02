@@ -21,19 +21,12 @@ def USER_DATA(env):
 		'core/SConstruct',
 		'os/SConstruct',
 	]
-	env.Append(CPPDEFINES=['_VAR_H_EXTERN_IMPLEMENTATIONS'])
 
 	if env['target'] == 'debug':
 		env.Append(CPPDEFINES=['DEBUG_BUILD'])
 		env.SCONSCRIPTS += [ 'tests/SConstruct' ]
 	else:
 		env.Append(CPPDEFINES=['RELEASE_BUILD'])
-
-	## Generate scripts.
-	if not os.path.exists('core/native/native_bind.gen.h'):
-		import source_gen
-		## TODO: change it to SCONS.BUILDER() <-- to detect file changes also.
-		source_gen.generage_method_calls('core/native/native_bind.gen.h', 6)
 
 
 	env.Append(CPPPATH=[Dir("./")])

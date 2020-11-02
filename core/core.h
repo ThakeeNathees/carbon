@@ -59,7 +59,6 @@ using namespace varh;
 #include <new>
 
 #include "error.h"
-#include "native/native_bind.gen.h"
 
 // https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
 #ifdef _MSC_VER // Microsoft compilers
@@ -170,9 +169,6 @@ do {                                                                            
 
 namespace carbon {
 typedef unsigned char byte_t;
-
-template<typename T, typename... Targs>
-stdvec<T> make_stdvec(Targs... p_args) { return { p_args... }; }
 
 }
 
