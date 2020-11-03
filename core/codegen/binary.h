@@ -30,9 +30,16 @@
 
 namespace carbon {
 
+
 class Binary {
 public:
-	class Address {
+	struct Address {
+		static constexpr int ADDR_BITS = 32;
+		static constexpr int ADDR_TYPE_BITS = 8;
+		static constexpr int ADDR_INDEX_BITS = ADDR_BITS - ADDR_TYPE_BITS;
+		static constexpr int ADDR_TYPE_MASK = ((1 << ADDR_TYPE_BITS) - 1) << ADDR_INDEX_BITS;
+		static constexpr int ADDR_INDEX_MASK = (1 << ADDR_INDEX_BITS) - 1;
+
 		enum Type {
 			_NULL = 0,
 			STACK,
@@ -45,10 +52,49 @@ public:
 			CONSTANT_CLASS,
 			CONSTANT_FILE,
 		};
+
+		Address() {}
+		Address(Type p_type, uint32_t p_index, bool p_temp = false) :type(p_type), index(p_index), temp(p_temp) {}
+
+		static Type get_type_s(uint32_t p_addr) { return  (Type)((p_addr & ADDR_TYPE_MASK) >> ADDR_INDEX_BITS); }
+		static uint32_t get_index_s(uint32_t p_addr) { return p_addr & ADDR_INDEX_MASK; }
+
+		Type get_type() const { return type; }
+		uint32_t get_index() const { return index; }
+		uint32_t get_address() const { return index | (type << ADDR_INDEX_BITS); }
+		bool is_temp() const { return temp; }
+
+	private:
+		Type type = _NULL;
+		bool temp = false;
+		uint32_t index = 0;
 	};
 
 	enum Opcode {
+		GET,
+		SET,
+		GET_MAPPED,
+		SET_MAPPED,
+		SET_TRUE,
+		SET_FALSE,
+		OPERATOR,
+		ASSIGN,
+		CONSTRUCT_BUILTIN,
+		CONSTRUCT_LITERAL_ARRAY,
+		CONSTRUCT_LITERAL_DICT,
+		// Native and other types constructed from calling
+		CALL,
+		CALL_BUILTIN,
+		CALL_SUPER,
+		JUMP,
+		JUMP_IF,
+		JUMP_IF_NOT,
+		RETURN,
 
+		// ITER_BEGIN
+		// ITER_NEXT
+
+		_OPCODE_END_,
 	};
 
 };
