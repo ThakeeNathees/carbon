@@ -143,6 +143,7 @@ public:
 		enum BaseType {
 			NO_BASE,
 			BASE_LOCAL,
+			BASE_NATIVE,
 			BASE_EXTERN
 		};
 		BaseType base_type = NO_BASE;
@@ -170,6 +171,7 @@ public:
 		Vect2i pos = Vect2i(-1, -1);
 		ptr<Node> expr;
 		bool is_reduced = false;
+		bool _is_reducing = false; // for cyclic dependancy.
 		int64_t value = 0;
 		EnumNode* _enum = nullptr; // if not named enum it'll be nullptr.
 		EnumValueNode() {}
@@ -351,7 +353,9 @@ public:
 
 	struct CallNode : public Node {
 		ptr<Node> base;
-		ptr<Node> method; // should be Node (instead of identifier node) for calling reduce expression.
+		// should be Node (instead of identifier node) for reduce the identifier.
+		// if the method is nullptr and base is a var `a_var(...)` -> `a_var.__call(...)` will be called.
+		ptr<Node> method;
 		stdvec<ptr<Node>> r_args;
 		CallNode() {
 			type = Node::Type::CALL;
@@ -536,6 +540,7 @@ private:
 
 	struct ParserContext {
 		ClassNode* current_class = nullptr;
+		VarNode* current_var = nullptr;
 		FunctionNode* current_func = nullptr;
 		BlockNode* current_block = nullptr;
 		EnumNode* current_enum = nullptr;

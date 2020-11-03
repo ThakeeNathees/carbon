@@ -58,7 +58,7 @@ using namespace varh;
 #include <memory>
 #include <new>
 
-#include "error.h"
+#include "error/error.h"
 
 // https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
 #ifdef _MSC_VER // Microsoft compilers

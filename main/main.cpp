@@ -47,6 +47,7 @@ int _main(int argc, char** argv) {
 		Logger::log("\nTests failed. continue? [Y/N] (default:N) ", Logger::VERBOSE, Logger::Color::L_WHITE);
 		char _continue = getchar();
 		if (_continue != 'Y' && _continue != 'y') {
+			NativeClasses::cleanup();
 			return res;
 		}
 		CLEAR_GETCHAR_BUFFER();
@@ -57,6 +58,5 @@ int _main(int argc, char** argv) {
 	getchar(); // pause
 
 	NativeClasses::cleanup();
-
 	return 0;
 }

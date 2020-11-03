@@ -1,4 +1,6 @@
 //------------------------------------------------------------------------------
+// MIT License
+//------------------------------------------------------------------------------
 // 
 // Copyright (c) 2020 Thakee Nathees
 // 
@@ -21,21 +23,15 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "carbon.h"
+#ifndef CARBON_FUNCTION_H
+#define CARBON_FUNCTION_H
 
 namespace carbon {
 
-void initialize(NativeClasses* p_singleton) {
-	NativeClasses::_set_singleton(p_singleton);
+class CarbonFunction {
 
-	// Register native classes,
-	NativeClasses::singleton()->register_class<Object>();
-
-	// io
-	NativeClasses::singleton()->register_class<File>();
-	NativeClasses::singleton()->register_class<Buffer>();
-	NativeClasses::singleton()->register_class<OS>();
-	NativeClasses::singleton()->register_class<DynamicLibrary>();
-}
+};
 
 }
+
+#endif // CARBON_FUNCTION_H

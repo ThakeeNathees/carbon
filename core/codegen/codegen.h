@@ -33,17 +33,15 @@ namespace carbon {
 #define ADDR_BITS       32
 #define ADDR_TYPE_BITS  8
 #define ADDR_VALUE_BITS (ADDR_BITS - ADDR_TYPE_BITS)
-
 #define ADDR_TYPE_MASK  (((1 << ADDR_TYPE_BITS) - 1) << ADDR_VALUE_BITS)
 #define ADDR_VALUE_MASK ((1 << ADDR_VALUE_BITS) - 1)
 
+#define ADDR_GET_TYPE (m_addr) ((m_addr & ADDR_TYPE_MASK) >> ADDR_VALUE_BITS)
+#define ADDR_GET_VALUE(m_addr) (m_addr & ADDR_VALUE_MASK)
+
 class CodeGen {
 public:
-	class Address {
-		enum Type {
-
-		};
-	};
+	
 };
 
 }

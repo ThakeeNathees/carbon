@@ -46,13 +46,14 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			}
 
 		} else if (tk->type == Token::KWORD_THIS) {
-			if (parser_context.current_class == nullptr || (parser_context.current_func && parser_context.current_func->is_static))
+			if (parser_context.current_class == nullptr || (parser_context.current_func && parser_context.current_func->is_static) ||
+				(parser_context.current_var && parser_context.current_var->is_static))
 				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "keyword \"this\" only be used in non-static member function.", Vect2i());
 			expr = new_node<ThisNode>();
 
 		} else if (tk->type == Token::KWORD_SUPER) {
 			// if super is inside class function, it calls the same function in it's base.
-			if (parser_context.current_class == nullptr || (parser_context.current_func))
+			if (parser_context.current_class == nullptr || (parser_context.current_func == nullptr))
 				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "keyword \"super\" can only be used in class function.", Vect2i());
 			if (parser_context.current_class->base_type == ClassNode::NO_BASE) {
 				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "invalid use of \"super\". Can only used inside classes with a base type.", Vect2i());
