@@ -23,40 +23,17 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_H
-#define CARBON_H
-
-// core imports
-#include "core/core.h"
-
-// compilation pipeline
-#include "core/tokenizer/tokenizer.h"
-#include "core/parser/parser.h"
-#include "core/analyzer/analyzer.h"
-
-// native imports
-#include "io/logger.h"
-#include "io/file.h"
-#include "io/dynamic_library.h"
-#include "os/os.h"
+#ifndef BYTECODE_H
+#define BYTECODE_H
 
 namespace carbon {
 
-inline void initialize(NativeClasses* p_singleton) {
-	NativeClasses::_set_singleton(p_singleton);
+class Bytecode {
 
-	// Register native classes.
-	NativeClasses::singleton()->register_class<Object>();
-	NativeClasses::singleton()->register_class<OS>();
 
-	NativeClasses::singleton()->register_class<File>();
-	NativeClasses::singleton()->register_class<Buffer>();
-	NativeClasses::singleton()->register_class<DynamicLibrary>();
-	NativeClasses::singleton()->register_class<NativeLib>();
+
+};
 
 }
 
-}
-
-
-#endif // CARBON_H
+#endif // BYTECODE_H

@@ -27,8 +27,8 @@
 #define TOKENIZER_H
 
 #include "core.h"
-#include "builtin_functions.h"
-#include "builtin_types.h"
+#include "builtin/builtin_functions.h"
+#include "builtin/builtin_types.h"
 
 #define THROW_TOKENIZE_ERROR(m_err_type, m_msg)                                                                      \
 	do {                                                                                                             \

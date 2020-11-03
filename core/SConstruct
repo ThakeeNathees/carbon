@@ -9,13 +9,17 @@ cbenv.Append(CPPPATH=[Dir("var.h/")])
 ## core env
 env_core = cbenv.Clone()
 env_core.SOURCES = [
-    File('var.h/var.cpp'),
-    File('var.h/_native.cpp'),
 
     Glob('*.cpp'),
-    Glob('parser/*.cpp'),
+    File('var.h/var.cpp'),
+    File('var.h/_native.cpp'),
+    Glob('error/*.cpp'),
+    Glob('builtin/*.cpp'),
+
     Glob('tokenizer/*.cpp'),
+    Glob('parser/*.cpp'),
     Glob('analyzer/*.cpp'),
+    Glob('codegen/*.cpp'),
 
 ]
 

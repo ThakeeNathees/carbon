@@ -33,7 +33,7 @@ int _test_main(int argc, char** argv) {
 	// !!! THIS IS JUST AN EXAMPLE SHOWING HOW DEFAULTS/OVERRIDES ARE SET !!!
 
 	// defaults
-	//context.addFilter("test-case-exclude", "[native_classes:dylib]");    // exclude test cases
+	context.addFilter("test-case-exclude", "[native_classes:dylib]");    // exclude test cases
 	context.setOption("rand-seed", 324);     // if order-by is set to "rand" use this seed
 	context.setOption("order-by", "file");   // sort the test cases by file and line
 

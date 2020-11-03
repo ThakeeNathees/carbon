@@ -58,14 +58,16 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 	// File/class enums/unnamed_enums.
 	for (size_t i = 0; i < file_node->enums.size(); i++) {
 		parser->parser_context.current_enum = file_node->enums[i].get();
+		int _possible_value = 0;
 		for (std::pair<String, Parser::EnumValueNode> pair : file_node->enums[i]->values) {
-			_resolve_enumvalue(file_node->enums[i]->values[pair.first]);
+			_resolve_enumvalue(file_node->enums[i]->values[pair.first], &_possible_value);
 		}
 	}
 	if (file_node->unnamed_enum != nullptr) {
 		parser->parser_context.current_enum = file_node->unnamed_enum.get();
+		int _possible_value = 0;
 		for (std::pair<String, Parser::EnumValueNode> pair : file_node->unnamed_enum->values) {
-			_resolve_enumvalue(file_node->unnamed_enum->values[pair.first]);
+			_resolve_enumvalue(file_node->unnamed_enum->values[pair.first], &_possible_value);
 		}
 	}
 	parser->parser_context.current_enum = nullptr;
@@ -74,14 +76,16 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 		parser->parser_context.current_class = file_node->classes[i].get();
 		for (size_t j = 0; j < file_node->classes[i]->enums.size(); j++) {
 			parser->parser_context.current_enum = file_node->classes[i]->enums[j].get();
+			int _possible_value = 0;
 			for (std::pair<String, Parser::EnumValueNode> pair : file_node->classes[i]->enums[j]->values) {
-				_resolve_enumvalue(file_node->classes[i]->enums[j]->values[pair.first]);
+				_resolve_enumvalue(file_node->classes[i]->enums[j]->values[pair.first], &_possible_value);
 			}
 		}
 		if (file_node->classes[i]->unnamed_enum != nullptr) {
 			parser->parser_context.current_enum = file_node->classes[i]->unnamed_enum.get();
+			int _possible_value = 0;
 			for (std::pair<String, Parser::EnumValueNode> pair : file_node->classes[i]->unnamed_enum->values) {
-				_resolve_enumvalue(file_node->classes[i]->unnamed_enum->values[pair.first]);
+				_resolve_enumvalue(file_node->classes[i]->unnamed_enum->values[pair.first], &_possible_value);
 			}
 		}
 	}
@@ -91,12 +95,15 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 	// call compile time functions.
 	_resolve_compiletime_funcs(file_node->compiletime_functions);
 	for (size_t i = 0; i < file_node->classes.size(); i++) {
+		parser->parser_context.current_class = file_node->classes[i].get();
 		_resolve_compiletime_funcs(file_node->classes[i]->compiletime_functions);
 	}
+	parser->parser_context.current_class = nullptr;
 
 	// File/class level variables.
 	for (size_t i = 0; i < file_node->vars.size(); i++) {
 		if (file_node->vars[i]->assignment != nullptr) {
+			parser->parser_context.current_var = file_node->vars[i].get();
 			_reduce_expression(file_node->vars[i]->assignment);
 		}
 	}
@@ -104,10 +111,12 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 		parser->parser_context.current_class = file_node->classes[i].get();
 		for (size_t j = 0; j < file_node->classes[i]->vars.size(); j++) {
 			if (file_node->classes[i]->vars[j]->assignment != nullptr) {
+				parser->parser_context.current_var = file_node->classes[i]->vars[j].get();
 				_reduce_expression(file_node->classes[i]->vars[j]->assignment);
 			}
 		}
 	}
+	parser->parser_context.current_var = nullptr;
 	parser->parser_context.current_class = nullptr;
 
 	// File level function.
@@ -233,6 +242,7 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 
 	switch (p_class->base_type) {
 		case Parser::ClassNode::NO_BASE:
+		case Parser::ClassNode::BASE_NATIVE:
 			break;
 		case Parser::ClassNode::BASE_LOCAL:
 			for (int i = 0; i < (int)file_node->classes.size(); i++) {
@@ -288,16 +298,25 @@ void Analyzer::_resolve_parameters(Parser::FunctionNode* p_func) {
 	}
 }
 
-void Analyzer::_resolve_enumvalue(Parser::EnumValueNode& p_enumvalue) {
+void Analyzer::_resolve_enumvalue(Parser::EnumValueNode& p_enumvalue, int* p_possible) {
 	if (p_enumvalue.is_reduced) return;
-	p_enumvalue.is_reduced = true;
+	if (p_enumvalue._is_reducing) THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "cyclic enum value dependancy found.", p_enumvalue.expr->pos);
+	p_enumvalue._is_reducing = true;
 
-	_reduce_expression(p_enumvalue.expr);
-	if (p_enumvalue.expr->type != Parser::Node::Type::CONST_VALUE)
-		THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "enum value must be a constant integer.", p_enumvalue.expr->pos);
-	ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(p_enumvalue.expr);
-	if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "enum value must be a constant integer.", p_enumvalue.expr->pos);
-	p_enumvalue.value = cv->value;
+	if (p_enumvalue.expr != nullptr) {
+		_reduce_expression(p_enumvalue.expr);
+		if (p_enumvalue.expr->type != Parser::Node::Type::CONST_VALUE)
+			THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "enum value must be a constant integer.", p_enumvalue.expr->pos);
+		ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(p_enumvalue.expr);
+		if (cv->value.get_type() != var::INT) THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "enum value must be a constant integer.", p_enumvalue.expr->pos);
+		p_enumvalue.value = cv->value;
+	} else {
+		p_enumvalue.value = (p_possible) ? *p_possible: -1;
+	}
+	if (p_possible) *p_possible = p_enumvalue.value + 1;
+
+	p_enumvalue._is_reducing = false;
+	p_enumvalue.is_reduced = true;
 }
 
 void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {

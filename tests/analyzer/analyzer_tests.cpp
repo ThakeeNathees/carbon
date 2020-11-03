@@ -23,11 +23,15 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("func fn() { String; }");
 	CHECK_NOTHROW__ANALYZE("func fn() { return 1; if (false) { return 0; print(); } }");
 
+	//CHECK_NOTHROW__ANALYZE("enum E { V1, V2 = 12, V3 } __assert(E.V1 == 0 && E.V3 == 13);");
+	CHECK_NOTHROW__ANALYZE("enum { V = 1 } __assert(V == 1);");
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = 1 + 2, }");
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = - 2, }");
 	CHECK_NOTHROW__ANALYZE("enum E { V1 = 1 << 1, V2 = 1 << 2, V3 = V1 | V2 } __assert(E.V3 == 6);");
 	CHECK_NOTHROW__ANALYZE("const C = 1; enum E { V1 = C, }");
 	CHECK_NOTHROW__ANALYZE("const C = 1 + 2; enum E { V1 = 1 + C, }");
+	CHECK_NOTHROW__ANALYZE("enum E { VAL = 42 } __assert(E.VAL == 42);"); 
+	CHECK_NOTHROW__ANALYZE("class Aclass { enum E { VAL = 42 } __assert(E.VAL == 42); }"); 
 
 	CHECK_NOTHROW__ANALYZE("const C1 = C2; const C2 = 2;");
 	CHECK_NOTHROW__ANALYZE("const C1 = C2; const C2 = C3; const C3 = 3;");

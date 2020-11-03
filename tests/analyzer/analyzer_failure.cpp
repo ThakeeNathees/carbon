@@ -29,6 +29,8 @@ TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	CHECK_THROWS_CARBON__ANALYZE(Error::NAME_ERROR, "const C = identifier;");
 	CHECK_THROWS_CARBON__ANALYZE(Error::NAME_ERROR, "var v = identifier;");
 	CHECK_THROWS_CARBON__ANALYZE(Error::NAME_ERROR, "enum { VAL = identifier, }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "class Aclass { enum { V = V, } }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "enum { V = V, }");
 	CHECK_THROWS_CARBON__ANALYZE(Error::NAME_ERROR, "func fn() { var x = identifier; }");
 	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "class C1 : C2 {} class C2 : C1 {}");
 	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "const C1 = C2; const C2 = C1;");

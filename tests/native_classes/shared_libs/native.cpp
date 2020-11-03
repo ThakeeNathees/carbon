@@ -37,6 +37,7 @@ void carbon_register_classes(NativeClasses* p_native) {
 
 __declspec(dllexport)
 void carbon_unregister_classes(NativeClasses* p_native) {
+	// if class isn't unregistered it'll crash at the carbon's cleanup();
 	printf("unregister classes called\n");
 }
 

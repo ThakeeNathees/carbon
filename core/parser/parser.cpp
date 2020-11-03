@@ -48,6 +48,12 @@ if (m_parent->unnamed_enum != nullptr) {																		 \
 	}																											 \
 }
 
+#define THROW_IF_NAME_NATIVE(m_name)                                                                                         \
+	if (NativeClasses::singleton()->is_class_registered(m_name)) {                                                           \
+		THROW_PARSER_ERR(Error::NAME_ERROR, String::format("a native type named \"%s\" already exists at (line:%i, col:%i)", \
+			m_name.c_str(), tk->line, tk->col), Vect2i());                                                                   \
+	}
+
 namespace carbon {
 
 void Parser::parse(String p_source, String p_file_path) {
@@ -164,6 +170,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
 	
 	// TODO: check identifier from import.
+	THROW_IF_NAME_NATIVE(tk->identifier);
 	THROW_IF_NAME_DEFINED(file_node, "a class", tk->identifier, classes);
 	THROW_IF_NAME_DEFINED(file_node, "a variable", tk->identifier, vars);
 	THROW_IF_NAME_DEFINED(file_node, "a constants", tk->identifier, constants);
@@ -193,8 +200,12 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 
 			tk = &tokenizer->next();
 		} else {
-			if (class_node->base_class == class_node->name) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "", tokenizer->peek(-2, true).get_pos());
-			class_node->base_type = ClassNode::BASE_LOCAL;
+			if (NativeClasses::singleton()->is_class_registered(class_node->base_class)) {
+				class_node->base_type = ClassNode::BASE_NATIVE;
+			} else {
+				if (class_node->base_class == class_node->name) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "", tokenizer->peek(-2, true).get_pos());
+				class_node->base_type = ClassNode::BASE_LOCAL;
+			}
 		} // TODO: what if inherits a builtin type like Array, Map, String, ...
 	}
 
@@ -299,7 +310,7 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 		THROW_UNEXP_TOKEN("an identifier or symbol \"{\"");	
 
 	if (tk->type == Token::IDENTIFIER) {
-
+		THROW_IF_NAME_NATIVE(tk->identifier);
 		// TODO: check identifier from import.
 		if (p_parent->type == Node::Type::FILE) {
 			THROW_IF_NAME_DEFINED(file_node, "a class", tk->identifier, classes);
@@ -449,6 +460,19 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_parent) {
 		var_node->parernt_node = p_parent;
 		var_node->is_static = _static;
 		var_node->name = tk->identifier;
+
+		parser_context.current_var = var_node.get();
+		class ScopeDestruct {
+		public:
+			Parser::ParserContext* context = nullptr;
+			ScopeDestruct(Parser::ParserContext* p_context) {
+				context = p_context;
+			}
+			~ScopeDestruct() {
+				context->current_var = nullptr;
+			}
+		};
+		ScopeDestruct destruct = ScopeDestruct(&parser_context);
 
 		tk = &tokenizer->next();
 		if (tk->type == Token::OP_EQ) {

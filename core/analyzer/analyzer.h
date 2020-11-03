@@ -96,7 +96,7 @@ private:
 	void _resolve_inheritance(Parser::ClassNode* p_class);
 	void _resolve_constant(Parser::ConstNode* p_const);
 	void _resolve_parameters(Parser::FunctionNode* p_func);
-	void _resolve_enumvalue(Parser::EnumValueNode& p_enumvalue);
+	void _resolve_enumvalue(Parser::EnumValueNode& p_enumvalue, int* p_possible = nullptr);
 
 	void _reduce_expression(ptr<Parser::Node>& p_expr);
 	void _reduce_block(ptr<Parser::BlockNode> p_block);
