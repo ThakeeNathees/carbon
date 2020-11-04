@@ -290,6 +290,7 @@ const char* Parser::ControlFlowNode::get_cftype_name(CfType p_type) {
 		"SWITCH",
 		"WHILE",
 		"FOR",
+		"FOREACH",
 		"BREAK",
 		"CONTINUE",
 		"RETURN",
@@ -297,7 +298,7 @@ const char* Parser::ControlFlowNode::get_cftype_name(CfType p_type) {
 	};
 	return cf_names[p_type];
 
-MISSED_ENUM_CHECK(Parser::ControlFlowNode::_CF_MAX_, 7);
+MISSED_ENUM_CHECK(Parser::ControlFlowNode::_CF_MAX_, 8);
 }
 
 

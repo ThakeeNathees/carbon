@@ -133,6 +133,47 @@ void Parser::parse(String p_source, String p_file_path) {
 	} // while true
 }
 
+void Parser::_check_identifier_predefinition(const String& p_name, Node* p_scope) const {
+	const TokenData* tk = &tokenizer->peek(-1, true);
+
+	THROW_IF_NAME_NATIVE(p_name);
+	// TODO: check identifier from import.
+	if (p_scope == nullptr || p_scope->type == Node::Type::FILE) {
+		THROW_IF_NAME_DEFINED(file_node, "a class", p_name, classes);
+		THROW_IF_NAME_DEFINED(file_node, "a variable", p_name, vars);
+		THROW_IF_NAME_DEFINED(file_node, "a constant", p_name, constants);
+		THROW_IF_NAME_DEFINED(file_node, "a function", p_name, functions);
+		THROW_IF_NAME_DEFINED(file_node, "an enum", p_name, enums);
+		THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
+	} else if (p_scope->type == Node::Type::CLASS) {
+		ClassNode* cn = static_cast<ClassNode*>(p_scope);
+		THROW_IF_NAME_DEFINED(cn, "a variable", p_name, vars);
+		THROW_IF_NAME_DEFINED(cn, "a constant", p_name, constants);
+		THROW_IF_NAME_DEFINED(cn, "a function", p_name, functions);
+		THROW_IF_NAME_DEFINED(cn, "an enum", p_name, enums);
+		THROW_IF_NAME_DEFINED_ENUMVALUES(cn);
+	} else if (p_scope->type == Node::Type::BLOCK) {
+		ASSERT(parser_context.current_func != nullptr);
+		for (int i = 0; i < (int)parser_context.current_func->args.size(); i++) {
+			if (parser_context.current_func->args[i].name == p_name) {
+				THROW_PREDEFINED("an argument", p_name, parser_context.current_func->args[i].pos);
+			}
+		}
+		BlockNode* block = static_cast<BlockNode*>(p_scope);
+		while (block) {
+			for (int i = 0; i < (int)block->local_vars.size(); i++) {
+				if (block->local_vars[i]->name == p_name) {
+					THROW_PREDEFINED("a variable", p_name, block->local_vars[i]->pos);
+				}
+			}
+			if (block->parernt_node->type == Node::Type::FUNCTION) break;
+			block = ptrcast<BlockNode>(block->parernt_node).get();
+		}
+	} else {
+		ASSERT(false);
+	}
+}
+
 void Parser::_parse_import() {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_IMPORT);
 	ptr<FileNode> import_file = new_node<FileNode>();
@@ -168,15 +209,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
-	
-	// TODO: check identifier from import.
-	THROW_IF_NAME_NATIVE(tk->identifier);
-	THROW_IF_NAME_DEFINED(file_node, "a class", tk->identifier, classes);
-	THROW_IF_NAME_DEFINED(file_node, "a variable", tk->identifier, vars);
-	THROW_IF_NAME_DEFINED(file_node, "a constants", tk->identifier, constants);
-	THROW_IF_NAME_DEFINED(file_node, "a function", tk->identifier, functions);
-	THROW_IF_NAME_DEFINED(file_node, "an enum", tk->identifier, enums);
-	THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
+	_check_identifier_predefinition(tk->identifier, nullptr);
 
 	class_node->name = tk->identifier;
 
@@ -310,24 +343,7 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 		THROW_UNEXP_TOKEN("an identifier or symbol \"{\"");	
 
 	if (tk->type == Token::IDENTIFIER) {
-		THROW_IF_NAME_NATIVE(tk->identifier);
-		// TODO: check identifier from import.
-		if (p_parent->type == Node::Type::FILE) {
-			THROW_IF_NAME_DEFINED(file_node, "a class", tk->identifier, classes);
-			THROW_IF_NAME_DEFINED(file_node, "a variable", tk->identifier, vars);
-			THROW_IF_NAME_DEFINED(file_node, "a constant", tk->identifier, constants);
-			THROW_IF_NAME_DEFINED(file_node, "a function", tk->identifier, functions);
-			THROW_IF_NAME_DEFINED(file_node, "an enum", tk->identifier, enums);
-			THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
-		} else { // class enum.
-			ptr<ClassNode> cn = ptrcast<ClassNode>(p_parent);
-			THROW_IF_NAME_DEFINED(cn, "a variable", tk->identifier, vars);
-			THROW_IF_NAME_DEFINED(cn, "a constant", tk->identifier, constants);
-			THROW_IF_NAME_DEFINED(cn, "a function", tk->identifier, functions);
-			THROW_IF_NAME_DEFINED(cn, "an enum", tk->identifier, enums);
-			THROW_IF_NAME_DEFINED_ENUMVALUES(cn);
-			// TODO: shadowed warning ?
-		}
+		_check_identifier_predefinition(tk->identifier, p_parent.get());
 
 		enum_node->name = tk->identifier;
 		enum_node->named_enum = true;
@@ -364,31 +380,13 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 				}
 
 				if (!enum_node->named_enum) {
-					if (p_parent->type == Node::Type::FILE) {
-						THROW_IF_NAME_DEFINED(file_node, "a variable", token.identifier, vars);
-						THROW_IF_NAME_DEFINED(file_node, "a constant", tk->identifier, constants);
-						THROW_IF_NAME_DEFINED(file_node, "a function", token.identifier, functions);
-						THROW_IF_NAME_DEFINED(file_node, "an enum", token.identifier, enums);
-						THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
-						
-					} else { // CLASS
-						ptr<ClassNode> cn = ptrcast<ClassNode>(p_parent);
-						THROW_IF_NAME_DEFINED(cn, "a variable", token.identifier, vars);
-						THROW_IF_NAME_DEFINED(cn, "a constant", tk->identifier, constants);
-						THROW_IF_NAME_DEFINED(cn, "a function", token.identifier, functions);
-						THROW_IF_NAME_DEFINED(cn, "an enum", token.identifier, enums);
-						THROW_IF_NAME_DEFINED_ENUMVALUES(cn);
-					}
+					_check_identifier_predefinition(token.identifier, p_parent.get());
 				}
 				
 				const TokenData* tk = &tokenizer->peek();
 				if (tk->type == Token::OP_EQ) {
 					tk = &tokenizer->next(); // eat "=".
 					ptr<Node> expr = _parse_expression(enum_node, false);
-					//if (expr->type != Node::Type::CONST_VALUE || ptrcast<ConstValueNode>(expr)->value.get_type() != var::INT) {
-					//	THROW_PARSER_ERR(Error::INVALID_TYPE, "enum value must be a constant integer", Vect2i());
-					//}
-					//next_value = ptrcast<ConstValueNode>(expr)->value.operator int64_t();
 					enum_node->values[token.identifier] = EnumValueNode(expr, token.get_pos(), (enum_node->named_enum) ? enum_node.get() : nullptr);
 				} else {
 					enum_node->values[token.identifier] = EnumValueNode(nullptr, token.get_pos(), (enum_node->named_enum) ? enum_node.get() : nullptr);
@@ -416,45 +414,9 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_parent) {
 
 	while (true) {
 		tk = &tokenizer->next();
-		if (tk->type != Token::IDENTIFIER) {
-			THROW_UNEXP_TOKEN("an identifier");
-		}
 
-		// TODO: check identifier include import
-		if (p_parent->type == Node::Type::FILE) {
-			THROW_IF_NAME_DEFINED(file_node, "a class", tk->identifier, classes);
-			THROW_IF_NAME_DEFINED(file_node, "a variable", tk->identifier, vars);
-			THROW_IF_NAME_DEFINED(file_node, "a constant", tk->identifier, constants);
-			THROW_IF_NAME_DEFINED(file_node, "a function", tk->identifier, functions);
-			THROW_IF_NAME_DEFINED(file_node, "an enum", tk->identifier, enums);
-			THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
-		} else if (p_parent->type == Node::Type::CLASS) {
-			ptr<ClassNode> cn = ptrcast<ClassNode>(p_parent);
-			THROW_IF_NAME_DEFINED(cn, "a variable", tk->identifier, vars);
-			THROW_IF_NAME_DEFINED(cn, "a constant", tk->identifier, constants);
-			THROW_IF_NAME_DEFINED(cn, "a function", tk->identifier, functions);
-			THROW_IF_NAME_DEFINED(cn, "an enum", tk->identifier, enums);
-			THROW_IF_NAME_DEFINED_ENUMVALUES(cn);
-		} else { // BLOCK local var
-			ASSERT(parser_context.current_func != nullptr);
-			for (int i = 0; i < (int)parser_context.current_func->args.size(); i++) {
-				if (parser_context.current_func->args[i].name == tk->identifier) {
-					THROW_PREDEFINED("an argument", tk->identifier, parser_context.current_func->args[i].pos);
-				}
-			}
-			BlockNode* block = ptrcast<BlockNode>(p_parent).get();
-			while (block) {
-				for (int i = 0; i < (int)block->local_vars.size(); i++) {
-					if (block->local_vars[i]->name == tk->identifier) {
-						THROW_PREDEFINED("a variable", tk->identifier, block->local_vars[i]->pos);
-					}
-				}
-				if (block->parernt_node->type == Node::Type::FUNCTION) {
-					break;
-				}
-				block = ptrcast<BlockNode>(block->parernt_node).get();
-			}
-		}
+		if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+		_check_identifier_predefinition(tk->identifier, p_parent.get());
 
 		ptr<VarNode> var_node = new_node<VarNode>();
 		var_node->parernt_node = p_parent;
@@ -477,7 +439,6 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_parent) {
 		tk = &tokenizer->next();
 		if (tk->type == Token::OP_EQ) {
 			ptr<Node> expr = _parse_expression(p_parent, false);
-			//_reduce_expression(expr); TODO: reduce after all are parsed.
 			var_node->assignment = expr;
 
 			tk = &tokenizer->next();
@@ -507,45 +468,9 @@ ptr<Parser::ConstNode> Parser::_parse_const(ptr<Node> p_parent) {
 
 	const TokenData* tk;
 	tk = &tokenizer->next();
-	if (tk->type != Token::IDENTIFIER) {
-		THROW_UNEXP_TOKEN("an identifier");
-	}
 
-	// TODO: check identifier include import
-	if (p_parent->type == Node::Type::FILE) {
-		THROW_IF_NAME_DEFINED(file_node, "a class", tk->identifier, classes);
-		THROW_IF_NAME_DEFINED(file_node, "a variable", tk->identifier, vars);
-		THROW_IF_NAME_DEFINED(file_node, "a constant", tk->identifier, constants);
-		THROW_IF_NAME_DEFINED(file_node, "a function", tk->identifier, functions);
-		THROW_IF_NAME_DEFINED(file_node, "an enum", tk->identifier, enums);
-		THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
-	} else if (p_parent->type == Node::Type::CLASS) {
-		ptr<ClassNode> cn = ptrcast<ClassNode>(p_parent);
-		THROW_IF_NAME_DEFINED(cn, "a variable", tk->identifier, vars);
-		THROW_IF_NAME_DEFINED(cn, "a constant", tk->identifier, constants);
-		THROW_IF_NAME_DEFINED(cn, "a function", tk->identifier, functions);
-		THROW_IF_NAME_DEFINED(cn, "an enum", tk->identifier, enums);
-		THROW_IF_NAME_DEFINED_ENUMVALUES(cn);
-	} else { // BLOCK local var
-		ASSERT(parser_context.current_func != nullptr);
-		for (int i = 0; i < (int)parser_context.current_func->args.size(); i++) {
-			if (parser_context.current_func->args[i].name == tk->identifier) {
-				THROW_PREDEFINED("an argument", tk->identifier, parser_context.current_func->args[i].pos);
-			}
-		}
-		BlockNode* block = ptrcast<BlockNode>(p_parent).get();
-		while (block) {
-			for (int i = 0; i < (int)block->local_vars.size(); i++) {
-				if (block->local_vars[i]->name == tk->identifier) {
-					THROW_PREDEFINED("a variable", tk->identifier, block->local_vars[i]->pos);
-				}
-			}
-			if (block->parernt_node->type == Node::Type::FUNCTION) {
-				break;
-			}
-			block = ptrcast<BlockNode>(block->parernt_node).get();
-		}
-	}
+	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+	_check_identifier_predefinition(tk->identifier, p_parent.get());
 
 	ptr<ConstNode> const_node = new_node<ConstNode>();
 	const_node->parernt_node = p_parent;
@@ -585,24 +510,9 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	};
 	ScopeDestruct destruct = ScopeDestruct(&parser_context);
 
-	// TODO: check identifier from import
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
-	if (p_parent->type == Node::Type::FILE) {
-		THROW_IF_NAME_DEFINED(file_node, "a class", tk->identifier, classes);
-		THROW_IF_NAME_DEFINED(file_node, "a variable", tk->identifier, vars);
-		THROW_IF_NAME_DEFINED(file_node, "a constant", tk->identifier, constants);
-		THROW_IF_NAME_DEFINED(file_node, "a function", tk->identifier, functions);
-		THROW_IF_NAME_DEFINED(file_node, "an enum", tk->identifier, enums);
-		THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
-	} else { // CLASS
-		ptr<ClassNode> cn = ptrcast<ClassNode>(p_parent);
-		THROW_IF_NAME_DEFINED(cn, "a variable", tk->identifier, vars);
-		THROW_IF_NAME_DEFINED(cn, "a constant", tk->identifier, constants);
-		THROW_IF_NAME_DEFINED(cn, "a function", tk->identifier, functions);
-		THROW_IF_NAME_DEFINED(cn, "an enum", tk->identifier, enums);
-		THROW_IF_NAME_DEFINED_ENUMVALUES(cn);
-	}
+	_check_identifier_predefinition(tk->identifier, p_parent.get());
 
 	func_node->name = tk->identifier;
 	if (parser_context.current_class && parser_context.current_class->name == tk->identifier) {

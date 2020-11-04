@@ -450,6 +450,7 @@ public:
 			SWITCH,
 			WHILE,
 			FOR,
+			FOREACH,
 			BREAK,
 			CONTINUE,
 			RETURN,
@@ -573,6 +574,7 @@ private:
 
 	ptr<Node> _build_operator_tree(stdvec<Expr>& p_expr);
 	static int _get_operator_precedence(OperatorNode::OpType p_op);
+	void _check_identifier_predefinition(const String& p_name, Node* p_scope) const;
 
 	// Members.
 	ptr<FileNode> file_node;

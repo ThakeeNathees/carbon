@@ -1,2 +1,9 @@
 
-enum E { V1, V2 }
+func f() {
+
+	for (;;){}
+	var arr = [1, 2, 3];
+	for (var i : 12) {
+		print(i);
+	}
+}
