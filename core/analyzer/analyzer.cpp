@@ -313,7 +313,7 @@ void Analyzer::_resolve_enumvalue(Parser::EnumValueNode& p_enumvalue, int* p_pos
 	} else {
 		p_enumvalue.value = (p_possible) ? *p_possible: -1;
 	}
-	if (p_possible) *p_possible = p_enumvalue.value + 1;
+	if (p_possible) *p_possible = (int)p_enumvalue.value + 1;
 
 	p_enumvalue._is_reducing = false;
 	p_enumvalue.is_reduced = true;
@@ -471,14 +471,40 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 
 					case Parser::ControlFlowNode::FOR: {
 						ASSERT(cf_node->args.size() == 3);
-						ASSERT(cf_node->body->statements.size() >= 3); // arguments are in the body.
+
+						// reduce loop arguments.
+						Parser::BlockNode* parent_block = parser->parser_context.current_block;
+						parser->parser_context.current_block = cf_node->body.get();
+						if (cf_node->args[0] != nullptr && cf_node->args[0]->type == Parser::Node::Type::VAR) {
+							cf_node->body->local_vars.push_back(ptrcast<Parser::VarNode>(cf_node->args[0]));
+							_reduce_expression(ptrcast<Parser::VarNode>(cf_node->args[0])->assignment);
+						}
+						else _reduce_expression(cf_node->args[0]);
+						_reduce_expression(cf_node->args[1]);
+						_reduce_expression(cf_node->args[2]);
+						parser->parser_context.current_block = parent_block;
+
 						_reduce_block(cf_node->body);
 						// TODO: if it's evaluvated to compile time constant it could be optimized/warned.
 						if (cf_node->args[0] == nullptr && cf_node->args[1] == nullptr && cf_node->args[2] == nullptr) {
 							if (!cf_node->has_break) {
-								ADD_WARNING(Warning::NON_TERMINATING_LOOP, "", cf_node->args[0]->pos);
+								ADD_WARNING(Warning::NON_TERMINATING_LOOP, "", cf_node->pos);
 							}
 						}
+					} break;
+
+					case Parser::ControlFlowNode::FOREACH: {
+						ASSERT(cf_node->args.size() == 2);
+
+						// reduce loop arguments.
+						Parser::BlockNode* parent_block = parser->parser_context.current_block;
+						parser->parser_context.current_block = cf_node->body.get();
+						cf_node->body->local_vars.push_back(ptrcast<Parser::VarNode>(cf_node->args[0]));
+						_reduce_expression(ptrcast<Parser::VarNode>(cf_node->args[0])->assignment);
+						_reduce_expression(cf_node->args[1]);
+						parser->parser_context.current_block = parent_block;
+
+						_reduce_block(cf_node->body);
 					} break;
 
 					case Parser::ControlFlowNode::BREAK:

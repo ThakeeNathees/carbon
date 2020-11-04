@@ -47,8 +47,12 @@ inline void initialize(NativeClasses* p_singleton) {
 
 	// Register native classes.
 	NativeClasses::singleton()->register_class<Object>();
-	NativeClasses::singleton()->register_class<OS>();
+	NativeClasses::singleton()->register_class<_Map_KeyValue_Pair>();
+	NativeClasses::singleton()->register_class<_Iterator_String>();
+	NativeClasses::singleton()->register_class<_Iterator_Array>();
+	NativeClasses::singleton()->register_class<_Iterator_Map>();
 
+	NativeClasses::singleton()->register_class<OS>();
 	NativeClasses::singleton()->register_class<File>();
 	NativeClasses::singleton()->register_class<Buffer>();
 	NativeClasses::singleton()->register_class<DynamicLibrary>();

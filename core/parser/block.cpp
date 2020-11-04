@@ -165,29 +165,53 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 				} else {
 					if (tokenizer->peek().type == Token::KWORD_VAR) {
 						tokenizer->next(); // eat "var"
-						stdvec<ptr<VarNode>> vars = _parse_var(block_node);
-						if (vars.size() > 1) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "multiple assignment not allowed here.", vars[1]->pos);
-						for_block->args.push_back(vars[0]);
+
+						tk = &tokenizer->next();
+						if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+						_check_identifier_predefinition(tk->identifier, block_node.get());
+
+						ptr<VarNode> var_node = new_node<VarNode>();
+						var_node->parernt_node = p_parent;
+						var_node->name = tk->identifier;
+
+						tk = &tokenizer->next();
+						if (tk->type == Token::OP_EQ) {
+							parser_context.current_var = var_node.get();
+							ptr<Node> expr = _parse_expression(p_parent, false);
+							parser_context.current_var = nullptr;
+							var_node->assignment = expr;
+							if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+						} else if (tk->type == Token::SYM_SEMI_COLLON) {
+							
+						} else if (tk->type == Token::SYM_COLLON) {
+							for_block->cf_type = ControlFlowNode::CfType::FOREACH;
+						}
+						for_block->args.push_back(var_node);
 					} else {
 						for_block->args.push_back(_parse_expression(block_node, true));
 						if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
 					}
 				}
 
-				if (tokenizer->peek().type == Token::SYM_SEMI_COLLON) {
-					tokenizer->next(); // eat ";"
-					for_block->args.push_back(nullptr);
-				} else {
+				if (for_block->cf_type == ControlFlowNode::CfType::FOREACH) {
 					for_block->args.push_back(_parse_expression(block_node, false));
-					if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
-				}
-
-				if (tokenizer->peek().type == Token::BRACKET_RPARAN) {
-					tokenizer->next(); // eat ")"
-					for_block->args.push_back(nullptr);
-				} else {
-					for_block->args.push_back(_parse_expression(block_node, true));
 					if (tokenizer->next().type != Token::BRACKET_RPARAN) THROW_UNEXP_TOKEN("symbol \")\"");
+				} else {
+					if (tokenizer->peek().type == Token::SYM_SEMI_COLLON) {
+						tokenizer->next(); // eat ";"
+						for_block->args.push_back(nullptr);
+					} else {
+						for_block->args.push_back(_parse_expression(block_node, false));
+						if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+					}
+
+					if (tokenizer->peek().type == Token::BRACKET_RPARAN) {
+						tokenizer->next(); // eat ")"
+						for_block->args.push_back(nullptr);
+					} else {
+						for_block->args.push_back(_parse_expression(block_node, true));
+						if (tokenizer->next().type != Token::BRACKET_RPARAN) THROW_UNEXP_TOKEN("symbol \")\"");
+					}
 				}
 
 				if (tokenizer->peek().type == Token::BRACKET_LCUR) {
@@ -197,10 +221,6 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 				} else {
 					for_block->body = _parse_block(block_node, true);
 				}
-
-				for_block->body->statements.insert(for_block->body->statements.begin(), for_block->args[1]); // second statement is the condition.
-				for_block->body->statements.insert(for_block->body->statements.begin(), for_block->args[0]); // first statement is the initialization.
-				for_block->body->statements.push_back(for_block->args[2]);                                   // last statement is counter increment.
 
 				// add loop counter initialization to local vars.
 				if (for_block->args[0] != nullptr && for_block->args[0]->type == Node::Type::VAR) {
