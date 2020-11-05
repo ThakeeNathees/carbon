@@ -15,6 +15,7 @@ env_core.SOURCES = [
     File('var.h/_native.cpp'),
     Glob('error/*.cpp'),
     Glob('builtin/*.cpp'),
+    Glob('binary/*.cpp'),
 
     Glob('tokenizer/*.cpp'),
     Glob('parser/*.cpp'),

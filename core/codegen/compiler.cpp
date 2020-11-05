@@ -23,17 +23,12 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BYTECODE_H
-#define BYTECODE_H
+#include "compiler.h"
 
 namespace carbon {
 
-class Bytecode {
-
-
-
-};
-
+ptr<Bytecode> Compiler::compile(ptr<Analyzer> p_analyzer) {
+	return nullptr;
 }
 
-#endif // BYTECODE_H
+}

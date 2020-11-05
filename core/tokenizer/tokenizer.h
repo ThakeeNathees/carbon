@@ -147,7 +147,6 @@ struct TokenData {
 	Vect2i get_pos() const {  return Vect2i(line, col);  }
 };
 
-
 class Tokenizer {
 public:
 	// Methods.

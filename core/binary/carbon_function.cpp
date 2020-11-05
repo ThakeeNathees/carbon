@@ -23,19 +23,6 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CODEGEN_H
-#define CODEGEN_H
-
-#include "analyzer/analyzer.h"
-
 namespace carbon {
 
-
-class CodeGen {
-public:
-	
-};
-
 }
-
-#endif // CODEGEN_H

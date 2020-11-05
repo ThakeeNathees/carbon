@@ -119,26 +119,28 @@ public:
 	struct OperatorNode;
 	struct ControlFlowNode;
 
-	struct FileNode : public Node {
-		String path;
-		String source;		
+	struct MemberContainer : public Node {
+		MemberContainer(Type type) { this->type = type; }
 
-		// stdvec<std::pair<String, CarbonByteCode>> imports; // pairs of name and byte code.
+		ptr<EnumNode> unnamed_enum;
+		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
-		stdvec<ptr<ClassNode>> classes;
-		ptr<EnumNode> unnamed_enum = nullptr;
-		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<FunctionNode>> functions;
 		stdvec<ptr<CallNode>> compiletime_functions;
+	};
 
-		FileNode() {
-			type = Type::FILE;
-		}
+	struct FileNode : public MemberContainer {
+		String path, source;
+
+		stdvec<ptr<ClassNode>> classes;
+		// stdmap<String, ptr<Bytecode> imports;
+
+		FileNode() : MemberContainer(Type::FILE) { }
 
 	};
 
-	struct ClassNode : public Node {
+	struct ClassNode : public MemberContainer {
 		String name;
 
 		enum BaseType {
@@ -156,16 +158,7 @@ public:
 		// TODO: ptr<CarbonByteCode> base_binary;
 		// CarbonByteCode will be the compiled version of FileNode
 
-		ptr<EnumNode> unnamed_enum;
-		stdvec<ptr<EnumNode>> enums;
-		stdvec<ptr<VarNode>> vars;
-		stdvec<ptr<ConstNode>> constants;
-		stdvec<ptr<FunctionNode>> functions;
-		stdvec<ptr<CallNode>> compiletime_functions;
-
-		ClassNode() {
-			type = Type::CLASS;
-		}
+		ClassNode() : MemberContainer(Type::CLASS) { }
 	};
 
 	struct EnumValueNode {
@@ -510,11 +503,9 @@ public:
 	void print_tree() const;
 #endif
 
-protected:
-	friend class Analyzer;
-
 private:
-
+	friend class Analyzer;
+	friend class Compiler;
 	struct Expr {
 		Expr(OperatorNode::OpType p_op, const Vect2i& p_pos) { _is_op = true; op = p_op; pos = p_pos; }
 		Expr(const ptr<Node>& p_node) { _is_op = false; expr = p_node; pos = p_node->pos; }

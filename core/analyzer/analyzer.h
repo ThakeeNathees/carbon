@@ -75,9 +75,8 @@ class Analyzer {
 public:
 	void analyze(ptr<Parser> p_parser);
 
-protected:
-
 private:
+	friend class Compiler;
 	ptr<Parser> parser;
 	ptr<Parser::FileNode> file_node; // Quick access.
 	stdvec<Warning> warnings;
