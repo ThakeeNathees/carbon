@@ -115,7 +115,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 						if (pair.first == id->name) {
 							id->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
 							_resolve_enumvalue(parser->parser_context.current_enum->values[pair.first]);
-							id->enum_value = &pair.second;
+							id->_enum_value = &pair.second;
 							break;
 						}
 					}
@@ -127,7 +127,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 						if (pair.first == id->name) {
 							id->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
 							_resolve_enumvalue(file_node->unnamed_enum->values[pair.first]);
-							id->enum_value = &pair.second;
+							id->_enum_value = &pair.second;
 							break;
 						}
 					}
@@ -137,7 +137,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				for (int i = 0; i < (int)file_node->enums.size(); i++) {
 					if (file_node->enums[i]->name == id->name) {
 						id->ref = Parser::IdentifierNode::REF_ENUM_NAME;
-						id->enum_node = file_node->enums[i].get();
+						id->_enum_node = file_node->enums[i].get();
 						break;
 					}
 				}
@@ -178,7 +178,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					cv->pos = id->pos; p_expr = cv;
 				} break;
 				case Parser::IdentifierNode::REF_ENUM_VALUE: {
-					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->enum_value->value);
+					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->_enum_value->value);
 					cv->pos = id->pos; p_expr = cv;
 				} break;
 				default: { // variable, parameter, function name, ...
@@ -433,7 +433,7 @@ do {                                                                            
 						switch (parser->parser_context.current_class->base_type) {
 							case Parser::ClassNode::NO_BASE: ASSERT(false);
 							case Parser::ClassNode::BASE_LOCAL: {
-								_class = parser->parser_context.current_class->base_local;
+								_class = parser->parser_context.current_class->base_class;
 							} break;
 							case Parser::ClassNode::BASE_EXTERN: ASSERT(false); // TODO:
 						}
@@ -671,9 +671,9 @@ do {                                                                            
 						_base_class_ref = _THIS;
 					} else if (index->base->type == Parser::Node::Type::SUPER) {
 						if (parser->parser_context.current_class->base_type == Parser::ClassNode::BASE_LOCAL) {
-							_keep_alive = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->base_local->name);
+							_keep_alive = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->base_class->name);
 							_keep_alive->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
-							_keep_alive->_class = parser->parser_context.current_class->base_local;
+							_keep_alive->_class = parser->parser_context.current_class->base_class;
 							base = _keep_alive.get();
 							_base_class_ref = _SUPER;
 						} else if (parser->parser_context.current_class->base_type == Parser::ClassNode::BASE_EXTERN) {
@@ -706,12 +706,12 @@ do {                                                                            
 						} break;
 
 						case Parser::IdentifierNode::REF_ENUM_NAME: {
-							for (std::pair<String, Parser::EnumValueNode> pair : base->enum_node->values) {
+							for (std::pair<String, Parser::EnumValueNode> pair : base->_enum_node->values) {
 								if (pair.first == member->name) {
 									member->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-									member->enum_value = &pair.second;
-									_resolve_enumvalue(base->enum_node->values[pair.first]);
-									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->enum_node->values[pair.first].value);
+									member->_enum_value = &pair.second;
+									_resolve_enumvalue(base->_enum_node->values[pair.first]);
+									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->_enum_node->values[pair.first].value);
 									cv->pos = member->pos; p_expr = cv;
 									break;
 								}
@@ -750,7 +750,7 @@ do {                                                                            
 								} break;
 
 								case Parser::IdentifierNode::REF_ENUM_VALUE: {
-									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(_id.enum_value);
+									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(_id._enum_value);
 									cv->pos = member->pos; p_expr = cv;
 								} break;
 

@@ -27,8 +27,58 @@
 
 namespace carbon {
 
+void Compiler::_generate_members(Parser::MemberContainer* p_container, Bytecode* p_bytecode) {
+
+	// members/ static vars
+	int member_index = 0;
+	for (ptr<Parser::VarNode>& var_node : p_container->vars) {
+		var default_value;
+		if (var_node->assignment->type == Parser::Node::Type::CONST_VALUE)
+			default_value = ptrcast<Parser::ConstValueNode>(var_node->assignment)->value;
+
+		if (var_node->is_static) {
+			p_bytecode->_static_vars[var_node->name] = default_value;
+		} else {
+			p_bytecode->_members[var_node->name] = { member_index++, default_value };
+		}
+	}
+
+	// constants
+	for (ptr<Parser::ConstNode>& const_node : p_container->constants) {
+		p_bytecode->_constants[const_node->name] = const_node->value;
+	}
+
+	// unnamed enums
+	for (std::pair<String, Parser::EnumValueNode> value : p_container->unnamed_enum->values) {
+		p_bytecode->_unnamed_enums[value.first] = value.second.value;
+	}
+
+	// named enums
+	for (ptr<Parser::EnumNode> en : p_container->enums) {
+		ptr<_EnumBytes> eb = newptr<_EnumBytes>(en->name);
+		for (std::pair<String, Parser::EnumValueNode> value : en->values) {
+			eb->_values[value.first] = value.second.value;
+		}
+		p_bytecode->_enums[en->name] = eb;
+	}
+
+	// functions
+	// TODO:
+}
+
 ptr<Bytecode> Compiler::compile(ptr<Analyzer> p_analyzer) {
-	return nullptr;
+	ptr<Bytecode> bytecode = newptr<Bytecode>();
+	Parser::FileNode* root = p_analyzer->parser->file_node.get();
+
+	bytecode->_path = root->path;
+	_generate_members(static_cast<Parser::MemberContainer*>(root), bytecode.get());
+
+	for (ptr<Parser::ClassNode>& class_node : root->classes) {
+		ptr<Bytecode>_class;
+		_generate_members(static_cast<Parser::MemberContainer*>(class_node.get()), _class.get());
+	}
+
+	return bytecode;
 }
 
 }

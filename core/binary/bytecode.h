@@ -26,26 +26,29 @@
 #ifndef BYTECODE_H
 #define BYTECODE_H
 
-#include "core.h"
+#include "binary.h"
 
 namespace carbon {
 
-class EnumBytes : public Object {
-	REGISTER_CLASS(EnumBytes, Object) { }
+class _EnumBytes : public Object {
+	REGISTER_CLASS(_EnumBytes, Object) { }
 
 	var __get_member(const String& p_name) override {
 		stdmap<String, int64_t>::iterator it = _values.find(p_name);
 		if (it != _values.end()) return it->second;
-		else THROW_VARERROR(VarError::ATTRIBUTE_ERROR, String::format("enum %s has no value named \"%s\".", _name->c_str(), p_name.c_str()));
+		else THROW_VARERROR(VarError::ATTRIBUTE_ERROR, String::format("enum %s has no value named \"%s\".", _name.c_str(), p_name.c_str()));
 	}
 	void __set_member(const String& p_name, var& p_value) {
 		stdmap<String, int64_t>::iterator it = _values.find(p_name);
 		if (it != _values.end()) THROW_VARERROR(VarError::ATTRIBUTE_ERROR, String::format("cannot assign a value to enum value."));
-		else THROW_VARERROR(VarError::ATTRIBUTE_ERROR, String::format("enum %s has no member named \"%s\".", _name->c_str(), p_name.c_str()));
+		else THROW_VARERROR(VarError::ATTRIBUTE_ERROR, String::format("enum %s has no member named \"%s\".", _name.c_str(), p_name.c_str()));
 	}
 
-private:
-	String* _name; // points to the name in enums map.
+	_EnumBytes() {}
+	_EnumBytes(const String& p_name) :_name(p_name) {}
+
+public: // like a struct.
+	String _name; // points to the name in enums map.
 	stdmap<String, int64_t> _values;
 };
 
@@ -64,24 +67,31 @@ public:
 	var __get_member(const String& p_member_name) override; // static member, constants, enums.
 	void __set_member(const String& p_member_name, var& p_value) override; // static members.
 
+	int get_member_offset() const {
+		return (_base != nullptr ? _base->get_member_offset() : 0) + (int)_members.size();
+	}
+
+	const stdmap<String, ptr<Bytecode>>& get_classes() const { return _classes; }
+
 private:
+	friend class Compiler;
 	bool _is_class = false;
 
 	String _path; // for FileNode
 	String _name; // for ClassNode
 	
-	ptr<Bytecode> _base = nullptr;
+	stdmap<String, ptr<Bytecode>> _classes; // for FileNode
+	ptr<Bytecode> _base = nullptr; // for ClassNode
 
 	struct _MemberData {
 		int index; // member index. offset willbe added for inherited instances.
 		var default_value;
 	}; stdmap<String, _MemberData> _members;
 
-	stdmap<String, ptr<Bytecode>> _subclasses; // for FileNode
-	stdmap<String, ptr<EnumBytes>> _enums;
-	stdmap<String, int64_t> _unnamed_enums;
-	stdmap<String, var> _constants;
 	stdmap<String, var> _static_vars;
+	stdmap<String, var> _constants;
+	stdmap<String, int64_t> _unnamed_enums;
+	stdmap<String, ptr<_EnumBytes>> _enums;
 	// TODO: function pointers
 
 	bool _is_compiled = false;

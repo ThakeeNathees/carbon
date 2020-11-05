@@ -39,6 +39,9 @@ public:
 class Compiler {
 public:
 	ptr<Bytecode> compile(ptr<Analyzer> p_analyzer);
+
+private:
+	void _generate_members(Parser::MemberContainer* p_container, Bytecode* p_bytecode);
 };
 
 }

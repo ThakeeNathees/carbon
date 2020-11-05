@@ -38,7 +38,7 @@ var Bytecode::__get_member(const String& p_member_name) {
 	it = _static_vars.find(p_member_name);
 	if (it != _static_vars.end()) return it->second;
 
-	stdmap<String, ptr<EnumBytes>>::iterator it_en = _enums.find(p_member_name);
+	stdmap<String, ptr<_EnumBytes>>::iterator it_en = _enums.find(p_member_name);
 	if (it_en != _enums.end()) return it_en->second;
 
 	stdmap<String, int64_t>::iterator it_uen = _unnamed_enums.find(p_member_name);
@@ -61,7 +61,7 @@ void Bytecode::__set_member(const String& p_member_name, var& p_value) {
 	if (it != _constants.end()) THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
 		String::format("cannot assign to a constant value named \"%s\".", it->first.c_str()));
 
-	stdmap<String, ptr<EnumBytes>>::iterator it_en = _enums.find(p_member_name);
+	stdmap<String, ptr<_EnumBytes>>::iterator it_en = _enums.find(p_member_name);
 	if (it_en != _enums.end())  THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
 		String::format("cannot assign to an enum type named \"%s\".", it->first.c_str()));
 
