@@ -57,6 +57,7 @@ if (m_parent->unnamed_enum != nullptr) {																		 \
 namespace carbon {
 
 void Parser::parse(String p_source, String p_file_path) {
+
 	tokenizer = newptr<Tokenizer>();
 	file_node = new_node<FileNode>();
 	file_node->source = p_source;
@@ -70,14 +71,15 @@ void Parser::parse(String p_source, String p_file_path) {
 		switch (token.type) {
 			case  Token::_EOF:
 				return;
+
 			case Token::KWORD_IMPORT: {
-				// TODO: file_node->imports.push_back(_parse_import());
-				break;
-			}
+				file_node->imports.push_back(_parse_import());
+			} break;
+
 			case Token::KWORD_CLASS: {
 				file_node->classes.push_back(_parse_class());
-				break;
-			}
+			} break;
+
 			case Token::KWORD_ENUM: {
 				ptr<EnumNode> _enum = _parse_enum(file_node);
 				if (_enum->named_enum) {
@@ -92,18 +94,19 @@ void Parser::parse(String p_source, String p_file_path) {
 					}
 				}
 			} break;
+
 			case Token::KWORD_FUNC: {
 				ptr<FunctionNode> func = _parse_func(file_node);
 				file_node->functions.push_back(func);
-				break;
-			}
+			} break;
+
 			case Token::KWORD_VAR: {
 				stdvec<ptr<VarNode>> vars = _parse_var(file_node);
 				for (ptr<VarNode>& _var : vars) {
 					file_node->vars.push_back(_var);
 				}
-				break;
-			}
+			} break;
+
 			case Token::KWORD_CONST: {
 				ptr<ConstNode> _const = _parse_const(file_node);
 				file_node->constants.push_back(_const);
@@ -126,6 +129,7 @@ void Parser::parse(String p_source, String p_file_path) {
 					break;
 				}
 			} // [[fallthrough]]
+
 			default:
 				THROW_UNEXP_TOKEN("");
 		}
@@ -137,7 +141,11 @@ void Parser::_check_identifier_predefinition(const String& p_name, Node* p_scope
 	const TokenData* tk = &tokenizer->peek(-1, true);
 
 	THROW_IF_NAME_NATIVE(p_name);
-	// TODO: check identifier from import.
+
+	for (ptr<ImportNode>& in : file_node->imports) {
+		if (p_name == in->name) THROW_PREDEFINED("an imported file", p_name, in->pos);
+	}
+
 	if (p_scope == nullptr || p_scope->type == Node::Type::FILE) {
 		THROW_IF_NAME_DEFINED(file_node, "a class", p_name, classes);
 		THROW_IF_NAME_DEFINED(file_node, "a variable", p_name, vars);
@@ -174,19 +182,31 @@ void Parser::_check_identifier_predefinition(const String& p_name, Node* p_scope
 	}
 }
 
-void Parser::_parse_import() {
+ptr<Parser::ImportNode> Parser::_parse_import() {
 	ASSERT(tokenizer->peek(-1).type == Token::KWORD_IMPORT);
-	ptr<FileNode> import_file = new_node<FileNode>();
+
+	ptr<ImportNode> import_node = new_node<ImportNode>();
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
 
+	String name = tk->identifier;
+	_check_identifier_predefinition(name, nullptr);
+	import_node->name = name;
+
 	if (tokenizer->next().type != Token::OP_EQ) THROW_UNEXP_TOKEN("symbol \"=\"");
 	tk = &tokenizer->next();
 	if (tk->type != Token::VALUE_STRING) THROW_UNEXP_TOKEN("string path to source");
-	// TODO:
 
-	return;
+	// TODO: validate path... cyclic dep.
+
+	// TODO: compile bytecode
+
+	tk = &tokenizer->next();
+	if (tk->type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+
+	ASSERT(false); // TODO:
+	return import_node;
 }
 
 ptr<Parser::ClassNode> Parser::_parse_class() {
@@ -219,24 +239,44 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 
 		tk = &tokenizer->next();
 		if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
-		class_node->base_class = tk->identifier;
+		class_node->base_class_name = tk->identifier;
 
 		tk = &tokenizer->next();
 		if (tk->type == Token::SYM_DOT) {
 			tk = &tokenizer->next();
 			if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
 
-			class_node->base_file = class_node->base_class;
-			class_node->base_class = tk->identifier;
+			class_node->base_file_name = class_node->base_class_name;
+			class_node->base_class_name = tk->identifier;
 			class_node->base_type = ClassNode::BASE_EXTERN;
-			ASSERT(false); // TODO: inherits a binary base.
+
+			Bytecode* base_file = nullptr;
+			for (ptr<ImportNode>& in : file_node->imports) {
+				if (in->name == class_node->base_file_name) {
+					base_file = in->bytecode.get();
+					break;
+				}
+			}
+			if (!base_file)
+				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("base file name \"%s\" not found from the imported libs.", class_node->base_file_name.c_str()), Vect2i());
+
+			Bytecode* base_class = nullptr;
+			for (const std::pair<String, ptr<Bytecode>>& cls : base_file->get_classes()) {
+				if (cls.first == class_node->base_class_name) {
+					base_class = cls.second.get();
+					break;
+				}
+			}
+			if (!base_class)
+				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("base class name \"%s\" not found from the imported lib \"%s\".", class_node->base_class_name.c_str(), class_node->base_file_name.c_str()), Vect2i());
+			class_node->base_binary = base_class;
 
 			tk = &tokenizer->next();
 		} else {
-			if (NativeClasses::singleton()->is_class_registered(class_node->base_class)) {
+			if (NativeClasses::singleton()->is_class_registered(class_node->base_class_name)) {
 				class_node->base_type = ClassNode::BASE_NATIVE;
 			} else {
-				if (class_node->base_class == class_node->name)
+				if (class_node->base_class_name == class_node->name)
 					THROW_PARSER_ERR(Error::TYPE_ERROR, "cyclic inheritance. class inherits itself isn't allowed.", tokenizer->peek(-2, true).get_pos());
 				class_node->base_type = ClassNode::BASE_LOCAL;
 			}
@@ -373,11 +413,8 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 			} break;
 
 			case Token::IDENTIFIER: {
-				// TODO: check identifier with include
 				for (const std::pair<String, EnumValueNode>& value : enum_node->values) {
-					if (value.first == token.identifier) {
-						THROW_PREDEFINED("an enum value", value.first, value.second.pos);
-					}
+					if (value.first == token.identifier) THROW_PREDEFINED("an enum value", value.first, value.second.pos);
 				}
 
 				if (!enum_node->named_enum) {
@@ -709,11 +746,11 @@ static void print_class_node(Parser::ClassNode* p_class, int p_indent) {
 	if (p_class->base_type != Parser::ClassNode::NO_BASE) {
 		printf(" inherits ");
 		if (p_class->base_type == Parser::ClassNode::BASE_LOCAL) {
-			PRINT_COLOR(p_class->base_class.c_str(), TYPE_COLOR);
+			PRINT_COLOR(p_class->base_class_name.c_str(), TYPE_COLOR);
 		} else { // BASE_EXTERN
-			PRINT_COLOR(p_class->base_file.c_str(), TYPE_COLOR);
+			PRINT_COLOR(p_class->base_file_name.c_str(), TYPE_COLOR);
 			printf(".");
-			PRINT_COLOR(p_class->base_class.c_str(), TYPE_COLOR);
+			PRINT_COLOR(p_class->base_class_name.c_str(), TYPE_COLOR);
 		}
 	}
 	printf("\n");

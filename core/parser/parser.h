@@ -27,6 +27,7 @@
 #define PARSER_H
 
 #include "tokenizer/tokenizer.h"
+#include "binary/bytecode.h"
 #include "io/logger.h"
 
 namespace carbon {
@@ -70,6 +71,7 @@ public:
 		enum class Type {
 			UNKNOWN,
 
+			IMPORT,
 			FILE,
 			CLASS,
 			ENUM,
@@ -119,26 +121,33 @@ public:
 	struct OperatorNode;
 	struct ControlFlowNode;
 
-	struct FileNode : public Node {
-		String path;
-		String source;		
+	struct MemberContainer : public Node {
+		MemberContainer(Type type) { this->type = type; }
 
-		// stdvec<std::pair<String, CarbonByteCode>> imports; // pairs of name and byte code.
+		ptr<EnumNode> unnamed_enum;
+		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<VarNode>> vars;
 		stdvec<ptr<ConstNode>> constants;
-		stdvec<ptr<ClassNode>> classes;
-		ptr<EnumNode> unnamed_enum = nullptr;
-		stdvec<ptr<EnumNode>> enums;
 		stdvec<ptr<FunctionNode>> functions;
 		stdvec<ptr<CallNode>> compiletime_functions;
+	};
 
-		FileNode() {
-			type = Type::FILE;
-		}
+	struct ImportNode : public Node {
+		String name;
+		ptr<Bytecode> bytecode;
+	};
+
+	struct FileNode : public MemberContainer {
+		String path, source;
+
+		stdvec<ptr<ClassNode>> classes;
+		stdvec<ptr<ImportNode>> imports;
+
+		FileNode() : MemberContainer(Type::FILE) { }
 
 	};
 
-	struct ClassNode : public Node {
+	struct ClassNode : public MemberContainer {
 		String name;
 
 		enum BaseType {
@@ -148,24 +157,15 @@ public:
 			BASE_EXTERN
 		};
 		BaseType base_type = NO_BASE;
-		String base_file;
-		String base_class;
+		String base_file_name;
+		String base_class_name;
 
-		ClassNode* base_local = nullptr;
+		ClassNode* base_class = nullptr;
+		Bytecode* base_binary = nullptr;
+
 		FunctionNode* constructor = nullptr;
-		// TODO: ptr<CarbonByteCode> base_binary;
-		// CarbonByteCode will be the compiled version of FileNode
 
-		ptr<EnumNode> unnamed_enum;
-		stdvec<ptr<EnumNode>> enums;
-		stdvec<ptr<VarNode>> vars;
-		stdvec<ptr<ConstNode>> constants;
-		stdvec<ptr<FunctionNode>> functions;
-		stdvec<ptr<CallNode>> compiletime_functions;
-
-		ClassNode() {
-			type = Type::CLASS;
-		}
+		ClassNode() : MemberContainer(Type::CLASS) { }
 	};
 
 	struct EnumValueNode {
@@ -230,32 +230,51 @@ public:
 		// TODO: declared_block haven't added.
 		BlockNode* declared_block = nullptr; // For search in local vars.
 
+		enum IdentifierReferenceBase {
+			BASE_UNKNOWN,
+			BASE_LOCAL,
+			BASE_NATIVE,
+			BASE_EXTERN,
+		};
+
 		enum IdentifierReference {
 			REF_UNKNOWN,
 			REF_PARAMETER,
 			REF_LOCAL_VAR,
 			REF_LOCAL_CONST,
+
+			// these will have base.
 			REF_MEMBER_VAR,
 			REF_MEMBER_CONST,
 			REF_ENUM_NAME,
 			REF_ENUM_VALUE,
 			REF_CARBON_CLASS,
-			REF_NATIVE_CLASS,
-			REF_CARBON_FUNCTION,
 
-			// TODO: Binary version of all above.
-			REF_FILE, // import file_ref = "my/file.cb";
+			REF_NATIVE_CLASS,
+			REF_CARBON_FUNCTION, // REF_FUNCTION instead of carbon, use base.
+			REF_FILE,
 		};
+
+		IdentifierReferenceBase ref_base = BASE_UNKNOWN;
 		IdentifierReference ref = REF_UNKNOWN;
 		union {
 			int param_index = 0;
+
+			// reference from carbon local.
 			VarNode* _var;
 			ConstNode* _const;
-			EnumValueNode* enum_value;
-			EnumNode* enum_node;
+			EnumValueNode* _enum_value;
+			EnumNode* _enum_node;
 			ClassNode* _class;
 			FunctionNode* _func;
-			// TODO: REF_FILE
+			
+			// reference from native.
+			MethodInfo* _method_info;
+			PropertyInfo* _prop_info;
+			EnumInfo* _enum_info;
+			EnumValueInfo* _enum_value_info;
+
+			// Bytecode* for base extern.
 		};
 
 		IdentifierNode() {
@@ -510,11 +529,9 @@ public:
 	void print_tree() const;
 #endif
 
-protected:
-	friend class Analyzer;
-
 private:
-
+	friend class Analyzer;
+	friend class Compiler;
 	struct Expr {
 		Expr(OperatorNode::OpType p_op, const Vect2i& p_pos) { _is_op = true; op = p_op; pos = p_pos; }
 		Expr(const ptr<Node>& p_node) { _is_op = false; expr = p_node; pos = p_node->pos; }
@@ -560,7 +577,7 @@ private:
 		return ret;
 	}
 
-	void _parse_import(); // TODO: should return ptr<CarbonByteCode>
+	ptr<ImportNode> _parse_import();
 	ptr<ClassNode> _parse_class();
 	ptr<EnumNode> _parse_enum(ptr<Node> p_parent);
 	stdvec<ptr<VarNode>> _parse_var(ptr<Node> p_parent);

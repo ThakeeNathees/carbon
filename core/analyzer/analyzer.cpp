@@ -25,8 +25,6 @@
 
 #include "analyzer.h"
 
-// TODO: class variable name can't shadow from base.
-
 namespace carbon {
 
 void Analyzer::analyze(ptr<Parser> p_parser) {
@@ -171,7 +169,7 @@ Parser::IdentifierNode Analyzer::_get_member(const Parser::ClassNode* p_class, c
 			if (pair.first == id.name) {
 				id.ref = Parser::IdentifierNode::REF_ENUM_VALUE;
 				_resolve_enumvalue(p_class->unnamed_enum->values[pair.first]);
-				id.enum_value = &p_class->unnamed_enum->values[pair.first];
+				id._enum_value = &p_class->unnamed_enum->values[pair.first];
 				return id;
 			}
 		}
@@ -179,17 +177,30 @@ Parser::IdentifierNode Analyzer::_get_member(const Parser::ClassNode* p_class, c
 	for (int i = 0; i < (int)p_class->enums.size(); i++) {
 		if (p_class->enums[i]->name == id.name) {
 			id.ref = Parser::IdentifierNode::REF_ENUM_NAME;
-			id.enum_node = p_class->enums[i].get();
+			id._enum_node = p_class->enums[i].get();
 			return id;
 		}
 	}
-	// TODO: REF_FILE for import.
 
 	ASSERT(id.ref == Parser::IdentifierNode::REF_UNKNOWN);
 	switch (p_class->base_type) {
 		case Parser::ClassNode::BASE_LOCAL:
-			return _get_member(p_class->base_local, p_name);
+			return _get_member(p_class->base_class, p_name);
+		case Parser::ClassNode::BASE_NATIVE: {
+			ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(p_class->base_class_name, p_name);
+			if (bd) {
+				ASSERT(false); // todo:
+				switch (bd->get_member_info()->get_type()) {
+					case MemberInfo::Type::METHOD:
+					case MemberInfo::Type::PROPERTY:
+					case MemberInfo::Type::ENUM:
+					case MemberInfo::Type::ENUM_VALUE:
+						break;
+				}
+			}
+		} break;
 		case Parser::ClassNode::BASE_EXTERN:
+			// TODO: from imported Bytecode.
 			ASSERT(false && "TODO:");
 	}
 	return id;
@@ -244,19 +255,22 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 	switch (p_class->base_type) {
 		case Parser::ClassNode::NO_BASE:
 		case Parser::ClassNode::BASE_NATIVE:
+		case Parser::ClassNode::BASE_EXTERN:
+			// already resolved from the parser.
 			break;
-		case Parser::ClassNode::BASE_LOCAL:
+
+		case Parser::ClassNode::BASE_LOCAL: {
 			for (int i = 0; i < (int)file_node->classes.size(); i++) {
-				if (p_class->base_class == file_node->classes[i]->name) {
+				if (p_class->base_class_name == file_node->classes[i]->name) {
 					_resolve_inheritance(file_node->classes[i].get());
-					p_class->base_local = file_node->classes[i].get();
+					p_class->base_class = file_node->classes[i].get();
 				}
 			}
-			break;
-		case Parser::ClassNode::BASE_EXTERN:
-			DEBUG_PRINT("TODO"); // TODO: load ptr<CarbonByteCode> from path
-			break;
+		} break;
+
 	}
+
+	// TODO: check if a member is already exists in the parent class.
 
 	p_class->_is_reducing = false;
 	p_class->is_reduced = true;
@@ -418,7 +432,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 						if (cf_node->switch_cases.size() > 1 && cf_node->switch_cases[0].expr->type == Parser::Node::Type::IDENTIFIER) {
 							Parser::IdentifierNode* id = ptrcast<Parser::IdentifierNode>(cf_node->switch_cases[0].expr).get();
 							if (id->ref == Parser::IdentifierNode::REF_ENUM_VALUE) {
-								_switch_enum = id->enum_value->_enum;
+								_switch_enum = id->_enum_value->_enum;
 							}
 						}
 
@@ -427,7 +441,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 							if (_check_missed_enum && cf_node->switch_cases[j].expr->type == Parser::Node::Type::IDENTIFIER) {
 								Parser::IdentifierNode* id = ptrcast<Parser::IdentifierNode>(cf_node->switch_cases[j].expr).get();
 								if (id->ref == Parser::IdentifierNode::REF_ENUM_VALUE) {
-									if (id->enum_value->_enum == _switch_enum) _enum_case_count++;
+									if (id->_enum_value->_enum == _switch_enum) _enum_case_count++;
 								} else _check_missed_enum = false;
 							} else _check_missed_enum = false;
 

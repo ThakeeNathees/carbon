@@ -23,17 +23,27 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BYTECODE_H
-#define BYTECODE_H
+#ifndef COMPILER_H
+#define COMPILER_H
+
+#include "analyzer/analyzer.h"
+#include "binary/bytecode.h"
 
 namespace carbon {
 
-class Bytecode {
+class CodeGen {
+public:
+	
+};
 
+class Compiler {
+public:
+	ptr<Bytecode> compile(ptr<Analyzer> p_analyzer);
 
-
+private:
+	void _generate_members(Parser::MemberContainer* p_container, Bytecode* p_bytecode);
 };
 
 }
 
-#endif // BYTECODE_H
+#endif // COMPILER_H

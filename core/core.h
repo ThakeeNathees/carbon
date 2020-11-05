@@ -56,6 +56,8 @@ using namespace varh;
 #include <sstream>
 #include <fstream>
 #include <memory>
+#define _HAS_CXX17 1 // for autocompletion (delete this later).
+#include <filesystem>
 #include <new>
 
 #include "error/error.h"

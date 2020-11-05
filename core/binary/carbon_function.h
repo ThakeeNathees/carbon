@@ -29,7 +29,6 @@
 namespace carbon {
 
 class CarbonFunction {
-
 };
 
 }

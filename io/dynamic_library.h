@@ -71,8 +71,6 @@ class DynamicLibrary : public Object {
 		BIND_METHOD("open", &DynamicLibrary::open, PARAMS("lib_name"));
 		BIND_METHOD_VA("call", &DynamicLibrary::call_va_args);
 		BIND_METHOD("close", &DynamicLibrary::close);
-
-		BIND_METHOD("__call_method", &DynamicLibrary::__call_method, PARAMS("method_name", "args"));
 	}
 
 public:
@@ -97,14 +95,14 @@ public:
 		}
 	}
 
-	var __call_method(const String& p_method_name, Array p_args) {
+	var __call_method(const String& p_method_name, stdvec<var*>& p_args) override {
 		switch ((int)p_args.size()) {
 			case 0: return _call(p_method_name.c_str());
-			case 1: return  call(p_method_name, p_args[0]);
-			case 2: return  call(p_method_name, p_args[0], p_args[1]);
-			case 3: return  call(p_method_name, p_args[0], p_args[1], p_args[2]);
-			case 4: return  call(p_method_name, p_args[0], p_args[1], p_args[2], p_args[3]);
-			case 5: return  call(p_method_name, p_args[0], p_args[1], p_args[2], p_args[3], p_args[4]);
+			case 1: return  call(p_method_name, *p_args[0]);
+			case 2: return  call(p_method_name, *p_args[0], *p_args[1]);
+			case 3: return  call(p_method_name, *p_args[0], *p_args[1], *p_args[2]);
+			case 4: return  call(p_method_name, *p_args[0], *p_args[1], *p_args[2], *p_args[3]);
+			case 5: return  call(p_method_name, *p_args[0], *p_args[1], *p_args[2], *p_args[3], *p_args[4]);
 		}
 		THROW_ERROR(Error::INVALID_ARG_COUNT, "dynamic library call argument count must be less than or equal to 5.");
 	}
@@ -114,8 +112,8 @@ public:
 		if (p_args[0]->get_type() != var::STRING)
 			THROW_ERROR(Error::TYPE_ERROR, "first argument of call() must be string (name of the function).");
 		const String& method_name = *p_args[0];
-		Array args; for (int i = 1; i < p_args.size(); i++) args.push_back(*p_args[i]);
-		return __call_method(method_name, args);
+		p_args.erase(p_args.begin());
+		return __call_method(method_name, p_args);
 	}
 
 	int call(const String& p_func) {

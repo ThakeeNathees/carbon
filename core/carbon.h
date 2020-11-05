@@ -33,6 +33,10 @@
 #include "core/tokenizer/tokenizer.h"
 #include "core/parser/parser.h"
 #include "core/analyzer/analyzer.h"
+#include "core/codegen/compiler.h"
+
+#include "core/binary/carbon_function.h"
+#include "core/binary/bytecode.h"
 
 // native imports
 #include "io/logger.h"
@@ -51,6 +55,8 @@ inline void initialize(NativeClasses* p_singleton) {
 	NativeClasses::singleton()->register_class<_Iterator_String>();
 	NativeClasses::singleton()->register_class<_Iterator_Array>();
 	NativeClasses::singleton()->register_class<_Iterator_Map>();
+	NativeClasses::singleton()->register_class<_EnumBytes>();
+	NativeClasses::singleton()->register_class<Bytecode>();
 
 	NativeClasses::singleton()->register_class<OS>();
 	NativeClasses::singleton()->register_class<File>();

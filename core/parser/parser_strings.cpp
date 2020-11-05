@@ -238,7 +238,7 @@ const char* Parser::Node::get_node_type_name(Type p_type) {
 		nullptr, // _NODE_MAX_
 	};
 	return type_names[(int)p_type];
-MISSED_ENUM_CHECK(Parser::Node::Type::_NODE_MAX_, 21);
+MISSED_ENUM_CHECK(Parser::Node::Type::_NODE_MAX_, 22);
 }
 
 const char* Parser::OperatorNode::get_op_name(OpType p_op) {
