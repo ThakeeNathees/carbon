@@ -50,6 +50,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					for (int i = 0; i < (int)parser->parser_context.current_func->args.size(); i++) {
 						if (parser->parser_context.current_func->args[i].name == id->name) {
 							id->ref = Parser::IdentifierNode::REF_PARAMETER;
+							id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 							id->param_index = i;
 							break;
 						}
@@ -62,6 +63,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					for (int i = 0; i < (int)outer_block->local_vars.size(); i++) {
 						if (outer_block->local_vars[i]->name == id->name) {
 							id->ref = Parser::IdentifierNode::REF_LOCAL_VAR;
+							id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 							id->_var = outer_block->local_vars[i].get();
 							break;
 						}
@@ -71,6 +73,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					for (int i = 0; i < (int)outer_block->local_const.size(); i++) {
 						if (outer_block->local_const[i]->name == id->name) {
 							id->ref = Parser::IdentifierNode::REF_LOCAL_CONST;
+							id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 							_resolve_constant(outer_block->local_const[i].get());
 							id->_const = outer_block->local_const[i].get();
 							break;
@@ -87,6 +90,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
 
 				Parser::IdentifierNode _id = _get_member(parser->parser_context.current_class, id->name);
+				_id.pos = id->pos;
 				if (_id.ref != Parser::IdentifierNode::REF_UNKNOWN) {
 					id = newptr<Parser::IdentifierNode>(_id); break;
 				}
@@ -94,6 +98,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				for (int i = 0; i < (int)file_node->vars.size(); i++) {
 					if (file_node->vars[i]->name == id->name) {
 						id->ref = Parser::IdentifierNode::REF_MEMBER_VAR;
+						id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 						id->_var = file_node->vars[i].get();
 						break;
 					}
@@ -103,6 +108,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				for (int i = 0; i < (int)file_node->constants.size(); i++) {
 					if (file_node->constants[i]->name == id->name) {
 						id->ref = Parser::IdentifierNode::REF_MEMBER_CONST;
+						id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 						_resolve_constant(file_node->constants[i].get());
 						id->_const = file_node->constants[i].get();
 						break;
@@ -114,6 +120,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					for (std::pair<String, Parser::EnumValueNode> pair : parser->parser_context.current_enum->values) {
 						if (pair.first == id->name) {
 							id->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
+							id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 							_resolve_enumvalue(parser->parser_context.current_enum->values[pair.first]);
 							id->_enum_value = &pair.second;
 							break;
@@ -126,6 +133,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					for (std::pair<String, Parser::EnumValueNode> pair : file_node->unnamed_enum->values) {
 						if (pair.first == id->name) {
 							id->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
+							id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 							_resolve_enumvalue(file_node->unnamed_enum->values[pair.first]);
 							id->_enum_value = &pair.second;
 							break;
@@ -137,6 +145,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				for (int i = 0; i < (int)file_node->enums.size(); i++) {
 					if (file_node->enums[i]->name == id->name) {
 						id->ref = Parser::IdentifierNode::REF_ENUM_NAME;
+						id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 						id->_enum_node = file_node->enums[i].get();
 						break;
 					}
@@ -146,6 +155,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				for (int i = 0; i < (int)file_node->classes.size(); i++) {
 					if (file_node->classes[i]->name == id->name) {
 						id->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
+						id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 						id->_class = file_node->classes[i].get();
 						break;
 					}
@@ -154,7 +164,8 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 
 				for (int i = 0; i < (int)file_node->functions.size(); i++) {
 					if (file_node->functions[i]->name == id->name) {
-						id->ref = Parser::IdentifierNode::REF_CARBON_FUNCTION;
+						id->ref = Parser::IdentifierNode::REF_FUNCTION;
+						id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 						id->_func = file_node->functions[i].get();
 						break;
 					}
@@ -163,6 +174,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 
 				if (NativeClasses::singleton()->is_class_registered(id->name)) {
 					id->ref = Parser::IdentifierNode::REF_NATIVE_CLASS;
+					id->ref_base = Parser::IdentifierNode::BASE_NATIVE;
 					break;
 				}
 
@@ -237,9 +249,9 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 		} break; /// reduce MapNode ///////////////////////////////////
 
 #define GET_ARGS(m_nodes)                                                             \
-	stdvec<var> args;                                                                 \
+	stdvec<var*> args;                                                                \
 	for (int i = 0; i < (int)m_nodes.size(); i++) {                                   \
-	    args.push_back(ptrcast<Parser::ConstValueNode>(m_nodes[i])->value);           \
+	    args.push_back(&ptrcast<Parser::ConstValueNode>(m_nodes[i])->value);          \
 	}
 
 #define SET_EXPR_CONST_NODE(m_var, m_pos)                                             \
@@ -335,13 +347,24 @@ do {                                                                            
 						case Parser::IdentifierNode::REF_LOCAL_VAR:
 						case Parser::IdentifierNode::REF_MEMBER_VAR: {
 							call->base = call->method; // param(args...); -> will call param.__call(args...);
-							call->method = nullptr; 
+							call->method = nullptr;
 						} break;
 
 						// check arguments.
-						case Parser::IdentifierNode::REF_CARBON_FUNCTION: {
+						case Parser::IdentifierNode::REF_FUNCTION: {
 
-							if (parser->parser_context.current_class && !id->_func->is_static) { // calling a non-static function.
+							bool is_illegal_call = false;
+							switch (id->ref_base) {
+								case Parser::IdentifierNode::BASE_UNKNOWN:
+								case Parser::IdentifierNode::BASE_EXTERN:
+								case Parser::IdentifierNode::BASE_NATIVE:
+									THROW_BUG("can't be"); // call base is empty.
+								case Parser::IdentifierNode::BASE_LOCAL: {
+									is_illegal_call = parser->parser_context.current_class && !id->_func->is_static;
+								} break;
+							}
+
+							if (is_illegal_call) { // calling a non-static function.
 								if ((parser->parser_context.current_func && parser->parser_context.current_func->is_static) ||
 									(parser->parser_context.current_var && parser->parser_context.current_var->is_static)) {
 										THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", id->name.c_str()), id->pos);
@@ -440,7 +463,7 @@ do {                                                                            
 					}
 
 					const String& method_name = ptrcast<Parser::IdentifierNode>(call->method)->name;
-					Parser::IdentifierNode _id = _get_member(_class, method_name);
+					Parser::IdentifierNode _id = _get_member(_class, method_name); _id.pos = call->method->pos;
 					switch (_id.ref) {
 						case Parser::IdentifierNode::REF_UNKNOWN:
 							THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), _class->name.c_str()), call->pos);
@@ -462,9 +485,14 @@ do {                                                                            
 							THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
 							break;
 
-						case Parser::IdentifierNode::REF_CARBON_FUNCTION: {
+						case Parser::IdentifierNode::REF_FUNCTION: {
+							if (parser->parser_context.current_func->is_static && !_id._func->is_static) { // TODO: can super be outside of function like `member_var = super.f();`
+								THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", _id.name.c_str()), _id.pos);
+							}
+
 							int argc = (int)_id._func->args.size();
 							int argc_default = (int)_id._func->default_parameters.size();
+
 							int argc_given = (int)call->r_args.size();
 							if (argc_given + argc_default < argc) {
 								if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), call->pos);
@@ -477,7 +505,7 @@ do {                                                                            
 
 						case Parser::IdentifierNode::REF_CARBON_CLASS:
 						case Parser::IdentifierNode::REF_NATIVE_CLASS:
-						case Parser::IdentifierNode::REF_FILE:
+						case Parser::IdentifierNode::REF_EXTERN:
 							THROW_BUG("can't be");
 					}
 				} break;
@@ -512,10 +540,22 @@ do {                                                                            
 						case Parser::IdentifierNode::REF_CARBON_CLASS: {
 
 							Parser::IdentifierNode _id = _get_member(base->_class, id->name);
+							_id.pos = id->pos;
 							switch (_id.ref) {
 								case Parser::IdentifierNode::REF_UNKNOWN:
 									THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s", id->name.c_str(), base->_class->name.c_str()), id->pos);
 								case Parser::IdentifierNode::REF_MEMBER_VAR: {
+									bool _is_member_static = false;
+									switch (id->ref_base) {
+										case Parser::IdentifierNode::BASE_UNKNOWN: ASSERT(false && "I must forgotten here");
+										case Parser::IdentifierNode::BASE_LOCAL:
+											_is_member_static = id->_var->is_static; break;
+										case Parser::IdentifierNode::BASE_NATIVE:
+											_is_member_static = id->_prop_info->is_static(); break;
+										case Parser::IdentifierNode::BASE_EXTERN:
+											ASSERT(false && "TODO:");
+									}
+
 									if (_id._var->is_static) {
 										break; // Class.var(args...);
 									} else {
@@ -531,7 +571,7 @@ do {                                                                            
 								case Parser::IdentifierNode::REF_ENUM_NAME: THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("enums (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
 								case Parser::IdentifierNode::REF_ENUM_VALUE: THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("enum value (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
 
-								case Parser::IdentifierNode::REF_CARBON_FUNCTION: {
+								case Parser::IdentifierNode::REF_FUNCTION: {
 									if (_id._func->is_static) {
 										break; // Class.static_func(args...);
 									} else {
@@ -593,7 +633,7 @@ do {                                                                            
 						} break;
 
 							// fn.get_default_args(), fn.get_name(), ...
-						case Parser::IdentifierNode::REF_CARBON_FUNCTION: {
+						case Parser::IdentifierNode::REF_FUNCTION: {
 							THROW_BUG("TODO:"); // FuncRef object.
 						} break;
 
@@ -629,7 +669,7 @@ do {                                                                            
 					if (!mi) THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s.", member->name.c_str(), BuiltinTypes::get_type_name(bt->builtin_type).c_str()), member->pos);
 					switch (mi->get_type()) {
 						case MemberInfo::METHOD:
-							break; // FuncRef.
+							break; // TODO: FuncRef?
 						case MemberInfo::PROPERTY: {
 							PropertyInfo* pi = (PropertyInfo*)mi;
 							if (pi->is_const()) SET_EXPR_CONST_NODE(pi->get_value(), index->pos);
@@ -653,32 +693,38 @@ do {                                                                            
 				} break;
 
 				// this.member; super.member; idf.member;
+				case Parser::Node::Type::INDEX: { // <-- base is index node but reference reduced.
+					Parser::IndexNode* _ind = ptrcast<Parser::IndexNode>(index->base).get();
+					if (!_ind->_ref_reduced) break;
+				}  // [[ FALLTHROUGH ]]
 				case Parser::Node::Type::THIS:
 				case Parser::Node::Type::SUPER:
 				case Parser::Node::Type::IDENTIFIER: {
 
 					Parser::IdentifierNode* base;
-					ptr<Parser::IdentifierNode> _keep_alive;
-
 					enum _BaseClassRef { _THIS, _SUPER, _NEITHER };
 					_BaseClassRef _base_class_ref = _NEITHER;
 
 					if (index->base->type == Parser::Node::Type::THIS) {
-						_keep_alive = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->name);
-						_keep_alive->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
-						_keep_alive->_class = parser->parser_context.current_class;
-						base = _keep_alive.get();
+						ptr<Parser::IdentifierNode> _id = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->name);
+						_id->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
+						_id->_class = parser->parser_context.current_class;
+						index->base = _id;
 						_base_class_ref = _THIS;
 					} else if (index->base->type == Parser::Node::Type::SUPER) {
 						if (parser->parser_context.current_class->base_type == Parser::ClassNode::BASE_LOCAL) {
-							_keep_alive = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->base_class->name);
-							_keep_alive->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
-							_keep_alive->_class = parser->parser_context.current_class->base_class;
-							base = _keep_alive.get();
+							ptr<Parser::IdentifierNode> _id = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->base_class->name);
+							_id->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
+							_id->_class = parser->parser_context.current_class->base_class;
+							index->base = _id;
 							_base_class_ref = _SUPER;
 						} else if (parser->parser_context.current_class->base_type == Parser::ClassNode::BASE_EXTERN) {
 							THROW_BUG("TODO:");
 						}
+					}
+
+					if (index->base->type == Parser::Node::Type::INDEX) {
+						base = ptrcast<Parser::IndexNode>(index->base)->member.get();
 					} else {
 						base = ptrcast<Parser::IdentifierNode>(index->base).get();
 					}
@@ -690,31 +736,24 @@ do {                                                                            
 
 						case Parser::IdentifierNode::REF_PARAMETER:
 						case Parser::IdentifierNode::REF_LOCAL_VAR:
-							break; // Can't reduce anymore.
-						case Parser::IdentifierNode::REF_LOCAL_CONST: {
-						} break;
 						case Parser::IdentifierNode::REF_MEMBER_VAR:
 							break; // Can't reduce anymore.
 
+						case Parser::IdentifierNode::REF_LOCAL_CONST:
 						case Parser::IdentifierNode::REF_MEMBER_CONST: {
-							try {
-								base->_const->value.get_member(member->name);
-							} catch (VarError& verr) {
-								THROW_ANALYZER_ERROR(Error(verr).get_type(), verr.what(), member->pos);
-							}
 							THROW_BUG("there isn't any contant value currently support attribute access and most probably in the future");
 						} break;
 
 						case Parser::IdentifierNode::REF_ENUM_NAME: {
-							for (std::pair<String, Parser::EnumValueNode> pair : base->_enum_node->values) {
-								if (pair.first == member->name) {
-									member->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-									member->_enum_value = &pair.second;
-									_resolve_enumvalue(base->_enum_node->values[pair.first]);
-									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->_enum_node->values[pair.first].value);
-									cv->pos = member->pos; p_expr = cv;
-									break;
-								}
+							stdmap<String, Parser::EnumValueNode>::iterator it = base->_enum_node->values.find(member->name);
+							if (it != base->_enum_node->values.end()) {
+								member->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
+								member->_enum_value = &(it->second);
+								_resolve_enumvalue(base->_enum_node->values[it->first]);
+								ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->_enum_node->values[it->first].value);
+								cv->pos = member->pos; p_expr = cv;
+							} else {
+								ASSERT(false && "bug unresolved reference");
 							}
 						} break;
 
@@ -723,6 +762,7 @@ do {                                                                            
 
 						case Parser::IdentifierNode::REF_CARBON_CLASS: {
 							Parser::IdentifierNode _id = _get_member(base->_class, member->name);
+							_id.pos = member->pos;
 							switch (_id.ref) {
 								case Parser::IdentifierNode::REF_UNKNOWN:
 									THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", member->name.c_str(), base->name.c_str()), member->pos);
@@ -732,11 +772,12 @@ do {                                                                            
 									THROW_BUG("can't be.");
 
 								case Parser::IdentifierNode::REF_MEMBER_VAR: {
-									_id.pos = member->pos; _id.name = base->name + "." + _id.name;
+									_id.pos = member->pos;
 									if (_base_class_ref != _THIS && !_id._var->is_static) {
 										THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("non-static attribute \"%s\" cannot be access with a class reference \"%s\".", member->name.c_str(), base->name.c_str()), member->pos);
 									}
-									p_expr = newptr<Parser::IdentifierNode>(_id);
+									index->member = newptr<Parser::IdentifierNode>(_id);
+									index->_ref_reduced = true;
 								} break;
 
 								case Parser::IdentifierNode::REF_MEMBER_CONST: {
@@ -745,8 +786,9 @@ do {                                                                            
 								} break;
 
 								case Parser::IdentifierNode::REF_ENUM_NAME: {
-									_id.pos = member->pos; _id.name = base->name + "." + _id.name;
-									p_expr = newptr<Parser::IdentifierNode>(_id);
+									_id.pos = member->pos;
+									index->member = newptr<Parser::IdentifierNode>(_id);
+									index->_ref_reduced = true;
 								} break;
 
 								case Parser::IdentifierNode::REF_ENUM_VALUE: {
@@ -754,14 +796,15 @@ do {                                                                            
 									cv->pos = member->pos; p_expr = cv;
 								} break;
 
-								case Parser::IdentifierNode::REF_CARBON_FUNCTION: {
-									_id.pos = member->pos; _id.name = base->name + "." + _id.name;
-									p_expr = newptr<Parser::IdentifierNode>(_id);
+								case Parser::IdentifierNode::REF_FUNCTION: {
+									_id.pos = member->pos;
+									index->member = newptr<Parser::IdentifierNode>(_id);
+									index->_ref_reduced = true;
 								} break;
 
 								case Parser::IdentifierNode::REF_CARBON_CLASS:
 								case Parser::IdentifierNode::REF_NATIVE_CLASS:
-								case Parser::IdentifierNode::REF_FILE:
+								case Parser::IdentifierNode::REF_EXTERN:
 									THROW_BUG("can't be");
 							}
 						} break;
@@ -791,11 +834,11 @@ do {                                                                            
 						} break;
 
 							// TODO: fn.NAME, fn.ARGC, fn.DEFAULT_ARGC, ... TODO: implement FuncRef
-						case Parser::IdentifierNode::REF_CARBON_FUNCTION: {
+						case Parser::IdentifierNode::REF_FUNCTION: {
 							THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED, "function object doesn't support attribute access.", member->pos);
 						} break;
 
-						case Parser::IdentifierNode::REF_FILE: { // TODO: change the name.
+						case Parser::IdentifierNode::REF_EXTERN: { // TODO: change the name.
 							THROW_BUG("TODO:");
 						} break;
 
@@ -863,10 +906,10 @@ do {                                                                            
 							case Parser::IdentifierNode::REF_MEMBER_CONST:
 							case Parser::IdentifierNode::REF_ENUM_NAME:
 							case Parser::IdentifierNode::REF_ENUM_VALUE:
+							case Parser::IdentifierNode::REF_FUNCTION:
 							case Parser::IdentifierNode::REF_CARBON_CLASS:
 							case Parser::IdentifierNode::REF_NATIVE_CLASS:
-							case Parser::IdentifierNode::REF_CARBON_FUNCTION:
-							case Parser::IdentifierNode::REF_FILE:
+							case Parser::IdentifierNode::REF_EXTERN:
 								THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "invalid assignment (only assignment on variables/parameters are valid).", op->args[0]->pos);
 						}
 					} else if (op->args[0]->type == Parser::Node::Type::THIS) {
@@ -886,84 +929,84 @@ do {                                                                            
 					GET_ARGS(op->args);
 					switch (op->op_type) {
 						case Parser::OperatorNode::OpType::OP_EQEQ:
-							SET_EXPR_CONST_NODE(args[0] == args[1], op->pos);
+							SET_EXPR_CONST_NODE(*args[0] == *args[1], op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_PLUS:
-							SET_EXPR_CONST_NODE(args[0] + args[1], op->pos);
+							SET_EXPR_CONST_NODE(*args[0] + *args[1], op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_MINUS:
-							SET_EXPR_CONST_NODE(args[0] - args[1], op->pos);
+							SET_EXPR_CONST_NODE(*args[0] - *args[1], op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_MUL:
-							SET_EXPR_CONST_NODE(args[0] * args[1], op->pos);
+							SET_EXPR_CONST_NODE(*args[0] * *args[1], op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_DIV:
-							SET_EXPR_CONST_NODE(args[0] / args[1], op->pos);
+							SET_EXPR_CONST_NODE(*args[0] / *args[1], op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_MOD:
-							SET_EXPR_CONST_NODE(args[0] % args[1], op->pos);
+							SET_EXPR_CONST_NODE(*args[0] % *args[1], op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_LT:
-							SET_EXPR_CONST_NODE(args[0] < args[1], op->pos);
+							SET_EXPR_CONST_NODE(*args[0] < *args[1], op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_GT:
-							SET_EXPR_CONST_NODE(args[0] > args[1], op->pos);
+							SET_EXPR_CONST_NODE(*args[0] > *args[1], op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_AND:
-							SET_EXPR_CONST_NODE(args[0].operator bool() && args[1].operator bool(), op->pos);
+							SET_EXPR_CONST_NODE(args[0]->operator bool() && args[1]->operator bool(), op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_OR:
-							SET_EXPR_CONST_NODE(args[0].operator bool() || args[1].operator bool(), op->pos);
+							SET_EXPR_CONST_NODE(args[0]->operator bool() || args[1]->operator bool(), op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_NOTEQ:
-							SET_EXPR_CONST_NODE(args[0] != args[1], op->pos);
+							SET_EXPR_CONST_NODE(*args[0] != *args[1], op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_BIT_LSHIFT:
-							SET_EXPR_CONST_NODE(args[0].operator int64_t() << args[1].operator int64_t(), op->pos);
+							SET_EXPR_CONST_NODE(args[0]->operator int64_t() << args[1]->operator int64_t(), op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_BIT_RSHIFT:
-							SET_EXPR_CONST_NODE(args[0].operator int64_t() >> args[1].operator int64_t(), op->pos);
+							SET_EXPR_CONST_NODE(args[0]->operator int64_t() >> args[1]->operator int64_t(), op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_BIT_OR:
-							SET_EXPR_CONST_NODE(args[0].operator int64_t() | args[1].operator int64_t(), op->pos);
+							SET_EXPR_CONST_NODE(args[0]->operator int64_t() | args[1]->operator int64_t(), op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_BIT_AND:
-							SET_EXPR_CONST_NODE(args[0].operator int64_t() & args[1].operator int64_t(), op->pos);
+							SET_EXPR_CONST_NODE(args[0]->operator int64_t() & args[1]->operator int64_t(), op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_BIT_XOR:
-							SET_EXPR_CONST_NODE(args[0].operator int64_t() ^ args[1].operator int64_t(), op->pos);
+							SET_EXPR_CONST_NODE(args[0]->operator int64_t() ^ args[1]->operator int64_t(), op->pos);
 							break;
 
 						case Parser::OperatorNode::OpType::OP_NOT:
-							SET_EXPR_CONST_NODE(!args[0].operator bool(), op->pos);
+							SET_EXPR_CONST_NODE(!args[0]->operator bool(), op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_BIT_NOT:
-							SET_EXPR_CONST_NODE(~args[0].operator int64_t(), op->pos);
+							SET_EXPR_CONST_NODE(~args[0]->operator int64_t(), op->pos);
 							break;
 						case Parser::OperatorNode::OpType::OP_POSITIVE:
-							switch (args[0].get_type()) {
+							switch (args[0]->get_type()) {
 								case var::BOOL:
 								case var::INT:
 								case var::FLOAT: {
-									SET_EXPR_CONST_NODE(args[0], op->pos);
+									SET_EXPR_CONST_NODE(*args[0], op->pos);
 								} break;
 								default:
 									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
-										String::format("unary operator \"+\" not supported on %s.", args[0].get_type_name()), op->pos);
+										String::format("unary operator \"+\" not supported on %s.", args[0]->get_type_name()), op->pos);
 							}
 							break;
 						case Parser::OperatorNode::OpType::OP_NEGATIVE:
-							switch (args[0].get_type()) {
+							switch (args[0]->get_type()) {
 								case var::BOOL:
 								case var::INT:
-									SET_EXPR_CONST_NODE(-args[0].operator int64_t(), op->pos);
+									SET_EXPR_CONST_NODE(-args[0]->operator int64_t(), op->pos);
 									break;
 								case var::FLOAT:
-									SET_EXPR_CONST_NODE(-args[0].operator double(), op->pos);
+									SET_EXPR_CONST_NODE(-args[0]->operator double(), op->pos);
 									break;
 								default:
 									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
-										String::format("unary operator \"+\" not supported on %s.", args[0].get_type_name()), op->pos);
+										String::format("unary operator \"+\" not supported on %s.", args[0]->get_type_name()), op->pos);
 							}
 							break;
 					}

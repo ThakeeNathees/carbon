@@ -39,7 +39,7 @@ void Compiler::_generate_members(Parser::MemberContainer* p_container, Bytecode*
 		if (var_node->is_static) {
 			p_bytecode->_static_vars[var_node->name] = default_value;
 		} else {
-			p_bytecode->_members[var_node->name] = { member_index++, default_value };
+			p_bytecode->_members[var_node->name] = member_index++;
 		}
 	}
 
@@ -55,11 +55,11 @@ void Compiler::_generate_members(Parser::MemberContainer* p_container, Bytecode*
 
 	// named enums
 	for (ptr<Parser::EnumNode> en : p_container->enums) {
-		ptr<_EnumBytes> eb = newptr<_EnumBytes>(en->name);
-		for (std::pair<String, Parser::EnumValueNode> value : en->values) {
-			eb->_values[value.first] = value.second.value;
-		}
-		p_bytecode->_enums[en->name] = eb;
+		//ptr<_EnumBytes> eb = newptr<_EnumBytes>(en->name);
+		//for (std::pair<String, Parser::EnumValueNode> value : en->values) {
+		//	eb->_values[value.first] = value.second.value;
+		//}
+		//p_bytecode->_enums[en->name] = eb;
 	}
 
 	// functions
@@ -70,7 +70,7 @@ ptr<Bytecode> Compiler::compile(ptr<Analyzer> p_analyzer) {
 	ptr<Bytecode> bytecode = newptr<Bytecode>();
 	Parser::FileNode* root = p_analyzer->parser->file_node.get();
 
-	bytecode->_path = root->path;
+	bytecode->_name = root->path;
 	_generate_members(static_cast<Parser::MemberContainer*>(root), bytecode.get());
 
 	for (ptr<Parser::ClassNode>& class_node : root->classes) {

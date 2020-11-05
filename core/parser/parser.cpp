@@ -238,6 +238,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 	if (tk->type == Token::SYM_COLLON) {
 
 		tk = &tokenizer->next();
+		if (tk->type == Token::BUILTIN_TYPE) THROW_PARSER_ERR(Error::TYPE_ERROR, "cannot inherit a builtin type.", Vect2i());
 		if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
 		class_node->base_class_name = tk->identifier;
 
@@ -280,7 +281,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 					THROW_PARSER_ERR(Error::TYPE_ERROR, "cyclic inheritance. class inherits itself isn't allowed.", tokenizer->peek(-2, true).get_pos());
 				class_node->base_type = ClassNode::BASE_LOCAL;
 			}
-		} // TODO: what if inherits a builtin type like Array, Map, String, ...
+		}
 	}
 
 	if (tk->type != Token::BRACKET_LCUR) THROW_UNEXP_TOKEN("symbol \"{\"");
@@ -445,7 +446,7 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_parent) {
 	ASSERT(p_parent != nullptr);
 	ASSERT(p_parent->type == Node::Type::FILE || p_parent->type == Node::Type::BLOCK || p_parent->type == Node::Type::CLASS);
 
-	bool _static = tokenizer->peek(-2, true).type == Token::KWORD_STATIC;
+	bool _static = p_parent->type == Node::Type::FILE || tokenizer->peek(-2, true).type == Token::KWORD_STATIC;
 
 	const TokenData* tk;
 	stdvec<ptr<VarNode>> vars;
@@ -531,7 +532,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 
 	ptr<FunctionNode> func_node = new_node<FunctionNode>();
 	func_node->parent_node = p_parent;
-	if (tokenizer->peek(-2, true).type == Token::KWORD_STATIC) {
+	if (p_parent->type == Node::Type::FILE || tokenizer->peek(-2, true).type == Token::KWORD_STATIC) {
 		func_node->is_static = true;
 	}
 

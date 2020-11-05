@@ -44,8 +44,11 @@ var Bytecode::__get_member(const String& p_member_name) {
 	stdmap<String, int64_t>::iterator it_uen = _unnamed_enums.find(p_member_name);
 	if (it_uen != _unnamed_enums.end()) return it_uen->second;
 
+	if (_base != nullptr) return _base->__get_member(p_member_name);
+
 	THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
-		String::format("%s %s has no member named \"%s\".", ((_is_class)?"type":"file at"), _name.c_str(), p_member_name.c_str()));
+		String::format("%s %s has no member named \"%s\".", ((_is_class) ? "type" : "file at"), _name.c_str(), p_member_name.c_str()));
+
 }
 
 void Bytecode::__set_member(const String& p_member_name, var& p_value) {
@@ -69,8 +72,68 @@ void Bytecode::__set_member(const String& p_member_name, var& p_value) {
 	if (it_uen != _unnamed_enums.end())  THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
 		String::format("cannot assign to an enum value named \"%s\".", it->first.c_str()));
 
-	THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
-		String::format("%s %s has no member named \"%s\".", ((_is_class) ? "type" : "file at"), _name.c_str(), p_member_name.c_str()));
+	if (_base != nullptr) {
+		_base->__set_member(p_member_name, p_value);
+	} else {
+		THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
+			String::format("%s %s has no member named \"%s\".", ((_is_class) ? "type" : "file at"), _name.c_str(), p_member_name.c_str()));
+	}
+
+}
+
+ptr<MemberInfo> Bytecode::get_member_info(const String& p_member_name) {
+	stdmap<String, ptr<MemberInfo>>::iterator it = _member_info.find(p_member_name);
+	if (it != _member_info.end()) return it->second;
+
+	for (auto& cls : _classes) {
+		if (cls.first == p_member_name) {
+			ptr<ClassInfo> class_info = newptr<ClassInfo>(p_member_name, cls.second);
+			_member_info[p_member_name] = class_info;
+			return class_info;
+		}
+	}
+	for (auto& mem : _members) {
+		if (mem.first == p_member_name) {
+			ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(p_member_name);
+			_member_info[p_member_name] = prop_info;
+			return prop_info;
+		}
+	}
+	for (auto& svar : _static_vars) {
+		if (svar.first == p_member_name) {
+			ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(p_member_name, var::VAR, svar.second, false, true);
+			_member_info[p_member_name] = prop_info;
+			return prop_info;
+		}
+	}
+	for (auto& con : _constants) {
+		if (con.first == p_member_name) {
+			ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(p_member_name, var::VAR, con.second, true, true);
+			_member_info[p_member_name] = prop_info;
+			return prop_info;
+		}
+	}
+	for (auto& unen : _unnamed_enums) {
+		if (unen.first == p_member_name) {
+			ptr<EnumValueInfo> ev_info = newptr<EnumValueInfo>(p_member_name, unen.second);
+			_member_info[p_member_name] = ev_info;
+			return ev_info;
+		}
+	}
+	for (auto& en : _enums) {
+		if (en.first == p_member_name) {
+			ptr<EnumInfo> en_info = newptr<EnumInfo>(en.second);
+			_member_info[p_member_name] = en_info;
+			return en_info;
+		}
+	}
+
+	if (_base != nullptr) return _base->get_member_info(p_member_name);
+
+	return nullptr;
+	//THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
+	//	String::format("%s %s has no member named \"%s\".", ((_is_class) ? "type" : "file at"), _name.c_str(), p_member_name.c_str()));
+
 }
 
 }

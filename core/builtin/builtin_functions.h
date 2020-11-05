@@ -57,7 +57,7 @@ public:
 	static int get_arg_count(Type p_func); // returns -1 if variadic.
 	static bool can_const_fold(Type p_func);
 	static bool is_compiletime(Type p_func);
-	static void call(Type p_func, const stdvec<var>& p_args, var& r_ret);
+	static void call(Type p_func, const stdvec<var*>& p_args, var& r_ret);
 
 private:
 	static stdmap<Type, String> _func_list;

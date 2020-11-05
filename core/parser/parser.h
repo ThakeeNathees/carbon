@@ -245,14 +245,15 @@ public:
 
 			// these will have base.
 			REF_MEMBER_VAR,
+			REF_STATIC_VAR,
 			REF_MEMBER_CONST,
 			REF_ENUM_NAME,
 			REF_ENUM_VALUE,
-			REF_CARBON_CLASS,
+			REF_FUNCTION,
 
+			REF_CARBON_CLASS,
 			REF_NATIVE_CLASS,
-			REF_CARBON_FUNCTION, // REF_FUNCTION instead of carbon, use base.
-			REF_FILE,
+			REF_EXTERN, // TODO: extern class and extern file.
 		};
 
 		IdentifierReferenceBase ref_base = BASE_UNKNOWN;
@@ -265,14 +266,15 @@ public:
 			ConstNode* _const;
 			EnumValueNode* _enum_value;
 			EnumNode* _enum_node;
-			ClassNode* _class;
-			FunctionNode* _func;
+			const ClassNode* _class;
+			const FunctionNode* _func;
 			
 			// reference from native.
-			MethodInfo* _method_info;
-			PropertyInfo* _prop_info;
-			EnumInfo* _enum_info;
-			EnumValueInfo* _enum_value_info;
+			const MethodInfo* _method_info;
+			const PropertyInfo* _prop_info;
+			const EnumInfo* _enum_info;
+			const EnumValueInfo* _enum_value_info;
+			const ClassInfo* _class_info;
 
 			// Bytecode* for base extern.
 		};
@@ -384,7 +386,10 @@ public:
 
 	struct IndexNode : public Node {
 		ptr<Node> base;
-		ptr<IdentifierNode> member;
+		ptr<IdentifierNode> member = nullptr;
+
+		bool _ref_reduced = false;
+		//ptr<IdentifierNode> _ref = nullptr; // reduced index node reference.
 		IndexNode() {
 			type = Node::Type::INDEX;
 		}

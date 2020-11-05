@@ -142,16 +142,19 @@ Parser::IdentifierNode Analyzer::_get_member(const Parser::ClassNode* p_class, c
 	Parser::IdentifierNode id; id.name = p_name;
 	if (!p_class) return id;
 
+	id.ref_base = Parser::IdentifierNode::BASE_LOCAL;
+
 	for (int i = 0; i < (int)p_class->vars.size(); i++) {
 		if (p_class->vars[i]->name == id.name) {
-			id.ref = Parser::IdentifierNode::REF_MEMBER_VAR;
+			if (p_class->vars[i]->is_static) id.ref = Parser::IdentifierNode::REF_STATIC_VAR;
+			else id.ref = Parser::IdentifierNode::REF_MEMBER_VAR;
 			id._var = p_class->vars[i].get();
 			return id;
 		}
 	}
 	for (int i = 0; i < (int)p_class->functions.size(); i++) {
 		if (p_class->functions[i]->name == id.name) {
-			id.ref = Parser::IdentifierNode::REF_CARBON_FUNCTION;
+			id.ref = Parser::IdentifierNode::REF_FUNCTION;
 			id._func = p_class->functions[i].get();
 			return id;
 		}
@@ -189,28 +192,77 @@ Parser::IdentifierNode Analyzer::_get_member(const Parser::ClassNode* p_class, c
 		case Parser::ClassNode::BASE_NATIVE: {
 			ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(p_class->base_class_name, p_name);
 			if (bd) {
-				ASSERT(false); // todo:
+				id.ref_base = Parser::IdentifierNode::BASE_NATIVE;
 				switch (bd->get_member_info()->get_type()) {
-					case MemberInfo::Type::METHOD:
-					case MemberInfo::Type::PROPERTY:
-					case MemberInfo::Type::ENUM:
-					case MemberInfo::Type::ENUM_VALUE:
-						break;
+					case MemberInfo::Type::METHOD: {
+						id.ref = Parser::IdentifierNode::REF_FUNCTION;
+						id._method_info = ptrcast<MethodBind>(bd)->get_method_info();
+						return id;
+					} break;
+					case MemberInfo::Type::PROPERTY: {
+						id._prop_info = ptrcast<PropertyBind>(bd)->get_prop_info();
+						if (id._prop_info->is_const()) id.ref = Parser::IdentifierNode::REF_MEMBER_CONST;
+						else if (id._prop_info->is_static()) id.ref = Parser::IdentifierNode::REF_STATIC_VAR;
+						else id.ref = Parser::IdentifierNode::REF_MEMBER_VAR;
+						return id;
+					} break;
+					case MemberInfo::Type::ENUM: {
+						id.ref = Parser::IdentifierNode::REF_ENUM_NAME;
+						id._enum_info = ptrcast<EnumBind>(bd)->get_enum_info();
+						return id;
+					} break;
+					case MemberInfo::Type::ENUM_VALUE: {
+						id.ref = Parser::IdentifierNode::REF_ENUM_VALUE;
+						id._enum_value_info = ptrcast<EnumValueBind>(bd)->get_enum_value_info();
+						return id;
+					} break;
 				}
 			}
 		} break;
 		case Parser::ClassNode::BASE_EXTERN:
-			// TODO: from imported Bytecode.
-			ASSERT(false && "TODO:");
+			id.ref_base = Parser::IdentifierNode::BASE_EXTERN;
+			MemberInfo* mi = p_class->base_binary->get_member_info(p_name).get();
+			if (mi == nullptr) break;
+			switch (mi->get_type()) {
+				case MemberInfo::Type::CLASS: {
+					id.ref = Parser::IdentifierNode::REF_EXTERN; // extern class
+					id._class_info = static_cast<ClassInfo*>(mi);
+					return id;
+				} break;
+				case MemberInfo::Type::METHOD: {
+					id.ref = Parser::IdentifierNode::REF_FUNCTION;
+					id._method_info = static_cast<MethodInfo*>(mi);
+					return id;
+				} break;
+				case MemberInfo::Type::PROPERTY: {
+					id._prop_info = static_cast<PropertyInfo*>(mi);
+					if (id._prop_info->is_const()) id.ref = Parser::IdentifierNode::REF_MEMBER_CONST;
+					else if (id._prop_info->is_static()) id.ref = Parser::IdentifierNode::REF_STATIC_VAR;
+					else id.ref = Parser::IdentifierNode::REF_MEMBER_VAR;
+					return id;
+				} break;
+				case MemberInfo::Type::ENUM: {
+					id.ref = Parser::IdentifierNode::REF_ENUM_NAME;
+					id._enum_info = static_cast<EnumInfo*>(mi);
+					return id;
+				} break;
+				case MemberInfo::Type::ENUM_VALUE: {
+					id.ref = Parser::IdentifierNode::REF_ENUM_VALUE;
+					id._enum_value_info = static_cast<EnumValueInfo*>(mi);
+					return id;
+				} break;
+			}
 	}
+
+	id.ref_base = Parser::IdentifierNode::BASE_UNKNOWN;
 	return id;
 }
 
-var Analyzer::_call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var>& args) {
+var Analyzer::_call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var*>& args) {
 	switch (p_func->func) {
 		case BuiltinFunctions::__ASSERT: {
 			if (args.size() != 1) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.", p_func->pos);
-			if (!args[0].operator bool()) THROW_ANALYZER_ERROR(Error::ASSERTION, "assertion failed.", p_func->pos);
+			if (!args[0]->operator bool()) THROW_ANALYZER_ERROR(Error::ASSERTION, "assertion failed.", p_func->pos);
 		} break;
 		case BuiltinFunctions::__FUNC: {
 			if (!parser->parser_context.current_func) THROW_ANALYZER_ERROR(Error::SYNTAX_ERROR, "__func() must be called inside a function.", p_func->pos);
@@ -234,13 +286,13 @@ void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p
 		Parser::CallNode* call = p_funcs[i].get();
 		ASSERT(call->base->type == Parser::Node::Type::BUILTIN_FUNCTION);
 		Parser::BuiltinFunctionNode* bf = ptrcast<Parser::BuiltinFunctionNode>(call->base).get();
-		stdvec<var> args;
+		stdvec<var*> args;
 		for (int j = 0; j < (int)call->r_args.size(); j++) {
 			_reduce_expression(call->r_args[j]);
 			if (call->r_args[j]->type != Parser::Node::Type::CONST_VALUE) {
 				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->r_args[j]->pos);
 			}
-			args.push_back(ptrcast<Parser::ConstValueNode>(call->r_args[j])->value);
+			args.push_back(&ptrcast<Parser::ConstValueNode>(call->r_args[j])->value);
 		}
 		_call_compiletime_func(bf, args);
 	}
@@ -254,7 +306,8 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 
 	switch (p_class->base_type) {
 		case Parser::ClassNode::NO_BASE:
-		case Parser::ClassNode::BASE_NATIVE:
+		case Parser::ClassNode::BASE_NATIVE: {
+		} break;
 		case Parser::ClassNode::BASE_EXTERN:
 			// already resolved from the parser.
 			break;

@@ -75,17 +75,17 @@ public:
 		THROW_BUG("can't reach here.");
 	}
 
-	static var construct(Type p_type, const stdvec<var>& p_args) {
+	static var construct(Type p_type, const stdvec<var*>& p_args) {
 		switch (p_type) {
 			case _NULL:
 				THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, "can't construct null instance.");
 			case BOOL:
 				if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.");
-				return p_args[0].operator bool();
+				return p_args[0]->operator bool();
 			case INT:
 				if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.");
 				try {
-					return p_args[0].operator int64_t();
+					return p_args[0]->operator int64_t();
 				} catch (VarError& err) {
 					ASSERT(err.get_type() == VarError::TYPE_ERROR);
 					THROW_ERROR(Error::TYPE_ERROR, err.what()); // TODO: cast var error to cb error.
@@ -93,7 +93,7 @@ public:
 			case FLOAT:
 				if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.");
 				try {
-					return p_args[0].operator double();
+					return p_args[0]->operator double();
 				} catch (VarError& err) {
 					ASSERT(err.get_type() == VarError::TYPE_ERROR);
 					THROW_ERROR(Error::TYPE_ERROR, err.what());
@@ -101,14 +101,14 @@ public:
 			case STRING:
 				if (p_args.size() < 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected at least 1 argument.");
 				if (p_args.size() == 1) {
-					if (p_args[0].get_type() != var::STRING) THROW_ERROR(Error::TYPE_ERROR, "expected a string at argument 0.");
+					if (p_args[0]->get_type() != var::STRING) THROW_ERROR(Error::TYPE_ERROR, "expected a string at argument 0.");
 				} else {
 					ASSERT(false); // TODO: parse `String("pi = %f", 3.14);`
 				}
 			case ARRAY: {
 				Array ret;
 				for (size_t i = 0; i < p_args.size(); i++) {
-					ret.push_back(p_args[i]);
+					ret.push_back(*p_args[i]);
 				}
 				return ret;
 			}

@@ -30,28 +30,6 @@
 
 namespace carbon {
 
-class _EnumBytes : public Object {
-	REGISTER_CLASS(_EnumBytes, Object) { }
-
-	var __get_member(const String& p_name) override {
-		stdmap<String, int64_t>::iterator it = _values.find(p_name);
-		if (it != _values.end()) return it->second;
-		else THROW_VARERROR(VarError::ATTRIBUTE_ERROR, String::format("enum %s has no value named \"%s\".", _name.c_str(), p_name.c_str()));
-	}
-	void __set_member(const String& p_name, var& p_value) {
-		stdmap<String, int64_t>::iterator it = _values.find(p_name);
-		if (it != _values.end()) THROW_VARERROR(VarError::ATTRIBUTE_ERROR, String::format("cannot assign a value to enum value."));
-		else THROW_VARERROR(VarError::ATTRIBUTE_ERROR, String::format("enum %s has no member named \"%s\".", _name.c_str(), p_name.c_str()));
-	}
-
-	_EnumBytes() {}
-	_EnumBytes(const String& p_name) :_name(p_name) {}
-
-public: // like a struct.
-	String _name; // points to the name in enums map.
-	stdmap<String, int64_t> _values;
-};
-
 class Bytecode : public Object {
 	REGISTER_CLASS(Bytecode, Object) {
 		//BIND_STATIC_FUNC("Bytecode", &Bytecode::_Bytecode, PARAMS("self",  ...));
@@ -72,27 +50,25 @@ public:
 	}
 
 	const stdmap<String, ptr<Bytecode>>& get_classes() const { return _classes; }
+	ptr<MemberInfo> get_member_info(const String& p_member_name);
 
 private:
 	friend class Compiler;
 	bool _is_class = false;
 
-	String _path; // for FileNode
-	String _name; // for ClassNode
+	String _name; // name for class, path for file.
 	
 	stdmap<String, ptr<Bytecode>> _classes; // for FileNode
 	ptr<Bytecode> _base = nullptr; // for ClassNode
 
-	struct _MemberData {
-		int index; // member index. offset willbe added for inherited instances.
-		var default_value;
-	}; stdmap<String, _MemberData> _members;
-
+	stdmap<String, int> _members; // member index. offset willbe added for inherited instances.
 	stdmap<String, var> _static_vars;
 	stdmap<String, var> _constants;
 	stdmap<String, int64_t> _unnamed_enums;
 	stdmap<String, ptr<_EnumBytes>> _enums;
 	// TODO: function pointers
+
+	stdmap<String, ptr<MemberInfo>> _member_info;
 
 	bool _is_compiled = false;
 	bool _is_compinling = false;
