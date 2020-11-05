@@ -106,6 +106,7 @@ String TokenData::to_string() const {
 		case Token::KWORD_SUPER:    return "super";
 		case Token::KWORD_RETURN:   return "return";
 			
+		case Token::VALUE_NULL:     return "null";
 		case Token::VALUE_STRING: 
 			return String("\"") + constant.operator String() + "\"";
 		case Token::VALUE_INT: 
@@ -117,7 +118,7 @@ String TokenData::to_string() const {
 		case Token::_TK_MAX_: return "<_TK_MAX_>";
 	}
 	THROW_BUG(String::format("missed enum in switch case."));
-MISSED_ENUM_CHECK(Token::_TK_MAX_, 75);
+MISSED_ENUM_CHECK(Token::_TK_MAX_, 76);
 }
 
 
@@ -200,6 +201,7 @@ const char* Tokenizer::get_token_name(Token p_tk) {
 		"KWORD_SUPER",
 		"KWORD_RETURN",
 
+		"VALUE_NULL",
 		"VALUE_STRING",
 		"VALUE_INT",
 		"VALUE_FLOAT",
@@ -207,7 +209,7 @@ const char* Tokenizer::get_token_name(Token p_tk) {
 		nullptr, //_TK_MAX_
 	};
 	return token_names[(int)p_tk];
-MISSED_ENUM_CHECK(Token::_TK_MAX_, 75);
+MISSED_ENUM_CHECK(Token::_TK_MAX_, 76);
 }
 
 const char* Parser::Node::get_node_type_name(Type p_type) {

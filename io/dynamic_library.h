@@ -109,13 +109,13 @@ public:
 		THROW_ERROR(Error::INVALID_ARG_COUNT, "dynamic library call argument count must be less than or equal to 5.");
 	}
 
-	int call_va_args(stdvec<var>& p_args) {
+	int call_va_args(stdvec<var*>& p_args) {
 		if (p_args.size() == 0) THROW_ERROR(Error::INVALID_ARG_COUNT, "argument is 0, need at least 1 as the function name.");
-		if (p_args[0].get_type() != var::STRING)
+		if (p_args[0]->get_type() != var::STRING)
 			THROW_ERROR(Error::TYPE_ERROR, "first argument of call() must be string (name of the function).");
-		const String& method_name = p_args[0];
-		p_args.erase(p_args.begin());
-		return __call_method(method_name, p_args);
+		const String& method_name = *p_args[0];
+		Array args; for (int i = 1; i < p_args.size(); i++) args.push_back(*p_args[i]);
+		return __call_method(method_name, args);
 	}
 
 	int call(const String& p_func) {

@@ -1,9 +1,15 @@
 
-func f() {
+func range(i) {
+	var arr = Array();
+	for (var j = 0; j < i; j+=1) arr.append(j);
+	return arr;
+}
 
-	for (;;){}
-	var arr = [1, 2, 3];
-	for (var i : 12) {
+func f() {
+	for (var i : range(10))
 		print(i);
-	}
+}
+
+func main() {
+	f();
 }

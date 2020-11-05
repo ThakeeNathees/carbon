@@ -60,7 +60,7 @@ static KeywordName _keyword_name_list[] = {
 	{ "enum",     Token::KWORD_ENUM	         },
 	{ "func",     Token::KWORD_FUNC	         },
 	{ "var",      Token::KWORD_VAR		     },
-	{ "const",      Token::KWORD_CONST	     },
+	{ "const",    Token::KWORD_CONST	     },
 	{ "null",     Token::KWORD_NULL	         },
 	{ "true",     Token::KWORD_TRUE	         },
 	{ "false",    Token::KWORD_FALSE	     },
@@ -78,7 +78,7 @@ static KeywordName _keyword_name_list[] = {
 	{ "super",    Token::KWORD_SUPER         },
 	{ "return",   Token::KWORD_RETURN	     },
 };
-MISSED_ENUM_CHECK(Token::_TK_MAX_, 75);
+MISSED_ENUM_CHECK(Token::_TK_MAX_, 76);
 
 void Tokenizer::_eat_escape(String& p_str) {
 	char c = GET_CHAR(0);
@@ -161,6 +161,9 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 			} else if (tk.type == Token::KWORD_FALSE) {
 				tk.type = Token::VALUE_BOOL;
 				tk.constant = var(false);
+			} else if (tk.type == Token::KWORD_NULL) {
+				tk.type = Token::VALUE_NULL;
+				tk.constant = var();
 			}
 			break;
 		}

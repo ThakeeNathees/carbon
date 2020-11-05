@@ -97,6 +97,7 @@ public:
 		Vect2i pos;
 		ptr<Node> parernt_node;
 		bool is_reduced = false;
+		bool _is_reducing = false;
 		static const char* get_node_type_name(Type p_type);
 	};
 

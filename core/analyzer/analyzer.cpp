@@ -238,7 +238,8 @@ void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p
 void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 
 	if (p_class->is_reduced) return;
-	p_class->is_reduced = true;
+	if (p_class->_is_reducing) THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "cyclic inheritance. class inherits itself isn't allowed.", p_class->pos);
+	p_class->_is_reducing = true;
 
 	switch (p_class->base_type) {
 		case Parser::ClassNode::NO_BASE:
@@ -249,14 +250,6 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 				if (p_class->base_class == file_node->classes[i]->name) {
 					_resolve_inheritance(file_node->classes[i].get());
 					p_class->base_local = file_node->classes[i].get();
-
-					Parser::ClassNode* base = p_class->base_local;
-					while (base) {
-						if (base == p_class)
-							THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "cyclic inheritance. class inherits itself isn't allowed.", p_class->pos);
-						base = base->base_local;
-					}
-					break;
 				}
 			}
 			break;
@@ -264,11 +257,15 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 			DEBUG_PRINT("TODO"); // TODO: load ptr<CarbonByteCode> from path
 			break;
 	}
+
+	p_class->_is_reducing = false;
+	p_class->is_reduced = true;
 }
 
 void Analyzer::_resolve_constant(Parser::ConstNode* p_const) {
 	if (p_const->is_reduced) return;
-	p_const->is_reduced = true;
+	if (p_const->_is_reducing) THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "cyclic constant value dependancy found.", p_const->pos);
+	p_const->_is_reducing = true;
 
 	ASSERT(p_const->assignment != nullptr);
 	_reduce_expression(p_const->assignment);
@@ -276,10 +273,14 @@ void Analyzer::_resolve_constant(Parser::ConstNode* p_const) {
 		THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a contant expression.", p_const->assignment->pos);
 	ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(p_const->assignment);
 	if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
-		cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING) {
+		cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING &&
+		cv->value.get_type() != var::_NULL) {
 		THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a constant expression.", p_const->assignment->pos);
 	}
 	p_const->value = cv->value;
+
+	p_const->_is_reducing = false;
+	p_const->is_reduced = true;
 }
 
 void Analyzer::_resolve_parameters(Parser::FunctionNode* p_func) {
@@ -290,7 +291,8 @@ void Analyzer::_resolve_parameters(Parser::FunctionNode* p_func) {
 				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a contant expression.", p_func->args[i].default_value->pos);
 			ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(p_func->args[i].default_value);
 			if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
-				cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING) {
+				cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING &&
+				cv->value.get_type() != var::_NULL) {
 				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a constant expression.", p_func->args[i].default_value->pos);
 			}
 			p_func->default_parameters.push_back(cv->value);

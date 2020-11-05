@@ -236,7 +236,8 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 			if (NativeClasses::singleton()->is_class_registered(class_node->base_class)) {
 				class_node->base_type = ClassNode::BASE_NATIVE;
 			} else {
-				if (class_node->base_class == class_node->name) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "", tokenizer->peek(-2, true).get_pos());
+				if (class_node->base_class == class_node->name)
+					THROW_PARSER_ERR(Error::TYPE_ERROR, "cyclic inheritance. class inherits itself isn't allowed.", tokenizer->peek(-2, true).get_pos());
 				class_node->base_type = ClassNode::BASE_LOCAL;
 			}
 		} // TODO: what if inherits a builtin type like Array, Map, String, ...

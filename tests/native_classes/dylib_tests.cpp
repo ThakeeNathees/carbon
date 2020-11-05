@@ -20,7 +20,8 @@ TEST_CASE("[native_classes:dylib]") {
 
 	dlib.close();
 
-	var lib2 = NativeClasses::singleton()->construct(DynamicLibrary::get_class_name_s(), make_stdvec<var>("bin/dynamic.dll"));
+	var lib_path = "bin/dynamic.dll";
+	var lib2 = NativeClasses::singleton()->construct(DynamicLibrary::get_class_name_s(), make_stdvec<var*>(&lib_path));
 	ret = lib2.call_method("r0_func_a3", i, f, s); // lib2.call_method("call", "r0_func_a3", i, f, s);
 	CHECK(ret == 0);
 	lib2.call_method("close");
