@@ -244,7 +244,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 
 			case Token::KWORD_CONTINUE: {
 				tk = &tokenizer->next(); // eat "continue"
-				if (!parser_context.current_continue) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use break outside a loop.", tk->get_pos());
+				if (!parser_context.current_continue) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use continue outside a loop.", tk->get_pos());
 				ptr<ControlFlowNode> _continue = new_node<ControlFlowNode>(ControlFlowNode::CONTINUE);
 				_continue->break_continue = parser_context.current_continue;
 				parser_context.current_continue->has_continue = true;

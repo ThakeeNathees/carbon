@@ -35,6 +35,18 @@ TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "class C1 : C2 {} class C2 : C1 {}");
 	CHECK_THROWS_CARBON__ANALYZE(Error::TYPE_ERROR, "const C1 = C2; const C2 = C1;");
 
+	CHECK_THROWS_CARBON__ANALYZE(Error::ATTRIBUTE_ERROR, "var y = y * 2;");
+	CHECK_THROWS_CARBON__ANALYZE(Error::ATTRIBUTE_ERROR, "func f() { var y = y * 2; }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::NAME_ERROR, R"( // TODO: change name error to attribute error.
+	func f() { __assert(__func() == "f");
+		var x; switch (x) {
+			case 1:
+				var y = 0;
+			case 2:
+				print(y);
+		}
+	})");
+
 	// functions and arguments.
 	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_ARG_COUNT, "func f(arg1, arg2 = \"default\"){} func g(){ f(); }");
 	CHECK_THROWS_CARBON__ANALYZE(Error::INVALID_ARG_COUNT, "func f(arg1, arg2 = \"default\"){} func g(){ f(1, false, -3.14); }");
@@ -47,7 +59,8 @@ TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	CHECK_THROWS_CARBON__ANALYZE(Error::SYNTAX_ERROR, "__func(); // can't call outside a function");
 	CHECK_THROWS_CARBON__ANALYZE(Error::ASSERTION, "__assert(false);");
 
-
 	CHECK_THROWS_CARBON__ANALYZE(Error::ATTRIBUTE_ERROR, "class Class { func f() {} } func g() { Class.f(); } ");
-	//CHECK_THROWS_CARBON__ANALYZE(Error::ATTRIBUTE_ERROR, "class Class { func f(){}  func g() { f(); }  }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::ATTRIBUTE_ERROR, "class Class { func f(){}  func g() { Class.f(); }  }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::ATTRIBUTE_ERROR, "class A{ func f(){} } class B:A{ static func g(){ f(); } }");
+	CHECK_THROWS_CARBON__ANALYZE(Error::ATTRIBUTE_ERROR, "class A{ func f(){} } class B:A{ static func g(){ super.f(); } }");
 }

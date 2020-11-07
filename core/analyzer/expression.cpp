@@ -89,38 +89,10 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				}
 				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
 
-				Parser::IdentifierNode _id = _get_member(parser->parser_context.current_class, id->name);
-				_id.pos = id->pos;
-				if (_id.ref != Parser::IdentifierNode::REF_UNKNOWN) {
-					id = newptr<Parser::IdentifierNode>(_id); break;
-				}
-
-				for (int i = 0; i < (int)file_node->vars.size(); i++) {
-					if (file_node->vars[i]->name == id->name) {
-						id->ref = Parser::IdentifierNode::REF_MEMBER_VAR;
-						id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
-						id->_var = file_node->vars[i].get();
-						break;
-					}
-				}
-				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
-
-				for (int i = 0; i < (int)file_node->constants.size(); i++) {
-					if (file_node->constants[i]->name == id->name) {
-						id->ref = Parser::IdentifierNode::REF_MEMBER_CONST;
-						id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
-						_resolve_constant(file_node->constants[i].get());
-						id->_const = file_node->constants[i].get();
-						break;
-					}
-				}
-				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
-
 				if (parser->parser_context.current_enum != nullptr) {
 					for (std::pair<String, Parser::EnumValueNode> pair : parser->parser_context.current_enum->values) {
 						if (pair.first == id->name) {
 							id->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-							id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 							_resolve_enumvalue(parser->parser_context.current_enum->values[pair.first]);
 							id->_enum_value = &pair.second;
 							break;
@@ -129,56 +101,13 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				}
 				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
 
-				if (file_node->unnamed_enum != nullptr) {
-					for (std::pair<String, Parser::EnumValueNode> pair : file_node->unnamed_enum->values) {
-						if (pair.first == id->name) {
-							id->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-							id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
-							_resolve_enumvalue(file_node->unnamed_enum->values[pair.first]);
-							id->_enum_value = &pair.second;
-							break;
-						}
-					}
-				}
-				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
+				Parser::IdentifierNode _id = _get_member(parser->parser_context.current_class, id->name);
+				if (_id.ref == Parser::IdentifierNode::REF_UNKNOWN) _id = _get_member(parser->file_node.get(), id->name);
 
-				for (int i = 0; i < (int)file_node->enums.size(); i++) {
-					if (file_node->enums[i]->name == id->name) {
-						id->ref = Parser::IdentifierNode::REF_ENUM_NAME;
-						id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
-						id->_enum_node = file_node->enums[i].get();
-						break;
-					}
+				if (_id.ref != Parser::IdentifierNode::REF_UNKNOWN) {
+					_id.pos = id->pos; id = newptr<Parser::IdentifierNode>(_id);
 				}
-				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
-
-				for (int i = 0; i < (int)file_node->classes.size(); i++) {
-					if (file_node->classes[i]->name == id->name) {
-						id->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
-						id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
-						id->_class = file_node->classes[i].get();
-						break;
-					}
-				}
-				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
-
-				for (int i = 0; i < (int)file_node->functions.size(); i++) {
-					if (file_node->functions[i]->name == id->name) {
-						id->ref = Parser::IdentifierNode::REF_FUNCTION;
-						id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
-						id->_func = file_node->functions[i].get();
-						break;
-					}
-				}
-				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
-
-				if (NativeClasses::singleton()->is_class_registered(id->name)) {
-					id->ref = Parser::IdentifierNode::REF_NATIVE_CLASS;
-					id->ref_base = Parser::IdentifierNode::BASE_NATIVE;
-					break;
-				}
-
-				// TODO: REF_FILE for import.
+				
 			} while (false);
 
 			switch (id->ref) {
@@ -193,6 +122,16 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->_enum_value->value);
 					cv->pos = id->pos; p_expr = cv;
 				} break;
+
+				case Parser::IdentifierNode::REF_LOCAL_VAR:
+				case Parser::IdentifierNode::REF_STATIC_VAR:
+				case Parser::IdentifierNode::REF_MEMBER_VAR: {
+					if (id->ref_base == Parser::IdentifierNode::BASE_LOCAL && parser->parser_context.current_var) {
+						if (parser->parser_context.current_var->name == id->name) {
+							THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("invalid attribute access \"%s\" can't be used in it's own initialization.", id->name.c_str()), id->pos);
+						}
+					}
+				} // [[fallthrought]]
 				default: { // variable, parameter, function name, ...
 					p_expr = id;
 					break;
@@ -459,6 +398,7 @@ do {                                                                            
 								_class = parser->parser_context.current_class->base_class;
 							} break;
 							case Parser::ClassNode::BASE_EXTERN: ASSERT(false); // TODO:
+							case Parser::ClassNode::BASE_NATIVE: ASSERT(false); // TODO:
 						}
 					}
 
@@ -745,15 +685,28 @@ do {                                                                            
 						} break;
 
 						case Parser::IdentifierNode::REF_ENUM_NAME: {
-							stdmap<String, Parser::EnumValueNode>::iterator it = base->_enum_node->values.find(member->name);
-							if (it != base->_enum_node->values.end()) {
-								member->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-								member->_enum_value = &(it->second);
-								_resolve_enumvalue(base->_enum_node->values[it->first]);
-								ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->_enum_node->values[it->first].value);
-								cv->pos = member->pos; p_expr = cv;
-							} else {
-								ASSERT(false && "bug unresolved reference");
+							if (base->ref_base == Parser::IdentifierNode::BASE_LOCAL) {
+								stdmap<String, Parser::EnumValueNode>::iterator it = base->_enum_node->values.find(member->name);
+								if (it != base->_enum_node->values.end()) {
+									member->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
+									member->ref_base = Parser::IdentifierNode::BASE_LOCAL;
+									member->_enum_value = &(it->second);
+									_resolve_enumvalue(base->_enum_node->values[it->first]);
+									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->_enum_node->values[it->first].value);
+									cv->pos = member->pos; p_expr = cv;
+								} else {
+									ASSERT(false && "bug unresolved reference");
+								}
+							} else { // ref on base native/extern.
+								stdmap<String, int64_t>::const_iterator it = base->_enum_info->get_values().find(member->name);
+								if (it != base->_enum_info->get_values().end()) {
+									member->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
+									member->ref_base = base->ref_base;
+									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(it->second);
+									cv->pos = member->pos; p_expr = cv;
+								} else {
+									ASSERT(false && "bug unresolved reference");
+								}
 							}
 						} break;
 
@@ -841,8 +794,6 @@ do {                                                                            
 						case Parser::IdentifierNode::REF_EXTERN: { // TODO: change the name.
 							THROW_BUG("TODO:");
 						} break;
-
-							// TODO: REF binary version of everything above.
 					}
 				}
 
@@ -1006,7 +957,7 @@ do {                                                                            
 									break;
 								default:
 									THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
-										String::format("unary operator \"+\" not supported on %s.", args[0]->get_type_name()), op->pos);
+										String::format("unary operator \"-\" not supported on %s.", args[0]->get_type_name()), op->pos);
 							}
 							break;
 					}

@@ -84,9 +84,11 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 		}
 		class B {
 			const B_C1 = 0b10;
-			const B_C2 = 1 << 3;
+			const B_C2 = 1 << 3; __assert(B_C2 == 0x10 >> 1);
 			enum E { V = B_C1 & B_C2 }
 		}
+		const C = "testing".hash();
+		__assert(C == ("test" + ["ngi", "ing"][1]).hash());
 	)");
 	
 	// switch case.
@@ -100,23 +102,21 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 		}
 	)");
 
-
-	// function signature // TODO: these may be invalid or not ?? Not sure.
+	// function signature
 	CHECK_NOTHROW__ANALYZE("class Class {} var v = Class;");
+	//CHECK_NOTHROW__ANALYZE("func f(){} var v = f.something();"); ??
 	CHECK_NOTHROW__ANALYZE("func f() { } func g() { f(); } ");
 	CHECK_NOTHROW__ANALYZE("func f(a0, a1) { } func g() { f(1, 2); } ");
 	CHECK_NOTHROW__ANALYZE("class Class { static func f() { } } func g() { Class.f(); }");
-	//CHECK_NOTHROW__ANALYZE("class Class { func f(){}  func g() { Class.f(); }  }"); // should be valid ??
+	CHECK_NOTHROW__ANALYZE("class A{ func f(){} } class B:A{ static func f(){} static func g(){ f(); } }");
 
 	CHECK_NOTHROW__ANALYZE("func fn(arg1, arg2 = 1, arg3 = \"str\"){} func g(){ fn(false); fn(1.0, 2); fn(1, \"str\", true); } ");
-
-	// TODO:
 	CHECK_NOTHROW__ANALYZE("func call(f) { f(); } func fn(){ print(\"fn() called.\"); } var tmp = call(fn);");
 	CHECK_NOTHROW__ANALYZE("func f(){} var v = f;");
 	CHECK_NOTHROW__ANALYZE("class Aclass { func f(){} } var v = Aclass.f;");
+	CHECK_NOTHROW__ANALYZE("func f(x) { while (x) { if (false) break; } }");
 	//CHECK_NOTHROW__ANALYZE("func fn() {} var v = fn.get_name();");
 	// if ref of identifier is func pass it as callable object.
-	
 
 	// Native classes.
 	CHECK_NOTHROW__ANALYZE("const C = File.READ;");

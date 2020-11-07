@@ -137,70 +137,108 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 	parser->parser_context.current_func = nullptr;
 }
 
-Parser::IdentifierNode Analyzer::_get_member(const Parser::ClassNode* p_class, const String& p_name) {
+Parser::IdentifierNode Analyzer::_get_member(const Parser::MemberContainer* p_container, const String& p_name) {
 
 	Parser::IdentifierNode id; id.name = p_name;
-	if (!p_class) return id;
+	if (!p_container) return id;
 
 	id.ref_base = Parser::IdentifierNode::BASE_LOCAL;
 
-	for (int i = 0; i < (int)p_class->vars.size(); i++) {
-		if (p_class->vars[i]->name == id.name) {
-			if (p_class->vars[i]->is_static) id.ref = Parser::IdentifierNode::REF_STATIC_VAR;
+	for (int i = 0; i < (int)p_container->vars.size(); i++) {
+		if (p_container->vars[i]->name == id.name) {
+			if (p_container->vars[i]->is_static) id.ref = Parser::IdentifierNode::REF_STATIC_VAR;
 			else id.ref = Parser::IdentifierNode::REF_MEMBER_VAR;
-			id._var = p_class->vars[i].get();
+			id._var = p_container->vars[i].get();
 			return id;
 		}
 	}
-	for (int i = 0; i < (int)p_class->functions.size(); i++) {
-		if (p_class->functions[i]->name == id.name) {
+	for (int i = 0; i < (int)p_container->functions.size(); i++) {
+		if (p_container->functions[i]->name == id.name) {
 			id.ref = Parser::IdentifierNode::REF_FUNCTION;
-			id._func = p_class->functions[i].get();
+			id._func = p_container->functions[i].get();
 			return id;
 		}
 	}
-	for (int i = 0; i < (int)p_class->constants.size(); i++) {
-		if (p_class->constants[i]->name == id.name) {
+	for (int i = 0; i < (int)p_container->constants.size(); i++) {
+		if (p_container->constants[i]->name == id.name) {
 			id.ref = Parser::IdentifierNode::REF_MEMBER_CONST;
-			_resolve_constant(p_class->constants[i].get());
-			id._const = p_class->constants[i].get();
+			_resolve_constant(p_container->constants[i].get());
+			id._const = p_container->constants[i].get();
 			return id;
 		}
 	}
-	if (p_class->unnamed_enum != nullptr) {
-		for (std::pair<String, Parser::EnumValueNode> pair : p_class->unnamed_enum->values) {
+	if (p_container->unnamed_enum != nullptr) {
+		for (std::pair<String, Parser::EnumValueNode> pair : p_container->unnamed_enum->values) {
 			if (pair.first == id.name) {
 				id.ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-				_resolve_enumvalue(p_class->unnamed_enum->values[pair.first]);
-				id._enum_value = &p_class->unnamed_enum->values[pair.first];
+				_resolve_enumvalue(p_container->unnamed_enum->values[pair.first]);
+				id._enum_value = &p_container->unnamed_enum->values[pair.first];
 				return id;
 			}
 		}
 	}
-	for (int i = 0; i < (int)p_class->enums.size(); i++) {
-		if (p_class->enums[i]->name == id.name) {
+	for (int i = 0; i < (int)p_container->enums.size(); i++) {
+		if (p_container->enums[i]->name == id.name) {
 			id.ref = Parser::IdentifierNode::REF_ENUM_NAME;
-			id._enum_node = p_class->enums[i].get();
+			id._enum_node = p_container->enums[i].get();
 			return id;
 		}
 	}
 
 	ASSERT(id.ref == Parser::IdentifierNode::REF_UNKNOWN);
-	switch (p_class->base_type) {
-		case Parser::ClassNode::BASE_LOCAL:
-			return _get_member(p_class->base_class, p_name);
-		case Parser::ClassNode::BASE_NATIVE: {
-			ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(p_class->base_class_name, p_name);
-			if (bd) {
-				id.ref_base = Parser::IdentifierNode::BASE_NATIVE;
-				switch (bd->get_member_info()->get_type()) {
+	if (p_container->type == Parser::Node::Type::CLASS) {
+		const Parser::ClassNode* _class = static_cast<const Parser::ClassNode*>(p_container);
+
+		switch (_class->base_type) {
+			case Parser::ClassNode::BASE_LOCAL:
+				return _get_member(_class->base_class, p_name);
+			case Parser::ClassNode::BASE_NATIVE: {
+				ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(_class->base_class_name, p_name);
+				if (bd) {
+					id.ref_base = Parser::IdentifierNode::BASE_NATIVE;
+					switch (bd->get_member_info()->get_type()) {
+						case MemberInfo::Type::METHOD: {
+							id.ref = Parser::IdentifierNode::REF_FUNCTION;
+							id._method_info = ptrcast<MethodBind>(bd)->get_method_info();
+							return id;
+						} break;
+						case MemberInfo::Type::PROPERTY: {
+							id._prop_info = ptrcast<PropertyBind>(bd)->get_prop_info();
+							if (id._prop_info->is_const()) id.ref = Parser::IdentifierNode::REF_MEMBER_CONST;
+							else if (id._prop_info->is_static()) id.ref = Parser::IdentifierNode::REF_STATIC_VAR;
+							else id.ref = Parser::IdentifierNode::REF_MEMBER_VAR;
+							return id;
+						} break;
+						case MemberInfo::Type::ENUM: {
+							id.ref = Parser::IdentifierNode::REF_ENUM_NAME;
+							id._enum_info = ptrcast<EnumBind>(bd)->get_enum_info();
+							return id;
+						} break;
+						case MemberInfo::Type::ENUM_VALUE: {
+							id.ref = Parser::IdentifierNode::REF_ENUM_VALUE;
+							id._enum_value_info = ptrcast<EnumValueBind>(bd)->get_enum_value_info();
+							return id;
+						} break;
+					}
+				}
+			} break;
+			case Parser::ClassNode::BASE_EXTERN:
+				id.ref_base = Parser::IdentifierNode::BASE_EXTERN;
+				MemberInfo* mi = _class->base_binary->get_member_info(p_name).get();
+				if (mi == nullptr) break;
+				switch (mi->get_type()) {
+					case MemberInfo::Type::CLASS: {
+						id.ref = Parser::IdentifierNode::REF_EXTERN; // extern class
+						id._class_info = static_cast<ClassInfo*>(mi);
+						return id;
+					} break;
 					case MemberInfo::Type::METHOD: {
 						id.ref = Parser::IdentifierNode::REF_FUNCTION;
-						id._method_info = ptrcast<MethodBind>(bd)->get_method_info();
+						id._method_info = static_cast<MethodInfo*>(mi);
 						return id;
 					} break;
 					case MemberInfo::Type::PROPERTY: {
-						id._prop_info = ptrcast<PropertyBind>(bd)->get_prop_info();
+						id._prop_info = static_cast<PropertyInfo*>(mi);
 						if (id._prop_info->is_const()) id.ref = Parser::IdentifierNode::REF_MEMBER_CONST;
 						else if (id._prop_info->is_static()) id.ref = Parser::IdentifierNode::REF_STATIC_VAR;
 						else id.ref = Parser::IdentifierNode::REF_MEMBER_VAR;
@@ -208,50 +246,77 @@ Parser::IdentifierNode Analyzer::_get_member(const Parser::ClassNode* p_class, c
 					} break;
 					case MemberInfo::Type::ENUM: {
 						id.ref = Parser::IdentifierNode::REF_ENUM_NAME;
-						id._enum_info = ptrcast<EnumBind>(bd)->get_enum_info();
+						id._enum_info = static_cast<EnumInfo*>(mi);
 						return id;
 					} break;
 					case MemberInfo::Type::ENUM_VALUE: {
 						id.ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-						id._enum_value_info = ptrcast<EnumValueBind>(bd)->get_enum_value_info();
+						id._enum_value_info = static_cast<EnumValueInfo*>(mi);
 						return id;
 					} break;
 				}
+		}
+
+	} else { // container is FileNode
+		const Parser::FileNode* file_node = static_cast<const Parser::FileNode*>(p_container);
+
+		for (int i = 0; i < (int)file_node->vars.size(); i++) {
+			if (file_node->vars[i]->name == id.name) {
+				id.ref = Parser::IdentifierNode::REF_MEMBER_VAR;
+				id._var = file_node->vars[i].get();
+				break;
 			}
-		} break;
-		case Parser::ClassNode::BASE_EXTERN:
-			id.ref_base = Parser::IdentifierNode::BASE_EXTERN;
-			MemberInfo* mi = p_class->base_binary->get_member_info(p_name).get();
-			if (mi == nullptr) break;
-			switch (mi->get_type()) {
-				case MemberInfo::Type::CLASS: {
-					id.ref = Parser::IdentifierNode::REF_EXTERN; // extern class
-					id._class_info = static_cast<ClassInfo*>(mi);
-					return id;
-				} break;
-				case MemberInfo::Type::METHOD: {
-					id.ref = Parser::IdentifierNode::REF_FUNCTION;
-					id._method_info = static_cast<MethodInfo*>(mi);
-					return id;
-				} break;
-				case MemberInfo::Type::PROPERTY: {
-					id._prop_info = static_cast<PropertyInfo*>(mi);
-					if (id._prop_info->is_const()) id.ref = Parser::IdentifierNode::REF_MEMBER_CONST;
-					else if (id._prop_info->is_static()) id.ref = Parser::IdentifierNode::REF_STATIC_VAR;
-					else id.ref = Parser::IdentifierNode::REF_MEMBER_VAR;
-					return id;
-				} break;
-				case MemberInfo::Type::ENUM: {
-					id.ref = Parser::IdentifierNode::REF_ENUM_NAME;
-					id._enum_info = static_cast<EnumInfo*>(mi);
-					return id;
-				} break;
-				case MemberInfo::Type::ENUM_VALUE: {
+		}
+
+		for (int i = 0; i < (int)file_node->constants.size(); i++) {
+			if (file_node->constants[i]->name == id.name) {
+				id.ref = Parser::IdentifierNode::REF_MEMBER_CONST;
+				_resolve_constant(file_node->constants[i].get());
+				id._const = file_node->constants[i].get();
+				break;
+			}
+		}
+
+		if (file_node->unnamed_enum != nullptr) {
+			for (std::pair<String, Parser::EnumValueNode> pair : file_node->unnamed_enum->values) {
+				if (pair.first == id.name) {
 					id.ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-					id._enum_value_info = static_cast<EnumValueInfo*>(mi);
+					_resolve_enumvalue(file_node->unnamed_enum->values[pair.first]);
+					id._enum_value = &pair.second;
 					return id;
-				} break;
+				}
 			}
+		}
+
+		for (int i = 0; i < (int)file_node->enums.size(); i++) {
+			if (file_node->enums[i]->name == id.name) {
+				id.ref = Parser::IdentifierNode::REF_ENUM_NAME;
+				id._enum_node = file_node->enums[i].get();
+				return id;
+			}
+		}
+
+		for (int i = 0; i < (int)file_node->classes.size(); i++) {
+			if (file_node->classes[i]->name == id.name) {
+				id.ref = Parser::IdentifierNode::REF_CARBON_CLASS;
+				id._class = file_node->classes[i].get();
+				return id;
+			}
+		}
+
+		for (int i = 0; i < (int)file_node->functions.size(); i++) {
+			if (file_node->functions[i]->name == id.name) {
+				id.ref = Parser::IdentifierNode::REF_FUNCTION;
+				id._func = file_node->functions[i].get();
+				return id;
+			}
+		}
+
+		if (NativeClasses::singleton()->is_class_registered(id.name)) {
+			id.ref = Parser::IdentifierNode::REF_NATIVE_CLASS;
+			id.ref_base = Parser::IdentifierNode::BASE_NATIVE;
+			return id;
+		}
 	}
 
 	id.ref_base = Parser::IdentifierNode::BASE_UNKNOWN;
@@ -425,7 +490,10 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 			case Parser::Node::Type::VAR: {
 				ptr<Parser::VarNode> var_node = ptrcast<Parser::VarNode>(p_block->statements[i]);
 				if (var_node->assignment != nullptr) {
+					Parser::VarNode* last_var = parser->parser_context.current_var;
+					parser->parser_context.current_var = var_node.get();
 					_reduce_expression(var_node->assignment);
+					parser->parser_context.current_var = last_var;
 				}
 			} break;
 
@@ -612,7 +680,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode> p_block) {
 				}
 			} else if (cf->cf_type == Parser::ControlFlowNode::IF) {
 				if (cf->args[0]->type == Parser::Node::Type::CONST_VALUE && ptrcast<Parser::ConstValueNode>(cf->args[0])->value.operator bool() == false) {
-					ADD_WARNING(Warning::UNREACHABLE_CODE, "", p_block->statements[i + 1]->pos);
+					ADD_WARNING(Warning::UNREACHABLE_CODE, "", p_block->statements[i]->pos);
 					p_block->statements.erase(p_block->statements.begin() + i--);
 				}
 			}

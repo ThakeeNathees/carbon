@@ -1,28 +1,50 @@
+// bugs ////////////////////
+
+////////////////////////////
 
 class A {
 	var a_member;
-	func s() {}	
+	func s() {
+		if (false) var x = 1, y = 2;
+		print(y);
+	}	
 }
 
 class B : A {
 	func s(){}
-	static func t() { super.s(); }
 }
 
-// 
-// func range(i) {
-// 	var arr = Array();
-// 	for (var j = 0; j < i; j+=1) arr.append(j);
-// 	return arr;
-// }
-// 
-// 
-// func f() {
-// 	for (var i : range(10))
-// 		print(i);
-// }
-// 
-// func main() {
-// 	f();
-// }
-//
+func binary_search(arr, l, r, x) {
+
+    if (r >= l) { 
+        var mid = l + (r - l) / 2; 
+  
+        if (arr[mid] == x)  return mid; 
+			
+        if (arr[mid] > x) 
+            return binary_search(arr, l, mid - 1, x); 
+  
+        return binary_search(arr, mid + 1, r, x); 
+    }
+  
+    return -1; 
+} 
+
+/////////
+
+func range(i) {
+	var arr = Array();
+	for (var j = 0; j < i; j+=1) arr.append(j);
+	return arr;
+}
+
+
+func f() {
+	for (var i : range(10))
+		print(i);
+}
+
+func main() {
+	f();
+}
+

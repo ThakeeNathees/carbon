@@ -83,6 +83,8 @@ TEST_CASE("[parser_tests]:syntax_test") {
 	}	
 	)", NO_PATH));
 
+	CHECK_NOTHROW(parser.parse("func f(x) { while (x) { if (false) break; } }", NO_PATH));
+
 	// switch statement.
 	CHECK_NOTHROW(parser.parse(R"(
 	func fn(c) {
