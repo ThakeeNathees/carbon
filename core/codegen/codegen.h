@@ -23,8 +23,8 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef COMPILER_H
-#define COMPILER_H
+#ifndef CODEGEN_H
+#define CODEGEN_H
 
 #include "analyzer/analyzer.h"
 #include "binary/bytecode.h"
@@ -33,12 +33,7 @@ namespace carbon {
 
 class CodeGen {
 public:
-	
-};
-
-class Compiler {
-public:
-	ptr<Bytecode> compile(ptr<Analyzer> p_analyzer);
+	ptr<Bytecode> generate(ptr<Analyzer> p_analyzer);
 
 private:
 	void _generate_members(Parser::MemberContainer* p_container, Bytecode* p_bytecode);
@@ -46,4 +41,4 @@ private:
 
 }
 
-#endif // COMPILER_H
+#endif // CODEGEN_H

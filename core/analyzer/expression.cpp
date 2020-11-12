@@ -148,14 +148,8 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					all_const = false;
 				}
 			}
-			// TODO: array nodes are reduced to constvalues so they must be COW in global constants(not sure).
 			if (all_const) {
-				Array arr_value;
-				for (int i = 0; i < (int)arr->elements.size(); i++) {
-					arr_value.push_back(ptrcast<Parser::ConstValueNode>(arr->elements[i])->value);
-				}
-				ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(arr_value);
-				cv->pos = p_expr->pos; p_expr = cv;
+				arr->_can_const_fold = true;
 			}
 		} break; /// reduce ArrayNode ///////////////////////////////////
 
@@ -176,14 +170,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				}
 			}
 			if (all_const) {
-				Map map_value;
-				for (int i = 0; i < (int)map->elements.size(); i++) {
-					var& _key = ptrcast<Parser::ConstValueNode>(map->elements[i].key)->value;
-					var& _val = ptrcast<Parser::ConstValueNode>(map->elements[i].value)->value;
-					map_value[_key] = _val;
-				}
-				ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(map_value);
-				cv->pos = p_expr->pos; p_expr = cv;
+				map->_can_const_fold = true;
 			}
 		} break; /// reduce MapNode ///////////////////////////////////
 

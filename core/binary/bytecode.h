@@ -53,7 +53,7 @@ public:
 	ptr<MemberInfo> get_member_info(const String& p_member_name);
 
 private:
-	friend class Compiler;
+	friend class CodeGen;
 	bool _is_class = false;
 
 	String _name; // name for class, path for file.
@@ -65,7 +65,7 @@ private:
 	stdmap<String, var> _static_vars;
 	stdmap<String, var> _constants;
 	stdmap<String, int64_t> _unnamed_enums;
-	stdmap<String, ptr<_EnumBytes>> _enums;
+	stdmap<String, ptr<EnumInfo>> _enums;
 	// TODO: function pointers
 
 	stdmap<String, ptr<MemberInfo>> _member_info;

@@ -38,7 +38,7 @@ var Bytecode::__get_member(const String& p_member_name) {
 	it = _static_vars.find(p_member_name);
 	if (it != _static_vars.end()) return it->second;
 
-	stdmap<String, ptr<_EnumBytes>>::iterator it_en = _enums.find(p_member_name);
+	stdmap<String, ptr<EnumInfo>>::iterator it_en = _enums.find(p_member_name);
 	if (it_en != _enums.end()) return it_en->second;
 
 	stdmap<String, int64_t>::iterator it_uen = _unnamed_enums.find(p_member_name);
@@ -64,7 +64,7 @@ void Bytecode::__set_member(const String& p_member_name, var& p_value) {
 	if (it != _constants.end()) THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
 		String::format("cannot assign to a constant value named \"%s\".", it->first.c_str()));
 
-	stdmap<String, ptr<_EnumBytes>>::iterator it_en = _enums.find(p_member_name);
+	stdmap<String, ptr<EnumInfo>>::iterator it_en = _enums.find(p_member_name);
 	if (it_en != _enums.end())  THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
 		String::format("cannot assign to an enum type named \"%s\".", it->first.c_str()));
 
@@ -85,6 +85,8 @@ ptr<MemberInfo> Bytecode::get_member_info(const String& p_member_name) {
 	stdmap<String, ptr<MemberInfo>>::iterator it = _member_info.find(p_member_name);
 	if (it != _member_info.end()) return it->second;
 
+
+	// TODO: for loop iterate with O(n) use map.find() method with O(log(n))
 	for (auto& cls : _classes) {
 		if (cls.first == p_member_name) {
 			ptr<ClassInfo> class_info = newptr<ClassInfo>(p_member_name, cls.second);
@@ -122,8 +124,8 @@ ptr<MemberInfo> Bytecode::get_member_info(const String& p_member_name) {
 	}
 	for (auto& en : _enums) {
 		if (en.first == p_member_name) {
-			ptr<EnumInfo> en_info = newptr<EnumInfo>(en.second);
-			_member_info[p_member_name] = en_info;
+			ptr<EnumInfo> en_info = en.second;
+			_member_info[p_member_name] = en_info; // doesn't really necessary.
 			return en_info;
 		}
 	}

@@ -76,7 +76,7 @@ public:
 	void analyze(ptr<Parser> p_parser);
 
 private:
-	friend class Compiler;
+	friend class CodeGen;
 	ptr<Parser> parser;
 	ptr<Parser::FileNode> file_node; // Quick access.
 	stdvec<Warning> warnings;
@@ -92,13 +92,17 @@ private:
 	var _call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var*>& args);
 	void _resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p_funcs);
 
+	Array _const_fold_array(ptr<Parser::ArrayNode>& p_array);
+	Map _const_fold_map(ptr<Parser::MapNode>& p_array);
+
 	void _resolve_inheritance(Parser::ClassNode* p_class);
 	void _resolve_constant(Parser::ConstNode* p_const);
 	void _resolve_parameters(Parser::FunctionNode* p_func);
 	void _resolve_enumvalue(Parser::EnumValueNode& p_enumvalue, int* p_possible = nullptr);
 
 	void _reduce_expression(ptr<Parser::Node>& p_expr);
-	void _reduce_block(ptr<Parser::BlockNode> p_block);
+	void _reduce_block(ptr<Parser::BlockNode>& p_block);
+
 };
 
 }

@@ -23,11 +23,11 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "compiler.h"
+#include "codegen.h"
 
 namespace carbon {
 
-void Compiler::_generate_members(Parser::MemberContainer* p_container, Bytecode* p_bytecode) {
+void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* p_bytecode) {
 
 	// members/ static vars
 	int member_index = 0;
@@ -66,7 +66,7 @@ void Compiler::_generate_members(Parser::MemberContainer* p_container, Bytecode*
 	// TODO:
 }
 
-ptr<Bytecode> Compiler::compile(ptr<Analyzer> p_analyzer) {
+ptr<Bytecode> CodeGen::generate(ptr<Analyzer> p_analyzer) {
 	ptr<Bytecode> bytecode = newptr<Bytecode>();
 	Parser::FileNode* root = p_analyzer->parser->file_node.get();
 

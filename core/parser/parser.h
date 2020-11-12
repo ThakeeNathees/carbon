@@ -320,6 +320,7 @@ public:
 
 	struct ArrayNode : public Node {
 		stdvec<ptr<Node>> elements;
+		bool _can_const_fold = false;
 		ArrayNode() {
 			type = Type::ARRAY;
 		}
@@ -333,6 +334,7 @@ public:
 			Pair(ptr<Node>& p_key, ptr<Node>& p_value) { key = p_key; value = p_value; }
 		};
 		stdvec<Pair> elements;
+		bool _can_const_fold = false;
 		MapNode() {
 			type = Type::MAP;
 		}
@@ -535,7 +537,7 @@ public:
 
 private:
 	friend class Analyzer;
-	friend class Compiler;
+	friend class CodeGen;
 	struct Expr {
 		Expr(OperatorNode::OpType p_op, const Vect2i& p_pos) { _is_op = true; op = p_op; pos = p_pos; }
 		Expr(const ptr<Node>& p_node) { _is_op = false; expr = p_node; pos = p_node->pos; }
