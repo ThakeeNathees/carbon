@@ -20,6 +20,7 @@ env_core.SOURCES = [
     Glob('tokenizer/*.cpp'),
     Glob('parser/*.cpp'),
     Glob('analyzer/*.cpp'),
+    Glob('analyzer/expression/*.cpp'),
     Glob('codegen/*.cpp'),
 
 ]

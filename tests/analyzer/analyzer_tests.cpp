@@ -88,7 +88,10 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 			enum E { V = B_C1 & B_C2 }
 		}
 		const C = "testing".hash();
-		__assert(C == ("test" + ["ngi", "ing"][1]).hash());
+
+		// __assert(C == ("test" + ["ngi", "ing"][1]).hash()); //<-- arrays are runtime.
+		const C2 = ("test" + ["ngi", "ing"][1]).hash(); __assert(C == C2); //<-- now compiletime
+
 	)");
 	
 	// switch case.

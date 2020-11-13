@@ -44,99 +44,8 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 			break;
 
 		case Parser::Node::Type::IDENTIFIER: {
-			ptr<Parser::IdentifierNode> id = ptrcast<Parser::IdentifierNode>(p_expr);
-			do { // do ... while() loop is for jump out from the middle.
-				if (parser->parser_context.current_func) {
-					for (int i = 0; i < (int)parser->parser_context.current_func->args.size(); i++) {
-						if (parser->parser_context.current_func->args[i].name == id->name) {
-							id->ref = Parser::IdentifierNode::REF_PARAMETER;
-							id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
-							id->param_index = i;
-							break;
-						}
-					}
-				}
-				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
-
-				Parser::BlockNode* outer_block = parser->parser_context.current_block;
-				while (outer_block && id->ref == Parser::IdentifierNode::REF_UNKNOWN) {
-					for (int i = 0; i < (int)outer_block->local_vars.size(); i++) {
-						if (outer_block->local_vars[i]->name == id->name) {
-							id->ref = Parser::IdentifierNode::REF_LOCAL_VAR;
-							id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
-							id->_var = outer_block->local_vars[i].get();
-							break;
-						}
-					}
-					if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
-
-					for (int i = 0; i < (int)outer_block->local_const.size(); i++) {
-						if (outer_block->local_const[i]->name == id->name) {
-							id->ref = Parser::IdentifierNode::REF_LOCAL_CONST;
-							id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
-							_resolve_constant(outer_block->local_const[i].get());
-							id->_const = outer_block->local_const[i].get();
-							break;
-						}
-					}
-					if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
-
-					if (outer_block->parernt_node->type == Parser::Node::Type::BLOCK) {
-						outer_block = ptrcast<Parser::BlockNode>(outer_block->parernt_node).get();
-					} else {
-						outer_block = nullptr;
-					}
-				}
-				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
-
-				if (parser->parser_context.current_enum != nullptr) {
-					for (std::pair<String, Parser::EnumValueNode> pair : parser->parser_context.current_enum->values) {
-						if (pair.first == id->name) {
-							id->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-							_resolve_enumvalue(parser->parser_context.current_enum->values[pair.first]);
-							id->_enum_value = &pair.second;
-							break;
-						}
-					}
-				}
-				if (id->ref != Parser::IdentifierNode::REF_UNKNOWN) break;
-
-				Parser::IdentifierNode _id = _get_member(parser->parser_context.current_class, id->name);
-				if (_id.ref == Parser::IdentifierNode::REF_UNKNOWN) _id = _get_member(parser->file_node.get(), id->name);
-
-				if (_id.ref != Parser::IdentifierNode::REF_UNKNOWN) {
-					_id.pos = id->pos; id = newptr<Parser::IdentifierNode>(_id);
-				}
-				
-			} while (false);
-
-			switch (id->ref) {
-				case Parser::IdentifierNode::REF_UNKNOWN:
-					THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("identifier \"%s\" isn't defined.", id->name.c_str()), id->pos);
-				case Parser::IdentifierNode::REF_LOCAL_CONST:
-				case Parser::IdentifierNode::REF_MEMBER_CONST: {
-					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->_const->value);
-					cv->pos = id->pos; p_expr = cv;
-				} break;
-				case Parser::IdentifierNode::REF_ENUM_VALUE: {
-					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->_enum_value->value);
-					cv->pos = id->pos; p_expr = cv;
-				} break;
-
-				case Parser::IdentifierNode::REF_LOCAL_VAR:
-				case Parser::IdentifierNode::REF_STATIC_VAR:
-				case Parser::IdentifierNode::REF_MEMBER_VAR: {
-					if (id->ref_base == Parser::IdentifierNode::BASE_LOCAL && parser->parser_context.current_var) {
-						if (parser->parser_context.current_var->name == id->name) {
-							THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("invalid attribute access \"%s\" can't be used in it's own initialization.", id->name.c_str()), id->pos);
-						}
-					}
-				} // [[fallthrought]]
-				default: { // variable, parameter, function name, ...
-					p_expr = id;
-					break;
-				}
-			}
+			_reduce_identifier(p_expr);
+			_analyze_identifier(p_expr);
 		} break; /// reduce IdentifierNode ///////////////////////////////////
 
 		case Parser::Node::Type::ARRAY: {
@@ -148,8 +57,15 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					all_const = false;
 				}
 			}
-			if (all_const) {
-				arr->_can_const_fold = true;
+			arr->_can_const_fold = all_const;
+
+			if (all_const && parser->parser_context.current_const != nullptr) {
+				Array arr_v;
+				for (int i = 0; i < (int)arr->elements.size(); i++) {
+					arr_v.push_back(ptrcast<Parser::ConstValueNode>(arr->elements[i])->value);
+				}
+				ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(arr_v);
+				cv->pos = arr->pos; p_expr = cv;
 			}
 		} break; /// reduce ArrayNode ///////////////////////////////////
 
@@ -169,8 +85,17 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					all_const = false;
 				}
 			}
-			if (all_const) {
-				map->_can_const_fold = true;
+			map->_can_const_fold = all_const;
+
+			if (all_const && parser->parser_context.current_const != nullptr) {
+				Map map_v;
+				for (int i = 0; i < (int)map->elements.size(); i++) {
+					var& _key = ptrcast<Parser::ConstValueNode>(map->elements[i].key)->value;
+					var& _val = ptrcast<Parser::ConstValueNode>(map->elements[i].value)->value;
+					map_v[_key] = _val;
+				}
+				ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(map_v);
+				cv->pos = map->pos; p_expr = cv;
 			}
 		} break; /// reduce MapNode ///////////////////////////////////
 
@@ -390,7 +315,7 @@ do {                                                                            
 					}
 
 					const String& method_name = ptrcast<Parser::IdentifierNode>(call->method)->name;
-					Parser::IdentifierNode _id = _get_member(_class, method_name); _id.pos = call->method->pos;
+					Parser::IdentifierNode _id = _find_member(_class, method_name); _id.pos = call->method->pos;
 					switch (_id.ref) {
 						case Parser::IdentifierNode::REF_UNKNOWN:
 							THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), _class->name.c_str()), call->pos);
@@ -466,7 +391,7 @@ do {                                                                            
 
 						case Parser::IdentifierNode::REF_CARBON_CLASS: {
 
-							Parser::IdentifierNode _id = _get_member(base->_class, id->name);
+							Parser::IdentifierNode _id = _find_member(base->_class, id->name);
 							_id.pos = id->pos;
 							switch (_id.ref) {
 								case Parser::IdentifierNode::REF_UNKNOWN:
@@ -701,7 +626,7 @@ do {                                                                            
 							THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED, "enum value doesn't support attribute access.", member->pos);
 
 						case Parser::IdentifierNode::REF_CARBON_CLASS: {
-							Parser::IdentifierNode _id = _get_member(base->_class, member->name);
+							Parser::IdentifierNode _id = _find_member(base->_class, member->name);
 							_id.pos = member->pos;
 							switch (_id.ref) {
 								case Parser::IdentifierNode::REF_UNKNOWN:

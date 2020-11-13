@@ -515,6 +515,19 @@ ptr<Parser::ConstNode> Parser::_parse_const(ptr<Node> p_parent) {
 	const_node->parernt_node = p_parent;
 	const_node->name = tk->identifier;
 
+	parser_context.current_const = const_node.get();
+	class ScopeDestruct {
+	public:
+		Parser::ParserContext* context = nullptr;
+		ScopeDestruct(Parser::ParserContext* p_context) {
+			context = p_context;
+		}
+		~ScopeDestruct() {
+			context->current_const = nullptr;
+		}
+	};
+	ScopeDestruct destruct = ScopeDestruct(&parser_context);
+
 	tk = &tokenizer->next();
 	if (tk->type != Token::OP_EQ) THROW_UNEXP_TOKEN("symbol \"=\"");
 	ptr<Node> expr = _parse_expression(p_parent, false);

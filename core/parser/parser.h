@@ -566,6 +566,7 @@ private:
 	struct ParserContext {
 		ClassNode* current_class = nullptr;
 		VarNode* current_var = nullptr;
+		ConstNode* current_const = nullptr;
 		FunctionNode* current_func = nullptr;
 		BlockNode* current_block = nullptr;
 		EnumNode* current_enum = nullptr;
