@@ -53,7 +53,7 @@ namespace carbon {
 
 #define THROW_UNEXP_TOKEN(m_tk)                                                                                            \
 	do {                                                                                                                   \
-		Error::Type err_type = Error::SYNTAX_ERROR;                                                                      \
+		Error::Type err_type = Error::SYNTAX_ERROR;                                                                        \
 		if (tokenizer->peek(-1, true).type == Token::_EOF) err_type = Error::UNEXPECTED_EOF;                               \
 		if (m_tk != "") {                                                                                                  \
 			THROW_PARSER_ERR(err_type, String::format("unexpected token(\"%s\"). expected %s.",                            \
@@ -268,6 +268,7 @@ public:
 			EnumNode* _enum_node;
 			const ClassNode* _class;
 			const FunctionNode* _func;
+			BuiltinFunctions::Type _bi_func;
 			
 			// reference from native.
 			const MethodInfo* _method_info;

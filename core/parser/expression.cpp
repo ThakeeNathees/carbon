@@ -104,9 +104,15 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			expr = call;
 
 		} else if (tk->type == Token::IDENTIFIER) {
-			ptr<IdentifierNode> id = new_node<IdentifierNode>(tk->identifier);
-			id->declared_block = parser_context.current_block;
-			expr = id;
+			BuiltinFunctions::Type bif_type = BuiltinFunctions::get_func_type(tk->identifier);
+			if (bif_type != BuiltinFunctions::UNKNOWN) {
+				ptr<BuiltinFunctionNode> bif = new_node<BuiltinFunctionNode>(bif_type);
+				expr = bif;
+			} else {
+				ptr<IdentifierNode> id = new_node<IdentifierNode>(tk->identifier);
+				id->declared_block = parser_context.current_block;
+				expr = id;
+			}
 
 		} else if (tk->type == Token::BUILTIN_TYPE) { // String.format(...);
 			ptr<BuiltinTypeNode> bt = new_node<BuiltinTypeNode>(tk->builtin_type);
