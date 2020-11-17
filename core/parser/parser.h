@@ -207,7 +207,7 @@ public:
 		bool is_static = false;
 		bool has_return = false;
 		stdvec<ParameterNode> args;
-		stdvec<var> default_parameters;
+		stdvec<var> default_args;
 		ptr<BlockNode> body;
 		ptr<Node> parent_node;
 		FunctionNode() {

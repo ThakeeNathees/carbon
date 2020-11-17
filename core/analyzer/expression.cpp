@@ -101,233 +101,15 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 			}
 		} break;
 
-#define GET_ARGS(m_nodes)                                                             \
-	stdvec<var*> args;                                                                \
-	for (int i = 0; i < (int)m_nodes.size(); i++) {                                   \
-	    args.push_back(&ptrcast<Parser::ConstValueNode>(m_nodes[i])->value);          \
-	}
-
-#define SET_EXPR_CONST_NODE(m_var, m_pos)                                             \
-do {                                                                                  \
-	ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(m_var);         \
-	cv->pos = m_pos;                                                                  \
-	p_expr = cv;                                                                      \
-} while (false)
-
 		case Parser::Node::Type::CALL: {
 			_reduce_call(p_expr);
 		} break;
 
 		case Parser::Node::Type::INDEX: {
-			ptr<Parser::IndexNode> index = ptrcast<Parser::IndexNode>(p_expr);
-			_reduce_expression(index->base);
-			ASSERT(index->member->type == Parser::Node::Type::IDENTIFIER);
-			ptr<Parser::IdentifierNode> member = ptrcast<Parser::IdentifierNode>(index->member);
+			_reduce_indexing(p_expr);
+		} break;
 
-			switch (index->base->type) {
-
-				// used in: Vect2.ZERO;
-				case Parser::Node::Type::BUILTIN_TYPE: {
-					Parser::BuiltinTypeNode* bt = ptrcast<Parser::BuiltinTypeNode>(index->base).get();
-					const MemberInfo* mi = var::get_member_info_s(BuiltinTypes::get_var_type(bt->builtin_type), member->name);
-					if (!mi) THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s.", member->name.c_str(), BuiltinTypes::get_type_name(bt->builtin_type).c_str()), member->pos);
-					switch (mi->get_type()) {
-						case MemberInfo::METHOD:
-							break; // TODO: FuncRef?
-						case MemberInfo::PROPERTY: {
-							PropertyInfo* pi = (PropertyInfo*)mi;
-							if (pi->is_const()) SET_EXPR_CONST_NODE(pi->get_value(), index->pos);
-							else THROW_BUG("can't be.");
-						} break;
-						case MemberInfo::ENUM:
-						case MemberInfo::ENUM_VALUE:
-							THROW_BUG("can't be.");
-					}
-				} break;
-
-				// [1, 2].member;
-				case Parser::Node::Type::CONST_VALUE: {
-					Parser::ConstValueNode* base = ptrcast<Parser::ConstValueNode>(index->base).get();
-					try {
-						ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->value.get_member(member->name));
-						cv->pos = member->pos; p_expr = cv;
-					} catch (VarError& verr) {
-						THROW_ANALYZER_ERROR(Error(verr).get_type(), verr.what(), index->pos);
-					}
-				} break;
-
-				// this.member; super.member; idf.member;
-				case Parser::Node::Type::INDEX: { // <-- base is index node but reference reduced.
-					Parser::IndexNode* _ind = ptrcast<Parser::IndexNode>(index->base).get();
-					if (!_ind->_ref_reduced) break;
-				}  // [[ FALLTHROUGH ]]
-				case Parser::Node::Type::THIS:
-				case Parser::Node::Type::SUPER:
-				case Parser::Node::Type::IDENTIFIER: {
-
-					Parser::IdentifierNode* base;
-					enum _BaseClassRef { _THIS, _SUPER, _NEITHER };
-					_BaseClassRef _base_class_ref = _NEITHER;
-
-					if (index->base->type == Parser::Node::Type::THIS) {
-						ptr<Parser::IdentifierNode> _id = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->name);
-						_id->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
-						_id->_class = parser->parser_context.current_class;
-						index->base = _id;
-						_base_class_ref = _THIS;
-					} else if (index->base->type == Parser::Node::Type::SUPER) {
-						if (parser->parser_context.current_class->base_type == Parser::ClassNode::BASE_LOCAL) {
-							ptr<Parser::IdentifierNode> _id = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->base_class->name);
-							_id->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
-							_id->_class = parser->parser_context.current_class->base_class;
-							index->base = _id;
-							_base_class_ref = _SUPER;
-						} else if (parser->parser_context.current_class->base_type == Parser::ClassNode::BASE_EXTERN) {
-							THROW_BUG("TODO:");
-						}
-					}
-
-					if (index->base->type == Parser::Node::Type::INDEX) {
-						base = ptrcast<Parser::IndexNode>(index->base)->member.get();
-					} else {
-						base = ptrcast<Parser::IdentifierNode>(index->base).get();
-					}
-
-					switch (base->ref) {
-						case Parser::IdentifierNode::REF_UNKNOWN: {
-							THROW_BUG("base can't be unknown.");
-						} break;
-
-						case Parser::IdentifierNode::REF_PARAMETER:
-						case Parser::IdentifierNode::REF_LOCAL_VAR:
-						case Parser::IdentifierNode::REF_MEMBER_VAR:
-							break; // Can't reduce anymore.
-
-						case Parser::IdentifierNode::REF_LOCAL_CONST:
-						case Parser::IdentifierNode::REF_MEMBER_CONST: {
-							THROW_BUG("there isn't any contant value currently support attribute access and most probably in the future");
-						} break;
-
-						case Parser::IdentifierNode::REF_ENUM_NAME: {
-							if (base->ref_base == Parser::IdentifierNode::BASE_LOCAL) {
-								stdmap<String, Parser::EnumValueNode>::iterator it = base->_enum_node->values.find(member->name);
-								if (it != base->_enum_node->values.end()) {
-									member->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-									member->ref_base = Parser::IdentifierNode::BASE_LOCAL;
-									member->_enum_value = &(it->second);
-									_resolve_enumvalue(base->_enum_node->values[it->first]);
-									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->_enum_node->values[it->first].value);
-									cv->pos = member->pos; p_expr = cv;
-								} else {
-									ASSERT(false && "bug unresolved reference");
-								}
-							} else { // ref on base native/extern.
-								stdmap<String, int64_t>::const_iterator it = base->_enum_info->get_values().find(member->name);
-								if (it != base->_enum_info->get_values().end()) {
-									member->ref = Parser::IdentifierNode::REF_ENUM_VALUE;
-									member->ref_base = base->ref_base;
-									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(it->second);
-									cv->pos = member->pos; p_expr = cv;
-								} else {
-									ASSERT(false && "bug unresolved reference");
-								}
-							}
-						} break;
-
-						case Parser::IdentifierNode::REF_ENUM_VALUE:
-							THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED, "enum value doesn't support attribute access.", member->pos);
-
-						case Parser::IdentifierNode::REF_CARBON_CLASS: {
-							Parser::IdentifierNode _id = _find_member(base->_class, member->name);
-							_id.pos = member->pos;
-							switch (_id.ref) {
-								case Parser::IdentifierNode::REF_UNKNOWN:
-									THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", member->name.c_str(), base->name.c_str()), member->pos);
-								case Parser::IdentifierNode::REF_PARAMETER:
-								case Parser::IdentifierNode::REF_LOCAL_VAR:
-								case Parser::IdentifierNode::REF_LOCAL_CONST:
-									THROW_BUG("can't be.");
-
-								case Parser::IdentifierNode::REF_MEMBER_VAR: {
-									_id.pos = member->pos;
-									if (_base_class_ref != _THIS && !_id._var->is_static) {
-										THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("non-static attribute \"%s\" cannot be access with a class reference \"%s\".", member->name.c_str(), base->name.c_str()), member->pos);
-									}
-									index->member = newptr<Parser::IdentifierNode>(_id);
-									index->_ref_reduced = true;
-								} break;
-
-								case Parser::IdentifierNode::REF_MEMBER_CONST: {
-									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(_id._const->value);
-									cv->pos = member->pos; p_expr = cv;
-								} break;
-
-								case Parser::IdentifierNode::REF_ENUM_NAME: {
-									_id.pos = member->pos;
-									index->member = newptr<Parser::IdentifierNode>(_id);
-									index->_ref_reduced = true;
-								} break;
-
-								case Parser::IdentifierNode::REF_ENUM_VALUE: {
-									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(_id._enum_value);
-									cv->pos = member->pos; p_expr = cv;
-								} break;
-
-								case Parser::IdentifierNode::REF_FUNCTION: {
-									_id.pos = member->pos;
-									index->member = newptr<Parser::IdentifierNode>(_id);
-									index->_ref_reduced = true;
-								} break;
-
-								case Parser::IdentifierNode::REF_CARBON_CLASS:
-								case Parser::IdentifierNode::REF_NATIVE_CLASS:
-								case Parser::IdentifierNode::REF_EXTERN:
-									THROW_BUG("can't be");
-							}
-						} break;
-
-						case Parser::IdentifierNode::REF_NATIVE_CLASS: {
-							ASSERT(NativeClasses::singleton()->is_class_registered(base->name));
-							BindData* bd = NativeClasses::singleton()->get_bind_data(base->name, member->name).get();
-							if (!bd) THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s.", member->name.c_str(), base->name.c_str()), member->pos);
-							switch (bd->get_type()) {
-								case BindData::METHOD:
-								case BindData::STATIC_FUNC:
-								case BindData::MEMBER_VAR:
-								case BindData::STATIC_VAR:
-								case BindData::ENUM:
-									break;
-
-								case BindData::STATIC_CONST: {
-									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(((ConstantBind*)bd)->get());
-									cv->pos = member->pos; p_expr = cv;
-								} break;
-								case BindData::ENUM_VALUE: {
-									ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(((EnumValueBind*)bd)->get());
-									cv->pos = member->pos; p_expr = cv;
-								} break;
-							}
-
-						} break;
-
-							// TODO: fn.NAME, fn.ARGC, fn.DEFAULT_ARGC, ... TODO: implement FuncRef
-						case Parser::IdentifierNode::REF_FUNCTION: {
-							THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED, "function object doesn't support attribute access.", member->pos);
-						} break;
-
-						case Parser::IdentifierNode::REF_EXTERN: { // TODO: change the name.
-							THROW_BUG("TODO:");
-						} break;
-					}
-				}
-
-				default:
-					break;
-					// RUNTIME.
-			}
-
-		} break; /// reduce IndexNode ///////////////////////////////////
-
+		// reduce MappedIndexNode
 		case Parser::Node::Type::MAPPED_INDEX: {
 			ptr<Parser::MappedIndexNode> mapped_index = ptrcast<Parser::MappedIndexNode>(p_expr);
 			_reduce_expression(mapped_index->base);
@@ -342,7 +124,7 @@ do {                                                                            
 					THROW_ANALYZER_ERROR(Error(verr).get_type(), verr.what(), key->pos);
 				}
 			}
-		} break; /// reduce MappedIndexNode ///////////////////////////////////
+		} break;
 
 		///////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -376,6 +158,7 @@ do {                                                                            
 							case Parser::IdentifierNode::REF_PARAMETER:
 							case Parser::IdentifierNode::REF_LOCAL_VAR:
 							case Parser::IdentifierNode::REF_MEMBER_VAR:
+							case Parser::IdentifierNode::REF_STATIC_VAR:
 								break;
 							case Parser::IdentifierNode::REF_LOCAL_CONST:
 							case Parser::IdentifierNode::REF_MEMBER_CONST:
@@ -399,9 +182,17 @@ do {                                                                            
 						THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to map literal.", op->args[0]->pos);
 					}
 				} break;
+
 				default: { // Remaining binary/unary operators.
 					if (!all_const) break;
-					GET_ARGS(op->args);
+					stdvec<var*> args;
+					for (int i = 0; i < (int)op->args.size(); i++) args.push_back(&ptrcast<Parser::ConstValueNode>(op->args[i])->value);
+					#define SET_EXPR_CONST_NODE(m_var, m_pos)											      \
+						do {                                                                                  \
+							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(m_var);         \
+							cv->pos = m_pos;                                                                  \
+							p_expr = cv;                                                                      \
+						} while (false)
 					switch (op->op_type) {
 						case Parser::OperatorNode::OpType::OP_EQEQ:
 							SET_EXPR_CONST_NODE(*args[0] == *args[1], op->pos);

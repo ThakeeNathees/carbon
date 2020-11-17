@@ -103,6 +103,7 @@ private:
 	void _analyze_identifier(ptr<Parser::Node>& p_expr);
 
 	void _reduce_call(ptr<Parser::Node>& p_expr);
+	void _reduce_indexing(ptr<Parser::Node>& p_expr);
 
 
 	Parser::IdentifierNode _find_member(const Parser::MemberContainer* p_member, const String& p_name);

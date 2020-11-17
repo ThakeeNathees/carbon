@@ -246,7 +246,7 @@ void Analyzer::_resolve_parameters(Parser::FunctionNode* p_func) {
 				cv->value.get_type() != var::_NULL) {
 				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "expected a constant expression.", p_func->args[i].default_value->pos);
 			}
-			p_func->default_parameters.push_back(cv->value);
+			p_func->default_args.push_back(cv->value);
 		}
 	}
 }

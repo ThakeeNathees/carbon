@@ -26,9 +26,35 @@
 #ifndef CARBON_FUNCTION_H
 #define CARBON_FUNCTION_H
 
+#include "binary.h"
+
 namespace carbon {
 
-class CarbonFunction {
+class Bytecode;
+
+class CarbonFunction : public Object {
+	REGISTER_CLASS(CarbonFunction, Object) {
+	}
+
+private:
+	friend class CodeGen;
+	Bytecode* _owner;
+
+	String _name;
+	bool _is_static;
+	int _arg_count;
+	stdvec<var> _default_args;
+
+	stdvec<uint32_t> _opcodes;
+	
+public:
+	const String& get_name() const { return _name; }
+	bool is_static() const { return _is_static; }
+	int get_arg_count() const { return _arg_count; }
+	const stdvec<var>& get_default_args() const { return _default_args; }
+	// parameter names : only in debug build
+
+	// var call(Bytecode* p_self, ...) <-- VM
 };
 
 }

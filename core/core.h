@@ -44,10 +44,12 @@ using namespace varh;
 #define _USE_MATH_DEFINES
 #include <math.h>
 
+#include <algorithm>
 #include <string>
 #include <cstring>
 #include <vector>
 #include <map>
+#include <stack>
 #include <type_traits>
 #include <typeinfo>
 

@@ -25,6 +25,8 @@
 
 #include "bytecode.h"
 
+#include "carbon_function.h"
+
 namespace carbon {
 
 var Bytecode::__call_method(const String& p_method_name, stdvec<var*>& p_args) {
@@ -32,19 +34,39 @@ var Bytecode::__call_method(const String& p_method_name, stdvec<var*>& p_args) {
 }
 
 var Bytecode::__get_member(const String& p_member_name) {
-	stdmap<String, var>::iterator it = _constants.find(p_member_name);
-	if (it != _constants.end()) return it->second;
 
-	it = _static_vars.find(p_member_name);
-	if (it != _static_vars.end()) return it->second;
 
-	stdmap<String, ptr<EnumInfo>>::iterator it_en = _enums.find(p_member_name);
-	if (it_en != _enums.end()) return it_en->second;
+	const stdmap<String, uint32_t>* global_names = nullptr;
 
-	stdmap<String, int64_t>::iterator it_uen = _unnamed_enums.find(p_member_name);
-	if (it_uen != _unnamed_enums.end()) return it_uen->second;
+	if (_is_class) {
+		ASSERT(_file != nullptr);
+		global_names = &_file->_global_names;
+	} else {
+		global_names = &_global_names;
+	}
 
-	if (_base != nullptr) return _base->__get_member(p_member_name);
+	auto it_name = global_names->find(p_member_name);
+	if (it_name != global_names->end()) {
+		uint32_t name = it_name->second;
+
+		stdmap<global_name_pos, var>::iterator it_const = _constants.find(name);
+		if (it_const != _constants.end()) return it_const->second;
+
+		stdmap<global_name_pos, var>::iterator it_static = _static_vars.find(name);
+		if (it_const != _static_vars.end()) return it_const->second;
+
+		stdmap<global_name_pos, ptr<EnumInfo>>::iterator it_en = _enums.find(name);
+		if (it_en != _enums.end()) return it_en->second;
+
+		stdmap<global_name_pos, int64_t>::iterator it_uen = _unnamed_enums.find(name);
+		if (it_uen != _unnamed_enums.end()) return it_uen->second;
+
+		stdmap<global_name_pos, ptr<CarbonFunction>>::iterator it_fn = _functions.find(name);
+		if (it_fn != _functions.end()) return it_fn->second;
+
+	} else if (_base != nullptr) {
+		return _base->__get_member(p_member_name);
+	}
 
 	THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
 		String::format("%s %s has no member named \"%s\".", ((_is_class) ? "type" : "file at"), _name.c_str(), p_member_name.c_str()));
@@ -52,25 +74,29 @@ var Bytecode::__get_member(const String& p_member_name) {
 }
 
 void Bytecode::__set_member(const String& p_member_name, var& p_value) {
-	stdmap<String, var>::iterator it = _constants.find(p_member_name);
-	it = _static_vars.find(p_member_name);
+	stdmap<global_name_pos, var>::iterator it = _constants.find(_global_name_get(p_member_name));
+	it = _static_vars.find(_global_name_get(p_member_name));
 	if (it != _static_vars.end()) {
 		it->second = p_value;
 		return;
 	}
 
 	// TODO: check other members only when debugging is enabled.
-	it = _constants.find(p_member_name);
+	it = _constants.find(_global_name_get(p_member_name));
 	if (it != _constants.end()) THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
-		String::format("cannot assign to a constant value named \"%s\".", it->first.c_str()));
+		String::format("cannot assign to a constant value named \"%s\".", p_member_name.c_str()));
 
-	stdmap<String, ptr<EnumInfo>>::iterator it_en = _enums.find(p_member_name);
+	stdmap<global_name_pos, ptr<EnumInfo>>::iterator it_en = _enums.find(_global_name_get(p_member_name));
 	if (it_en != _enums.end())  THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
-		String::format("cannot assign to an enum type named \"%s\".", it->first.c_str()));
+		String::format("cannot assign to an enum type named \"%s\".", p_member_name.c_str()));
 
-	stdmap<String, int64_t>::iterator it_uen = _unnamed_enums.find(p_member_name);
+	stdmap<global_name_pos, int64_t>::iterator it_uen = _unnamed_enums.find(_global_name_get(p_member_name));
 	if (it_uen != _unnamed_enums.end())  THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
-		String::format("cannot assign to an enum value named \"%s\".", it->first.c_str()));
+		String::format("cannot assign to an enum value named \"%s\".", p_member_name.c_str()));
+
+	stdmap<global_name_pos, ptr<CarbonFunction>>::iterator it_fn = _functions.find(_global_name_get(p_member_name));
+	if (it_fn != _functions.end()) THROW_VARERROR(VarError::ATTRIBUTE_ERROR,
+		String::format("cannot assign to a function pointer named \"%s\".", p_member_name.c_str()));
 
 	if (_base != nullptr) {
 		_base->__set_member(p_member_name, p_value);
@@ -95,40 +121,42 @@ ptr<MemberInfo> Bytecode::get_member_info(const String& p_member_name) {
 		}
 	}
 	for (auto& mem : _members) {
-		if (mem.first == p_member_name) {
+		if (mem.first == _global_name_get(p_member_name)) {
 			ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(p_member_name);
 			_member_info[p_member_name] = prop_info;
 			return prop_info;
 		}
 	}
 	for (auto& svar : _static_vars) {
-		if (svar.first == p_member_name) {
+		if (svar.first == _global_name_get(p_member_name)) {
 			ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(p_member_name, var::VAR, svar.second, false, true);
 			_member_info[p_member_name] = prop_info;
 			return prop_info;
 		}
 	}
 	for (auto& con : _constants) {
-		if (con.first == p_member_name) {
+		if (con.first == _global_name_get(p_member_name)) {
 			ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(p_member_name, var::VAR, con.second, true, true);
 			_member_info[p_member_name] = prop_info;
 			return prop_info;
 		}
 	}
 	for (auto& unen : _unnamed_enums) {
-		if (unen.first == p_member_name) {
+		if (unen.first == _global_name_get(p_member_name)) {
 			ptr<EnumValueInfo> ev_info = newptr<EnumValueInfo>(p_member_name, unen.second);
 			_member_info[p_member_name] = ev_info;
 			return ev_info;
 		}
 	}
 	for (auto& en : _enums) {
-		if (en.first == p_member_name) {
+		if (en.first == _global_name_get(p_member_name)) {
 			ptr<EnumInfo> en_info = en.second;
 			_member_info[p_member_name] = en_info; // doesn't really necessary.
 			return en_info;
 		}
 	}
+
+	// TODO: method info
 
 	if (_base != nullptr) return _base->get_member_info(p_member_name);
 

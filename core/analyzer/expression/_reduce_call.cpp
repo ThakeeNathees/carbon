@@ -168,7 +168,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					}
 
 					int argc = (int)id->_func->args.size();
-					int argc_default = (int)id->_func->default_parameters.size();
+					int argc_default = (int)id->_func->default_args.size();
 					int argc_given = (int)call->r_args.size();
 					if (argc_given + argc_default < argc) {
 						if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
@@ -183,7 +183,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				case Parser::IdentifierNode::REF_CARBON_CLASS: {
 					if (id->_class->constructor) {
 						int argc = (int)id->_class->constructor->args.size();
-						int argc_default = (int)id->_class->constructor->default_parameters.size();
+						int argc_default = (int)id->_class->constructor->default_args.size();
 						int argc_given = (int)call->r_args.size();
 						if (argc_given + argc_default < argc) {
 							if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
@@ -294,7 +294,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					}
 
 					int argc = (int)_id._func->args.size();
-					int argc_default = (int)_id._func->default_parameters.size();
+					int argc_default = (int)_id._func->default_args.size();
 
 					int argc_given = (int)call->r_args.size();
 					if (argc_given + argc_default < argc) {
