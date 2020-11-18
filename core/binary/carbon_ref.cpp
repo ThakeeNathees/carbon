@@ -23,42 +23,23 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_FUNCTION_H
-#define CARBON_FUNCTION_H
-
-#include "binary.h"
+#include "carbon_ref.h"
 
 namespace carbon {
 
-class Bytecode;
-
-class CarbonFunction : public Object {
-	REGISTER_CLASS(CarbonFunction, Object) {
-	}
-
-private:
-	friend class CodeGen;
-	Bytecode* _owner;
-
-	String _name;
-	bool _is_static;
-	int _arg_count;
-	stdvec<var> _default_args;
-
-	stdvec<uint32_t> _opcodes;
-	uint32_t _stack_size;
-	
-public:
-	const String& get_name() const { return _name; }
-	bool is_static() const { return _is_static; }
-	int get_arg_count() const { return _arg_count; }
-	const stdvec<var>& get_default_args() const { return _default_args; }
-	// parameter names : only in debug build
-
-	uint32_t get_stack_size() const { return _stack_size; }
-	const stdvec<uint32_t>& get_opcodes() const { return _opcodes; }
-};
-
+NativeClassRef::NativeClassRef(const String& p_native_class) {
+	_name = p_native_class;
+	if (!NativeClasses::singleton()->is_class_registered(_name))
+		THROW_BUG(String::format("class \"%s\" not registered in native classes entries.", _name.c_str()));
 }
 
-#endif // CARBON_FUNCTION_H
+var NativeClassRef::__call(stdvec<var*>& p_args) {
+	return NativeClasses::singleton()->construct(_name, p_args);
+}
+
+// TODO:
+var  NativeClassRef::__call_method(const String& p_name, stdvec<var*>& p_args) { return var(); }
+var  NativeClassRef::__get_member(const String& p_name) { return var(); }
+void NativeClassRef::__set_member(const String& p_name, var& p_value) {}
+
+}

@@ -100,7 +100,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 
 			tk = &tokenizer->next();
 			if (tk->type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
-			call->r_args = _parse_arguments(p_parent);
+			call->args = _parse_arguments(p_parent);
 			expr = call;
 
 		} else if (tk->type == Token::IDENTIFIER) {
@@ -204,7 +204,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 					call->base = expr;
 					call->method = new_node<IdentifierNode>(tk->identifier);
 					tk = &tokenizer->next();
-					call->r_args = _parse_arguments(p_parent);
+					call->args = _parse_arguments(p_parent);
 					expr = call;
 
 				// Just indexing.

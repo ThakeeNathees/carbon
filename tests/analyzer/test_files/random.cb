@@ -1,8 +1,29 @@
-// bugs ////////////////////
 
-func main() {
-	//var print = 1;
-	print.asd();
-	//Array.some_f();
+// https://www.geeksforgeeks.org/count-number-of-subsets-of-a-set-with-gcd-equal-to-a-given-number/
+
+func gcd_subset(gcd, nums) {
+	var frequency = Map();
+	var subsets = Map();
+	var num_max = 0;
+
+	for (var i = 0; i < nums.size(); i+=1) {
+		frequency[nums[i]] += 1;
+		if (nums[i] > num_max) num_max = nums[i];
+	}
+
+	
+	for (var i = num_max; i >= 1; i-=1) {
+		var factor_count = frequency[i]; // these many numbers can divided by i
+		var subtract_subsets = 0;
+
+		for (var j = 2; i * j <= num_max; j+=1) {
+			factor_count += frequency[i * j];
+			subtract_subsets += subsets[i * j];
+		}
+		subsets[i] = (1 << factor_count) - 1 - subtract_subsets;
+	}
+
+	for (var i = 0; i < gcd.size(); i+=1) {
+		print(subsets[gcd[i]]);
+	}
 }
-

@@ -124,7 +124,7 @@ void Parser::parse(String p_source, String p_file_path) {
 				if (builtin_func != BuiltinFunctions::UNKNOWN && BuiltinFunctions::is_compiletime(builtin_func)) {
 					call->base = new_node<BuiltinFunctionNode>(builtin_func);
 					if (tokenizer->next().type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
-					call->r_args = _parse_arguments(file_node);
+					call->args = _parse_arguments(file_node);
 					file_node->compiletime_functions.push_back(call);
 					break;
 				}
@@ -348,7 +348,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 				if (builtin_func != BuiltinFunctions::UNKNOWN && BuiltinFunctions::is_compiletime(builtin_func)) {
 					call->base = new_node<BuiltinFunctionNode>(builtin_func);
 					if (tokenizer->next().type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
-					call->r_args = _parse_arguments(class_node);
+					call->args = _parse_arguments(class_node);
 					class_node->compiletime_functions.push_back(call);
 					break;
 				}

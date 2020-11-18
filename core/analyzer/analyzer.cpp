@@ -169,12 +169,12 @@ void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p
 		ASSERT(call->base->type == Parser::Node::Type::BUILTIN_FUNCTION);
 		Parser::BuiltinFunctionNode* bf = ptrcast<Parser::BuiltinFunctionNode>(call->base).get();
 		stdvec<var*> args;
-		for (int j = 0; j < (int)call->r_args.size(); j++) {
-			_reduce_expression(call->r_args[j]);
-			if (call->r_args[j]->type != Parser::Node::Type::CONST_VALUE) {
-				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->r_args[j]->pos);
+		for (int j = 0; j < (int)call->args.size(); j++) {
+			_reduce_expression(call->args[j]);
+			if (call->args[j]->type != Parser::Node::Type::CONST_VALUE) {
+				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->args[j]->pos);
 			}
-			args.push_back(&ptrcast<Parser::ConstValueNode>(call->r_args[j])->value);
+			args.push_back(&ptrcast<Parser::ConstValueNode>(call->args[j])->value);
 		}
 		_call_compiletime_func(bf, args);
 	}

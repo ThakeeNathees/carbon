@@ -95,7 +95,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var*>& p_args, var& r_ret)
 
 		case Type::PRINT: {
 			for (int i = 0; i < (int)p_args.size(); i++) {
-				printf("%s", p_args[i]->operator String().c_str());
+				printf("%s", p_args[i]->to_string().c_str());
 			}
 			printf("\n");
 		} break;

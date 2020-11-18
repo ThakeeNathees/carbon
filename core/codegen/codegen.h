@@ -68,11 +68,6 @@ struct CGContext {
 		curr_stack_temps--;
 	}
 
-	Address add_global_const_value(const var& p_value) {
-		uint32_t pos = bytecode->_global_const_value_get(p_value);
-		return Address(Address::CONST_VALUE, pos);
-	}
-
 	Address add_stack_local(const String& p_name) {
 		ASSERT(stack_locals.find(p_name) == stack_locals.end());
 
@@ -88,9 +83,8 @@ struct CGContext {
 	}
 
 	Address add_stack_temp() {
-		curr_stack_temps++;
-		uint32_t temp_pos = (uint32_t)stack_locals.size() + curr_stack_temps;
-		stack_max_size = std::max(stack_max_size, temp_pos);
+		uint32_t temp_pos = (uint32_t)stack_locals.size() + (curr_stack_temps++);
+		stack_max_size = std::max(stack_max_size, temp_pos + 1);
 		return Address(Address::STACK, temp_pos, true);
 	}
 
@@ -112,7 +106,14 @@ private:
 	void _generate_control_flow(const Parser::ControlFlowNode* p_cflow);
 	Address _generate_expression(const Parser::Node* p_expr);
 
+	Address add_global_const_value(const var& p_value) {
+		uint32_t pos = _bytecode->_global_const_value_get(p_value);
+		return Address(Address::CONST_VALUE, pos);
+	}
 
+	uint32_t add_global_name(const String& p_name) {
+		return _bytecode->_global_name_get(p_name);
+	}
 };
 
 }

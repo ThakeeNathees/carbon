@@ -23,42 +23,23 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_FUNCTION_H
-#define CARBON_FUNCTION_H
+#ifndef RUNTIME_INSTANCE_H
+#define RUNTIME_INSTANCE_H
 
-#include "binary.h"
+#include "core.h"
+#include "binary/bytecode.h"
 
 namespace carbon {
 
-class Bytecode;
-
-class CarbonFunction : public Object {
-	REGISTER_CLASS(CarbonFunction, Object) {
-	}
+class RuntimeInstance : public Object {
+	REGISTER_CLASS(RuntimeInstance, Object) {}
 
 private:
-	friend class CodeGen;
-	Bytecode* _owner;
-
-	String _name;
-	bool _is_static;
-	int _arg_count;
-	stdvec<var> _default_args;
-
-	stdvec<uint32_t> _opcodes;
-	uint32_t _stack_size;
+	ptr<Bytecode> blueprint;
+	stdvec<var> members;
 	
-public:
-	const String& get_name() const { return _name; }
-	bool is_static() const { return _is_static; }
-	int get_arg_count() const { return _arg_count; }
-	const stdvec<var>& get_default_args() const { return _default_args; }
-	// parameter names : only in debug build
-
-	uint32_t get_stack_size() const { return _stack_size; }
-	const stdvec<uint32_t>& get_opcodes() const { return _opcodes; }
 };
 
 }
 
-#endif // CARBON_FUNCTION_H
+#endif // RUNTIME_INSTANCE_H

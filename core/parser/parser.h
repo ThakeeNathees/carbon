@@ -380,7 +380,7 @@ public:
 		// should be Node (instead of identifier node) for reduce the identifier.
 		// if the method is nullptr and base is a var `a_var(...)` -> `a_var.__call(...)` will be called.
 		ptr<Node> method;
-		stdvec<ptr<Node>> r_args;
+		stdvec<ptr<Node>> args;
 		CallNode() {
 			type = Node::Type::CALL;
 		}

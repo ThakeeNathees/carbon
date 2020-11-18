@@ -48,9 +48,9 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 
 	// reduce arguments.
 	bool all_const = true;
-	for (int i = 0; i < (int)call->r_args.size(); i++) {
-		_reduce_expression(call->r_args[i]);
-		if (call->r_args[i]->type != Parser::Node::Type::CONST_VALUE) {
+	for (int i = 0; i < (int)call->args.size(); i++) {
+		_reduce_expression(call->args[i]);
+		if (call->args[i]->type != Parser::Node::Type::CONST_VALUE) {
 			all_const = false;
 		}
 	}
@@ -78,7 +78,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				if (all_const) {
 					ptr<Parser::BuiltinFunctionNode> bf = ptrcast<Parser::BuiltinFunctionNode>(call->base);
 					if (BuiltinFunctions::can_const_fold(bf->func)) {
-						GET_ARGS(call->r_args);
+						GET_ARGS(call->args);
 						if (BuiltinFunctions::is_compiletime(bf->func)) {
 							var ret = _call_compiletime_func(bf.get(), args);
 							SET_EXPR_CONST_NODE(ret, call->pos);
@@ -102,16 +102,17 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 		// String(); String.format(...); method call on base built in type
 		case Parser::Node::Type::BUILTIN_TYPE: {
 			if (call->method == nullptr) { // String(...); constructor.
-				if (all_const) {
-					ptr<Parser::BuiltinTypeNode> bt = ptrcast<Parser::BuiltinTypeNode>(call->base);
-					try {
-						GET_ARGS(call->r_args);
-						var ret = BuiltinTypes::construct(bt->builtin_type, args);
-						SET_EXPR_CONST_NODE(ret, call->pos);
-					} catch (Error& err) {
-						THROW_ANALYZER_ERROR(err.get_type(), err.get_msg(), call->base->pos);
-					}
-				}
+				// CONSTRUCTED OBJECT CANNOT BE A COMPILE TIME CONST VALUE (like Map())
+				//if (all_const) {
+				//	ptr<Parser::BuiltinTypeNode> bt = ptrcast<Parser::BuiltinTypeNode>(call->base);
+				//	try {
+				//		GET_ARGS(call->r_args);
+				//		var ret = BuiltinTypes::construct(bt->builtin_type, args);
+				//		SET_EXPR_CONST_NODE(ret, call->pos);
+				//	} catch (Error& err) {
+				//		THROW_ANALYZER_ERROR(err.get_type(), err.get_msg(), call->base->pos);
+				//	}
+				//}
 			} else { // String.format(); static func call.
 				// TODO: check if exists, reduce if compile time callable.
 			}
@@ -123,7 +124,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 			if (all_const) {
 				try {
 					ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
-					GET_ARGS(call->r_args); // 0 : const value, 1: name, ... args.
+					GET_ARGS(call->args); // 0 : const value, 1: name, ... args.
 					var ret = ptrcast<Parser::ConstValueNode>(call->base)->value.call_method(ptrcast<Parser::IdentifierNode>(call->method)->name, args);
 					SET_EXPR_CONST_NODE(ret, call->pos);
 				} catch (const VarError& verr) {
@@ -169,7 +170,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 
 					int argc = (int)id->_func->args.size();
 					int argc_default = (int)id->_func->default_args.size();
-					int argc_given = (int)call->r_args.size();
+					int argc_given = (int)call->args.size();
 					if (argc_given + argc_default < argc) {
 						if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
 						else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
@@ -184,7 +185,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					if (id->_class->constructor) {
 						int argc = (int)id->_class->constructor->args.size();
 						int argc_default = (int)id->_class->constructor->default_args.size();
-						int argc_given = (int)call->r_args.size();
+						int argc_given = (int)call->args.size();
 						if (argc_given + argc_default < argc) {
 							if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
 							else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
@@ -193,7 +194,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
 						}
 					} else {
-						if (call->r_args.size() != 0)
+						if (call->args.size() != 0)
 							THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "default constructor takes exactly 0 argument.", id->pos);
 					}
 				} break;
@@ -206,7 +207,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						// check arg counts.
 						int argc = initializer->get_method_info()->get_arg_count() - 1; // -1 for self argument.
 						int argc_default = initializer->get_method_info()->get_default_arg_count();
-						int argc_given = (int)call->r_args.size();
+						int argc_given = (int)call->args.size();
 						if (argc_given + argc_default < argc) {
 							if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
 							else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
@@ -216,15 +217,15 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						}
 						// check arg types.
 						const stdvec<VarTypeInfo>& arg_types = initializer->get_method_info()->get_arg_types();
-						for (int i = 0; i < (int)call->r_args.size(); i++) {
-							if (call->r_args[i]->type == Parser::Node::Type::CONST_VALUE) {
-								var value = ptrcast<Parser::ConstValueNode>(call->r_args[i])->value;
+						for (int i = 0; i < (int)call->args.size(); i++) {
+							if (call->args[i]->type == Parser::Node::Type::CONST_VALUE) {
+								var value = ptrcast<Parser::ConstValueNode>(call->args[i])->value;
 								if (value.get_type() != arg_types[i + 1].type) // +1 for skip self argument.
-									THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(arg_types[i].type), i), call->r_args[i]->pos);
+									THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(arg_types[i].type), i), call->args[i]->pos);
 							}
 						}
 					} else {
-						if (call->r_args.size() != 0)
+						if (call->args.size() != 0)
 							THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "default constructor takes exactly 0 argument.", id->pos);
 					}
 				} break;
@@ -296,7 +297,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					int argc = (int)_id._func->args.size();
 					int argc_default = (int)_id._func->default_args.size();
 
-					int argc_given = (int)call->r_args.size();
+					int argc_given = (int)call->args.size();
 					if (argc_given + argc_default < argc) {
 						if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), call->pos);
 						else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), call->pos);
@@ -413,7 +414,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							const MethodInfo* mi = (const MethodInfo*)memi;
 							if (!mi->is_static()) THROW_BUG("native method reference mismatch.");
 
-							int argc_given = (int)call->r_args.size();
+							int argc_given = (int)call->args.size();
 							int argc = mi->get_arg_count(), argc_default = mi->get_default_arg_count();
 							if (argc_given + argc_default < argc) {
 								if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
@@ -423,10 +424,10 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 								else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
 							}
 
-							for (int i = 0; i < (int)call->r_args.size(); i++) {
-								if (call->r_args[i]->type == Parser::Node::Type::CONST_VALUE) {
-									if (mi->get_arg_types()[i].type != ptrcast<Parser::ConstValueNode>(call->r_args[i])->value.get_type()) {
-										THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(mi->get_arg_types()[i].type), i), call->r_args[i]->pos);
+							for (int i = 0; i < (int)call->args.size(); i++) {
+								if (call->args[i]->type == Parser::Node::Type::CONST_VALUE) {
+									if (mi->get_arg_types()[i].type != ptrcast<Parser::ConstValueNode>(call->args[i])->value.get_type()) {
+										THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(mi->get_arg_types()[i].type), i), call->args[i]->pos);
 									}
 								}
 							}

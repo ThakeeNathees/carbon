@@ -27,6 +27,8 @@
 #define BINARY_H
 
 #include "core.h"
+#include "builtin/builtin_functions.h"
+#include "builtin/builtin_types.h"
 
 namespace carbon {
 
@@ -41,17 +43,27 @@ struct Address {
 		_NULL = 0,
 		STACK,
 		THIS,
-		CLASS,
-		FILE,
+
+		//CLASS,        // another local class ref <-- STATIC
+		EXTERN,       // cruurent translation unit or imported one
+		NATIVE_CLASS, // native class ref
+		BUILTIN_FUNC, // builtin function ref
+		BUILTIN_TYPE, // builtin type ref
 
 		MEMBER_VAR,   // only member variables with index with offset
 		STATIC,       // constant, function, enums, enum value, static vars, static function ... are static var
 
 		CONST_VALUE, // searched in _global_const_values
+
 	};
 
 	Address() {}
 	Address(Type p_type, uint32_t p_index, bool p_temp = false) :type(p_type), index(p_index), temp(p_temp) {}
+
+	Address(uint32_t p_addr) {
+		type = get_type_s(p_addr);
+		index = get_index_s(p_addr);
+	}
 
 	static Type get_type_s(uint32_t p_addr) { return  (Type)((p_addr & ADDR_TYPE_MASK) >> ADDR_INDEX_BITS); }
 	static uint32_t get_index_s(uint32_t p_addr) { return p_addr & ADDR_INDEX_MASK; }
@@ -84,7 +96,8 @@ enum Opcode {
 	CONSTRUCT_LITERAL_ARRAY,
 	CONSTRUCT_LITERAL_DICT,
 	// Native and other types constructed from calling
-	CALL,
+	CALL_FUNC,
+	CALL_METHOD,
 	CALL_BUILTIN,
 	CALL_SUPER,
 
@@ -266,6 +279,77 @@ struct Opcodes {
 		insert(p_name);
 		insert(p_dst);
 	}
+
+	void write_get_index(const Address& p_on, uint32_t p_name, const Address& p_dst) {
+		insert(Opcode::GET);
+		insert(p_on);
+		insert(p_name);
+		insert(p_dst);
+	}
+
+	void write_get_mapped(const Address& p_on, const Address& p_key, const Address& p_dst) {
+		insert(Opcode::GET_MAPPED);
+		insert(p_on);
+		insert(p_key);
+		insert(p_dst);
+	}
+
+	void write_array_literal(const Address& p_dst, const stdvec<Address>& p_values) {
+		insert(Opcode::CONSTRUCT_LITERAL_ARRAY);
+		insert((uint32_t)p_values.size());
+		for (const Address& addr : p_values) insert(addr);
+		insert(p_dst);
+	}
+
+	void write_map_literal(const Address& p_dst, const stdvec<Address>& p_keys, const stdvec<Address>& p_values) {
+		ASSERT(p_keys.size() == p_values.size());
+
+		insert(Opcode::CONSTRUCT_LITERAL_DICT);
+		insert((uint32_t)p_keys.size());
+		for (int i = 0; i < (int)p_keys.size(); i++) {
+			insert(p_keys[i]);
+			insert(p_values[i]);
+		}
+		insert(p_dst);
+	}
+
+	void write_construct_builtin_type(const Address& p_dst, BuiltinTypes::Type p_type, const stdvec<Address>& p_args) {
+		insert(Opcode::CONSTRUCT_BUILTIN);
+		insert((uint32_t)p_type);
+		insert((uint32_t)p_args.size());
+		for (const Address& addr : p_args) {
+			insert(addr);
+		}
+	}
+
+	void write_call_builtin_func(const Address& p_ret, BuiltinFunctions::Type p_func, const stdvec<Address>& p_args) {
+		insert(Opcode::CALL_BUILTIN);
+		insert((uint32_t)p_func);
+		insert((uint32_t)p_args.size());
+		for (const Address& addr : p_args) {
+			insert(addr);
+		}
+	}
+
+	void write_call_func(const Address& p_ret, const Address& p_on, const stdvec<Address>& p_args) {
+		insert(Opcode::CALL_FUNC);
+		insert(p_on);
+		insert((uint32_t)p_args.size());
+		for (const Address& addr : p_args) {
+			insert(addr);
+		}
+	}
+
+	void write_call_method(const Address& p_ret, Address& p_on, uint32_t p_method, const stdvec<Address>& p_args) {
+		insert(Opcode::CALL_METHOD);
+		insert(p_on);
+		insert(p_method);
+		insert((uint32_t)p_args.size());
+		for (const Address& addr : p_args) {
+			insert(addr);
+		}
+	}
+
 };
 
 }

@@ -23,42 +23,49 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_FUNCTION_H
-#define CARBON_FUNCTION_H
+#ifndef VM_H
+#define VM_H
 
-#include "binary.h"
+#include "core.h"
+#include "runtime_instance.h"
+#include "binary/carbon_function.h"
+#include "binary/bytecode.h"
 
 namespace carbon {
 
-class Bytecode;
+class Stack {
+private:
+	stdvec<var> _stack;
+	uint32_t _sp = 0; // stack pointer
 
-class CarbonFunction : public Object {
-	REGISTER_CLASS(CarbonFunction, Object) {
+public:
+	Stack(uint32_t p_max_size = 0) { _stack.resize(p_max_size); }
+	var* get_at(uint32_t p_pos) {
+		THROW_INVALID_INDEX(_stack.size(), p_pos);
+		return &_stack[p_pos];
 	}
+};
+
+struct RuntimeContext {
+	Stack* stack = nullptr;
+	var self;
+	var bytecode;
+
+	Bytecode* _file = nullptr;
+
+	void init();
+	var* get_var_at(const Address& p_addr);
+};
+
+class VM {
+
+public:
+	int run(ptr<Bytecode> bytecode, stdvec<String> args);
 
 private:
-	friend class CodeGen;
-	Bytecode* _owner;
-
-	String _name;
-	bool _is_static;
-	int _arg_count;
-	stdvec<var> _default_args;
-
-	stdvec<uint32_t> _opcodes;
-	uint32_t _stack_size;
-	
-public:
-	const String& get_name() const { return _name; }
-	bool is_static() const { return _is_static; }
-	int get_arg_count() const { return _arg_count; }
-	const stdvec<var>& get_default_args() const { return _default_args; }
-	// parameter names : only in debug build
-
-	uint32_t get_stack_size() const { return _stack_size; }
-	const stdvec<uint32_t>& get_opcodes() const { return _opcodes; }
+	var call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytecode, ptr<RuntimeInstance> p_self, stdvec<var*> p_args);
 };
 
 }
 
-#endif // CARBON_FUNCTION_H
+#endif // VM_H

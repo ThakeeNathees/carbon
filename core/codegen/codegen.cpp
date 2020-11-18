@@ -38,13 +38,18 @@ ptr<Bytecode> CodeGen::generate(ptr<Analyzer> p_analyzer) {
 	bytecode->_name = root->path;
 	_generate_members(static_cast<Parser::MemberContainer*>(root), bytecode.get());
 
+	for (ptr<Parser::ImportNode>& import_node : root->imports) {
+		_bytecode->_externs[import_node->name] = import_node->bytecode;
+	}
+
 	for (ptr<Parser::ClassNode>& class_node : root->classes) {
 		ptr<Bytecode>_class;
-		_class->_file = _bytecode;
+		_class->_file = bytecode;
 		_generate_members(static_cast<Parser::MemberContainer*>(class_node.get()), _class.get());
 	}
 	_context.curr_class = nullptr;
 
+	bytecode->_build_global_names_array();
 	return bytecode;
 }
 
@@ -70,8 +75,10 @@ void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* 
 	}
 
 	// unnamed enums
-	for (std::pair<String, Parser::EnumValueNode> value : p_container->unnamed_enum->values) {
-		p_bytecode->_unnamed_enums[_bytecode->_global_name_get(value.first)] = value.second.value;
+	if (p_container->unnamed_enum != nullptr) {
+		for (std::pair<String, Parser::EnumValueNode> value : p_container->unnamed_enum->values) {
+			p_bytecode->_unnamed_enums[_bytecode->_global_name_get(value.first)] = value.second.value;
+		}
 	}
 
 	// named enums
@@ -93,7 +100,8 @@ void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* 
 		const Parser::ClassNode* class_node = nullptr;
 		if (p_container->type == Parser::Node::Type::CLASS) class_node = static_cast<const Parser::ClassNode*>(p_container);
 		ptr<CarbonFunction> cfn = _generate_function(fn.get(), class_node, p_bytecode);
-		p_bytecode->_functions[_bytecode->_global_name_get(cfn->_name)] = cfn;
+		cfn->_stack_size = _context.stack_max_size;
+		p_bytecode->_functions[cfn->_name] = cfn;
 	}
 }
 
@@ -114,7 +122,7 @@ ptr<CarbonFunction> CodeGen::_generate_function(const Parser::FunctionNode* p_fu
 
 	// add parameters to stack locals.
 	for (int i = 0; i < (int)p_func->args.size(); i++) {
-		_context.add_stack_local(_context.bytecode->_global_name_get(p_func->args[i].name));
+		_context.add_stack_local(p_func->args[i].name);
 	}
 
 	_generate_block(p_func->body.get());
