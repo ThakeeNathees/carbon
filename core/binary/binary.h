@@ -44,7 +44,7 @@ struct Address {
 		STACK,
 		THIS,
 
-		//CLASS,        // another local class ref <-- STATIC
+		//CLASS,       // another local class ref <-- STATIC
 		EXTERN,       // cruurent translation unit or imported one
 		NATIVE_CLASS, // native class ref
 		BUILTIN_FUNC, // builtin function ref
@@ -67,11 +67,14 @@ struct Address {
 
 	static Type get_type_s(uint32_t p_addr) { return  (Type)((p_addr & ADDR_TYPE_MASK) >> ADDR_INDEX_BITS); }
 	static uint32_t get_index_s(uint32_t p_addr) { return p_addr & ADDR_INDEX_MASK; }
+	static String get_type_name_s(Type p_type);
 
 	Type get_type() const { return type; }
 	uint32_t get_index() const { return index; }
 	uint32_t get_address() const { return index | (type << ADDR_INDEX_BITS); }
 	bool is_temp() const { return temp; }
+
+	String as_string(const stdvec<String>* _global_names_array = nullptr, const stdvec<var>* _global_const_values = nullptr) const;
 
 private:
 	Type type = _NULL;
@@ -126,6 +129,8 @@ struct Opcodes {
 	uint32_t last() { return (uint32_t)opcodes.size() - 1; } // last instruction
 	uint32_t next() { return (uint32_t)opcodes.size(); }     // next instruction
 
+	static String get_opcode_name(Opcode p_opcode);
+
 	void insert(uint32_t p_opcode) {
 		opcodes.push_back(p_opcode);
 	}
@@ -135,7 +140,6 @@ struct Opcodes {
 	void insert(Opcode p_opcode) {
 		opcodes.push_back((uint32_t)p_opcode);
 	}
-
 
 	void write_assign(const Address& dst, const Address& src) {
 		insert(Opcode::ASSIGN);
@@ -320,6 +324,7 @@ struct Opcodes {
 		for (const Address& addr : p_args) {
 			insert(addr);
 		}
+		insert(p_dst);
 	}
 
 	void write_call_builtin_func(const Address& p_ret, BuiltinFunctions::Type p_func, const stdvec<Address>& p_args) {
@@ -329,6 +334,7 @@ struct Opcodes {
 		for (const Address& addr : p_args) {
 			insert(addr);
 		}
+		insert(p_ret);
 	}
 
 	void write_call_func(const Address& p_ret, const Address& p_on, const stdvec<Address>& p_args) {

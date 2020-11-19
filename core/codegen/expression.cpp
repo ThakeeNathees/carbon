@@ -66,7 +66,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 				case Parser::IdentifierNode::REF_FUNCTION:
 				case Parser::IdentifierNode::REF_CARBON_CLASS: {
 					Address get_dst = _context.add_stack_temp();
-					Address member_addr = Address(Address::STACK, _bytecode->_global_name_get(id->name));
+					Address member_addr = Address(Address::STATIC, _bytecode->_global_name_get(id->name));
 					_context.opcodes->write_get_member(member_addr, get_dst);
 					return get_dst;
 				} break;

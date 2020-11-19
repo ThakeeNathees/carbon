@@ -58,9 +58,9 @@ int _main(int argc, char** argv) {
 	File source("tests/analyzer/test_files/random.cb", File::READ);
 	ptr<Parser> parser = newptr<Parser>(); parser->parse(source.read_text(), source.get_path());
 	ptr<Analyzer> analyzer = newptr<Analyzer>(); analyzer->analyze(parser);
-	CodeGen codegen;
-	ptr<Bytecode> bytecode = codegen.generate(analyzer);
+	CodeGen codegen; ptr<Bytecode> bytecode = codegen.generate(analyzer);
 	auto x = bytecode.get();
+	VM vm; vm.run(bytecode, {});
 
 	Logger::log("\nPress enter to exit...", Logger::VERBOSE, Logger::Color::L_SKYBLUE);
 	getchar(); // pause

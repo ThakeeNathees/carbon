@@ -60,10 +60,12 @@ public:
 	ptr<MemberInfo> get_member_info(const String& p_member_name);
 
 	bool is_class() const { return _is_class; }
+	var* _get_member_var_ptr(const String& p_member_name);
 	stdmap<String, ptr<Bytecode>>& get_classes() { return _classes; }
 	stdmap<String, ptr<Bytecode>>& get_externs() { return _externs; }
 
 	const stdmap<String, ptr<CarbonFunction>>& get_functions() const { return _functions; }
+	String get_function_opcodes_as_string(const String& p_name) const;
 	const ptr<CarbonFunction> get_main() const {
 		auto it = _functions.find("main");
 		if (it == _functions.end()) {
@@ -76,6 +78,11 @@ public:
 	const String& get_global_name(uint32_t p_pos) {
 		THROW_INVALID_INDEX(_global_names_array.size(), p_pos);
 		return _global_names_array[p_pos];
+	}
+
+	var* get_global_const_value(uint32_t p_index) {
+		THROW_INVALID_INDEX(_global_const_values.size(), p_index);
+		return &_global_const_values[p_index];
 	}
 
 private:
@@ -102,6 +109,7 @@ private:
 	stdvec<var> _global_const_values;
 
 	stdmap<String, ptr<MemberInfo>> _member_info;
+	stdmap<String, var> _member_vars; // all members as var (constructed at runtime)
 
 	bool _is_compiled = false;
 	bool _is_compinling = false;

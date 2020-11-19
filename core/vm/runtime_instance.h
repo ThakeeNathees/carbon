@@ -35,6 +35,8 @@ class RuntimeInstance : public Object {
 	REGISTER_CLASS(RuntimeInstance, Object) {}
 
 private:
+	friend class VM;
+	friend struct RuntimeContext;
 	ptr<Bytecode> blueprint;
 	stdvec<var> members;
 	

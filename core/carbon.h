@@ -34,6 +34,7 @@
 #include "core/parser/parser.h"
 #include "core/analyzer/analyzer.h"
 #include "core/codegen/codegen.h"
+#include "core/vm/vm.h"
 
 #include "core/binary/carbon_function.h"
 #include "core/binary/bytecode.h"

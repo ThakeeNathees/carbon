@@ -30,6 +30,7 @@
 #include "runtime_instance.h"
 #include "binary/carbon_function.h"
 #include "binary/bytecode.h"
+#include "binary/carbon_ref.h"
 
 namespace carbon {
 
@@ -47,6 +48,7 @@ public:
 };
 
 struct RuntimeContext {
+	VM* vm = nullptr;
 	Stack* stack = nullptr;
 	var self;
 	var bytecode;
@@ -63,7 +65,16 @@ public:
 	int run(ptr<Bytecode> bytecode, stdvec<String> args);
 
 private:
+	friend struct RuntimeContext;
 	var call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytecode, ptr<RuntimeInstance> p_self, stdvec<var*> p_args);
+
+	var* _get_native_ref(const String& p_name);
+	var* _get_builtin_func_ref(uint32_t p_type);
+	var* _get_builtin_type_ref(uint32_t p_type);
+
+	stdmap<String, var> _native_ref;
+	stdmap<uint32_t, var> _builtin_func_ref;
+	stdmap<uint32_t, var> _builtin_type_ref;
 };
 
 }

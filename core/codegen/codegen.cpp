@@ -43,7 +43,7 @@ ptr<Bytecode> CodeGen::generate(ptr<Analyzer> p_analyzer) {
 	}
 
 	for (ptr<Parser::ClassNode>& class_node : root->classes) {
-		ptr<Bytecode>_class;
+		ptr<Bytecode>_class = newptr<Bytecode>();
 		_class->_file = bytecode;
 		_generate_members(static_cast<Parser::MemberContainer*>(class_node.get()), _class.get());
 	}

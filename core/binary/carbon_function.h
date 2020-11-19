@@ -57,6 +57,9 @@ public:
 
 	uint32_t get_stack_size() const { return _stack_size; }
 	const stdvec<uint32_t>& get_opcodes() const { return _opcodes; }
+
+	String get_opcodes_as_string(const stdvec<String>* _global_names_array = nullptr, const stdvec<var>* _global_const_values = nullptr) const;
+
 };
 
 }

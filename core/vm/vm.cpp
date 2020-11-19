@@ -35,6 +35,8 @@ int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 		ASSERT(false); // TODO: error no main function to run.
 	}
 
+	printf("%s\n", bytecode->get_function_opcodes_as_string("main").c_str());
+
 	ASSERT(main->get_arg_count() <= 1); // main() or main(args)
 
 	stdvec<var*> call_args; var argv = Array();
@@ -52,12 +54,13 @@ void RuntimeContext::init() {
 }
 
 var* RuntimeContext::get_var_at(const Address& p_addr) {
-	static var v;
+	static var _null;
 
 	uint32_t index = p_addr.get_index();
 	switch (p_addr.get_type()) {
 		case Address::_NULL: {
-
+			_null.clear();
+			return &_null;
 		} break;
 		case Address::STACK: {
 			return stack->get_at(index);
@@ -67,37 +70,81 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 		} break;
 		case Address::EXTERN: {
 			const String& name = _file->get_global_name(index);
-			_file->get_externs()[name];
+			ASSERT(_file->get_externs().find(name) != _file->get_externs().end());
+			return _file->_get_member_var_ptr(name);
 		} break;
 		case Address::NATIVE_CLASS: {
-
+			const String& name = _file->get_global_name(index);
+			return vm->_get_native_ref(name);
 		} break;
 		case Address::BUILTIN_FUNC: {
-
+			return vm->_get_builtin_func_ref(index);
 		} break;
 		case Address::BUILTIN_TYPE: {
-
+			return vm->_get_builtin_type_ref(index);
 		} break;
 		case Address::MEMBER_VAR: {
-
+			// ASSERT self is runtime instance
+			stdvec<var>& members = self.cast_to<RuntimeInstance>()->members;
+			THROW_INVALID_INDEX(members.size(), index);
+			return &members[index];
 		} break;
 		case Address::STATIC: {
-
+			const String& name = _file->get_global_name(index);
+			var* member = nullptr;
+			if (self.get_type() == var::OBJECT) member = self.cast_to<RuntimeInstance>()->blueprint->_get_member_var_ptr(name);
+			if (member == nullptr) member = _file->_get_member_var_ptr(name);
+			return member;
 		} break;
 		case Address::CONST_VALUE: {
-
+			return _file->get_global_const_value(index);
 		} break;
 
 		MISSED_ENUM_CHECK(Address::CONST_VALUE, 9);
 	}
+	THROW_BUG("can't reach here");
 }
+
+var* VM::_get_native_ref(const String& p_name) {
+	auto it = _native_ref.find(p_name);
+	if (it != _native_ref.end()) { return &it->second; }
+
+	ASSERT(NativeClasses::singleton()->is_class_registered(p_name));
+	var new_ref = newptr<NativeClassRef>(p_name);
+	_native_ref[p_name] = new_ref;
+	return &_native_ref[p_name];
+}
+
+var* VM::_get_builtin_func_ref(uint32_t p_type) {
+	ASSERT(p_type < BuiltinFunctions::Type::_FUNC_MAX_);
+
+	auto it = _builtin_func_ref.find(p_type);
+	if (it != _builtin_func_ref.end()) { return &it->second; }
+
+	var new_ref = newptr<BuiltinFuncRef>((BuiltinFunctions::Type)p_type);
+	_builtin_func_ref[p_type] = new_ref;
+	return &_builtin_func_ref[p_type];
+}
+
+var* VM::_get_builtin_type_ref(uint32_t p_type) {
+	ASSERT(p_type < BuiltinTypes::Type::_TYPE_MAX_);
+
+	auto it = _builtin_type_ref.find(p_type);
+	if (it != _builtin_type_ref.end()) { return &it->second; }
+
+	var new_ref = newptr<BuiltinTypeRef>((BuiltinTypes::Type)p_type);
+	_builtin_type_ref[p_type] = new_ref;
+	return &_builtin_type_ref[p_type];
+}
+
 
 var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytecode, ptr<RuntimeInstance> p_self, stdvec<var*> p_args) {
 	Stack stack(p_func->get_stack_size());
 
 	RuntimeContext context;
+	context.vm = this;
 	context.stack = &stack;
-	context.self = p_self;
+	if (p_self != nullptr) context.self = p_self;
 	context.bytecode = p_bytecode;
 
 	context.init();
@@ -106,11 +153,12 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 
 	const stdvec<uint32_t>& opcodes = p_func->get_opcodes();
 
+#define CHECK_OPCODE_SIZE(m_size) ASSERT(ip + m_size < opcodes.size())
 	while (ip < opcodes.size()) {
 
 		switch (opcodes[ip]) {
 			case Opcode::GET: {
-				ASSERT(ip + 3 < opcodes.size());
+				CHECK_OPCODE_SIZE(4);
 
 			} break;
 			case Opcode::SET: {
@@ -130,12 +178,12 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 			case Opcode::OPERATOR: {
 			} break;
 			case Opcode::ASSIGN: {
-				ASSERT(ip + 2 < opcodes.size());
-				Address src = opcodes[++ip];
-				Address dst = opcodes[++ip];
+				CHECK_OPCODE_SIZE(3);
+				var* dst = context.get_var_at(opcodes[++ip]);
+				var* src = context.get_var_at(opcodes[++ip]);
 
-
-
+				*dst = *src;
+				ip++;
 			} break;
 			case Opcode::CONSTRUCT_BUILTIN: {
 			} break;
@@ -148,6 +196,19 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 			case Opcode::CALL_METHOD: {
 			} break;
 			case Opcode::CALL_BUILTIN: {
+				CHECK_OPCODE_SIZE(3);
+
+				uint32_t func = opcodes[++ip];
+				uint32_t argc = opcodes[++ip];
+				stdvec<var*> args;
+				for (int i = 0; i < (int)argc; i++) {
+					var* arg = context.get_var_at(opcodes[++ip]);
+					args.push_back(arg);
+				}
+				var* ret = context.get_var_at(opcodes[++ip]);
+				ASSERT(func < BuiltinFunctions::_FUNC_MAX_);
+				BuiltinFunctions::call((BuiltinFunctions::Type)func, args, *ret);
+				ip++;
 			} break;
 			case Opcode::CALL_SUPER: {
 			} break;
@@ -164,12 +225,14 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 			case Opcode::ITER_NEXT: {
 			} break;
 			case Opcode::END: {
+				return var();
 			} break;
 
 		}
 		MISSED_ENUM_CHECK(Opcode::END, 23);
 
 	}
+	THROW_BUG("can't reach here");
 }
 
 }

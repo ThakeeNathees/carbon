@@ -23,6 +23,183 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
+#include "carbon_function.h"
+
 namespace carbon {
+
+String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names_array, const stdvec<var>* _global_const_values) const {
+	String ret;
+	uint32_t ip = 0;
+#define CHECK_OPCODE_SIZE(m_size) ASSERT(ip + m_size < _opcodes.size())
+#define ADD_ADDR() ret += Address(_opcodes[++ip]).as_string(_global_names_array, _global_const_values) + '\n'
+#define ADD_GLOBAL_NAME()																					\
+	do {                                                                                                    \
+		uint32_t index = _opcodes[++ip];																	\
+		if (_global_names_array) {																			\
+			THROW_INVALID_INDEX(_global_names_array->size(), index);										\
+			ret += String(std::to_string(index)) + " // \"" + (*_global_names_array)[index] + "\"";			\
+		} else {																							\
+			ret += std::to_string(index);																	\
+		}																									\
+	} while (false)
+
+#define ADD_ADDR_LIST()                                  \
+	do {									             \
+		uint32_t argc = _opcodes[++ip];		             \
+		ret += std::to_string(argc) + " // argc\n";		 \
+		for (int i = 0; i < (int)argc; i++) {	         \
+			ADD_ADDR();						             \
+		}									             \
+	} while (false)
+
+#define ADD_ADDR_LIST_MAP()                              \
+	do {									             \
+		uint32_t argc = _opcodes[++ip];		             \
+		ret += std::to_string(argc) + " // argc\n";		 \
+		for (int i = 0; i < (int)argc; i++) {	         \
+			ADD_ADDR();						             \
+			ADD_ADDR();						             \
+		}									             \
+	} while (false)
+
+
+	while (ip < _opcodes.size()) {
+
+		ASSERT(_opcodes[ip] <= Opcode::END);
+		ret += Opcodes::get_opcode_name((Opcode)_opcodes[ip]) + '\n';
+
+		switch (_opcodes[ip]) {
+			case Opcode::GET: {
+				CHECK_OPCODE_SIZE(4);
+				ADD_ADDR();
+				ADD_GLOBAL_NAME();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::SET: {
+				THROW_BUG("TODO:"); // TODO:
+			} break;
+			case Opcode::GET_MAPPED: {
+				CHECK_OPCODE_SIZE(4);
+				ADD_ADDR();
+				ADD_ADDR();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::SET_MAPPED: {
+				THROW_BUG("TODO:"); // TODO:
+			} break;
+			case Opcode::GET_MEMBER: {
+				CHECK_OPCODE_SIZE(3);
+				ADD_ADDR();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::SET_MEMBER: {
+				THROW_BUG("TODO:"); // TODO:
+			} break;
+			case Opcode::SET_TRUE: {
+				THROW_BUG("TODO:"); // TODO:
+			} break;
+			case Opcode::SET_FALSE: {
+				THROW_BUG("TODO:"); // TODO:
+			} break;
+			case Opcode::OPERATOR: {
+				THROW_BUG("TODO:"); // TODO:
+			} break;
+			case Opcode::ASSIGN: {
+				CHECK_OPCODE_SIZE(3);
+				ADD_ADDR();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::CONSTRUCT_BUILTIN: {
+				CHECK_OPCODE_SIZE(4);
+				uint32_t b_type = _opcodes[++ip]; ASSERT(b_type < BuiltinTypes::_TYPE_MAX_);
+				ret += String(std::to_string(b_type)) + " // " + BuiltinTypes::get_type_name((BuiltinTypes::Type)b_type) + '\n';
+				ADD_ADDR_LIST();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::CONSTRUCT_LITERAL_ARRAY: {
+				CHECK_OPCODE_SIZE(3);
+				ADD_ADDR_LIST();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::CONSTRUCT_LITERAL_DICT: {
+				CHECK_OPCODE_SIZE(3);
+				ADD_ADDR_LIST_MAP();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::CALL_FUNC: {
+				CHECK_OPCODE_SIZE(3);
+				ADD_ADDR();
+				ADD_ADDR_LIST();
+				ip++;
+			} break;
+			case Opcode::CALL_METHOD: {
+				CHECK_OPCODE_SIZE(4);
+				ADD_ADDR();
+				ADD_GLOBAL_NAME();
+				ADD_ADDR_LIST();
+				ip++;
+			} break;
+			case Opcode::CALL_BUILTIN: {
+				CHECK_OPCODE_SIZE(3);
+				uint32_t func = _opcodes[++ip]; ASSERT(func < BuiltinFunctions::_FUNC_MAX_);
+				ret += String(std::to_string(func)) + " // " + BuiltinFunctions::get_func_name((BuiltinFunctions::Type)func) + '\n';
+				ADD_ADDR_LIST();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::CALL_SUPER: {
+				THROW_BUG("TODO:"); // TODO:
+			} break;
+			case Opcode::JUMP: {
+				CHECK_OPCODE_SIZE(2);
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::JUMP_IF: {
+				CHECK_OPCODE_SIZE(3);
+				ADD_ADDR();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::JUMP_IF_NOT: {
+				CHECK_OPCODE_SIZE(3);
+				ADD_ADDR();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::RETURN: {
+				CHECK_OPCODE_SIZE(2);
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::ITER_BEGIN: {
+				CHECK_OPCODE_SIZE(3);
+				ADD_ADDR();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::ITER_NEXT: {
+				CHECK_OPCODE_SIZE(3);
+				ADD_ADDR();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::END: {
+				ip++;
+			} break;
+
+		}
+		ret += "\n";
+		MISSED_ENUM_CHECK(Opcode::END, 23);
+	}
+	return ret;
+}
 
 }
