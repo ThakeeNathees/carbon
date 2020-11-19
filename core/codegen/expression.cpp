@@ -44,7 +44,10 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 				case Parser::IdentifierNode::REF_UNKNOWN:
 					THROW_BUG("unknown identifier should be analyzer error (can't reach to codegen)");
 
-				case Parser::IdentifierNode::REF_PARAMETER: 
+				case Parser::IdentifierNode::REF_PARAMETER: {
+					return _context.get_parameter(id->name);
+				} break;
+
 				case Parser::IdentifierNode::REF_LOCAL_VAR: {
 					return _context.get_stack_local(id->name);
 				} break;
@@ -66,7 +69,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 				case Parser::IdentifierNode::REF_FUNCTION:
 				case Parser::IdentifierNode::REF_CARBON_CLASS: {
 					Address get_dst = _context.add_stack_temp();
-					Address member_addr = Address(Address::STATIC, _bytecode->_global_name_get(id->name));
+					Address member_addr = Address(Address::STATIC_MEMBER, _bytecode->_global_name_get(id->name));
 					_context.opcodes->write_get_member(member_addr, get_dst);
 					return get_dst;
 				} break;
@@ -110,7 +113,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 			_context.opcodes->write_array_literal(arr_dst, values);
 
 			for (Address& addr : values) {
-				if (addr.is_temp()) _context.pop_stack_temp();
+				_POP_ADDR_IF_TEMP(addr);
 			}
 
 			return arr_dst;
@@ -132,8 +135,8 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 
 			_context.opcodes->write_map_literal(map_dst, keys, values);
 
-			for (Address& addr : keys) if (addr.is_temp()) _context.pop_stack_temp();
-			for (Address& addr : values) if (addr.is_temp()) _context.pop_stack_temp();
+			for (Address& addr : keys) _POP_ADDR_IF_TEMP(addr);
+			for (Address& addr : values) _POP_ADDR_IF_TEMP(addr);
 
 			return map_dst;
 		} break;
@@ -142,6 +145,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 			return Address(Address::THIS, 0);
 		} break;
 		case Parser::Node::Type::SUPER: {
+			THROW_BUG("TODO:");
 			// TODO: super cannot be a stand alone expression (throw error)
 		} break;
 
@@ -180,7 +184,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 						ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
 						uint32_t name = add_global_name(static_cast<const Parser::IdentifierNode*>(call->method.get())->name);
 						_context.opcodes->write_call_method(ret, base, name,  args);
-						if (base.is_temp()) _context.pop_stack_temp();
+						_POP_ADDR_IF_TEMP(base);
 					}
 				} break;
 
@@ -193,7 +197,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 						ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
 						uint32_t name = add_global_name(static_cast<const Parser::IdentifierNode*>(call->method.get())->name);
 						_context.opcodes->write_call_method(ret, base, name, args);
-						if (base.is_temp()) _context.pop_stack_temp();
+						_POP_ADDR_IF_TEMP(base);
 					}
 				} break;
 
@@ -207,6 +211,26 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 
 				} break;
 
+				case Parser::Node::Type::UNKNOWN: {
+					ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
+					const Parser::IdentifierNode* func = ptrcast<Parser::IdentifierNode>(call->method).get();
+					switch (func->ref) {
+						case  Parser::IdentifierNode::REF_FUNCTION: {
+							uint32_t name = add_global_name(func->name);
+							_context.opcodes->write_call_func(ret, name, args);
+						} break;
+						case  Parser::IdentifierNode::REF_CARBON_CLASS: {
+							// TODO: construct carbon class.
+						} break;
+						case Parser::IdentifierNode::REF_NATIVE_CLASS: {
+							// TODO: construct native class.
+						} break;
+						default: {
+							THROW_BUG("can't reach here"); // TODO: refactor
+						}
+					}
+				} break;
+
 				default: {
 					Address base = _generate_expression(call->base.get());
 					if (call->method != nullptr) {
@@ -214,12 +238,12 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 						uint32_t name = add_global_name(static_cast<const Parser::IdentifierNode*>(call->method.get())->name);
 						_context.opcodes->write_call_method(ret, base, name, args);
 					} else {
-						_context.opcodes->write_call_func(ret, base, args);
+						_context.opcodes->write_call(ret, base, args);
 					}
-					if (base.is_temp()) _context.pop_stack_temp();
+					_POP_ADDR_IF_TEMP(base);
 				} break;
 			}
-			for (Address& addr : args) if (addr.is_temp()) _context.pop_stack_temp();
+			for (Address& addr : args) _POP_ADDR_IF_TEMP(addr);
 			return ret;
 		} break;
 
@@ -229,7 +253,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 			Address on = _generate_expression(index_node->base.get());
 			uint32_t name = add_global_name(index_node->member->name);
 			_context.opcodes->write_get_index(on, name, dst);
-			if (on.is_temp()) _context.pop_stack_temp();
+			_POP_ADDR_IF_TEMP(on);
 			return dst;
 		} break;
 
@@ -241,12 +265,104 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 
 			_context.opcodes->write_get_mapped(on, key, dst);
 
-			if (on.is_temp()) _context.pop_stack_temp();
-			if (key.is_temp()) _context.pop_stack_temp();
+			_POP_ADDR_IF_TEMP(on);
+			_POP_ADDR_IF_TEMP(key);
 			return dst;
 		} break;
 		case Parser::Node::Type::OPERATOR: {
-			// TODO:
+			const Parser::OperatorNode* op = static_cast<const Parser::OperatorNode*>(p_expr);
+
+			var::Operator var_op = var::_OP_MAX_;
+			switch (op->op_type) {
+				case Parser::OperatorNode::OP_EQ:
+				case Parser::OperatorNode::OP_PLUSEQ:        var_op = var::OP_ADDITION;       goto _addr_operator_assign_;
+				case Parser::OperatorNode::OP_MINUSEQ:       var_op = var::OP_SUBTRACTION;	  goto _addr_operator_assign_;
+				case Parser::OperatorNode::OP_MULEQ:         var_op = var::OP_MULTIPLICATION; goto _addr_operator_assign_;
+				case Parser::OperatorNode::OP_DIVEQ:         var_op = var::OP_DIVISION;		  goto _addr_operator_assign_;
+				case Parser::OperatorNode::OP_MOD_EQ:        var_op = var::OP_MODULO;		  goto _addr_operator_assign_;
+				case Parser::OperatorNode::OP_BIT_LSHIFT_EQ: var_op = var::OP_BIT_LSHIFT;	  goto _addr_operator_assign_;
+				case Parser::OperatorNode::OP_BIT_RSHIFT_EQ: var_op = var::OP_BIT_RSHIFT;	  goto _addr_operator_assign_;
+				case Parser::OperatorNode::OP_BIT_OR_EQ:     var_op = var::OP_BIT_OR;		  goto _addr_operator_assign_;
+				case Parser::OperatorNode::OP_BIT_AND_EQ:    var_op = var::OP_BIT_AND;		  goto _addr_operator_assign_;
+				case Parser::OperatorNode::OP_BIT_XOR_EQ: {  var_op = var::OP_BIT_XOR;
+				_addr_operator_assign_:
+					// indexing, mapped indexing is special case.
+					if (op->args[0]->type == Parser::Node::Type::INDEX) {
+						//	TODO:
+					} else if (op->args[0]->type == Parser::Node::Type::MAPPED_INDEX) {
+						//	TODO:
+					} else {
+						Address left = _generate_expression(op->args[0].get());
+						Address right = _generate_expression(op->args[1].get());
+
+						if (var_op != var::_OP_MAX_) _context.opcodes->write_operator(right, var_op, left, right);
+						_context.opcodes->write_assign(left, right);
+						_POP_ADDR_IF_TEMP(right);
+						return left;
+					}
+				} break;
+
+				// TODO: if (false && true) don't evaluvate the second expression.
+				case Parser::OperatorNode::OP_AND: var_op = var::OP_AND;
+				case Parser::OperatorNode::OP_OR: var_op = var::OP_OR;
+
+				case Parser::OperatorNode::OP_EQEQ:       var_op = var::OP_EQ_CHECK;       goto _addr_operator_;
+				case Parser::OperatorNode::OP_NOTEQ:      var_op = var::OP_EQ_CHECK;	   goto _addr_operator_;
+				case Parser::OperatorNode::OP_LTEQ:       var_op = var::OP_LTEQ;		   goto _addr_operator_;
+				case Parser::OperatorNode::OP_GTEQ:       var_op = var::OP_GTEQ;		   goto _addr_operator_;
+				case Parser::OperatorNode::OP_PLUS:       var_op = var::OP_ADDITION;	   goto _addr_operator_;
+				case Parser::OperatorNode::OP_MINUS:      var_op = var::OP_SUBTRACTION;	   goto _addr_operator_;
+				case Parser::OperatorNode::OP_MUL:        var_op = var::OP_MULTIPLICATION; goto _addr_operator_;
+				case Parser::OperatorNode::OP_DIV:        var_op = var::OP_DIVISION;	   goto _addr_operator_;
+				case Parser::OperatorNode::OP_MOD:        var_op = var::OP_MODULO;		   goto _addr_operator_;
+				case Parser::OperatorNode::OP_LT:         var_op = var::OP_LT;			   goto _addr_operator_;
+				case Parser::OperatorNode::OP_GT:         var_op = var::OP_GT;			   goto _addr_operator_;
+				case Parser::OperatorNode::OP_BIT_LSHIFT: var_op = var::OP_BIT_LSHIFT;	   goto _addr_operator_;
+				case Parser::OperatorNode::OP_BIT_RSHIFT: var_op = var::OP_BIT_RSHIFT;	   goto _addr_operator_;
+				case Parser::OperatorNode::OP_BIT_OR:     var_op = var::OP_BIT_OR;		   goto _addr_operator_;
+				case Parser::OperatorNode::OP_BIT_AND:    var_op = var::OP_BIT_AND;		   goto _addr_operator_;
+				case Parser::OperatorNode::OP_BIT_XOR: {  var_op = var::OP_BIT_XOR;
+					_addr_operator_:
+					Address dst = _context.add_stack_temp();
+					Address left = _generate_expression(op->args[0].get());
+					Address right = _generate_expression(op->args[1].get());
+					_context.opcodes->write_operator(dst, var_op, left, right);
+					_POP_ADDR_IF_TEMP(left);
+					_POP_ADDR_IF_TEMP(right);
+					return dst;
+				} break;
+
+				case Parser::OperatorNode::OP_NOT: {
+					Address dst = _context.add_stack_temp();
+					Address left = _generate_expression(op->args[0].get());
+					_context.opcodes->write_operator(dst, var::OP_NOT, left, Address());
+					_POP_ADDR_IF_TEMP(left);
+					return dst;
+				} break;
+
+				case Parser::OperatorNode::OP_BIT_NOT: {
+					Address dst = _context.add_stack_temp();
+					Address left = _generate_expression(op->args[0].get());
+					_context.opcodes->write_operator(dst, var::OP_BIT_NOT, left, Address());
+					_POP_ADDR_IF_TEMP(left);
+					return dst;
+				} break;
+
+				case Parser::OperatorNode::OP_POSITIVE: {
+					Address dst = _context.add_stack_temp();
+					Address left = _generate_expression(op->args[0].get());
+					_context.opcodes->write_operator(dst, var::OP_POSITIVE, left, Address());
+					_POP_ADDR_IF_TEMP(left);
+					return dst;
+				} break;
+				case Parser::OperatorNode::OP_NEGATIVE: {
+					Address dst = _context.add_stack_temp();
+					Address left = _generate_expression(op->args[0].get());
+					_context.opcodes->write_operator(dst, var::OP_NEGATIVE, left, Address());
+					_POP_ADDR_IF_TEMP(left);
+					return dst;
+				} break;
+			}
 		} break;
 
 		case Parser::Node::Type::CONTROL_FLOW: {

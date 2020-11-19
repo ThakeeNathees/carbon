@@ -30,6 +30,8 @@
 #include "binary/bytecode.h"
 #include "binary/carbon_function.h"
 
+#define _POP_ADDR_IF_TEMP(m_addr)if (m_addr.is_temp()) _context.pop_stack_temp();
+
 namespace carbon {
 
 struct CGContext {
@@ -39,6 +41,7 @@ struct CGContext {
 
 	std::stack<stdmap<String, uint32_t>> stack_locals_frames;
 	stdmap<String, uint32_t> stack_locals;
+	stdvec<String> parameters;
 	uint32_t curr_stack_temps = 0;
 	//curr_stack_size = curr_stack_temps + stack_frame.size();
 	uint32_t stack_max_size = 0;
@@ -50,6 +53,7 @@ struct CGContext {
 		function = nullptr;
 		while (!stack_locals_frames.empty()) stack_locals_frames.pop();
 		stack_locals.clear();
+		parameters.clear();
 		curr_stack_temps = 0;
 		stack_max_size = 0;
 		opcodes = newptr<Opcodes>();
@@ -80,6 +84,15 @@ struct CGContext {
 	Address get_stack_local(const String& p_name) {
 		ASSERT(stack_locals.find(p_name) != stack_locals.end());
 		return Address(Address::STACK, stack_locals[p_name]);
+	}
+
+	Address get_parameter(const String& p_name) {
+		for (int i = 0; i < (int)parameters.size(); i++) {
+			if (parameters[i] == p_name) {
+				return Address(Address::PARAMETER, i);
+			}
+		}
+		THROW_BUG("parameter not found."); // TODO: refactor all throw bugs.
 	}
 
 	Address add_stack_temp() {

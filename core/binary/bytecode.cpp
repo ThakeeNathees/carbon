@@ -31,8 +31,7 @@ namespace carbon {
 
 
 String Opcodes::get_opcode_name(Opcode p_opcode) {
-	static constexpr const int _size = Opcode::END + 1;
-	static const char* _names[_size] = {
+	static const char* _names[] = {
 		"GET",
 		"SET",
 		"GET_MAPPED",
@@ -46,6 +45,7 @@ String Opcodes::get_opcode_name(Opcode p_opcode) {
 		"CONSTRUCT_BUILTIN",
 		"CONSTRUCT_LITERAL_ARRAY",
 		"CONSTRUCT_LITERAL_DICT",
+		"CALL",
 		"CALL_FUNC",
 		"CALL_METHOD",
 		"CALL_BUILTIN",
@@ -58,23 +58,25 @@ String Opcodes::get_opcode_name(Opcode p_opcode) {
 		"ITER_NEXT",
 		"END",
 	};
+	MISSED_ENUM_CHECK(END, 24);
 	return _names[p_opcode];
 }
 
 String Address::get_type_name_s(Address::Type p_type) {
-	static constexpr const int _size = Address::CONST_VALUE + 1;
-	static const char* _names[_size] = {
+	static const char* _names[] = {
 		"Address::_NULL",
 		"Address::STACK",
+		"Address::PARAMETER",
 		"Address::THIS",
 		"Address::EXTERN",
 		"Address::NATIVE_CLASS",
 		"Address::BUILTIN_FUNC",
 		"Address::BUILTIN_TYPE",
 		"Address::MEMBER_VAR",
-		"Address::STATIC",
+		"Address::STATIC_MEMBER",
 		"Address::CONST_VALUE",
 	};
+	MISSED_ENUM_CHECK(CONST_VALUE, 10);
 	return _names[p_type];
 }
 
@@ -88,9 +90,12 @@ String Address::as_string(const stdvec<String>* _global_names_array, const stdve
 		case STACK:
 			return get_type_name_s(type) + "(" + std::to_string(index) + ")";
 
+		case PARAMETER:
+			return get_type_name_s(type) + "(" + std::to_string(index) + ")";
+
 		case EXTERN:
 		case NATIVE_CLASS:
-		case STATIC:
+		case STATIC_MEMBER:
 			return get_type_name_s(type) + "(" + std::to_string(index) + ")" + (
 				(_global_names_array) ? String(" // \"") + (*_global_names_array)[index] + "\"" : "");
 		case CONST_VALUE:
@@ -112,7 +117,7 @@ String Address::as_string(const stdvec<String>* _global_names_array, const stdve
 		case MEMBER_VAR:
 			return get_type_name_s(type) + "(" + std::to_string(index) + ")";
 	}
-	MISSED_ENUM_CHECK(CONST_VALUE, 9);
+	MISSED_ENUM_CHECK(CONST_VALUE, 10);
 	THROW_BUG("can't reach here");
 }
 

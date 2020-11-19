@@ -63,8 +63,19 @@ public:
 	var* _get_member_var_ptr(const String& p_member_name);
 	stdmap<String, ptr<Bytecode>>& get_classes() { return _classes; }
 	stdmap<String, ptr<Bytecode>>& get_externs() { return _externs; }
+	const ptr<Bytecode>& get_base() const { ASSERT(is_class()); return _base; }
+	const ptr<Bytecode>& get_file() const { ASSERT(!is_class()); return _file; }
 
 	const stdmap<String, ptr<CarbonFunction>>& get_functions() const { return _functions; }
+	const ptr<CarbonFunction>& find_function(const String& p_name) const {
+		auto it = _functions.find(p_name);
+		if (it != _functions.end()) {
+			return it->second;
+		} else {
+			if (_base != nullptr) return _base->find_function(p_name);
+			else return nullptr;
+		}
+	}
 	String get_function_opcodes_as_string(const String& p_name) const;
 	const ptr<CarbonFunction> get_main() const {
 		auto it = _functions.find("main");

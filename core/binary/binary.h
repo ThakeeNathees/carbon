@@ -42,16 +42,16 @@ struct Address {
 	enum Type {
 		_NULL = 0,
 		STACK,
+		PARAMETER,
 		THIS,
 
-		//CLASS,       // another local class ref <-- STATIC
-		EXTERN,       // cruurent translation unit or imported one
-		NATIVE_CLASS, // native class ref
-		BUILTIN_FUNC, // builtin function ref
-		BUILTIN_TYPE, // builtin type ref
+		EXTERN,         // cruurent translation unit or imported one
+		NATIVE_CLASS,   // native class ref
+		BUILTIN_FUNC,   // builtin function ref
+		BUILTIN_TYPE,   // builtin type ref
 
-		MEMBER_VAR,   // only member variables with index with offset
-		STATIC,       // constant, function, enums, enum value, static vars, static function ... are static var
+		MEMBER_VAR,     // only member variables with index with offset
+		STATIC_MEMBER,  // constant, function, enums, enum value, static vars, static function ... are static var
 
 		CONST_VALUE, // searched in _global_const_values
 
@@ -99,7 +99,8 @@ enum Opcode {
 	CONSTRUCT_LITERAL_ARRAY,
 	CONSTRUCT_LITERAL_DICT,
 	// Native and other types constructed from calling
-	CALL_FUNC,
+	CALL,       // a_var(...); -> a_var.__call(...);
+	CALL_FUNC,  // f(...); calling a function
 	CALL_METHOD,
 	CALL_BUILTIN,
 	CALL_SUPER,
@@ -337,13 +338,24 @@ struct Opcodes {
 		insert(p_ret);
 	}
 
-	void write_call_func(const Address& p_ret, const Address& p_on, const stdvec<Address>& p_args) {
-		insert(Opcode::CALL_FUNC);
+	void write_call(const Address& p_ret, const Address& p_on, const stdvec<Address>& p_args) {
+		insert(Opcode::CALL);
 		insert(p_on);
 		insert((uint32_t)p_args.size());
 		for (const Address& addr : p_args) {
 			insert(addr);
 		}
+		insert(p_ret);
+	}
+
+	void write_call_func(const Address& p_ret, uint32_t p_name, const stdvec<Address>& p_args) {
+		insert(Opcode::CALL_FUNC);
+		insert(p_name);
+		insert((uint32_t)p_args.size());
+		for (const Address& addr : p_args) {
+			insert(addr);
+		}
+		insert(p_ret);
 	}
 
 	void write_call_method(const Address& p_ret, Address& p_on, uint32_t p_method, const stdvec<Address>& p_args) {
@@ -354,6 +366,15 @@ struct Opcodes {
 		for (const Address& addr : p_args) {
 			insert(addr);
 		}
+		insert(p_ret);
+	}
+
+	void write_operator(const Address& p_dst, var::Operator p_op, const Address& p_left, const Address& p_right) {
+		insert(Opcode::OPERATOR);
+		insert((uint32_t)p_op);
+		insert(p_left);
+		insert(p_right);
+		insert(p_dst);
 	}
 
 };

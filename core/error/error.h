@@ -46,7 +46,7 @@ if (m_ptr == nullptr){                                                          
 
 
 #define THROW_ERROR(m_type, m_msg) throw Error(m_type, m_msg)_ERR_ADD_DBG_VARS
-#define THROW_BUG(m_msg) DEBUG_BREAK(); THROW_ERROR(Error::BUG, m_msg)
+#define THROW_BUG(m_msg) do{ DEBUG_BREAK(); THROW_ERROR(Error::BUG, m_msg); } while (false)
 
 #include "var.h/_var.h"
 using namespace varh;

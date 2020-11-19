@@ -112,6 +112,7 @@ ptr<CarbonFunction> CodeGen::_generate_function(const Parser::FunctionNode* p_fu
 	_context.function = cfn.get();
 	_context.bytecode = p_bytecode;
 	_context.curr_class = p_class;
+	for (int i = 0; i < (int)p_func->args.size(); i++) _context.parameters.push_back(p_func->args[i].name);
 
 	cfn->_name = p_func->name;
 	cfn->_is_static = p_func->is_static;
@@ -121,9 +122,9 @@ ptr<CarbonFunction> CodeGen::_generate_function(const Parser::FunctionNode* p_fu
 	cfn->_default_args = p_func->default_args;
 
 	// add parameters to stack locals.
-	for (int i = 0; i < (int)p_func->args.size(); i++) {
-		_context.add_stack_local(p_func->args[i].name);
-	}
+	//for (int i = 0; i < (int)p_func->args.size(); i++) {
+	//	_context.add_stack_local(p_func->args[i].name);
+	//}
 
 	_generate_block(p_func->body.get());
 	_context.opcodes->insert(Opcode::END);

@@ -37,7 +37,7 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 		uint32_t index = _opcodes[++ip];																	\
 		if (_global_names_array) {																			\
 			THROW_INVALID_INDEX(_global_names_array->size(), index);										\
-			ret += String(std::to_string(index)) + " // \"" + (*_global_names_array)[index] + "\"";			\
+			ret += String(std::to_string(index)) + " // \"" + (*_global_names_array)[index] + "\"\n";		\
 		} else {																							\
 			ret += std::to_string(index);																	\
 		}																									\
@@ -105,7 +105,10 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 				THROW_BUG("TODO:"); // TODO:
 			} break;
 			case Opcode::OPERATOR: {
-				THROW_BUG("TODO:"); // TODO:
+				uint32_t op_type = _opcodes[++ip]; ASSERT(op_type < var::_OP_MAX_);
+				ret += String(std::to_string(op_type)) + " // " + var::get_op_name_s((var::Operator)op_type) + '\n';
+				ADD_ADDR(); ADD_ADDR(); ADD_ADDR();
+				ip++;
 			} break;
 			case Opcode::ASSIGN: {
 				CHECK_OPCODE_SIZE(3);
@@ -133,17 +136,26 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 				ADD_ADDR();
 				ip++;
 			} break;
-			case Opcode::CALL_FUNC: {
-				CHECK_OPCODE_SIZE(3);
+			case Opcode::CALL: {
+				CHECK_OPCODE_SIZE(4);
 				ADD_ADDR();
 				ADD_ADDR_LIST();
+				ADD_ADDR();
+				ip++;
+			} break;
+			case Opcode::CALL_FUNC: {
+				CHECK_OPCODE_SIZE(4);
+				ADD_GLOBAL_NAME();
+				ADD_ADDR_LIST();
+				ADD_ADDR();
 				ip++;
 			} break;
 			case Opcode::CALL_METHOD: {
-				CHECK_OPCODE_SIZE(4);
+				CHECK_OPCODE_SIZE(5);
 				ADD_ADDR();
 				ADD_GLOBAL_NAME();
 				ADD_ADDR_LIST();
+				ADD_ADDR();
 				ip++;
 			} break;
 			case Opcode::CALL_BUILTIN: {
@@ -197,7 +209,7 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 
 		}
 		ret += "\n";
-		MISSED_ENUM_CHECK(Opcode::END, 23);
+		MISSED_ENUM_CHECK(Opcode::END, 24);
 	}
 	return ret;
 }

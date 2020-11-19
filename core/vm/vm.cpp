@@ -62,9 +62,15 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 			_null.clear();
 			return &_null;
 		} break;
+
 		case Address::STACK: {
 			return stack->get_at(index);
 		} break;
+
+		case Address::PARAMETER: {
+			return (*args)[index];
+		} break;
+
 		case Address::THIS: {
 			return &self;
 		} break;
@@ -89,7 +95,7 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 			THROW_INVALID_INDEX(members.size(), index);
 			return &members[index];
 		} break;
-		case Address::STATIC: {
+		case Address::STATIC_MEMBER: {
 			const String& name = _file->get_global_name(index);
 			var* member = nullptr;
 			if (self.get_type() == var::OBJECT) member = self.cast_to<RuntimeInstance>()->blueprint->_get_member_var_ptr(name);
@@ -100,7 +106,7 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 			return _file->get_global_const_value(index);
 		} break;
 
-		MISSED_ENUM_CHECK(Address::CONST_VALUE, 9);
+		MISSED_ENUM_CHECK(Address::CONST_VALUE, 10);
 	}
 	THROW_BUG("can't reach here");
 }
@@ -139,11 +145,13 @@ var* VM::_get_builtin_type_ref(uint32_t p_type) {
 
 
 var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytecode, ptr<RuntimeInstance> p_self, stdvec<var*> p_args) {
+
 	Stack stack(p_func->get_stack_size());
 
 	RuntimeContext context;
 	context.vm = this;
 	context.stack = &stack;
+	context.args = &p_args;
 	if (p_self != nullptr) context.self = p_self;
 	context.bytecode = p_bytecode;
 
@@ -155,6 +163,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 
 #define CHECK_OPCODE_SIZE(m_size) ASSERT(ip + m_size < opcodes.size())
 	while (ip < opcodes.size()) {
+		ASSERT(opcodes[ip] <= Opcode::END);
 
 		switch (opcodes[ip]) {
 			case Opcode::GET: {
@@ -176,6 +185,53 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 			case Opcode::SET_FALSE: {
 			} break;
 			case Opcode::OPERATOR: {
+				CHECK_OPCODE_SIZE(5);
+				ASSERT(opcodes[ip+1]  < var::_OP_MAX_);
+				var::Operator op = (var::Operator)opcodes[++ip];
+				var* left = context.get_var_at(opcodes[++ip]);
+				var* right = context.get_var_at(opcodes[++ip]);
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				switch (op) {
+					case var::OP_ASSIGNMENT: {
+						THROW_BUG("assignment operations should be under ASSIGN opcode");
+					};
+					case var::OP_ADDITION: { *dst = *left + *right; } break;
+					case var::OP_SUBTRACTION: { *dst = *left - *right; } break;
+					case var::OP_MULTIPLICATION: { *dst = *left * *right; } break;
+					case var::OP_DIVISION: { *dst = *left / *right; } break;
+					case var::OP_MODULO: { *dst = *left % *right; } break;
+					case var::OP_POSITIVE: { *dst = *left; /* TODO: anything? */ } break;
+					case var::OP_NEGATIVE: {
+						if (left->get_type() == var::INT) {
+							*dst = -left->operator int64_t();
+						} else if (left->get_type() == var::FLOAT) {
+							*dst = -left->operator double();
+						} else {
+							// TODO: throw runtime error.
+						}
+					} break;
+					case var::OP_EQ_CHECK: { *dst = *left == *right; } break;
+					case var::OP_NOT_EQ_CHECK: { *dst = *left != *right; } break;
+					case var::OP_LT: { *dst = *left < *right; } break;
+					case var::OP_LTEQ: { *dst = *left <= *right; } break;
+					case var::OP_GT: { *dst = *left > *right; } break;
+					case var::OP_GTEQ: { *dst = *left >= *right; } break;
+					case var::OP_AND: { *dst = *left && *right; } break;
+					case var::OP_OR: { *dst = *left || *right; } break;
+					case var::OP_NOT: { *dst = !*left; } break;
+					case var::OP_BIT_LSHIFT: { *dst = left->operator int64_t() << right->operator int64_t(); } break;
+					case var::OP_BIT_RSHIFT: { *dst = left->operator int64_t() >> right->operator int64_t(); } break;
+					case var::OP_BIT_AND: { *dst = left->operator int64_t() & right->operator int64_t(); } break;
+					case var::OP_BIT_OR: { *dst = left->operator int64_t() | right->operator int64_t(); } break;
+					case var::OP_BIT_XOR: { *dst = left->operator int64_t() ^ right->operator int64_t(); } break;
+					case var::OP_BIT_NOT: { *dst = ~left->operator int64_t(); } break;
+						break;
+				}
+
+				// TODO: perform
+
 			} break;
 			case Opcode::ASSIGN: {
 				CHECK_OPCODE_SIZE(3);
@@ -191,7 +247,47 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 			} break;
 			case Opcode::CONSTRUCT_LITERAL_DICT: {
 			} break;
+			case Opcode::CALL: {
+			} break;
 			case Opcode::CALL_FUNC: {
+				CHECK_OPCODE_SIZE(3);
+
+				const String& func = context._file->get_global_name(opcodes[++ip]);
+				uint32_t argc = opcodes[++ip];
+
+				stdvec<var*> args;
+				for (int i = 0; i < (int)argc; i++) {
+					var* arg = context.get_var_at(opcodes[++ip]);
+					args.push_back(arg);
+				}
+				var* ret_value = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				// search function throught inheritance first, then file
+				ptr<Bytecode> call_base;
+				ptr<CarbonFunction> func_ptr;
+				if (p_self != nullptr) {
+					call_base = p_self->blueprint;
+					while (call_base != nullptr) {
+						auto it = call_base->get_functions().find(func);
+						if (it != call_base->get_functions().end()) {
+							func_ptr = it->second;
+							break;
+						}
+						call_base = call_base->get_base();
+					}
+				} else {
+					if (p_bytecode->is_class()) call_base = p_bytecode->get_file();
+					else call_base = p_bytecode;
+
+					auto& functions = call_base->get_functions();
+					auto it = functions.find(func);
+					if (it == functions.end()) THROW_BUG("can't find the function");
+					func_ptr = it->second;
+				}
+
+				*ret_value = call_carbon_function(func_ptr.get(), call_base, (func_ptr->is_static()) ? nullptr : p_self, args);
+
 			} break;
 			case Opcode::CALL_METHOD: {
 			} break;
@@ -219,6 +315,9 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 			case Opcode::JUMP_IF_NOT: {
 			} break;
 			case Opcode::RETURN: {
+				CHECK_OPCODE_SIZE(2);
+				var* val = context.get_var_at(opcodes[++ip]);
+				return *val;
 			} break;
 			case Opcode::ITER_BEGIN: {
 			} break;
@@ -229,7 +328,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 			} break;
 
 		}
-		MISSED_ENUM_CHECK(Opcode::END, 23);
+		MISSED_ENUM_CHECK(Opcode::END, 24);
 
 	}
 	THROW_BUG("can't reach here");

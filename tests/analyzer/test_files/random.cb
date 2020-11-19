@@ -1,6 +1,17 @@
 
+/*
+class X{ func f(){} }
+class Y:X{
+	func g(){ f(); }
+}
+//*/
+
+
+func f() {
+	f();
+}
+
 func main() {
-	var x = input("enter a string: ");
-	print(x);
+	f();
 }
 

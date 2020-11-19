@@ -50,6 +50,7 @@ public:
 struct RuntimeContext {
 	VM* vm = nullptr;
 	Stack* stack = nullptr;
+	stdvec<var*>* args = nullptr;
 	var self;
 	var bytecode;
 
