@@ -34,12 +34,27 @@ namespace carbon {
 class RuntimeInstance : public Object {
 	REGISTER_CLASS(RuntimeInstance, Object) {}
 
+	var __call_method(const String& p_method_name, stdvec<var*>& p_args) override;
+	var __call(stdvec<var*>& p_args) override;
+	var __get_member(const String& p_name) override {
+		uint32_t pos = blueprint->get_member_index(p_name);
+		return members[pos];
+	}
+	void __set_member(const String& p_name, var& p_value) override {
+		uint32_t pos = blueprint->get_member_index(p_name);
+		members[pos] = p_value;
+	}
+
+	// TODO: implement all the operator methods here.
+
 private:
 	friend class VM;
 	friend struct RuntimeContext;
 	ptr<Bytecode> blueprint;
 	stdvec<var> members;
 	
+	ptr<RuntimeInstance>* _self_ptr = nullptr; // not sure if it's a good idea.
+
 };
 
 }

@@ -124,13 +124,23 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 				ADD_ADDR();
 				ip++;
 			} break;
+
+			case Opcode::CONSTRUCT_NATIVE:
+			case Opcode::CONSTRUCT_CARBON: {
+				CHECK_OPCODE_SIZE(4);
+				ADD_GLOBAL_NAME();
+				ADD_ADDR_LIST();
+				ADD_ADDR();
+				ip++;
+			} break;
+
 			case Opcode::CONSTRUCT_LITERAL_ARRAY: {
 				CHECK_OPCODE_SIZE(3);
 				ADD_ADDR_LIST();
 				ADD_ADDR();
 				ip++;
 			} break;
-			case Opcode::CONSTRUCT_LITERAL_DICT: {
+			case Opcode::CONSTRUCT_LITERAL_MAP: {
 				CHECK_OPCODE_SIZE(3);
 				ADD_ADDR_LIST_MAP();
 				ADD_ADDR();
@@ -209,7 +219,7 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 
 		}
 		ret += "\n";
-		MISSED_ENUM_CHECK(Opcode::END, 24);
+		MISSED_ENUM_CHECK(Opcode::END, 26);
 	}
 	return ret;
 }

@@ -50,7 +50,7 @@ public:
 	uint32_t get_member_index(const String& p_name) {
 		auto it = _members.find(p_name);
 		if (it == _members.end()) {
-			ASSERT(_base != nullptr);
+			ASSERT(_base != nullptr); // TODO: _base==nullptr -> throw runtime error here <-- no member named p_name
 			return _base->get_member_index(p_name);
 		} else {
 			return get_member_offset() + _members[it->second];

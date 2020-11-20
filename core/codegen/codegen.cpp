@@ -121,11 +121,6 @@ ptr<CarbonFunction> CodeGen::_generate_function(const Parser::FunctionNode* p_fu
 	cfn->_owner = _context.bytecode;
 	cfn->_default_args = p_func->default_args;
 
-	// add parameters to stack locals.
-	//for (int i = 0; i < (int)p_func->args.size(); i++) {
-	//	_context.add_stack_local(p_func->args[i].name);
-	//}
-
 	_generate_block(p_func->body.get());
 	_context.opcodes->insert(Opcode::END);
 
@@ -159,7 +154,7 @@ void CodeGen::_generate_block(const Parser::BlockNode* p_block) {
 				if (var_node->assignment != nullptr) {
 					Address assign_value = _generate_expression(var_node->assignment.get());
 					_context.opcodes->write_assign(local_var, assign_value);
-					if (assign_value.is_temp()) _context.pop_stack_temp();
+					_POP_ADDR_IF_TEMP(assign_value);
 				}
 			} break;
 
@@ -182,7 +177,7 @@ void CodeGen::_generate_block(const Parser::BlockNode* p_block) {
 			case Parser::Node::Type::MAPPED_INDEX:
 			case Parser::Node::Type::OPERATOR: {
 				Address expr = _generate_expression(statement);
-				if (expr.is_temp()) _context.pop_stack_temp();
+				_POP_ADDR_IF_TEMP(expr);
 			} break;
 
 			case Parser::Node::Type::CONTROL_FLOW: {

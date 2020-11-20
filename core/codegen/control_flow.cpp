@@ -51,6 +51,7 @@ void CodeGen::_generate_control_flow(const Parser::ControlFlowNode* p_cflow) {
 
 		case Parser::ControlFlowNode::CfType::WHILE: {
 			ASSERT(p_cflow->args.size() == 1);
+			_context.opcodes->jump_to_continue.push(_context.opcodes->next());
 			Address cond = _generate_expression(p_cflow->args[0].get());
 			_context.opcodes->write_while(cond);
 			if (cond.is_temp()) _context.pop_stack_temp();
@@ -75,6 +76,7 @@ void CodeGen::_generate_control_flow(const Parser::ControlFlowNode* p_cflow) {
 
 			// condition.
 			Address cond;
+			_context.opcodes->jump_to_continue.push(_context.opcodes->next());
 			if (p_cflow->args[1] != nullptr) {
 				const Parser::Node* cond_node = p_cflow->args[1].get();
 				cond = _generate_expression(cond_node);

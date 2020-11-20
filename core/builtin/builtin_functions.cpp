@@ -101,7 +101,12 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var*>& p_args, var& r_ret)
 		} break;
 
 		case Type::INPUT: {
+			if (p_args.size() >= 2) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at most 1 argument.");
 			// Not safe to use scanf() possibly lead to buffer overflow.
+			if (p_args.size() == 1) {
+				if (p_args[0]->get_type() != var::STRING) THROW_ERROR(Error::TYPE_ERROR, "expected a string value at argument 0.");
+				std::cout << p_args[0]->operator String();
+			}
 			String input;
 			std::cin >> input;
 			r_ret = input;

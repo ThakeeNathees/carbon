@@ -60,7 +60,7 @@ int _main(int argc, char** argv) {
 	ptr<Analyzer> analyzer = newptr<Analyzer>(); analyzer->analyze(parser);
 	CodeGen codegen; ptr<Bytecode> bytecode = codegen.generate(analyzer);
 	auto x = bytecode.get();
-	VM vm; vm.run(bytecode, {});
+	VM* vm = VM::singleton(); vm->run(bytecode, {});
 
 	Logger::log("\nPress enter to exit...", Logger::VERBOSE, Logger::Color::L_SKYBLUE);
 	getchar(); // pause

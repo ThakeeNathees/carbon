@@ -27,6 +27,31 @@
 
 namespace carbon {
 
+VM* VM::_singleton = nullptr;
+VM* VM::singleton() {
+	if (_singleton == nullptr) _singleton = new VM();
+	return _singleton;
+}
+void VM::cleanup() {
+	if (_singleton != nullptr) delete _singleton;
+}
+
+var RuntimeInstance::__call_method(const String& p_method_name, stdvec<var*>& p_args) {
+	auto& functions = blueprint->get_functions();
+	auto it = functions.find(p_method_name);
+	if (it == functions.end());   // TODO: throw runtime error method not found.
+
+	if (it->second->is_static() || _self_ptr == nullptr) { // calling static method using instance (acceptable)
+		return VM::singleton()->call_carbon_function(it->second.get(), blueprint, nullptr, p_args);
+	} else {
+		return VM::singleton()->call_carbon_function(it->second.get(), blueprint, *_self_ptr, p_args);
+	}
+}
+
+var RuntimeInstance::__call(stdvec<var*>& p_args) {
+	//	TODO:
+	return var();
+}
 
 int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 	
@@ -35,7 +60,7 @@ int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 		ASSERT(false); // TODO: error no main function to run.
 	}
 
-	printf("%s\n", bytecode->get_function_opcodes_as_string("main").c_str());
+	printf("%s\n", bytecode->get_function_opcodes_as_string("f").c_str());
 
 	ASSERT(main->get_arg_count() <= 1); // main() or main(args)
 
@@ -75,12 +100,12 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 			return &self;
 		} break;
 		case Address::EXTERN: {
-			const String& name = _file->get_global_name(index);
+			const String& name = get_name_at(index);
 			ASSERT(_file->get_externs().find(name) != _file->get_externs().end());
 			return _file->_get_member_var_ptr(name);
 		} break;
 		case Address::NATIVE_CLASS: {
-			const String& name = _file->get_global_name(index);
+			const String& name = get_name_at(index);
 			return vm->_get_native_ref(name);
 		} break;
 		case Address::BUILTIN_FUNC: {
@@ -96,7 +121,7 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 			return &members[index];
 		} break;
 		case Address::STATIC_MEMBER: {
-			const String& name = _file->get_global_name(index);
+			const String& name = get_name_at(index);
 			var* member = nullptr;
 			if (self.get_type() == var::OBJECT) member = self.cast_to<RuntimeInstance>()->blueprint->_get_member_var_ptr(name);
 			if (member == nullptr) member = _file->_get_member_var_ptr(name);
@@ -109,6 +134,10 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 		MISSED_ENUM_CHECK(Address::CONST_VALUE, 10);
 	}
 	THROW_BUG("can't reach here");
+}
+
+const String& RuntimeContext::get_name_at(uint32_t p_pos) {
+	return _file->get_global_name(p_pos);
 }
 
 var* VM::_get_native_ref(const String& p_name) {
@@ -152,7 +181,10 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 	context.vm = this;
 	context.stack = &stack;
 	context.args = &p_args;
-	if (p_self != nullptr) context.self = p_self;
+	if (p_self != nullptr) {
+		context.self = p_self;
+		p_self->_self_ptr = &p_self;
+	}
 	context.bytecode = p_bytecode;
 
 	context.init();
@@ -168,21 +200,52 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 		switch (opcodes[ip]) {
 			case Opcode::GET: {
 				CHECK_OPCODE_SIZE(4);
+				var* on = context.get_var_at(opcodes[++ip]);
+				const String& name = context.get_name_at(opcodes[++ip]);
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
 
+				*dst = on->get_member(name);
 			} break;
 			case Opcode::SET: {
+				// TODO:
 			} break;
 			case Opcode::GET_MAPPED: {
+				CHECK_OPCODE_SIZE(4);
+				var* on = context.get_var_at(opcodes[++ip]);
+				var* key = context.get_var_at(opcodes[++ip]);
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				*dst = on->__get_mapped(*key);
 			} break;
 			case Opcode::SET_MAPPED: {
+				// TODO:
 			} break;
 			case Opcode::GET_MEMBER: {
+				CHECK_OPCODE_SIZE(3);
+				var* member = context.get_var_at(opcodes[++ip]);
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				*dst = *member;
 			} break;
 			case Opcode::SET_MEMBER: {
+				// TODO:
 			} break;
 			case Opcode::SET_TRUE: {
+				CHECK_OPCODE_SIZE(2);
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				*dst = true;
 			} break;
 			case Opcode::SET_FALSE: {
+				CHECK_OPCODE_SIZE(2);
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				*dst = false;
 			} break;
 			case Opcode::OPERATOR: {
 				CHECK_OPCODE_SIZE(5);
@@ -227,12 +290,9 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 					case var::OP_BIT_OR: { *dst = left->operator int64_t() | right->operator int64_t(); } break;
 					case var::OP_BIT_XOR: { *dst = left->operator int64_t() ^ right->operator int64_t(); } break;
 					case var::OP_BIT_NOT: { *dst = ~left->operator int64_t(); } break;
-						break;
 				}
-
-				// TODO: perform
-
 			} break;
+
 			case Opcode::ASSIGN: {
 				CHECK_OPCODE_SIZE(3);
 				var* dst = context.get_var_at(opcodes[++ip]);
@@ -241,20 +301,88 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 				*dst = *src;
 				ip++;
 			} break;
+
 			case Opcode::CONSTRUCT_BUILTIN: {
+				CHECK_OPCODE_SIZE(4);
+				uint32_t b_type = opcodes[++ip];
+				uint32_t argc = opcodes[++ip];
+				stdvec<var*> args;
+				for (int i = 0; i < (int)argc; i++) {
+					var* arg = context.get_var_at(opcodes[++ip]);
+					args.push_back(arg);
+				}
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				ASSERT(b_type < BuiltinTypes::_TYPE_MAX_);
+				*dst = BuiltinTypes::construct((BuiltinTypes::Type)b_type, args);
+			} break;
+
+			case Opcode::CONSTRUCT_NATIVE: {
+				CHECK_OPCODE_SIZE(4);
+				const String& class_name = context.get_name_at(opcodes[++ip]);
+				uint32_t argc = opcodes[++ip];
+				stdvec<var*> args;
+				for (int i = 0; i < (int)argc; i++) {
+					var* arg = context.get_var_at(opcodes[++ip]);
+					args.push_back(arg);
+				}
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				*dst = NativeClasses::singleton()->construct(class_name, args);
+			} break;
+			case Opcode::CONSTRUCT_CARBON: {
+				// TODO:
 			} break;
 			case Opcode::CONSTRUCT_LITERAL_ARRAY: {
+				CHECK_OPCODE_SIZE(3);
+				uint32_t size = opcodes[++ip];
+				
+				Array arr;
+				for (int i = 0; i < (int)size; i++) {
+					var* value = context.get_var_at(opcodes[++ip]);
+					arr.push_back(*value);
+				}
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				*dst = arr;
 			} break;
-			case Opcode::CONSTRUCT_LITERAL_DICT: {
+			case Opcode::CONSTRUCT_LITERAL_MAP: {
+				CHECK_OPCODE_SIZE(3);
+				uint32_t size = opcodes[++ip];
+
+				Map map;
+				for (int i = 0; i < (int)size; i++) {
+					var* key = context.get_var_at(opcodes[++ip]);
+					var* value = context.get_var_at(opcodes[++ip]);
+					map[*key] = *value;
+				}
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				*dst = map;
 			} break;
 			case Opcode::CALL: {
+				CHECK_OPCODE_SIZE(4);
+				var* on = context.get_var_at(opcodes[++ip]);
+				uint32_t argc = opcodes[++ip];
+				stdvec<var*> args;
+				for (int i = 0; i < (int)argc; i++) {
+					var* arg = context.get_var_at(opcodes[++ip]);
+					args.push_back(arg);
+				}
+				var* ret_value = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				*ret_value = on->__call(args);
 			} break;
 			case Opcode::CALL_FUNC: {
-				CHECK_OPCODE_SIZE(3);
+				CHECK_OPCODE_SIZE(4);
 
-				const String& func = context._file->get_global_name(opcodes[++ip]);
+				const String& func = context.get_name_at(opcodes[++ip]);
 				uint32_t argc = opcodes[++ip];
-
 				stdvec<var*> args;
 				for (int i = 0; i < (int)argc; i++) {
 					var* arg = context.get_var_at(opcodes[++ip]);
@@ -290,9 +418,24 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 
 			} break;
 			case Opcode::CALL_METHOD: {
+				CHECK_OPCODE_SIZE(5);
+
+				var* on = context.get_var_at(opcodes[++ip]);
+				const String& method = context.get_name_at(opcodes[++ip]);
+				uint32_t argc = opcodes[++ip];
+				stdvec<var*> args;
+				for (int i = 0; i < (int)argc; i++) {
+					var* arg = context.get_var_at(opcodes[++ip]);
+					args.push_back(arg);
+				}
+				var* ret_value = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				*ret_value = on->call_method(method, args);
+
 			} break;
 			case Opcode::CALL_BUILTIN: {
-				CHECK_OPCODE_SIZE(3);
+				CHECK_OPCODE_SIZE(4);
 
 				uint32_t func = opcodes[++ip];
 				uint32_t argc = opcodes[++ip];
@@ -302,33 +445,64 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 					args.push_back(arg);
 				}
 				var* ret = context.get_var_at(opcodes[++ip]);
+
 				ASSERT(func < BuiltinFunctions::_FUNC_MAX_);
 				BuiltinFunctions::call((BuiltinFunctions::Type)func, args, *ret);
 				ip++;
 			} break;
 			case Opcode::CALL_SUPER: {
+				// TODO: implement super(); add opcode call_super_func super.f();
 			} break;
 			case Opcode::JUMP: {
+				CHECK_OPCODE_SIZE(2);
+				uint32_t addr = opcodes[++ip];
+				ip = addr;
 			} break;
 			case Opcode::JUMP_IF: {
+				CHECK_OPCODE_SIZE(3);
+				var* cond = context.get_var_at(opcodes[++ip]);
+				uint32_t addr = opcodes[++ip];
+				if (cond->operator bool()) ip = addr;
+				else ip++;
 			} break;
 			case Opcode::JUMP_IF_NOT: {
+				CHECK_OPCODE_SIZE(3);
+				var* cond = context.get_var_at(opcodes[++ip]);
+				uint32_t addr = opcodes[++ip];
+				if (!cond->operator bool()) ip = addr;
+				else ip++;
 			} break;
 			case Opcode::RETURN: {
 				CHECK_OPCODE_SIZE(2);
 				var* val = context.get_var_at(opcodes[++ip]);
 				return *val;
 			} break;
+
 			case Opcode::ITER_BEGIN: {
+				CHECK_OPCODE_SIZE(3);
+				var* iterator = context.get_var_at(opcodes[++ip]);
+				var* on = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				*iterator = on->__iter_begin();
 			} break;
 			case Opcode::ITER_NEXT: {
+				CHECK_OPCODE_SIZE(4);
+				var* iterator = context.get_var_at(opcodes[++ip]);
+				var* on = context.get_var_at(opcodes[++ip]);
+				uint32_t addr = opcodes[++ip];
+				ip++;
+
+				// TODO: implement __iter_has_next, __iter_next as operators
+				// instead of call_method("__iter_has_next");
+
 			} break;
 			case Opcode::END: {
 				return var();
 			} break;
 
 		}
-		MISSED_ENUM_CHECK(Opcode::END, 24);
+		MISSED_ENUM_CHECK(Opcode::END, 26);
 
 	}
 	THROW_BUG("can't reach here");

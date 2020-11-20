@@ -7,11 +7,13 @@ class Y:X{
 //*/
 
 
-func f() {
-	f();
+func f(arr) {
+	for (var i = 0; i < arr.size(); i+=1) {
+		print(arr[i]);
+	}
 }
 
 func main() {
-	f();
+	f([1, 2, 3, 4]);
 }
 

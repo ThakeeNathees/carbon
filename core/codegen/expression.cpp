@@ -178,7 +178,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 				// print(); builtin func call
 				case Parser::Node::Type::BUILTIN_FUNCTION: {
 					if (call->method == nullptr) { // print(...);
-						_context.opcodes->write_call_builtin_func(ret, static_cast<const Parser::BuiltinFunctionNode*>(call->base.get())->func, args);
+						_context.opcodes->write_call_builtin(ret, static_cast<const Parser::BuiltinFunctionNode*>(call->base.get())->func, args);
 					} else { // print.member(...);
 						Address base = _generate_expression(call->base.get());
 						ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
@@ -214,16 +214,16 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 				case Parser::Node::Type::UNKNOWN: {
 					ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
 					const Parser::IdentifierNode* func = ptrcast<Parser::IdentifierNode>(call->method).get();
+					uint32_t name = add_global_name(func->name);
 					switch (func->ref) {
 						case  Parser::IdentifierNode::REF_FUNCTION: {
-							uint32_t name = add_global_name(func->name);
 							_context.opcodes->write_call_func(ret, name, args);
 						} break;
 						case  Parser::IdentifierNode::REF_CARBON_CLASS: {
-							// TODO: construct carbon class.
+							_context.opcodes->write_construct_carbon(ret, name, args);
 						} break;
 						case Parser::IdentifierNode::REF_NATIVE_CLASS: {
-							// TODO: construct native class.
+							_context.opcodes->write_construct_native(ret, name, args);
 						} break;
 						default: {
 							THROW_BUG("can't reach here"); // TODO: refactor
@@ -295,16 +295,42 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 						Address left = _generate_expression(op->args[0].get());
 						Address right = _generate_expression(op->args[1].get());
 
-						if (var_op != var::_OP_MAX_) _context.opcodes->write_operator(right, var_op, left, right);
-						_context.opcodes->write_assign(left, right);
+						if (var_op != var::_OP_MAX_) {
+							Address operation = _context.add_stack_temp();
+							_context.opcodes->write_operator(operation, var_op, left, right);
+							_context.opcodes->write_assign(left, operation);
+							_POP_ADDR_IF_TEMP(operation);
+						} else {
+							_context.opcodes->write_assign(left, right);
+						}
 						_POP_ADDR_IF_TEMP(right);
 						return left;
 					}
 				} break;
 
-				// TODO: if (false && true) don't evaluvate the second expression.
-				case Parser::OperatorNode::OP_AND: var_op = var::OP_AND;
-				case Parser::OperatorNode::OP_OR: var_op = var::OP_OR;
+				case Parser::OperatorNode::OP_AND: {
+					Address dst = _context.add_stack_temp();
+					_context.opcodes->write_assign_bool(dst, false);
+					Address left = _generate_expression(op->args[0].get());
+					_context.opcodes->write_and_left(left);
+					Address right = _generate_expression(op->args[1].get());
+					_context.opcodes->write_and_right(right, dst);
+					_POP_ADDR_IF_TEMP(left);
+					_POP_ADDR_IF_TEMP(right);
+					return dst;
+				} break;
+
+				case Parser::OperatorNode::OP_OR: {
+					Address dst = _context.add_stack_temp();
+					_context.opcodes->write_assign_bool(dst, true);
+					Address left = _generate_expression(op->args[0].get());
+					_context.opcodes->write_or_left(left);
+					Address right = _generate_expression(op->args[1].get());
+					_context.opcodes->write_or_right(right, dst);
+					_POP_ADDR_IF_TEMP(left);
+					_POP_ADDR_IF_TEMP(right);
+					return dst;
+				} break;
 
 				case Parser::OperatorNode::OP_EQEQ:       var_op = var::OP_EQ_CHECK;       goto _addr_operator_;
 				case Parser::OperatorNode::OP_NOTEQ:      var_op = var::OP_EQ_CHECK;	   goto _addr_operator_;

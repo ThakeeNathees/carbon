@@ -58,16 +58,21 @@ struct RuntimeContext {
 
 	void init();
 	var* get_var_at(const Address& p_addr);
+	const String& get_name_at(uint32_t p_pos);
 };
 
 class VM {
 
 public:
+	VM() {} // if wanted multiple instance could be created
 	int run(ptr<Bytecode> bytecode, stdvec<String> args);
+	var call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytecode, ptr<RuntimeInstance> p_self, stdvec<var*> p_args);
+
+	static VM* singleton();
+	static void cleanup();
 
 private:
 	friend struct RuntimeContext;
-	var call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytecode, ptr<RuntimeInstance> p_self, stdvec<var*> p_args);
 
 	var* _get_native_ref(const String& p_name);
 	var* _get_builtin_func_ref(uint32_t p_type);
@@ -76,6 +81,8 @@ private:
 	stdmap<String, var> _native_ref;
 	stdmap<uint32_t, var> _builtin_func_ref;
 	stdmap<uint32_t, var> _builtin_type_ref;
+
+	static VM* _singleton;
 };
 
 }
