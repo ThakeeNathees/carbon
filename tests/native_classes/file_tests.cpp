@@ -43,5 +43,5 @@ TEST_CASE("[native_classes]:file+") {
 // NEGATIVE TESTS
 TEST_CASE("[native_classes]:file-") {
 	File file;
-	CHECK_THROWS_CARBON_ERR(Error::IO_ERROR, file.open("./blah blah", File::READ));
+	CHECK_THROWS_ERR(Error::IO_ERROR, file.open("./blah blah", File::READ));
 }

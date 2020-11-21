@@ -155,7 +155,7 @@ struct Opcodes {
 	void write_endif();
 	void write_while(const Address& p_cond);
 	void write_endwhile();
-	void write_foreach(const Address& p_iterator, const Address& p_on);
+	void write_foreach(const Address& p_iter_value, const Address& p_iterator, const Address& p_on);
 	void write_endforeach();
 	void write_for(const Address& p_cond);
 	void write_endfor(bool p_has_cond);

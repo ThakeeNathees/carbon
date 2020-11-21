@@ -175,7 +175,7 @@ void Opcodes::write_endwhile() {
 	jump_out_break.pop();
 }
 
-void Opcodes::write_foreach(const Address& p_iterator, const Address& p_on) {
+void Opcodes::write_foreach(const Address& p_iter_value, const Address& p_iterator, const Address& p_on) {
 
 	insert(Opcode::ITER_BEGIN);
 	insert(p_iterator);
@@ -186,8 +186,8 @@ void Opcodes::write_foreach(const Address& p_iterator, const Address& p_on) {
 
 	// check if can iterate more
 	insert(Opcode::ITER_NEXT);
+	insert(p_iter_value);
 	insert(p_iterator);
-	insert(p_on);
 	insert(0); // addr to jump out of foreach;
 
 	jump_out_foreach.push(last());

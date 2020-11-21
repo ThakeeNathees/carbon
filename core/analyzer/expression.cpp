@@ -120,8 +120,8 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				try {
 					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->value.__get_mapped(key->value));
 					cv->pos = base->pos; p_expr = cv;
-				} catch (VarError& verr) {
-					THROW_ANALYZER_ERROR(Error(verr).get_type(), verr.what(), key->pos);
+				} catch (Error& err) {
+					THROW_ANALYZER_ERROR(err.get_type(), err.what(), key->pos);
 				}
 			}
 		} break;

@@ -48,8 +48,10 @@ if (m_ptr == nullptr){                                                          
 #define THROW_ERROR(m_type, m_msg) throw Error(m_type, m_msg)_ERR_ADD_DBG_VARS
 #define THROW_BUG(m_msg) do{ DEBUG_BREAK(); THROW_ERROR(Error::BUG, m_msg); } while (false)
 
-#include "var.h/_var.h"
-using namespace varh;
+#include "core_internal.h"
+//#include "var/_var.h"
+#include "var/_string.h"
+#include "var/_vector.h"
 
 namespace carbon {
 
@@ -100,7 +102,6 @@ public:
 	Error() {}
 	Error(Type p_type) { type = p_type; }
 	Error(Type p_type, const String& p_msg) { type = p_type; msg = p_msg; }
-	Error(const VarError& p_other);
 
 	Error(Type p_type, const String& p_msg, const Vect2i p_pos, uint32_t p_err_len = 1) { 
 		type = p_type; msg = p_msg; pos = p_pos; err_len = p_err_len; 
@@ -125,7 +126,6 @@ public:
 #endif
 
 private:
-	// TODO: bool is_carbon_script_error;
 	Type type = OK;
 	String msg = "<NO-ERROR-MSG-SET>";
 	String file = "<NO-FILE-SET>";

@@ -115,7 +115,7 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 			return vm->_get_builtin_type_ref(index);
 		} break;
 		case Address::MEMBER_VAR: {
-			// ASSERT self is runtime instance
+			// TODO: ASSERT self is runtime instance
 			stdvec<var>& members = self.cast_to<RuntimeInstance>()->members;
 			THROW_INVALID_INDEX(members.size(), index);
 			return &members[index];
@@ -172,7 +172,6 @@ var* VM::_get_builtin_type_ref(uint32_t p_type) {
 	return &_builtin_type_ref[p_type];
 }
 
-
 var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytecode, ptr<RuntimeInstance> p_self, stdvec<var*> p_args) {
 
 	Stack stack(p_func->get_stack_size());
@@ -208,7 +207,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 				*dst = on->get_member(name);
 			} break;
 			case Opcode::SET: {
-				// TODO:
+				THROW_BUG("TODO:"); // TODO:
 			} break;
 			case Opcode::GET_MAPPED: {
 				CHECK_OPCODE_SIZE(4);
@@ -220,7 +219,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 				*dst = on->__get_mapped(*key);
 			} break;
 			case Opcode::SET_MAPPED: {
-				// TODO:
+				THROW_BUG("TODO:"); // TODO:
 			} break;
 			case Opcode::GET_MEMBER: {
 				CHECK_OPCODE_SIZE(3);
@@ -231,7 +230,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 				*dst = *member;
 			} break;
 			case Opcode::SET_MEMBER: {
-				// TODO:
+				THROW_BUG("TODO:"); // TODO:
 			} break;
 			case Opcode::SET_TRUE: {
 				CHECK_OPCODE_SIZE(2);
@@ -333,7 +332,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 				*dst = NativeClasses::singleton()->construct(class_name, args);
 			} break;
 			case Opcode::CONSTRUCT_CARBON: {
-				// TODO:
+				THROW_BUG("TODO:"); // TODO:
 			} break;
 			case Opcode::CONSTRUCT_LITERAL_ARRAY: {
 				CHECK_OPCODE_SIZE(3);
@@ -451,7 +450,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 				ip++;
 			} break;
 			case Opcode::CALL_SUPER: {
-				// TODO: implement super(); add opcode call_super_func super.f();
+				THROW_BUG("TODO:"); // TODO: implement super(); add opcode call_super_func super.f();
 			} break;
 			case Opcode::JUMP: {
 				CHECK_OPCODE_SIZE(2);
@@ -488,13 +487,16 @@ var VM::call_carbon_function(const CarbonFunction* p_func, ptr<Bytecode> p_bytec
 			} break;
 			case Opcode::ITER_NEXT: {
 				CHECK_OPCODE_SIZE(4);
+				var* iter_value = context.get_var_at(opcodes[++ip]);
 				var* iterator = context.get_var_at(opcodes[++ip]);
-				var* on = context.get_var_at(opcodes[++ip]);
 				uint32_t addr = opcodes[++ip];
-				ip++;
 
-				// TODO: implement __iter_has_next, __iter_next as operators
-				// instead of call_method("__iter_has_next");
+				if (iterator->__iter_has_next()) {
+					*iter_value = iterator->__iter_next();
+					ip++;
+				} else {
+					ip = addr;
+				}
 
 			} break;
 			case Opcode::END: {

@@ -86,16 +86,16 @@ public:
 				if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.");
 				try {
 					return p_args[0]->operator int64_t();
-				} catch (VarError& err) {
-					ASSERT(err.get_type() == VarError::TYPE_ERROR);
+				} catch (Error& err) {
+					ASSERT(err.get_type() == Error::TYPE_ERROR);
 					THROW_ERROR(Error::TYPE_ERROR, err.what()); // TODO: cast var error to cb error.
 				}
 			case FLOAT:
 				if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.");
 				try {
 					return p_args[0]->operator double();
-				} catch (VarError& err) {
-					ASSERT(err.get_type() == VarError::TYPE_ERROR);
+				} catch (Error& err) {
+					ASSERT(err.get_type() == Error::TYPE_ERROR);
 					THROW_ERROR(Error::TYPE_ERROR, err.what());
 				}
 			case STRING:

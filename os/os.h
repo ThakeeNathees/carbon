@@ -31,9 +31,22 @@
 namespace carbon {
 
 class OS : public Object {
-	REGISTER_CLASS(OS, Object) {}
+	REGISTER_CLASS(OS, Object) {
+		BIND_STATIC_FUNC("abs_path", &OS::abs_path, PARAMS("path"));
+		BIND_STATIC_FUNC("rel_path", &OS::rel_path, PARAMS("path", "to"), DEFVALUES(""));
+	}
 
 public:
+	static String abs_path(const String& p_path) {
+		return std::filesystem::absolute(p_path.operator std::string()).string();
+	}
+	static String rel_path(const String& p_path, const String& p_to = "") {
+		std::filesystem::path to;
+		if (p_to == "") to = std::filesystem::current_path();
+		else to = p_to.operator std::string();
+		return std::filesystem::relative(p_path.operator std::string(), to).string();
+	}
+
 };
 
 }

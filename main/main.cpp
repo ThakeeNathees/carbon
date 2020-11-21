@@ -39,7 +39,7 @@ using namespace carbon;
 
 int _main(int argc, char** argv) {
 
-	initialize(NativeClasses::singleton());
+	initialize();
 
 #ifdef RUN_TESTS
 	int res = _test_main(argc, argv);
@@ -55,7 +55,7 @@ int _main(int argc, char** argv) {
 #endif // DEBUG_BUILD
 
 	// codegen test
-	File source("tests/analyzer/test_files/random.cb", File::READ);
+	File source("tests/test_main.cb", File::READ);
 	ptr<Parser> parser = newptr<Parser>(); parser->parse(source.read_text(), source.get_path());
 	ptr<Analyzer> analyzer = newptr<Analyzer>(); analyzer->analyze(parser);
 	CodeGen codegen; ptr<Bytecode> bytecode = codegen.generate(analyzer);

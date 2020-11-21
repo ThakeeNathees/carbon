@@ -104,11 +104,13 @@ void CodeGen::_generate_control_flow(const Parser::ControlFlowNode* p_cflow) {
 			_context.push_stack_locals();
 
 			const String& iterator_name = static_cast<const Parser::VarNode*>(p_cflow->args[0].get())->name;
-			Address iterator = _context.add_stack_local(iterator_name);
+			Address iter_value = _context.add_stack_local(iterator_name);
+			Address iterator = _context.add_stack_temp();
 			Address on = _generate_expression(p_cflow->args[1].get());
 
-			_context.opcodes->write_foreach(iterator, on);
+			_context.opcodes->write_foreach(iter_value, iterator, on);
 			_generate_block(p_cflow->body.get());
+			_POP_ADDR_IF_TEMP(iterator);
 			_context.opcodes->write_endforeach();
 			if (on.is_temp()) _context.pop_stack_temp();
 

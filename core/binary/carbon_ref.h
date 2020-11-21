@@ -42,6 +42,9 @@ public:
 	NativeClassRef() {}
 	NativeClassRef(const String& p_native_class);
 
+	bool _is_native_ref() const override { return true; }
+	String _get_native_ref() const { return _name; }
+
 	var __call(stdvec<var*>& p_args) override; // construct
 	var __call_method(const String& p_name, stdvec<var*>& p_args) override; // static method call
 	var __get_member(const String& p_name) override; // static member, constants, functions, ...

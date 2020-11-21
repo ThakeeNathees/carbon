@@ -34,7 +34,7 @@ using namespace carbon;
 #define NO_PATH "<NO-PATH-SET>"
 
 // TODO: handle varerror.
-#define CHECK_THROWS_CARBON_ERR(m_type, m_statement)																		\
+#define CHECK_THROWS_ERR(m_type, m_statement)																		\
 	do {																													\
 		try {																												\
 			m_statement;																									\

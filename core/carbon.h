@@ -42,26 +42,21 @@
 // native imports
 #include "io/logger.h"
 #include "io/file.h"
-#include "io/dynamic_library.h"
+//#include "io/dynamic_library.h" <-- depricated
 #include "os/os.h"
 
 namespace carbon {
 
-inline void initialize(NativeClasses* p_singleton) {
-	NativeClasses::_set_singleton(p_singleton);
+inline void initialize() {
 
 	// Register native classes.
 	NativeClasses::singleton()->register_class<Object>();
-	NativeClasses::singleton()->register_class<_Iterator_String>();
-	NativeClasses::singleton()->register_class<_Iterator_Array>();
-	NativeClasses::singleton()->register_class<_Iterator_Map>();
 	NativeClasses::singleton()->register_class<Bytecode>();
+	NativeClasses::singleton()->register_class<CarbonFunction>();
 
 	NativeClasses::singleton()->register_class<OS>();
 	NativeClasses::singleton()->register_class<File>();
 	NativeClasses::singleton()->register_class<Buffer>();
-	NativeClasses::singleton()->register_class<DynamicLibrary>();
-	NativeClasses::singleton()->register_class<NativeLib>();
 
 }
 

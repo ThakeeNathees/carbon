@@ -46,31 +46,6 @@ const char* Error::what() const noexcept {
 }
 #endif // DEBUG_BUILD
 
-Error::Error(const VarError& p_other) {
-#define CASE_ERROR(m_type) case VarError::m_type: type = m_type; break
-	switch (p_other.get_type()) {
-		CASE_ERROR(OK);
-		CASE_ERROR(BUG);
-		CASE_ERROR(NULL_POINTER);
-		CASE_ERROR(OPERATOR_NOT_SUPPORTED);
-		CASE_ERROR(NOT_IMPLEMENTED);
-		CASE_ERROR(ZERO_DIVISION);
-		CASE_ERROR(TYPE_ERROR);
-		CASE_ERROR(ATTRIBUTE_ERROR);
-		CASE_ERROR(INVALID_ARG_COUNT);
-		CASE_ERROR(INVALID_INDEX);
-	}
-
-#if DEBUG_BUILD
-	__dbg_func__ = p_other.get_dbg_func();
-	__dbg_file__ = get_dbg_file();
-	__dbg_line__ = get_dbg_line();
-#endif
-
-	msg = p_other.what();
-
-}
-
 String Error::get_line() const { 
 	return line;
 }

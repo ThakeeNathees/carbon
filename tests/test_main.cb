@@ -1,0 +1,15 @@
+
+
+func f() {
+	
+	
+	
+}
+
+func main() {
+	var p = "tool.py";
+	println(OS.abs_path(p));
+	println(OS.rel_path(p, "C:/Program Files/Git/cmd"));
+	//f();
+}
+

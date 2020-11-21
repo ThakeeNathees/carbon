@@ -7,5 +7,5 @@ cbenv.SOURCES += [
 	Glob('native_classes/*.cpp'),
 	Glob('parser/*.cpp'),
 	Glob('analyzer/*.cpp'),
-	Glob('var.h/*.cpp'),
+	Glob('var/*.cpp'),
 ]

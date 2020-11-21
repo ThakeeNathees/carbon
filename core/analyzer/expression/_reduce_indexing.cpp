@@ -81,8 +81,8 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 			try {
 				ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->value.get_member(member->name));
 				cv->pos = member->pos; p_expr = cv;
-			} catch (VarError& verr) {
-				THROW_ANALYZER_ERROR(Error(verr).get_type(), verr.what(), index->pos);
+			} catch (Error& err) {
+				THROW_ANALYZER_ERROR(err.get_type(), err.what(), index->pos);
 			}
 		} break;
 

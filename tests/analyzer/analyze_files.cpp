@@ -10,8 +10,7 @@ TEST_CASE("[analyzer_tests]:analyze_files") {
 	Array files = Array(
 		"tests/analyzer/test_files/z_function.cb",
 		"tests/analyzer/test_files/gcd_subset.cb",
-		"tests/analyzer/test_files/newman_conway.cb",
-		"tests/analyzer/test_files/random.cb"
+		"tests/analyzer/test_files/newman_conway.cb"
 	);
 
 	try {

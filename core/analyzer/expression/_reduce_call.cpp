@@ -127,8 +127,8 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					GET_ARGS(call->args); // 0 : const value, 1: name, ... args.
 					var ret = ptrcast<Parser::ConstValueNode>(call->base)->value.call_method(ptrcast<Parser::IdentifierNode>(call->method)->name, args);
 					SET_EXPR_CONST_NODE(ret, call->pos);
-				} catch (const VarError& verr) {
-					THROW_ANALYZER_ERROR(Error(verr).get_type(), verr.what(), call->method->pos);
+				} catch (const Error& err) {
+					THROW_ANALYZER_ERROR(err.get_type(), err.what(), call->method->pos);
 				}
 			}
 		} break;
@@ -439,8 +439,8 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							//		GET_ARGS(call->r_args);
 							//		var ret = ptrcast<StaticFuncBind>(bd)->call(args);
 							//		SET_EXPR_CONST_NODE(ret, call->pos);
-							//	} catch (VarError& verr) {
-							//		THROW_ANALYZER_ERROR(Error(verr).get_type(), verr.what(), call->pos);
+							//	} catch (Error& err) {
+							//		THROW_ANALYZER_ERROR(err.get_type(), err.what(), call->pos);
 							//	}
 							//}
 
