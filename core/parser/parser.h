@@ -276,7 +276,7 @@ public:
 			const EnumInfo* _enum_info;
 			const EnumValueInfo* _enum_value_info;
 			const ClassInfo* _class_info;
-			// Bytecode* for base extern.
+			const Bytecode* _bytecode;
 		};
 
 		IdentifierNode() {

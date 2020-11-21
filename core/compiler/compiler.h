@@ -23,40 +23,58 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef RUNTIME_INSTANCE_H
-#define RUNTIME_INSTANCE_H
+#ifndef COMPILER_H
+#define COMPILER_H
 
 #include "core.h"
-#include "binary/bytecode.h"
+#include "codegen/codegen.h"
+#include "io/path.h"
+#include "io/file.h"
 
 namespace carbon {
 
-class RuntimeInstance : public Object {
-	REGISTER_CLASS(RuntimeInstance, Object) {}
+class Compiler {
+public:
 
-	var __call_method(const String& p_method_name, stdvec<var*>& p_args) override;
-	var __call(stdvec<var*>& p_args) override;
-	var __get_member(const String& p_name) override {
-		uint32_t pos = blueprint->get_member_index(p_name);
-		return members[pos];
-	}
-	void __set_member(const String& p_name, var& p_value) override {
-		uint32_t pos = blueprint->get_member_index(p_name);
-		members[pos] = p_value;
-	}
+	static constexpr const char* source_extension = ".cb";
+	static constexpr const char* bytecode_extension = ".cbo";
 
-	// TODO: implement all the operator methods here.
+	enum CompileFlags {
+		// TODO: bitfield
+	};
+
+	static Compiler* singleton();
+	static void cleanup();
+	
+	void add_flag(CompileFlags p_flag) { _flags |= p_flag; }
+	void add_include_dir(const String& p_dir) {
+		if (!Path::exists(p_dir) || !Path::is_dir(p_dir)) {
+			// TODO: throw error / warning (ignore for now)
+		} else {
+			_include_dirs.push_back(Path::absolute(p_dir));
+		}
+	}
+	ptr<Bytecode> compile(const String& p_path);
 
 private:
-	friend class VM;
-	friend struct RuntimeContext;
-	ptr<Bytecode> blueprint;
-	stdvec<var> members;
-	
-	//ptr<RuntimeInstance>* _self_ptr = nullptr; // not sure if it's a good idea.
+	Compiler() {} // singleton;
+	static Compiler* _singleton;
+
+	struct _Cache {
+		bool compiling = true;
+		ptr<Bytecode> bytecode = nullptr;
+	};
+	stdmap<String, _Cache> _cache;
+	uint32_t _flags;
+	stdvec<String> _include_dirs;
+
+	std::stack<String> _cwd;
+
+public:
+
 
 };
 
 }
 
-#endif // RUNTIME_INSTANCE_H
+#endif // COMPILER_H

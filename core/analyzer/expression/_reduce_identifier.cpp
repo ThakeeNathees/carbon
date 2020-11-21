@@ -239,6 +239,15 @@ void Analyzer::_reduce_identifier(ptr<Parser::Node>& p_expr) {
 		_id.pos = id->pos; p_expr = newptr<Parser::IdentifierNode>(_id);
 		return;
 	}
+
+	// search in imports.
+	for (int i = 0; i < (int)parser->file_node->imports.size(); i++) {
+		if (parser->file_node->imports[i]->name == id->name) {
+			id->ref = Parser::IdentifierNode::REF_EXTERN;
+			id->_bytecode = parser->file_node->imports[i]->bytecode.get();
+			return;
+		}
+	}
 }
 
 

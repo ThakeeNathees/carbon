@@ -54,17 +54,13 @@ int _main(int argc, char** argv) {
 	}
 #endif // DEBUG_BUILD
 
-	// codegen test
-	File source("tests/test_main.cb", File::READ);
-	ptr<Parser> parser = newptr<Parser>(); parser->parse(source.read_text(), source.get_path());
-	ptr<Analyzer> analyzer = newptr<Analyzer>(); analyzer->analyze(parser);
-	CodeGen codegen; ptr<Bytecode> bytecode = codegen.generate(analyzer);
-	auto x = bytecode.get();
+	ptr<Bytecode> bytecode = Compiler::singleton()->compile("tests/test_main.cb");
 	VM* vm = VM::singleton(); vm->run(bytecode, {});
 
 	Logger::log("\nPress enter to exit...", Logger::VERBOSE, Logger::Color::L_SKYBLUE);
 	getchar(); // pause
 
-	NativeClasses::cleanup();
+	cleanup();
+
 	return 0;
 }

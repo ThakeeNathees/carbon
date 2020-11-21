@@ -23,40 +23,63 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef RUNTIME_INSTANCE_H
-#define RUNTIME_INSTANCE_H
-
-#include "core.h"
-#include "binary/bytecode.h"
+#include "compiler.h"
 
 namespace carbon {
 
-class RuntimeInstance : public Object {
-	REGISTER_CLASS(RuntimeInstance, Object) {}
-
-	var __call_method(const String& p_method_name, stdvec<var*>& p_args) override;
-	var __call(stdvec<var*>& p_args) override;
-	var __get_member(const String& p_name) override {
-		uint32_t pos = blueprint->get_member_index(p_name);
-		return members[pos];
-	}
-	void __set_member(const String& p_name, var& p_value) override {
-		uint32_t pos = blueprint->get_member_index(p_name);
-		members[pos] = p_value;
-	}
-
-	// TODO: implement all the operator methods here.
-
-private:
-	friend class VM;
-	friend struct RuntimeContext;
-	ptr<Bytecode> blueprint;
-	stdvec<var> members;
-	
-	//ptr<RuntimeInstance>* _self_ptr = nullptr; // not sure if it's a good idea.
-
-};
-
+Compiler* Compiler::_singleton = nullptr;
+Compiler* Compiler::singleton() {
+	if (_singleton == nullptr) _singleton = new Compiler();
+	return _singleton;
+}
+void Compiler::cleanup() {
+	if (_singleton != nullptr) delete _singleton;
 }
 
-#endif // RUNTIME_INSTANCE_H
+ptr<Bytecode> Compiler::compile(const String& p_path) {
+
+	String path = Path::absolute(p_path);
+	auto it = _cache.find(path);
+	if (it != _cache.end()) {
+		if (it->second.compiling)  throw "TODO: cyclic import found";
+		else return it->second.bytecode;
+
+	} else {
+		_cache[path] = _Cache();
+	}
+
+	String extension = Path::extension(path);
+	if (extension != source_extension) {
+		// TODO: error or warning.
+	}
+
+	class ScopeDestruct {
+	public:
+		std::stack<String>* _cwd_ptr = nullptr;
+		ScopeDestruct(std::stack<String>* p_cwd_ptr) {
+			_cwd_ptr = p_cwd_ptr;
+		}
+		~ScopeDestruct() {
+			Path::set_cwd(_cwd_ptr->top());
+			_cwd_ptr->pop();
+		}
+	};
+	ScopeDestruct destruct = ScopeDestruct(&_cwd);
+
+	_cwd.push(Path::get_cwd());
+	Path::set_cwd(Path::parent(path)); // TODO: error handle
+
+	ptr<Parser> parser = newptr<Parser>();
+	ptr<Analyzer> analyzer = newptr<Analyzer>();
+	ptr<CodeGen> codegen = newptr<CodeGen>();
+
+	File file(path, File::READ);
+	parser->parse(file.read_text(), path);
+	analyzer->analyze(parser);
+	ptr<Bytecode> bytecode = codegen->generate(analyzer);
+
+	_cache[path].bytecode = bytecode;
+	return bytecode;
+}
+
+}

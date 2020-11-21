@@ -1,0 +1,8 @@
+
+func f() {
+	g();
+}
+
+func g() {
+	println("hey from g() in lib");
+}

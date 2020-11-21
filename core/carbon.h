@@ -35,6 +35,7 @@
 #include "core/analyzer/analyzer.h"
 #include "core/codegen/codegen.h"
 #include "core/vm/vm.h"
+#include "compiler/compiler.h"
 
 #include "core/binary/carbon_function.h"
 #include "core/binary/bytecode.h"
@@ -42,6 +43,7 @@
 // native imports
 #include "io/logger.h"
 #include "io/file.h"
+#include "io/path.h"
 //#include "io/dynamic_library.h" <-- depricated
 #include "os/os.h"
 
@@ -56,8 +58,15 @@ inline void initialize() {
 
 	NativeClasses::singleton()->register_class<OS>();
 	NativeClasses::singleton()->register_class<File>();
+	NativeClasses::singleton()->register_class<Path>();
 	NativeClasses::singleton()->register_class<Buffer>();
 
+}
+
+inline void cleanup() {
+	NativeClasses::cleanup();
+	VM::cleanup();
+	Compiler::cleanup();
 }
 
 }

@@ -26,15 +26,29 @@
 #include "bytecode.h"
 
 #include "carbon_function.h"
+#include "vm/vm.h"
 
 namespace carbon {
 
 var Bytecode::__call(stdvec<var*>& p_args) {
+	throw "TODO:";
 	return var(); // TODO:
 }
 
 var Bytecode::__call_method(const String& p_method_name, stdvec<var*>& p_args) {
-	return nullptr; // TODO:
+
+	auto it_f = _functions.find(p_method_name);
+	if (it_f != _functions.end()) {
+		if (!it_f->second->is_static()) throw "TODO: throw error here";
+		return VM::singleton()->call_carbon_function(it_f->second.get(), this, nullptr, p_args);
+	}
+
+	auto it_sm = _static_vars.find(p_method_name);
+	if (it_sm != _static_vars.end()) {
+		return it_sm->second.__call(p_args);
+	}
+
+	throw "TODO: throw error here";
 }
 
 var Bytecode::__get_member(const String& p_member_name) {
@@ -99,6 +113,11 @@ var* Bytecode::_get_member_var_ptr(const String& p_member_name) {
 
 	auto it_fn = _functions.find(p_member_name);
 	if (it_fn != _functions.end()) { _member_vars[p_member_name] = it_fn->second; return &_member_vars[p_member_name]; }
+
+	if (!_is_class) {
+		auto it_ex = _externs.find(p_member_name);
+		if (it_ex != _externs.end()) { _member_vars[p_member_name] = it_ex->second; return &_member_vars[p_member_name]; }
+	}
 
 	if (_base != nullptr) { return _base->_get_member_var_ptr(p_member_name); }
 	return nullptr;

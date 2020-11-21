@@ -21,6 +21,7 @@ env_core.SOURCES = [
     Glob('analyzer/*.cpp'),
     Glob('analyzer/expression/*.cpp'),
     Glob('codegen/*.cpp'),
+    Glob('compiler/*.cpp'),
     Glob('vm/*.cpp'),
 
 ]

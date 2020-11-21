@@ -61,23 +61,23 @@ void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* 
 	for (ptr<Parser::VarNode>& var_node : p_container->vars) {
 		if (var_node->is_static) {
 			var default_value; // default value set at runtime `static var x = f();`
-			p_bytecode->_static_vars[_bytecode->_global_name_get(var_node->name)] = default_value;
+			p_bytecode->_static_vars[var_node->name] = default_value;
 			if (var_node->assignment != nullptr) static_var_init_fn_need = true;
 		} else {
-			p_bytecode->_members[_bytecode->_global_name_get(var_node->name)] = member_index++;
+			p_bytecode->_members[var_node->name] = member_index++;
 			if (var_node->assignment != nullptr) member_var_init_fn_need = true;
 		}
 	}
 
 	// constants
 	for (ptr<Parser::ConstNode>& const_node : p_container->constants) {
-		p_bytecode->_constants[_bytecode->_global_name_get(const_node->name)] = const_node->value;
+		p_bytecode->_constants[const_node->name] = const_node->value;
 	}
 
 	// unnamed enums
 	if (p_container->unnamed_enum != nullptr) {
 		for (std::pair<String, Parser::EnumValueNode> value : p_container->unnamed_enum->values) {
-			p_bytecode->_unnamed_enums[_bytecode->_global_name_get(value.first)] = value.second.value;
+			p_bytecode->_unnamed_enums[value.first] = value.second.value;
 		}
 	}
 
@@ -87,7 +87,7 @@ void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* 
 		for (std::pair<String, Parser::EnumValueNode> value : en->values) {
 			ei->get_edit_values()[value.first] = value.second.value;
 		}
-		p_bytecode->_enums[_bytecode->_global_name_get(en->name)] = ei;
+		p_bytecode->_enums[en->name] = ei;
 	}
 
 

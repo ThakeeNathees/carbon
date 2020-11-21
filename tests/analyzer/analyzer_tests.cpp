@@ -61,11 +61,11 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("__assert(!false);");
 	CHECK_NOTHROW__ANALYZE("__assert(__line() == 1);");
 	CHECK_NOTHROW__ANALYZE("const L = __line(); \n__assert(L == 1);");
-	CHECK_NOTHROW__ANALYZE("__assert(__file() == \"" NO_PATH "\");");
 	CHECK_NOTHROW__ANALYZE("func fn() { __assert(__func() == \"fn\"); }");
 	CHECK_NOTHROW__ANALYZE("class Aclass { func fn() { __assert(__func() == \"Aclass.fn\"); } }");
 	CHECK_NOTHROW__ANALYZE("enum E { V = 1 } __assert(E.V == 1);");
-	CHECK_NOTHROW__ANALYZE("const C = __file(); __assert(C == \"" NO_PATH "\")");
+	//CHECK_NOTHROW__ANALYZE("__assert(__file() == \"" NO_PATH "\");");
+	//CHECK_NOTHROW__ANALYZE("const C = __file(); __assert(C == \"" NO_PATH "\")");
 
 	// indexing reduced at compile time.
 	CHECK_NOTHROW__ANALYZE("enum E { V = 42 } const C = E.V;");

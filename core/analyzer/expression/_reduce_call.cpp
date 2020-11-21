@@ -460,6 +460,10 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					THROW_BUG("TODO:"); // CarbonFunction*
 				} break;
 
+				case Parser::IdentifierNode::REF_EXTERN: {
+					// TODO: check if function exists and check args.
+				} break;
+
 				// TODO: EnumType.get_value_count();
 				//case Parser::IdentifierNode::REF_ENUM_NAME:
 				//case Parser::IdentifierNode::REF_ENUM_VALUE:

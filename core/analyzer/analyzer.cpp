@@ -196,17 +196,21 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 			break;
 
 		case Parser::ClassNode::BASE_LOCAL: {
+			bool found = false;
 			for (int i = 0; i < (int)file_node->classes.size(); i++) {
 				if (p_class->base_class_name == file_node->classes[i]->name) {
+					found = true;
 					_resolve_inheritance(file_node->classes[i].get());
 					p_class->base_class = file_node->classes[i].get();
 				}
 			}
+			if (!found) THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("base class \"%s\" not found.", p_class->base_class_name.c_str()), p_class->pos);
 		} break;
 
 	}
 
 	// TODO: check if a member is already exists in the parent class.
+	// need a list of member info to check in extern.
 
 	p_class->_is_reducing = false;
 	p_class->is_reduced = true;

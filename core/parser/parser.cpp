@@ -26,6 +26,8 @@
 #include "parser.h"
 
 #include "analyzer/analyzer.h"
+#include "compiler/compiler.h"
+#include "io/path.h"
 
 #define THROW_PREDEFINED(m_what, m_name, m_pos)             \
 	THROW_PARSER_ERR(Error::NAME_ERROR,                     \
@@ -57,11 +59,11 @@ if (m_parent->unnamed_enum != nullptr) {																		 \
 namespace carbon {
 
 void Parser::parse(String p_source, String p_file_path) {
-
+	
 	tokenizer = newptr<Tokenizer>();
 	file_node = new_node<FileNode>();
 	file_node->source = p_source;
-	file_node->path = p_file_path;
+	file_node->path = Path::absolute(p_file_path);
 
 	tokenizer->tokenize(file_node->source, file_node->path);
 
@@ -197,15 +199,14 @@ ptr<Parser::ImportNode> Parser::_parse_import() {
 	if (tokenizer->next().type != Token::OP_EQ) THROW_UNEXP_TOKEN("symbol \"=\"");
 	tk = &tokenizer->next();
 	if (tk->type != Token::VALUE_STRING) THROW_UNEXP_TOKEN("string path to source");
+	String path = tk->constant.operator String();
 
-	// TODO: validate path... cyclic dep.
-
-	// TODO: compile bytecode
+	if (!Path::exists(path) || Path::is_dir(path)) throw "TODO: throw error here";
+	import_node->bytecode = Compiler::singleton()->compile(path);
 
 	tk = &tokenizer->next();
 	if (tk->type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
 
-	ASSERT(false); // TODO:
 	return import_node;
 }
 
