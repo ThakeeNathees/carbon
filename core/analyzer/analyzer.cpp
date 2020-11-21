@@ -360,6 +360,8 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 						_reduce_block(cf_node->body);
 						if (cf_node->body_else != nullptr) {
 							_reduce_block(cf_node->body_else);
+							// if it's statements cleared it needto be removed.
+							if (cf_node->body_else->statements.size() == 0) cf_node->body_else = nullptr;
 						}
 					} break;
 
@@ -501,7 +503,9 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 			} else if (cf->cf_type == Parser::ControlFlowNode::IF) {
 				if (cf->args[0]->type == Parser::Node::Type::CONST_VALUE && ptrcast<Parser::ConstValueNode>(cf->args[0])->value.operator bool() == false) {
 					ADD_WARNING(Warning::UNREACHABLE_CODE, "", p_block->statements[i]->pos);
-					p_block->statements.erase(p_block->statements.begin() + i--);
+					// if (false) {} <-- and no else TODO: what if replace the if statement with else body ??.
+					if (cf->body_else == nullptr) p_block->statements.erase(p_block->statements.begin() + i--);
+					
 				}
 			}
 

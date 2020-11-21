@@ -308,14 +308,17 @@ ptr<Parser::ControlFlowNode> Parser::_parse_if_block(const ptr<BlockNode>& p_par
 
 	tk = &tokenizer->peek(0);
 	while (tk->type == Token::KWORD_ELSE) {
-		tk = &tokenizer->next(1);
+		tokenizer->next(); // eat "else"
+		tk = &tokenizer->peek(0);
 		switch (tk->type) {
 			case Token::KWORD_IF: {
+				tokenizer->next(); // eat "if"
 				if_block->body_else = new_node<BlockNode>();
 				if_block->body->parernt_node = p_parent;
 				if_block->body_else->statements.push_back(_parse_if_block(p_parent));
 			} break;
 			case Token::BRACKET_LCUR: {
+				tokenizer->next(); // eat "{"
 				if_block->body_else = _parse_block(p_parent);
 				if (tokenizer->next().type != Token::BRACKET_RCUR) THROW_UNEXP_TOKEN("symbol \"}\"");
 			} break;

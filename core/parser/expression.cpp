@@ -401,6 +401,7 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 
 			int precedence = _get_operator_precedence(p_expr[i].get_op());
 			if (precedence < min_precedence) {
+				min_precedence = precedence;
 				next_op = i;
 				OperatorNode::OpType op = p_expr[i].get_op();
 				unary = (

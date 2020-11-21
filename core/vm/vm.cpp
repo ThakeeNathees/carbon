@@ -60,7 +60,7 @@ int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 		ASSERT(false); // TODO: error no main function to run.
 	}
 
-	printf("%s\n", bytecode->get_function_opcodes_as_string("f").c_str());
+	printf("%s\n", bytecode->get_function_opcodes_as_string("main").c_str());
 
 	ASSERT(main->get_arg_count() <= 1); // main() or main(args)
 

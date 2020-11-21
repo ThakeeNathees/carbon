@@ -1,19 +1,15 @@
 
-/*
-class X{ func f(){} }
-class Y:X{
-	func g(){ f(); }
-}
-//*/
+//func true_f() { println(__func() + " called"); return true; }
+//func false_f(){ println(__func() + " called"); return false; }
 
-
-func f(arr) {
-	for (var i = 0; i < arr.size(); i+=1) {
-		print(arr[i]);
-	}
+func f(){
+	var file = File("test.txt", File.WRITE);
+	print(file);
+	//file.write("testing");
+	file.close();
 }
 
 func main() {
-	f([1, 2, 3, 4]);
+	f();
 }
 

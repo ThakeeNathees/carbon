@@ -333,7 +333,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr) {
 				} break;
 
 				case Parser::OperatorNode::OP_EQEQ:       var_op = var::OP_EQ_CHECK;       goto _addr_operator_;
-				case Parser::OperatorNode::OP_NOTEQ:      var_op = var::OP_EQ_CHECK;	   goto _addr_operator_;
+				case Parser::OperatorNode::OP_NOTEQ:      var_op = var::OP_NOT_EQ_CHECK;   goto _addr_operator_;
 				case Parser::OperatorNode::OP_LTEQ:       var_op = var::OP_LTEQ;		   goto _addr_operator_;
 				case Parser::OperatorNode::OP_GTEQ:       var_op = var::OP_GTEQ;		   goto _addr_operator_;
 				case Parser::OperatorNode::OP_PLUS:       var_op = var::OP_ADDITION;	   goto _addr_operator_;

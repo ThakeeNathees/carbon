@@ -42,6 +42,7 @@ public:
 		__FILE,
 
 		PRINT,
+		PRINTLN,
 		INPUT,
 
 		MATH_MIN,

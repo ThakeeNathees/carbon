@@ -16,7 +16,6 @@ TEST_CASE("[analyzer_tests]:analyze_files") {
 
 	try {
 		for (int i = 0; i < files.size(); i++) {
-			//DEBUG_BREAK_COND(i == 3);
 			parser->parse(File(files[i], File::READ).read_text(), files[i]);
 			analyzer.analyze(parser);
 		}

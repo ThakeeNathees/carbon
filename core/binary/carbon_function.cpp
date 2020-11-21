@@ -66,6 +66,7 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 	while (ip < _opcodes.size()) {
 
 		ASSERT(_opcodes[ip] <= Opcode::END);
+		ret += String("---- addr:") + std::to_string(ip) + " ----\n";
 		ret += Opcodes::get_opcode_name((Opcode)_opcodes[ip]) + '\n';
 
 		switch (_opcodes[ip]) {
@@ -99,10 +100,14 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 				THROW_BUG("TODO:"); // TODO:
 			} break;
 			case Opcode::SET_TRUE: {
-				THROW_BUG("TODO:"); // TODO:
+				CHECK_OPCODE_SIZE(2);
+				ADD_ADDR();
+				ip++;
 			} break;
 			case Opcode::SET_FALSE: {
-				THROW_BUG("TODO:"); // TODO:
+				CHECK_OPCODE_SIZE(2);
+				ADD_ADDR();
+				ip++;
 			} break;
 			case Opcode::OPERATOR: {
 				uint32_t op_type = _opcodes[++ip]; ASSERT(op_type < var::_OP_MAX_);
@@ -181,19 +186,19 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 			} break;
 			case Opcode::JUMP: {
 				CHECK_OPCODE_SIZE(2);
-				ADD_ADDR();
+				ret += String(std::to_string(_opcodes[++ip])) + " // addr\n";
 				ip++;
 			} break;
 			case Opcode::JUMP_IF: {
 				CHECK_OPCODE_SIZE(3);
 				ADD_ADDR();
-				ADD_ADDR();
+				ret += String(std::to_string(_opcodes[++ip])) + " // addr\n" ;
 				ip++;
 			} break;
 			case Opcode::JUMP_IF_NOT: {
 				CHECK_OPCODE_SIZE(3);
 				ADD_ADDR();
-				ADD_ADDR();
+				ret += String(std::to_string(_opcodes[++ip])) + " // addr\n";
 				ip++;
 			} break;
 			case Opcode::RETURN: {

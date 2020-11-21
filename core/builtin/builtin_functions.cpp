@@ -48,6 +48,7 @@ int BuiltinFunctions::get_arg_count(BuiltinFunctions::Type p_func) {
 		case Type::__LINE:
 		case Type::__FILE:
 		case Type::PRINT:
+		case Type::PRINTLN:
 		case Type::INPUT:
 		case Type::MATH_MAX:
 		case Type::MATH_MIN:
@@ -56,18 +57,19 @@ int BuiltinFunctions::get_arg_count(BuiltinFunctions::Type p_func) {
 			return 2;
 	}
 	return 0;
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 10);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 11);
 }
 
 bool BuiltinFunctions::can_const_fold(Type p_func) {
 	switch (p_func) {
 		case Type::PRINT:
+		case Type::PRINTLN:
 		case Type::INPUT:
 			return false;
 		default:
 			return true;
 	}
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 10);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 11);
 }
 
 bool BuiltinFunctions::is_compiletime(Type p_func) {
@@ -80,7 +82,7 @@ bool BuiltinFunctions::is_compiletime(Type p_func) {
 		default:
 			return false;
 	}
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 10);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 11);
 }
 
 // TODO: change this to return r_ret for consistancy.
@@ -94,6 +96,12 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var*>& p_args, var& r_ret)
 			THROW_BUG("the compile time func should be called by the analyzer.");
 
 		case Type::PRINT: {
+			for (int i = 0; i < (int)p_args.size(); i++) {
+				printf("%s", p_args[i]->to_string().c_str());
+			}
+		} break;
+
+		case Type::PRINTLN: {
 			for (int i = 0; i < (int)p_args.size(); i++) {
 				printf("%s", p_args[i]->to_string().c_str());
 			}
@@ -144,7 +152,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var*>& p_args, var& r_ret)
 		} break;
 
 	}
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 10);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 11);
 }
 
 }
