@@ -53,7 +53,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 		// String.prop; index base on built in type
 		case Parser::Node::Type::BUILTIN_TYPE: {
 			Parser::BuiltinTypeNode* bt = ptrcast<Parser::BuiltinTypeNode>(index->base).get();
-			const MemberInfo* mi = var::get_member_info_s(BuiltinTypes::get_var_type(bt->builtin_type), member->name);
+			const MemberInfo* mi = var::get_member_info_s(BuiltinTypes::get_var_type(bt->builtin_type), member->name).get();
 			if (!mi) THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s.", member->name.c_str(), BuiltinTypes::get_type_name(bt->builtin_type).c_str()), member->pos);
 
 			switch (mi->get_type()) {

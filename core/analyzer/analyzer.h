@@ -91,6 +91,7 @@ private:
 	void _resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p_funcs);
 
 	void _resolve_inheritance(Parser::ClassNode* p_class);
+	void _check_member_var_shadow(void* p_base, Parser::ClassNode::BaseType p_base_type, stdvec<ptr<Parser::VarNode>>& p_vars);
 	void _resolve_constant(Parser::ConstNode* p_const);
 	void _resolve_parameters(Parser::FunctionNode* p_func);
 	void _resolve_enumvalue(Parser::EnumValueNode& p_enumvalue, int* p_possible = nullptr);

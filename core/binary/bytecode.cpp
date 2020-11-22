@@ -115,6 +115,9 @@ var* Bytecode::_get_member_var_ptr(const String& p_member_name) {
 	if (it_fn != _functions.end()) { _member_vars[p_member_name] = it_fn->second; return &_member_vars[p_member_name]; }
 
 	if (!_is_class) {
+		auto it_cls = _classes.find(p_member_name);
+		if (it_cls != _classes.end()) { _member_vars[p_member_name] = it_cls->second; return &_member_vars[p_member_name]; }
+
 		auto it_ex = _externs.find(p_member_name);
 		if (it_ex != _externs.end()) { _member_vars[p_member_name] = it_ex->second; return &_member_vars[p_member_name]; }
 	}
@@ -123,68 +126,49 @@ var* Bytecode::_get_member_var_ptr(const String& p_member_name) {
 	return nullptr;
 }
 
-ptr<MemberInfo> Bytecode::get_member_info(const String& p_member_name) {
-	stdmap<String, ptr<MemberInfo>>::iterator it = _member_info.find(p_member_name);
-	if (it != _member_info.end()) return it->second;
+const stdmap<size_t, ptr<MemberInfo>>& Bytecode::get_member_info_list() {
+	if (_member_info_built) return _member_info;
 
-	// TODO: for loop iterate with O(n) use map.find() method with O(log(n))
-	for (auto& cls : _classes) {
-		if (cls.first == p_member_name) {
-			ptr<ClassInfo> class_info = newptr<ClassInfo>(p_member_name, cls.second);
-			_member_info[p_member_name] = class_info;
-			return class_info;
-		}
+	for (auto& pair : _classes) {
+		ptr<ClassInfo> class_info = newptr<ClassInfo>(pair.first, pair.second);
+		_member_info[pair.first.hash()] = class_info;
 	}
-	for (auto& mem : _members) {
-		if (mem.first == p_member_name) {
-			ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(p_member_name);
-			_member_info[p_member_name] = prop_info;
-			return prop_info;
-		}
+
+	for (auto& pair : _members) {
+		ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(pair.first);
+		_member_info[pair.first.hash()] = prop_info;
 	}
-	for (auto& svar : _static_vars) {
-		if (svar.first == p_member_name) {
-			ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(p_member_name, var::VAR, svar.second, false, true);
-			_member_info[p_member_name] = prop_info;
-			return prop_info;
-		}
+	for (auto& pair : _static_vars) {
+		ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(pair.first, var::VAR, pair.second, false, true);
+		_member_info[pair.first.hash()] = prop_info;
 	}
-	for (auto& con : _constants) {
-		if (con.first == p_member_name) {
-			ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(p_member_name, var::VAR, con.second, true, true);
-			_member_info[p_member_name] = prop_info;
-			return prop_info;
-		}
+	for (auto& pair : _constants) {
+		ptr<PropertyInfo> prop_info = newptr<PropertyInfo>(pair.first, var::VAR, pair.second, true, true);
+		_member_info[pair.first.hash()] = prop_info;
 	}
-	for (auto& unen : _unnamed_enums) {
-		if (unen.first == p_member_name) {
-			ptr<EnumValueInfo> ev_info = newptr<EnumValueInfo>(p_member_name, unen.second);
-			_member_info[p_member_name] = ev_info;
-			return ev_info;
-		}
+	for (auto& pair : _unnamed_enums) {
+		ptr<EnumValueInfo> ev_info = newptr<EnumValueInfo>(pair.first, pair.second);
+		_member_info[pair.first.hash()] = ev_info;
 	}
-	for (auto& en : _enums) {
-		if (en.first == p_member_name) {
-			ptr<EnumInfo> en_info = en.second;
-			_member_info[p_member_name] = en_info; // doesn't really necessary.
-			return en_info;
-		}
+	for (auto& pair : _enums) {
+		ptr<EnumInfo> en_info = pair.second;
+		_member_info[pair.first.hash()] = en_info;
 	}
 
 	// TODO: method info
 
-	if (_base != nullptr) return _base->get_member_info(p_member_name);
-
-	return nullptr;
-	//THROW_ERROR(Error::ATTRIBUTE_ERROR,
-	//	String::format("%s %s has no member named \"%s\".", ((_is_class) ? "type" : "file at"), _name.c_str(), p_member_name.c_str()));
-
+	_member_info_built = true;
+	return _member_info;
 }
 
-String Bytecode::get_function_opcodes_as_string(const String& p_name) const {
-	auto it = _functions.find(p_name);
-	if (it == _functions.end()) THROW_ERROR(Error::NAME_ERROR, "function name not found in _functions map"); // TODO: refactor error.
-	return it->second->get_opcodes_as_string(&_global_names_array, &_global_const_values);
+const ptr<MemberInfo> Bytecode::get_member_info(const String& p_member_name) {
+
+	if (!_member_info_built) get_member_info_list(); // this will build.
+
+	auto it = _member_info.find(p_member_name.hash());
+	if (it != _member_info.end()) return it->second;
+	
+	return nullptr;
 }
 
 }

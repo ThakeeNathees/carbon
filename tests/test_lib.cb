@@ -1,8 +1,13 @@
 
+
+class X {
+	var x;
+}
+
 func f() {
-	g();
+	return g();
 }
 
 func g() {
-	println("hey from g() in lib");
+	return "hey from g() in lib";
 }

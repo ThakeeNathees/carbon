@@ -329,6 +329,13 @@ void Opcodes::write_get_mapped(const Address& p_on, const Address& p_key, const 
 	insert(p_dst);
 }
 
+void Opcodes::write_set_mapped(const Address& p_on, const Address& p_key, const Address& p_value) {
+	insert(Opcode::SET_MAPPED);
+	insert(p_on);
+	insert(p_key);
+	insert(p_value);
+}
+
 void Opcodes::write_array_literal(const Address& p_dst, const stdvec<Address>& p_values) {
 	insert(Opcode::CONSTRUCT_LITERAL_ARRAY);
 	insert((uint32_t)p_values.size());

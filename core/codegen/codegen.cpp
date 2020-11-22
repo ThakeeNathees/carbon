@@ -46,6 +46,7 @@ ptr<Bytecode> CodeGen::generate(ptr<Analyzer> p_analyzer) {
 		ptr<Bytecode>_class = newptr<Bytecode>();
 		_class->_file = bytecode;
 		_generate_members(static_cast<Parser::MemberContainer*>(class_node.get()), _class.get());
+		bytecode->_classes[class_node->name] = _class;
 	}
 	_context.curr_class = nullptr;
 
@@ -102,6 +103,9 @@ void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* 
 		ptr<CarbonFunction> cfn = _generate_function(fn.get(), class_node, p_bytecode);
 		cfn->_stack_size = _context.stack_max_size;
 		p_bytecode->_functions[cfn->_name] = cfn;
+
+		if (fn->name == "main") p_bytecode->_main = cfn.get();
+		if (class_node && class_node->constructor == fn.get()) p_bytecode->_constructor = cfn.get();
 	}
 }
 
@@ -152,8 +156,10 @@ void CodeGen::_generate_block(const Parser::BlockNode* p_block) {
 				const Parser::VarNode* var_node = static_cast<const Parser::VarNode*>(statement);
 				Address local_var = _context.add_stack_local(var_node->name);
 				if (var_node->assignment != nullptr) {
-					Address assign_value = _generate_expression(var_node->assignment.get());
-					_context.opcodes->write_assign(local_var, assign_value);
+					Address assign_value = _generate_expression(var_node->assignment.get(), &local_var);
+					if (assign_value != local_var) {
+						_context.opcodes->write_assign(local_var, assign_value);
+					}
 					_POP_ADDR_IF_TEMP(assign_value);
 				}
 			} break;

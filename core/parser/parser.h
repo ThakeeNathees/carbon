@@ -157,9 +157,8 @@ public:
 			BASE_EXTERN
 		};
 		BaseType base_type = NO_BASE;
-		String base_file_name;
-		String base_class_name;
 
+		String base_class_name;
 		ClassNode* base_class = nullptr;
 		Bytecode* base_binary = nullptr;
 

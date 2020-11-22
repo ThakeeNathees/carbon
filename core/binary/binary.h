@@ -74,6 +74,11 @@ struct Address {
 	uint32_t get_address() const { return index | (type << ADDR_INDEX_BITS); }
 	bool is_temp() const { return temp; }
 
+	bool operator==(const Address& p_other) const {
+		return type == p_other.type && index == p_other.index;
+	}
+	bool operator!=(const Address& p_other) const { return !operator==(p_other); }
+
 	String as_string(const stdvec<String>* _global_names_array = nullptr, const stdvec<var>* _global_const_values = nullptr) const;
 
 private:
@@ -172,6 +177,7 @@ struct Opcodes {
 	void write_get_member(const Address& p_name, const Address& p_dst);
 	void write_get_index(const Address& p_on, uint32_t p_name, const Address& p_dst);
 	void write_get_mapped(const Address& p_on, const Address& p_key, const Address& p_dst);
+	void write_set_mapped(const Address& p_on, const Address& p_key, const Address& p_value);
 	void write_array_literal(const Address& p_dst, const stdvec<Address>& p_values);
 	void write_map_literal(const Address& p_dst, const stdvec<Address>& p_keys, const stdvec<Address>& p_values);
 	void write_construct_builtin_type(const Address& p_dst, BuiltinTypes::Type p_type, const stdvec<Address>& p_args);

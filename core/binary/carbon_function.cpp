@@ -88,7 +88,11 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 				ip++;
 			} break;
 			case Opcode::SET_MAPPED: {
-				THROW_BUG("TODO:"); // TODO:
+				CHECK_OPCODE_SIZE(4);
+				ADD_ADDR();
+				ADD_ADDR();
+				ADD_ADDR();
+				ip++;
 			} break;
 			case Opcode::GET_MEMBER: {
 				CHECK_OPCODE_SIZE(3);

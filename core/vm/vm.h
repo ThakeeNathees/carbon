@@ -63,7 +63,7 @@ class VM {
 public:
 	VM() {} // if wanted multiple instance could be created
 	int run(ptr<Bytecode> bytecode, stdvec<String> args);
-	var call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, RuntimeInstance* p_self, stdvec<var*> p_args);
+	var call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<RuntimeInstance> p_self, stdvec<var*> p_args);
 
 	static VM* singleton();
 	static void cleanup();

@@ -117,7 +117,7 @@ private:
 	ptr<CarbonFunction> _generate_function(const Parser::FunctionNode* p_func, const Parser::ClassNode* p_class, Bytecode* p_bytecode);
 	void _generate_block(const Parser::BlockNode* p_block);
 	void _generate_control_flow(const Parser::ControlFlowNode* p_cflow);
-	Address _generate_expression(const Parser::Node* p_expr);
+	Address _generate_expression(const Parser::Node* p_expr, Address* p_dst = nullptr);
 
 	Address add_global_const_value(const var& p_value) {
 		uint32_t pos = _bytecode->_global_const_value_get(p_value);

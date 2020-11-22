@@ -409,7 +409,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					switch (bd->get_type()) {
 						case BindData::STATIC_FUNC: {
 
-							const MemberInfo* memi = bd->get_member_info();
+							const MemberInfo* memi = bd->get_member_info().get();
 							if (memi->get_type() != MemberInfo::METHOD) THROW_BUG("native member reference mismatch.");
 							const MethodInfo* mi = (const MethodInfo*)memi;
 							if (!mi->is_static()) THROW_BUG("native method reference mismatch.");

@@ -44,7 +44,7 @@ var RuntimeInstance::__call_method(const String& p_method_name, stdvec<var*>& p_
 	if (it->second->is_static()) { // calling static method using instance (acceptable)
 		return VM::singleton()->call_carbon_function(it->second.get(), blueprint.get(), nullptr, p_args);
 	} else {
-		return VM::singleton()->call_carbon_function(it->second.get(), blueprint.get(), this, p_args);
+		return VM::singleton()->call_carbon_function(it->second.get(), blueprint.get(), *_self_ptr, p_args);
 	}
 }
 
@@ -53,7 +53,7 @@ var RuntimeInstance::__call(stdvec<var*>& p_args) {
 	return var();
 }
 
-var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, RuntimeInstance* p_self, stdvec<var*> p_args) {
+var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<RuntimeInstance> p_self, stdvec<var*> p_args) {
 
 	Stack stack(p_func->get_stack_size());
 
@@ -61,7 +61,10 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 	context.vm = this;
 	context.stack = &stack;
 	context.args = &p_args;
-	context.self = p_self;
+	if (p_self != nullptr) {
+		context.self = p_self;
+		p_self->_self_ptr = &p_self;
+	}
 	context.bytecode = p_bytecode;
 
 	uint32_t ip = 0; // instruction pointer
@@ -95,7 +98,13 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				*dst = on->__get_mapped(*key);
 			} break;
 			case Opcode::SET_MAPPED: {
-				THROW_BUG("TODO:"); // TODO:
+				CHECK_OPCODE_SIZE(4);
+				var* on = context.get_var_at(opcodes[++ip]);
+				var* key = context.get_var_at(opcodes[++ip]);
+				var* value = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				on->__set_mapped(*key, *value);
 			} break;
 			case Opcode::GET_MEMBER: {
 				CHECK_OPCODE_SIZE(3);
@@ -277,7 +286,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 							func_ptr = it->second;
 							break;
 						}
-						call_base = call_base->get_base().get();
+						call_base = call_base->get_base_binary().get();
 					}
 				} else {
 					if (p_bytecode->is_class()) call_base = p_bytecode->get_file().get();
@@ -388,12 +397,12 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 
 int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 	
-	ptr<CarbonFunction> main = bytecode->get_main();
+	const CarbonFunction* main = bytecode->get_main();
 	if (main == nullptr) {
 		ASSERT(false); // TODO: error no main function to run.
 	}
 
-	printf("%s\n", bytecode->get_function_opcodes_as_string("main").c_str());
+	printf("%s\n", main->get_opcodes_as_string().c_str());
 
 	ASSERT(main->get_arg_count() <= 1); // main() or main(args)
 
@@ -402,9 +411,9 @@ int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 		for (const String& str : args) argv.operator Array().push_back(str);
 		call_args.push_back(&argv);
 	}
-	call_carbon_function(main.get(), bytecode.get(), nullptr, call_args);
+	call_carbon_function(main, bytecode.get(), nullptr, call_args);
 
-	// TODO: return what main returns
+	// TODO: return what main returns in int.
 	return 0;
 }
 

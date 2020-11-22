@@ -53,7 +53,7 @@ private:
 	ptr<Bytecode> blueprint;
 	stdvec<var> members;
 	
-	//ptr<RuntimeInstance>* _self_ptr = nullptr; // not sure if it's a good idea.
+	ptr<RuntimeInstance>* _self_ptr = nullptr; // not sure if it's a good idea.
 
 };
 

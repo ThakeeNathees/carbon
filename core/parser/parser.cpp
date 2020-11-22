@@ -201,7 +201,6 @@ ptr<Parser::ImportNode> Parser::_parse_import() {
 	if (tk->type != Token::VALUE_STRING) THROW_UNEXP_TOKEN("string path to source");
 	String path = tk->constant.operator String();
 
-	if (!Path::exists(path) || Path::is_dir(path)) throw "TODO: throw error here";
 	import_node->bytecode = Compiler::singleton()->compile(path);
 
 	tk = &tokenizer->next();
@@ -248,30 +247,32 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 			tk = &tokenizer->next();
 			if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
 
-			class_node->base_file_name = class_node->base_class_name;
-			class_node->base_class_name = tk->identifier;
+			String base_file_name  = class_node->base_class_name;
+			String base_class_name = tk->identifier;
 			class_node->base_type = ClassNode::BASE_EXTERN;
 
 			Bytecode* base_file = nullptr;
 			for (ptr<ImportNode>& in : file_node->imports) {
-				if (in->name == class_node->base_file_name) {
+				if (in->name == base_file_name) {
 					base_file = in->bytecode.get();
 					break;
 				}
 			}
 			if (!base_file)
-				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("base file name \"%s\" not found from the imported libs.", class_node->base_file_name.c_str()), Vect2i());
+				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("base file name \"%s\" not found from the imported libs.", base_file_name.c_str()), Vect2i());
 
-			Bytecode* base_class = nullptr;
+			Bytecode* base_binary = nullptr;
 			for (const std::pair<String, ptr<Bytecode>>& cls : base_file->get_classes()) {
-				if (cls.first == class_node->base_class_name) {
-					base_class = cls.second.get();
+				if (cls.first == base_class_name) {
+					base_binary = cls.second.get();
 					break;
 				}
 			}
-			if (!base_class)
-				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("base class name \"%s\" not found from the imported lib \"%s\".", class_node->base_class_name.c_str(), class_node->base_file_name.c_str()), Vect2i());
-			class_node->base_binary = base_class;
+			if (!base_binary)
+				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("base class name \"%s\" not found from the imported lib \"%s\".", base_class_name.c_str(), base_file_name.c_str()), Vect2i());
+
+			class_node->base_binary = base_binary;
+			class_node->base_class_name = base_class_name;
 
 			tk = &tokenizer->next();
 		} else {
@@ -763,9 +764,11 @@ static void print_class_node(Parser::ClassNode* p_class, int p_indent) {
 		if (p_class->base_type == Parser::ClassNode::BASE_LOCAL) {
 			PRINT_COLOR(p_class->base_class_name.c_str(), TYPE_COLOR);
 		} else { // BASE_EXTERN
-			PRINT_COLOR(p_class->base_file_name.c_str(), TYPE_COLOR);
-			printf(".");
-			PRINT_COLOR(p_class->base_class_name.c_str(), TYPE_COLOR);
+			//PRINT_COLOR(p_class->base_file_name.c_str(), TYPE_COLOR);
+			//printf(".");
+			//PRINT_COLOR(p_class->base_class_name.c_str(), TYPE_COLOR);
+			PRINT_COLOR("[TODO]", TYPE_COLOR);
+			
 		}
 	}
 	printf("\n");

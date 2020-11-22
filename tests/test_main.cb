@@ -1,7 +1,18 @@
-import x = "test_lib.cb";
+/* TODO:
+-- super call check
+*/
+//////////////////////////////////////////
+
+import lib = "test_lib.cb";
+
+class Y {
+	static func f() {
+		println("f called");
+	}
+}
 
 func main() {
+	var x = Y;
 	println(x);
-	x.f();
 }
 

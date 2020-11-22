@@ -123,12 +123,18 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 	// File level function.
 	for (size_t i = 0; i < file_node->functions.size(); i++) {
 		parser->parser_context.current_func = file_node->functions[i].get();
-		_resolve_parameters(file_node->functions[i].get());
+		Parser::FunctionNode* fn = file_node->functions[i].get();
+		_resolve_parameters(fn);
+
+		if (fn->name == "main") {
+			if (fn->args.size() >= 2) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "main function takes at most 1 argument.", fn->pos);
+		}
+
 		_reduce_block(file_node->functions[i]->body);
 	}
 	parser->parser_context.current_func = nullptr;
 
-	// Inner class function.
+	// class function.
 	for (size_t i = 0; i < file_node->classes.size(); i++) {
 		parser->parser_context.current_class = file_node->classes[i].get();
 		for (size_t j = 0; j < file_node->classes[i]->functions.size(); j++) {
@@ -136,6 +142,7 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 			_reduce_block(file_node->classes[i]->functions[j]->body);
 		}
 	}
+	// TODO: if super(); call needed and no constructor found throw error.
 	parser->parser_context.current_class = nullptr;
 	parser->parser_context.current_func = nullptr;
 }
@@ -180,6 +187,56 @@ void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p
 	}
 }
 
+void Analyzer::_check_member_var_shadow(void* p_base, Parser::ClassNode::BaseType p_base_type, stdvec<ptr<Parser::VarNode>>& p_vars) {
+	switch (p_base_type) {
+		case Parser::ClassNode::NO_BASE: // can't be
+			return;
+		case Parser::ClassNode::BASE_NATIVE: {
+			String* base = (String*)p_base;
+			for (const ptr<Parser::VarNode>& v : p_vars) {
+				ptr<MemberInfo> mi = NativeClasses::singleton()->get_member_info(*base, v->name);
+				if (mi == nullptr) continue;
+				if (mi->get_type() == MemberInfo::PROPERTY) {
+					const PropertyInfo* pi = static_cast<const PropertyInfo*>(mi.get());
+					if (!pi->is_static()) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR,
+						String::format("member named \"%s\" already exists in base \"%s\"", v->name.c_str(), base->c_str()), v->pos);
+				}
+			}
+			String parent = NativeClasses::singleton()->get_inheritance(*base);
+			if (parent != "") _check_member_var_shadow((void*)&parent, Parser::ClassNode::BASE_NATIVE, p_vars);
+		} break;
+		case Parser::ClassNode::BASE_EXTERN: {
+			Bytecode* base = (Bytecode*)p_base;
+			for (const ptr<Parser::VarNode>& v : p_vars) {
+				const ptr<MemberInfo> mi = base->get_member_info(v->name);
+				if (mi == nullptr) continue;
+				if (mi->get_type() == MemberInfo::PROPERTY) {
+					const PropertyInfo* pi = static_cast<const PropertyInfo*>(mi.get());
+					if (!pi->is_static()) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR,
+						String::format("member named \"%s\" already exists in base \"%s\"", v->name.c_str(), base->get_name().c_str()), v->pos);
+				}
+			}
+			if (base->has_base()) {
+				if (base->is_base_native()) _check_member_var_shadow((void*)&base->get_base_native(), Parser::ClassNode::BASE_NATIVE, p_vars);
+				else _check_member_var_shadow(base->get_base_binary().get(), Parser::ClassNode::BASE_EXTERN, p_vars);
+			}
+		} break;
+		case Parser::ClassNode::BASE_LOCAL: {
+			Parser::ClassNode* base = (Parser::ClassNode*)p_base;
+			for (const ptr<Parser::VarNode>& v : p_vars) {
+				for (const ptr<Parser::VarNode>& _v : base->vars) {
+					if (_v->name == v->name) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR,
+						String::format("member named \"%s\" already exists in base \"%s\"", v->name.c_str(), base->name.c_str()), v->pos);
+				}
+			}
+			if (base->base_type == Parser::ClassNode::BASE_LOCAL) _check_member_var_shadow((void*)base->base_class, Parser::ClassNode::BASE_LOCAL, p_vars);
+			else if (base->base_type == Parser::ClassNode::BASE_EXTERN) _check_member_var_shadow((void*)base->base_binary, Parser::ClassNode::BASE_EXTERN, p_vars);
+			else if (base->base_type == Parser::ClassNode::BASE_NATIVE) _check_member_var_shadow((void*)&base->base_class_name, Parser::ClassNode::BASE_NATIVE, p_vars);
+		} break;
+
+	}
+}
+
 void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 
 	if (p_class->is_reduced) return;
@@ -187,30 +244,22 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 	p_class->_is_reducing = true;
 
 	// resolve inheritance.
-	switch (p_class->base_type) {
-		case Parser::ClassNode::NO_BASE:
-		case Parser::ClassNode::BASE_NATIVE: {
-		} break;
-		case Parser::ClassNode::BASE_EXTERN:
-			// already resolved from the parser.
-			break;
-
-		case Parser::ClassNode::BASE_LOCAL: {
-			bool found = false;
-			for (int i = 0; i < (int)file_node->classes.size(); i++) {
-				if (p_class->base_class_name == file_node->classes[i]->name) {
-					found = true;
-					_resolve_inheritance(file_node->classes[i].get());
-					p_class->base_class = file_node->classes[i].get();
-				}
+	if (p_class->base_type == Parser::ClassNode::BASE_LOCAL) {
+		bool found = false;
+		for (int i = 0; i < (int)file_node->classes.size(); i++) {
+			if (p_class->base_class_name == file_node->classes[i]->name) {
+				found = true;
+				_resolve_inheritance(file_node->classes[i].get());
+				p_class->base_class = file_node->classes[i].get();
 			}
-			if (!found) THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("base class \"%s\" not found.", p_class->base_class_name.c_str()), p_class->pos);
-		} break;
-
+		}
+		if (!found) THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("base class \"%s\" not found.", p_class->base_class_name.c_str()), p_class->pos);
 	}
 
-	// TODO: check if a member is already exists in the parent class.
-	// need a list of member info to check in extern.
+	// check if a member is already exists in the parent class.
+	if (p_class->base_type == Parser::ClassNode::BASE_LOCAL) _check_member_var_shadow((void*)p_class->base_class, Parser::ClassNode::BASE_LOCAL, p_class->vars);
+	else if (p_class->base_type == Parser::ClassNode::BASE_EXTERN) _check_member_var_shadow((void*)p_class->base_binary, Parser::ClassNode::BASE_EXTERN, p_class->vars);
+	else if (p_class->base_type == Parser::ClassNode::BASE_NATIVE) _check_member_var_shadow((void*)&p_class->base_class_name, Parser::ClassNode::BASE_NATIVE, p_class->vars);
 
 	p_class->_is_reducing = false;
 	p_class->is_reduced = true;
@@ -294,7 +343,44 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 	};
 	ScopeDestruct destruct = ScopeDestruct(&parser->parser_context, parent_block);
 
+	// if reducing constructor -> check super() call
+	if (parser->parser_context.current_class && parser->parser_context.current_class->base_type != Parser::ClassNode::NO_BASE) {
+		if (parser->parser_context.current_class->constructor == parser->parser_context.current_func) {
+			switch (parser->parser_context.current_class->base_type) {
+				// case Parser::ClassNode::NO_BASE:
+				case Parser::ClassNode::BASE_LOCAL: {
+					Parser::FunctionNode* constructor = parser->parser_context.current_class->base_class->constructor;
+					int required_constructor_argc = (int)(constructor->args.size() - constructor->default_args.size());
+					if (constructor && required_constructor_argc > 0) {
+						// need to call super constructor;
+						if ((p_block->statements.size() == 0) || (p_block->statements[0]->type != Parser::Node::Type::CALL))
+							THROW_ANALYZER_ERROR(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", p_block->pos);
+						const Parser::CallNode* call = static_cast<const Parser::CallNode*>(p_block->statements[0].get());
+						if (call->base->type != Parser::Node::Type::SUPER)
+							THROW_ANALYZER_ERROR(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", call->pos);
+						int args_given = (int)call->args.size();
+						if (constructor->default_args.size() == 0) {
+							if (args_given != constructor->args.size()) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
+								String::format("expected excatly %i argument(s) for super constructor call", (int)constructor->args.size()), p_block->pos);
+						} else {
+							if (args_given < required_constructor_argc) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
+								String::format("expected at least %i argument(s) for super constructor call", required_constructor_argc), p_block->pos);
+							else if (args_given > (int)call->args.size()) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
+								String::format("expected at most %i argument(s) for super constructor call", (int)constructor->args.size()), p_block->pos);
+						}
+					}
+				} break;
+				case Parser::ClassNode::BASE_EXTERN:
+					// TODO:
+				case Parser::ClassNode::BASE_NATIVE:
+					// TODO:
+					break;
+			}
+		}
+	}
+
 	for (int i = 0; i < (int)p_block->statements.size(); i++) {
+
 		switch (p_block->statements[i]->type) {
 			case Parser::Node::Type::UNKNOWN:
 			case Parser::Node::Type::FILE:
@@ -509,7 +595,6 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 					ADD_WARNING(Warning::UNREACHABLE_CODE, "", p_block->statements[i]->pos);
 					// if (false) {} <-- and no else TODO: what if replace the if statement with else body ??.
 					if (cf->body_else == nullptr) p_block->statements.erase(p_block->statements.begin() + i--);
-					
 				}
 			}
 

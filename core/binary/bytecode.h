@@ -57,34 +57,25 @@ public:
 		}
 	}
 
-	ptr<MemberInfo> get_member_info(const String& p_member_name);
+	const ptr<MemberInfo> get_member_info(const String& p_member_name);
+	const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list();
 
 	bool is_class() const { return _is_class; }
+	String get_name() const { return _name; }
 	var* _get_member_var_ptr(const String& p_member_name);
-	stdmap<String, ptr<Bytecode>>& get_classes() { return _classes; }
-	stdmap<String, ptr<Bytecode>>& get_externs() { return _externs; }
-	const ptr<Bytecode>& get_base() const { ASSERT(is_class()); return _base; }
-	const ptr<Bytecode>& get_file() const { ASSERT(!is_class()); return _file; }
 
 	const stdmap<String, ptr<CarbonFunction>>& get_functions() const { return _functions; }
-	const ptr<CarbonFunction>& find_function(const String& p_name) const {
-		auto it = _functions.find(p_name);
-		if (it != _functions.end()) {
-			return it->second;
-		} else {
-			if (_base != nullptr) return _base->find_function(p_name);
-			else return nullptr;
-		}
-	}
-	String get_function_opcodes_as_string(const String& p_name) const;
-	const ptr<CarbonFunction> get_main() const {
-		auto it = _functions.find("main");
-		if (it == _functions.end()) {
-			return nullptr;
-		} else {
-			return it->second;
-		}
-	}
+	stdmap<String, ptr<Bytecode>>& get_classes() { return _classes; }
+	stdmap<String, ptr<Bytecode>>& get_externs() { return _externs; }
+
+	bool has_base() const { ASSERT(_is_class); return _has_base; }
+	bool is_base_native() const { ASSERT(_is_class); return _is_base_native; }
+	const ptr<Bytecode>& get_base_binary() const { ASSERT(_is_class); return _base; }
+	const String& get_base_native() const { return _base_native; }
+
+	const ptr<Bytecode>& get_file() const { ASSERT(!_is_class); return _file; }
+	const CarbonFunction* get_main() const { ASSERT(!_is_class); return _main; }
+	const CarbonFunction* get_constructor() const { ASSERT(_is_class); return _constructor; }
 
 	const String& get_global_name(uint32_t p_pos) {
 		THROW_INVALID_INDEX(_global_names_array.size(), p_pos);
@@ -103,8 +94,13 @@ private:
 
 	String _name; // name for class, path for file.
 	
-	ptr<Bytecode> _base = nullptr; // for ClassNode
-	ptr<Bytecode> _file = nullptr; // for ClassNode
+	// for ClassNode
+	bool _has_base = false;
+	bool _is_base_native = false;
+	ptr<Bytecode> _base = nullptr;
+	String _base_native;
+	ptr<Bytecode> _file = nullptr;
+
 	stdmap<String, ptr<Bytecode>> _classes; // for FileNode
 	stdmap<String, ptr<Bytecode>> _externs; // imported for FileNode
 
@@ -119,11 +115,19 @@ private:
 	stdmap<String, uint32_t> _global_names;
 	stdvec<var> _global_const_values;
 
-	stdmap<String, ptr<MemberInfo>> _member_info;
+	bool _member_info_built = false; // set to true after _member_info is built
+	stdmap<size_t, ptr<MemberInfo>> _member_info;
 	stdmap<String, var> _member_vars; // all members as var (constructed at runtime)
 
+	union {
+		CarbonFunction* _main = nullptr; // file
+		CarbonFunction* _constructor;    // class
+	};
+	CarbonFunction* _static_initializer;
+	CarbonFunction* _member_initialization; // class
+
 	bool _is_compiled = false;
-	bool _is_compinling = false;
+	bool _is_compiling = false;
 
 	uint32_t _global_name_get(const String& p_name) {
 		ASSERT(!_is_class); // global names only available at file.

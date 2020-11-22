@@ -84,37 +84,47 @@ public:
 				return p_args[0]->operator bool();
 			case INT:
 				if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.");
-				try {
-					return p_args[0]->operator int64_t();
-				} catch (Error& err) {
-					ASSERT(err.get_type() == Error::TYPE_ERROR);
-					THROW_ERROR(Error::TYPE_ERROR, err.what()); // TODO: cast var error to cb error.
+				switch (p_args[0]->get_type()) {
+					case var::INT:
+					case var::FLOAT:
+						return p_args[0]->operator int64_t();
+					case  var::STRING:
+						return p_args[0]->operator String().to_int();
+					default: {
+						THROW_ERROR(Error::TYPE_ERROR, String::format("cannot construct integer from type %s", p_args[0]->get_type_name().c_str()));
+					}
 				}
 			case FLOAT:
 				if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.");
-				try {
-					return p_args[0]->operator double();
-				} catch (Error& err) {
-					ASSERT(err.get_type() == Error::TYPE_ERROR);
-					THROW_ERROR(Error::TYPE_ERROR, err.what());
+				switch (p_args[0]->get_type()) {
+					case var::INT:
+					case var::FLOAT:
+						return p_args[0]->operator double();
+					case  var::STRING:
+						return p_args[0]->operator String().to_float();
+					default: {
+						THROW_ERROR(Error::TYPE_ERROR, String::format("cannot construct float from type %s", p_args[0]->get_type_name().c_str()));
+					}
 				}
-			case STRING:
-				if (p_args.size() < 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected at least 1 argument.");
-				if (p_args.size() == 1) {
-					if (p_args[0]->get_type() != var::STRING) THROW_ERROR(Error::TYPE_ERROR, "expected a string at argument 0.");
-				} else {
-					ASSERT(false); // TODO: parse `String("pi = %f", 3.14);`
-				}
+			case STRING: {
+				if (p_args.size() >= 2) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected at most 1 argument."); // TODO: what if multiple args??
+				if (p_args.size() == 0) return String();
+				return p_args[0]->to_string();
+				//if (p_args[0]->get_type() != var::STRING) THROW_ERROR(Error::TYPE_ERROR, "expected a string at argument 0.");
+
+			} break;
 			case ARRAY: {
 				Array ret;
 				for (size_t i = 0; i < p_args.size(); i++) {
 					ret.push_back(*p_args[i]);
 				}
 				return ret;
-			}
-			case MAP:
+			} break;
+
+			case MAP: {
 				if (p_args.size() != 0) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected exactly 0 argument.");
 				return Map();
+			}
 			default: {
 				ASSERT(false); // TODO: throw internal bug.
 			}
