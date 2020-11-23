@@ -58,10 +58,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 					THROW_BUG("identifier to local const should be reduced at analyzing phace");
 
 				case Parser::IdentifierNode::REF_MEMBER_VAR: {
-					Address get_dst = ADDR_DST();
-					Address member_addr = Address(Address::MEMBER_VAR, _context.bytecode->get_member_index(id->name));
-					_context.opcodes->write_get_member(member_addr, get_dst);
-					return get_dst;
+					return Address(Address::MEMBER_VAR, _context.bytecode->get_member_index(id->name));
 				} break;
 
 				case Parser::IdentifierNode::REF_STATIC_VAR:
@@ -70,24 +67,15 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				case Parser::IdentifierNode::REF_ENUM_VALUE:
 				case Parser::IdentifierNode::REF_FUNCTION:
 				case Parser::IdentifierNode::REF_CARBON_CLASS: {
-					Address get_dst = ADDR_DST();
-					Address member_addr = Address(Address::STATIC_MEMBER, _bytecode->_global_name_get(id->name));
-					_context.opcodes->write_get_member(member_addr, get_dst);
-					return get_dst;
+					return Address(Address::STATIC_MEMBER, _bytecode->_global_name_get(id->name));
 				} break;
 
 				case Parser::IdentifierNode::REF_NATIVE_CLASS: {
-					Address get_dst = ADDR_DST();
-					Address member_addr = Address(Address::NATIVE_CLASS, _bytecode->_global_name_get(id->name));
-					_context.opcodes->write_get_member(member_addr, get_dst);
-					return get_dst;
+					return Address(Address::NATIVE_CLASS, _bytecode->_global_name_get(id->name));
 				} break;
 
 				case Parser::IdentifierNode::REF_EXTERN: {
-					Address get_dst = ADDR_DST();
-					Address member_addr = Address(Address::EXTERN, _bytecode->_global_name_get(id->name));
-					_context.opcodes->write_get_member(member_addr, get_dst);
-					return get_dst;
+					return Address(Address::EXTERN, _bytecode->_global_name_get(id->name));
 				} break;
 			}
 		} break;
@@ -152,17 +140,11 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 		} break;
 
 		case Parser::Node::Type::BUILTIN_FUNCTION: {
-			Address get_dst = ADDR_DST();
-			Address func_addr = Address(Address::BUILTIN_FUNC, (uint32_t)static_cast<const Parser::BuiltinFunctionNode*>(p_expr)->func);
-			_context.opcodes->write_get_member(func_addr, get_dst);
-			return get_dst;
+			return Address(Address::BUILTIN_FUNC, (uint32_t)static_cast<const Parser::BuiltinFunctionNode*>(p_expr)->func);
 		} break;
 
 		case Parser::Node::Type::BUILTIN_TYPE: {
-			Address get_dst = ADDR_DST();
-			Address type_addr = Address(Address::BUILTIN_TYPE, (uint32_t)static_cast<const Parser::BuiltinTypeNode*>(p_expr)->builtin_type);
-			_context.opcodes->write_get_member(type_addr, get_dst);
-			return get_dst;
+			return Address(Address::BUILTIN_TYPE, (uint32_t)static_cast<const Parser::BuiltinTypeNode*>(p_expr)->builtin_type);
 		} break;
 
 		case Parser::Node::Type::CALL: {
@@ -206,9 +188,9 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				case Parser::Node::Type::SUPER: {
 
 					if (call->method == nullptr) { // super(...); if used in constructor -> super constructor else call same func on super.
-						// TODO:
+						_context.opcodes->write_call_super_constructor(args);
 					} else { // super.f();
-
+						// TODO:
 					}
 
 				} break;
@@ -276,7 +258,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 
 			var::Operator var_op = var::_OP_MAX_;
 			switch (op->op_type) {
-				case Parser::OperatorNode::OP_EQ:
+				case Parser::OperatorNode::OP_EQ:                                             goto _addr_operator_assign_;
 				case Parser::OperatorNode::OP_PLUSEQ:        var_op = var::OP_ADDITION;       goto _addr_operator_assign_;
 				case Parser::OperatorNode::OP_MINUSEQ:       var_op = var::OP_SUBTRACTION;	  goto _addr_operator_assign_;
 				case Parser::OperatorNode::OP_MULEQ:         var_op = var::OP_MULTIPLICATION; goto _addr_operator_assign_;

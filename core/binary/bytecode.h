@@ -43,8 +43,11 @@ public:
 	var __get_member(const String& p_member_name) override; // static member, constants, enums, functions ...
 	void __set_member(const String& p_member_name, var& p_value) override; // static members.
 
-	int get_member_offset() const {
-		return (_base != nullptr ? _base->get_member_offset() : 0) + (int)_members.size();
+	inline int get_member_count() const {
+		return get_member_offset() + (int)_members.size();
+	}
+	inline int get_member_offset() const {
+		return (_base != nullptr ? _base->get_member_count() : 0);
 	}
 
 	uint32_t get_member_index(const String& p_name) {
@@ -53,7 +56,7 @@ public:
 			ASSERT(_base != nullptr); // TODO: _base==nullptr -> throw runtime error here <-- no member named p_name
 			return _base->get_member_index(p_name);
 		} else {
-			return get_member_offset() + _members[it->second];
+			return get_member_offset() + it->second;
 		}
 	}
 
@@ -73,7 +76,7 @@ public:
 	const ptr<Bytecode>& get_base_binary() const { ASSERT(_is_class); return _base; }
 	const String& get_base_native() const { return _base_native; }
 
-	const ptr<Bytecode>& get_file() const { ASSERT(!_is_class); return _file; }
+	const ptr<Bytecode>& get_file() const { ASSERT(_is_class); return _file; }
 	const CarbonFunction* get_main() const { ASSERT(!_is_class); return _main; }
 	const CarbonFunction* get_constructor() const { ASSERT(_is_class); return _constructor; }
 

@@ -92,8 +92,6 @@ enum Opcode {
 	SET,
 	GET_MAPPED,
 	SET_MAPPED,
-	GET_MEMBER,
-	SET_MEMBER,
 	SET_TRUE,
 	SET_FALSE,
 
@@ -111,7 +109,7 @@ enum Opcode {
 	CALL_FUNC,  // f(...); calling a function
 	CALL_METHOD,
 	CALL_BUILTIN,
-	CALL_SUPER,
+	CALL_SUPER_CTOR,
 
 	JUMP,
 	JUMP_IF,
@@ -174,7 +172,7 @@ struct Opcodes {
 	void write_or_left(const Address& p_left);
 	void write_or_right(const Address& p_right, const Address& p_dst);
 
-	void write_get_member(const Address& p_name, const Address& p_dst);
+	//void write_get_member(const Address& p_name, const Address& p_dst);
 	void write_get_index(const Address& p_on, uint32_t p_name, const Address& p_dst);
 	void write_get_mapped(const Address& p_on, const Address& p_key, const Address& p_dst);
 	void write_set_mapped(const Address& p_on, const Address& p_key, const Address& p_value);
@@ -187,6 +185,7 @@ struct Opcodes {
 	void write_call(const Address& p_ret, const Address& p_on, const stdvec<Address>& p_args);
 	void write_call_func(const Address& p_ret, uint32_t p_name, const stdvec<Address>& p_args);
 	void write_call_method(const Address& p_ret, Address& p_on, uint32_t p_method, const stdvec<Address>& p_args);
+	void write_call_super_constructor(const stdvec<Address>& p_args);
 	void write_operator(const Address& p_dst, var::Operator p_op, const Address& p_left, const Address& p_right);
 
 };

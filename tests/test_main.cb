@@ -5,14 +5,16 @@
 
 import lib = "test_lib.cb";
 
-class Y {
-	static func f() {
-		println("f called");
+
+class Child : lib.L {
+	func Child() {
+		super();
+		println("child constructed");
 	}
 }
 
 func main() {
-	var x = Y;
-	println(x);
+	var c = Child();
+	println(c);
 }
 

@@ -94,15 +94,6 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 				ADD_ADDR();
 				ip++;
 			} break;
-			case Opcode::GET_MEMBER: {
-				CHECK_OPCODE_SIZE(3);
-				ADD_ADDR();
-				ADD_ADDR();
-				ip++;
-			} break;
-			case Opcode::SET_MEMBER: {
-				THROW_BUG("TODO:"); // TODO:
-			} break;
 			case Opcode::SET_TRUE: {
 				CHECK_OPCODE_SIZE(2);
 				ADD_ADDR();
@@ -185,7 +176,7 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 				ADD_ADDR();
 				ip++;
 			} break;
-			case Opcode::CALL_SUPER: {
+			case Opcode::CALL_SUPER_CTOR: {
 				THROW_BUG("TODO:"); // TODO:
 			} break;
 			case Opcode::JUMP: {
@@ -228,7 +219,7 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 
 		}
 		ret += "\n";
-		MISSED_ENUM_CHECK(Opcode::END, 26);
+		MISSED_ENUM_CHECK(Opcode::END, 24);
 	}
 	return ret;
 }

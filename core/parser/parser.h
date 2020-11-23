@@ -160,7 +160,7 @@ public:
 
 		String base_class_name;
 		ClassNode* base_class = nullptr;
-		Bytecode* base_binary = nullptr;
+		ptr<Bytecode> base_binary = nullptr;
 
 		FunctionNode* constructor = nullptr;
 

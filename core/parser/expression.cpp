@@ -49,8 +49,16 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			if (parser_context.current_class == nullptr || (parser_context.current_func && parser_context.current_func->is_static) ||
 				(parser_context.current_var && parser_context.current_var->is_static))
 				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "keyword \"this\" only be used in non-static member function.", Vect2i());
-			expr = new_node<ThisNode>();
-
+			if (tokenizer->peek().type == Token::BRACKET_LPARAN) { // super();
+				tk = &tokenizer->next(); // eat "("
+				ptr<CallNode> call = new_node<CallNode>();
+				call->base = new_node<ThisNode>();
+				call->method = nullptr;
+				call->args = _parse_arguments(p_parent);
+				expr = call;
+			} else {
+				expr = new_node<ThisNode>();
+			}
 		} else if (tk->type == Token::KWORD_SUPER) {
 			// if super is inside class function, it calls the same function in it's base.
 			if (parser_context.current_class == nullptr || (parser_context.current_func == nullptr))
@@ -58,7 +66,16 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			if (parser_context.current_class->base_type == ClassNode::NO_BASE) {
 				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "invalid use of \"super\". Can only used inside classes with a base type.", Vect2i());
 			}
-			expr = new_node<SuperNode>();
+			if (tokenizer->peek().type == Token::BRACKET_LPARAN) { // super();
+				tk = &tokenizer->next(); // eat "("
+				ptr<CallNode> call = new_node<CallNode>();
+				call->base = new_node<SuperNode>();
+				call->method = nullptr;
+				call->args = _parse_arguments(p_parent);
+				expr = call;
+			} else {
+				expr = new_node<SuperNode>();
+			}
 
 		} else if (tk->type == Token::VALUE_FLOAT || tk->type == Token::VALUE_INT || tk->type == Token::VALUE_STRING || tk->type == Token::VALUE_BOOL || tk->type == Token::VALUE_NULL) {
 			expr = new_node<ConstValueNode>(tk->constant);

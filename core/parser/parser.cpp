@@ -261,10 +261,10 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 			if (!base_file)
 				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("base file name \"%s\" not found from the imported libs.", base_file_name.c_str()), Vect2i());
 
-			Bytecode* base_binary = nullptr;
+			ptr<Bytecode> base_binary = nullptr;
 			for (const std::pair<String, ptr<Bytecode>>& cls : base_file->get_classes()) {
 				if (cls.first == base_class_name) {
-					base_binary = cls.second.get();
+					base_binary = cls.second;
 					break;
 				}
 			}

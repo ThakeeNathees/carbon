@@ -52,7 +52,7 @@ struct RuntimeContext {
 	Stack* stack = nullptr;
 	stdvec<var*>* args = nullptr;
 	var self;
-	Bytecode* bytecode = nullptr; // file node blueprint
+	Bytecode* bytecode_file = nullptr; // file node blueprint
 
 	var* get_var_at(const Address& p_addr);
 	const String& get_name_at(uint32_t p_pos);

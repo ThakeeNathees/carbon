@@ -251,7 +251,7 @@ void Analyzer::_reduce_identifier(ptr<Parser::Node>& p_expr) {
 }
 
 
-void Analyzer::_analyze_identifier(ptr<Parser::Node>& p_expr) {
+void Analyzer::_check_identifier(ptr<Parser::Node>& p_expr) {
 	ASSERT(p_expr->type == Parser::Node::Type::IDENTIFIER);
 
 	ptr<Parser::IdentifierNode> id = ptrcast<Parser::IdentifierNode>(p_expr);

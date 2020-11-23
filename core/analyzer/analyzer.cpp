@@ -24,6 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "analyzer.h"
+#include "binary/carbon_function.h"
 
 namespace carbon {
 
@@ -230,7 +231,7 @@ void Analyzer::_check_member_var_shadow(void* p_base, Parser::ClassNode::BaseTyp
 				}
 			}
 			if (base->base_type == Parser::ClassNode::BASE_LOCAL) _check_member_var_shadow((void*)base->base_class, Parser::ClassNode::BASE_LOCAL, p_vars);
-			else if (base->base_type == Parser::ClassNode::BASE_EXTERN) _check_member_var_shadow((void*)base->base_binary, Parser::ClassNode::BASE_EXTERN, p_vars);
+			else if (base->base_type == Parser::ClassNode::BASE_EXTERN) _check_member_var_shadow((void*)base->base_binary.get(), Parser::ClassNode::BASE_EXTERN, p_vars);
 			else if (base->base_type == Parser::ClassNode::BASE_NATIVE) _check_member_var_shadow((void*)&base->base_class_name, Parser::ClassNode::BASE_NATIVE, p_vars);
 		} break;
 
@@ -258,7 +259,7 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 
 	// check if a member is already exists in the parent class.
 	if (p_class->base_type == Parser::ClassNode::BASE_LOCAL) _check_member_var_shadow((void*)p_class->base_class, Parser::ClassNode::BASE_LOCAL, p_class->vars);
-	else if (p_class->base_type == Parser::ClassNode::BASE_EXTERN) _check_member_var_shadow((void*)p_class->base_binary, Parser::ClassNode::BASE_EXTERN, p_class->vars);
+	else if (p_class->base_type == Parser::ClassNode::BASE_EXTERN) _check_member_var_shadow((void*)p_class->base_binary.get(), Parser::ClassNode::BASE_EXTERN, p_class->vars);
 	else if (p_class->base_type == Parser::ClassNode::BASE_NATIVE) _check_member_var_shadow((void*)&p_class->base_class_name, Parser::ClassNode::BASE_NATIVE, p_class->vars);
 
 	p_class->_is_reducing = false;
@@ -325,6 +326,58 @@ void Analyzer::_resolve_enumvalue(Parser::EnumValueNode& p_enumvalue, int* p_pos
 	p_enumvalue.is_reduced = true;
 }
 
+void Analyzer::_check_super_constructor_call(const Parser::BlockNode* p_block) {
+	int constructor_argc = 0;
+	int default_argc = 0;
+
+	const Parser::ClassNode* current_class = parser->parser_context.current_class;
+	switch (parser->parser_context.current_class->base_type) {
+		case Parser::ClassNode::BASE_LOCAL: {
+			Parser::FunctionNode* constructor = current_class->base_class->constructor;
+			if (constructor == nullptr) return;
+			constructor_argc = (int)constructor->args.size();
+			default_argc = (int)constructor->default_args.size();
+		} break;
+		case Parser::ClassNode::BASE_EXTERN: {
+			const CarbonFunction* constructor = current_class->base_binary->get_constructor();
+			if (constructor == nullptr) return;
+			constructor_argc = (int)constructor->get_arg_count();
+			default_argc = (int)constructor->get_default_args().size();
+		} break;
+		case Parser::ClassNode::BASE_NATIVE: {
+			const StaticFuncBind* constructor = NativeClasses::singleton()->get_constructor(current_class->base_class_name);
+			constructor_argc = constructor->get_argc();
+			default_argc = constructor->get_method_info()->get_default_arg_count();
+		} break;
+	}
+
+	if (constructor_argc - default_argc > 0) { // super call needed.
+		if ((p_block->statements.size() == 0) || (p_block->statements[0]->type != Parser::Node::Type::CALL))
+			THROW_ANALYZER_ERROR(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", p_block->pos);
+		const Parser::CallNode* call = static_cast<const Parser::CallNode*>(p_block->statements[0].get());
+		if (call->base->type != Parser::Node::Type::SUPER)
+			THROW_ANALYZER_ERROR(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", call->pos);
+		_check_arg_count(constructor_argc, default_argc, (int)call->args.size(), call->pos);
+	}
+
+	
+}
+
+void Analyzer::_check_arg_count(int p_argc, int p_default_argc, int p_args_given, Vect2i p_err_pos) {
+	int required_min_argc = p_argc - p_default_argc;
+	if (required_min_argc > 0) {
+		if (p_default_argc == 0) {
+			if (p_args_given != p_argc) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
+				String::format("expected excatly %i argument(s) for super constructor call", p_argc), p_err_pos);
+		} else {
+			if (p_args_given < required_min_argc) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
+				String::format("expected at least %i argument(s) for super constructor call", required_min_argc), p_err_pos);
+			else if (p_args_given > p_argc) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
+				String::format("expected at most %i argument(s) for super constructor call", p_argc), p_err_pos);
+		}
+	}
+}
+
 void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 	
 	Parser::BlockNode* parent_block = parser->parser_context.current_block;
@@ -346,36 +399,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 	// if reducing constructor -> check super() call
 	if (parser->parser_context.current_class && parser->parser_context.current_class->base_type != Parser::ClassNode::NO_BASE) {
 		if (parser->parser_context.current_class->constructor == parser->parser_context.current_func) {
-			switch (parser->parser_context.current_class->base_type) {
-				// case Parser::ClassNode::NO_BASE:
-				case Parser::ClassNode::BASE_LOCAL: {
-					Parser::FunctionNode* constructor = parser->parser_context.current_class->base_class->constructor;
-					int required_constructor_argc = (int)(constructor->args.size() - constructor->default_args.size());
-					if (constructor && required_constructor_argc > 0) {
-						// need to call super constructor;
-						if ((p_block->statements.size() == 0) || (p_block->statements[0]->type != Parser::Node::Type::CALL))
-							THROW_ANALYZER_ERROR(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", p_block->pos);
-						const Parser::CallNode* call = static_cast<const Parser::CallNode*>(p_block->statements[0].get());
-						if (call->base->type != Parser::Node::Type::SUPER)
-							THROW_ANALYZER_ERROR(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", call->pos);
-						int args_given = (int)call->args.size();
-						if (constructor->default_args.size() == 0) {
-							if (args_given != constructor->args.size()) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
-								String::format("expected excatly %i argument(s) for super constructor call", (int)constructor->args.size()), p_block->pos);
-						} else {
-							if (args_given < required_constructor_argc) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
-								String::format("expected at least %i argument(s) for super constructor call", required_constructor_argc), p_block->pos);
-							else if (args_given > (int)call->args.size()) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
-								String::format("expected at most %i argument(s) for super constructor call", (int)constructor->args.size()), p_block->pos);
-						}
-					}
-				} break;
-				case Parser::ClassNode::BASE_EXTERN:
-					// TODO:
-				case Parser::ClassNode::BASE_NATIVE:
-					// TODO:
-					break;
-			}
+			_check_super_constructor_call(p_block.get());
 		}
 	}
 
@@ -569,7 +593,6 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 				}
 			} break;
 		} // statement switch ends.
-
 	}
 
 	// remove reduced && un-wanted statements.
@@ -593,8 +616,8 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 			} else if (cf->cf_type == Parser::ControlFlowNode::IF) {
 				if (cf->args[0]->type == Parser::Node::Type::CONST_VALUE && ptrcast<Parser::ConstValueNode>(cf->args[0])->value.operator bool() == false) {
 					ADD_WARNING(Warning::UNREACHABLE_CODE, "", p_block->statements[i]->pos);
-					// if (false) {} <-- and no else TODO: what if replace the if statement with else body ??.
 					if (cf->body_else == nullptr) p_block->statements.erase(p_block->statements.begin() + i--);
+					// TODO: if release build -> move else body to if body and set condition to true.
 				}
 			}
 

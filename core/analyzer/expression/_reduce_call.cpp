@@ -24,6 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "../analyzer.h"
+#include "binary/carbon_function.h"
 
 namespace carbon {
 
@@ -156,6 +157,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						case Parser::IdentifierNode::BASE_EXTERN:
 						case Parser::IdentifierNode::BASE_NATIVE:
 							THROW_BUG("can't be"); // call base is empty.
+
 						case Parser::IdentifierNode::BASE_LOCAL: {
 							is_illegal_call = parser->parser_context.current_class && !id->_func->is_static;
 						} break;
@@ -202,7 +204,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				// File(...); calling a native class constructor.
 				case Parser::IdentifierNode::REF_NATIVE_CLASS: {
 					ASSERT(NativeClasses::singleton()->is_class_registered(id->name));
-					const StaticFuncBind* initializer = NativeClasses::singleton()->get_initializer(id->name);
+					const StaticFuncBind* initializer = NativeClasses::singleton()->get_constructor(id->name);
 					if (initializer) {
 						// check arg counts.
 						int argc = initializer->get_method_info()->get_arg_count() - 1; // -1 for self argument.
@@ -246,72 +248,181 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 		// this.method(); super.method();
 		case Parser::Node::Type::THIS:
 		case Parser::Node::Type::SUPER: {
-			Parser::ClassNode* _class = nullptr;
-			bool base_super = false;
-			if (call->base->type == Parser::Node::Type::THIS) {
-				_class = parser->parser_context.current_class;
+			const Parser::ClassNode* curr_class = parser->parser_context.current_class;
+
+			if (call->method == nullptr) {
+				if (call->base->type == Parser::Node::Type::THIS) { // this(); = __call() = operator ()()
+					const Parser::FunctionNode* func = nullptr;
+					for (const ptr<Parser::FunctionNode>& fn : curr_class->functions) {
+						if (fn->name == "__call") { // TODO: move string literal "__call" to constants
+							func = fn.get(); break;
+						}
+					}
+					if (func == nullptr) THROW_ANALYZER_ERROR(Error::NOT_IMPLEMENTED, String::format("operator method __call not implemented on base %s", curr_class->name.c_str()), call->pos);
+					_check_arg_count((int)func->args.size(), (int)func->default_args.size(), (int)call->args.size(), call->pos);
+				} else { // super(); // TODO: check if it's the first statement.
+					switch (curr_class->base_type) {
+						case Parser::ClassNode::NO_BASE:
+							THROW_BUG("it should be an analyzer error");
+						case Parser::ClassNode::BASE_LOCAL: {
+							const Parser::FunctionNode* base_constructor = curr_class->base_class->constructor;
+							if (base_constructor == nullptr) _check_arg_count(0, 0, (int)call->args.size(), call->pos);
+							else _check_arg_count((int)base_constructor->args.size(), (int)base_constructor->default_args.size(), (int)call->args.size(), call->pos);
+						} break;
+						case Parser::ClassNode::BASE_NATIVE: {
+							const StaticFuncBind* base_constructor = NativeClasses::singleton()->get_constructor(curr_class->base_class_name);
+							if (base_constructor == nullptr) _check_arg_count(0, 0, (int)call->args.size(), call->pos);
+							else _check_arg_count(base_constructor->get_argc(), base_constructor->get_method_info()->get_default_arg_count(), (int)call->args.size(), call->pos);
+						} break;
+						case Parser::ClassNode::BASE_EXTERN: {
+							const CarbonFunction* base_constructor = curr_class->base_binary->get_constructor();
+							if (base_constructor == nullptr) _check_arg_count(0, 0, (int)call->args.size(), call->pos);
+							else _check_arg_count(base_constructor->get_arg_count(), (int)base_constructor->get_default_args().size(), (int)call->args.size(), call->pos);
+						} break;
+					}
+				}
+
 			} else {
-				base_super = true;
-				switch (parser->parser_context.current_class->base_type) {
-					case Parser::ClassNode::NO_BASE: ASSERT(false);
-					case Parser::ClassNode::BASE_LOCAL: {
-						_class = parser->parser_context.current_class->base_class;
-					} break;
-					case Parser::ClassNode::BASE_EXTERN: ASSERT(false); // TODO:
-					case Parser::ClassNode::BASE_NATIVE: ASSERT(false); // TODO:
+				const String& method_name = ptrcast<Parser::IdentifierNode>(call->method)->name;
+				if (call->base->type == Parser::Node::Type::THIS) {
+					// this.method();
+					Parser::IdentifierNode _id = _find_member(curr_class, method_name);
+					switch (_id.ref) {
+						case Parser::IdentifierNode::REF_UNKNOWN:
+							THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->name.c_str()), call->pos);
+
+						// this.a_var();
+						case Parser::IdentifierNode::REF_MEMBER_VAR: {
+							call->base = call->method;
+							call->method = nullptr;
+						} break;
+
+						// this.CONST(); inavlid callables.
+						case Parser::IdentifierNode::REF_MEMBER_CONST:
+						case Parser::IdentifierNode::REF_ENUM_NAME:
+						case Parser::IdentifierNode::REF_ENUM_VALUE:
+							THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
+
+						// this.f(); // function call on this.
+						case Parser::IdentifierNode::REF_FUNCTION: {
+							if (parser->parser_context.current_func->is_static && !_id._func->is_static) {
+								THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", _id.name.c_str()), _id.pos);
+							}
+
+							int argc = (int)_id._func->args.size();
+							int argc_default = (int)_id._func->default_args.size();
+							_check_arg_count(argc, argc_default, (int)call->args.size(), call->pos);
+
+						} break;
+
+						case Parser::IdentifierNode::REF_PARAMETER:
+						case Parser::IdentifierNode::REF_LOCAL_VAR:
+						case Parser::IdentifierNode::REF_LOCAL_CONST:
+						case Parser::IdentifierNode::REF_CARBON_CLASS:
+						case Parser::IdentifierNode::REF_NATIVE_CLASS:
+						case Parser::IdentifierNode::REF_EXTERN:
+							THROW_BUG("can't be");
+					}
+				} else { // super.method();
+
+
+					switch (curr_class->base_type) {
+						case Parser::ClassNode::NO_BASE: THROW_BUG("it should be an analyzer error");
+
+
+						case Parser::ClassNode::BASE_LOCAL: {
+							Parser::IdentifierNode _id = _find_member(curr_class->base_class, method_name);
+							switch (_id.ref) {
+								case Parser::IdentifierNode::REF_UNKNOWN:
+									THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->name.c_str()), call->pos);
+
+								// super.a_var();
+								case Parser::IdentifierNode::REF_MEMBER_VAR: {
+									THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" cannot be access with with \"super\" use \"this\" instead.", method_name.c_str()), call->pos);
+								} break;
+
+								// super.CONST(); inavlid callables.
+								case Parser::IdentifierNode::REF_MEMBER_CONST:
+								case Parser::IdentifierNode::REF_ENUM_NAME:
+								case Parser::IdentifierNode::REF_ENUM_VALUE:
+									THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
+
+								// super.f(); // function call on super.
+								case Parser::IdentifierNode::REF_FUNCTION: { // TODO: static function and super -> super.f(); vs SuperClass.f();
+									if (parser->parser_context.current_func->is_static && !_id._func->is_static) {
+										THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", _id.name.c_str()), call->pos);
+									}
+
+									int argc = (int)_id._func->args.size();
+									int argc_default = (int)_id._func->default_args.size();
+									_check_arg_count(argc, argc_default, (int)call->args.size(), call->pos);
+
+								} break;
+
+								case Parser::IdentifierNode::REF_PARAMETER:
+								case Parser::IdentifierNode::REF_LOCAL_VAR:
+								case Parser::IdentifierNode::REF_LOCAL_CONST:
+								case Parser::IdentifierNode::REF_CARBON_CLASS:
+								case Parser::IdentifierNode::REF_NATIVE_CLASS:
+								case Parser::IdentifierNode::REF_EXTERN:
+									THROW_BUG("can't be");
+							}
+						} break;
+
+						// super.method(); // super is native
+						case Parser::ClassNode::BASE_NATIVE: {
+							// TODO: can also check types at compile time it arg is constvalue.
+							ptr<BindData> bd = NativeClasses::singleton()->get_bind_data(curr_class->base_class_name, method_name);
+							if (bd == nullptr) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->base_class_name.c_str()), call->pos);
+							switch (bd->get_type()) {
+								case BindData::METHOD: { // super.method();
+									if (parser->parser_context.current_func->is_static) { // calling super method from static function.
+										THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", method_name.c_str()), call->pos);
+									}
+									const MethodInfo* mi = ptrcast<MethodBind>(bd)->get_method_info();
+									_check_arg_count(mi->get_arg_count(), mi->get_default_arg_count(), (int)call->args.size(), call->pos);
+								} break;
+								case BindData::STATIC_FUNC: { // super.sfunc();
+									const MethodInfo* mi = ptrcast<StaticFuncBind>(bd)->get_method_info();
+									_check_arg_count(mi->get_arg_count(), mi->get_default_arg_count(), (int)call->args.size(), call->pos);
+								} break;
+								case BindData::MEMBER_VAR: { // super.a_var();
+									THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" cannot be access with with \"super\" use \"this\" instead.", method_name.c_str()), call->pos);
+								} break;
+								case BindData::STATIC_VAR:
+									break; // OK
+								case BindData::STATIC_CONST:
+								case BindData::ENUM:
+								case BindData::ENUM_VALUE:
+									THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
+									break;
+							}
+						} break;
+
+						// super.method() // super is extern
+						case Parser::ClassNode::BASE_EXTERN: {
+							const MemberInfo* info = curr_class->base_binary->get_member_info(method_name).get();
+							if (info == nullptr) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->base_class_name.c_str()), call->pos);
+							switch (info->get_type()) {
+								case MemberInfo::METHOD: {
+									const MethodInfo* mi = static_cast<const MethodInfo*>(info);
+									_check_arg_count(mi->get_arg_count(), mi->get_default_arg_count(), (int)call->args.size(), call->pos);
+								} break;
+								case MemberInfo::PROPERTY: {
+									const PropertyInfo* pi = static_cast<const PropertyInfo*>(info);
+									if (!pi->is_static()) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" cannot be access with with \"super\" use \"this\" instead.", method_name.c_str()), call->pos);
+								} break;
+								case MemberInfo::ENUM:
+								case MemberInfo::ENUM_VALUE:
+									THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
+								case MemberInfo::CLASS:
+									THROW_BUG("can't be");
+							}
+						} break;
+					}
 				}
 			}
-
-			// TODO: move this, this is only `this` and base is local.
-			const String& method_name = ptrcast<Parser::IdentifierNode>(call->method)->name;
-			Parser::IdentifierNode _id = _find_member(_class, method_name); _id.pos = call->method->pos;
-			switch (_id.ref) {
-				case Parser::IdentifierNode::REF_UNKNOWN:
-					THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), _class->name.c_str()), call->pos);
-				case Parser::IdentifierNode::REF_PARAMETER:
-				case Parser::IdentifierNode::REF_LOCAL_VAR:
-				case Parser::IdentifierNode::REF_LOCAL_CONST:
-					THROW_BUG("can't be.");
-
-				// this.a_var();
-				case Parser::IdentifierNode::REF_MEMBER_VAR: {
-					if (base_super) // super.a_var(); is illegal
-						THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" cannot be access with with \"super\" use \"this\" instead.", method_name.c_str()), call->pos);
-					call->base = call->method;
-					call->method = nullptr;
-				} break;
-
-				// this.CONST(); inavlid callables.
-				case Parser::IdentifierNode::REF_MEMBER_CONST:
-				case Parser::IdentifierNode::REF_ENUM_NAME:
-				case Parser::IdentifierNode::REF_ENUM_VALUE:
-					THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
-					break;
-
-				// this.f(); // function call on this, super.
-				case Parser::IdentifierNode::REF_FUNCTION: {
-					if (parser->parser_context.current_func->is_static && !_id._func->is_static) {
-						THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", _id.name.c_str()), _id.pos);
-					}
-
-					int argc = (int)_id._func->args.size();
-					int argc_default = (int)_id._func->default_args.size();
-
-					int argc_given = (int)call->args.size();
-					if (argc_given + argc_default < argc) {
-						if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), call->pos);
-						else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), call->pos);
-					} else if (argc_given > argc) {
-						if (argc_default == 0) THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), call->pos);
-						else THROW_ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), call->pos);
-					}
-				} break;
-
-				case Parser::IdentifierNode::REF_CARBON_CLASS:
-				case Parser::IdentifierNode::REF_NATIVE_CLASS:
-				case Parser::IdentifierNode::REF_EXTERN:
-					THROW_BUG("can't be");
-			}
+			
 		} break;
 
 		// base().method(); [o1, o2][1].method(); (x + y).method();

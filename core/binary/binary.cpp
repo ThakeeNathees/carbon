@@ -33,8 +33,6 @@ String Opcodes::get_opcode_name(Opcode p_opcode) {
 		"SET",
 		"GET_MAPPED",
 		"SET_MAPPED",
-		"GET_MEMBER",
-		"SET_MEMBER",
 		"SET_TRUE",
 		"SET_FALSE",
 		"OPERATOR",
@@ -57,7 +55,7 @@ String Opcodes::get_opcode_name(Opcode p_opcode) {
 		"ITER_NEXT",
 		"END",
 	};
-	MISSED_ENUM_CHECK(END, 26);
+	MISSED_ENUM_CHECK(END, 24);
 	return _names[p_opcode];
 }
 
@@ -309,11 +307,11 @@ void Opcodes::write_or_right(const Address& p_right, const Address& p_dst) {
 
 /// expressions
 
-void Opcodes::write_get_member(const Address& p_member, const Address& p_dst) {
-	insert(Opcode::GET_MEMBER);
-	insert(p_member);
-	insert(p_dst);
-}
+//void Opcodes::write_get_member(const Address& p_member, const Address& p_dst) {
+//	insert(Opcode::GET_MEMBER);
+//	insert(p_member);
+//	insert(p_dst);
+//}
 
 void Opcodes::write_get_index(const Address& p_on, uint32_t p_name, const Address& p_dst) {
 	insert(Opcode::GET);
@@ -423,6 +421,14 @@ void Opcodes::write_call_method(const Address& p_ret, Address& p_on, uint32_t p_
 		insert(addr);
 	}
 	insert(p_ret);
+}
+
+void Opcodes::write_call_super_constructor(const stdvec<Address>& p_args) {
+	insert(Opcode::CALL_SUPER_CTOR);
+	insert((uint32_t)p_args.size());
+	for (const Address& addr : p_args) {
+		insert(addr);
+	}
 }
 
 void Opcodes::write_operator(const Address& p_dst, var::Operator p_op, const Address& p_left, const Address& p_right) {

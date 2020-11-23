@@ -90,19 +90,19 @@ private:
 	var _call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var*>& args);
 	void _resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p_funcs);
 
-	void _resolve_inheritance(Parser::ClassNode* p_class);
+	void _check_identifier(ptr<Parser::Node>& p_expr);
 	void _check_member_var_shadow(void* p_base, Parser::ClassNode::BaseType p_base_type, stdvec<ptr<Parser::VarNode>>& p_vars);
+	void _check_super_constructor_call(const Parser::BlockNode* p_block);
+	void _check_arg_count(int p_argc, int p_default_argc, int p_args_given, Vect2i p_err_pos = Vect2i(0, 0));
+
+	void _resolve_inheritance(Parser::ClassNode* p_class);
 	void _resolve_constant(Parser::ConstNode* p_const);
 	void _resolve_parameters(Parser::FunctionNode* p_func);
 	void _resolve_enumvalue(Parser::EnumValueNode& p_enumvalue, int* p_possible = nullptr);
 
 	void _reduce_expression(ptr<Parser::Node>& p_expr);
 	void _reduce_block(ptr<Parser::BlockNode>& p_block);
-
-	// expressions.
 	void _reduce_identifier(ptr<Parser::Node>& p_expr);
-	void _analyze_identifier(ptr<Parser::Node>& p_expr);
-
 	void _reduce_call(ptr<Parser::Node>& p_expr);
 	void _reduce_indexing(ptr<Parser::Node>& p_expr);
 

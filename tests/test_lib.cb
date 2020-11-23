@@ -1,13 +1,12 @@
 
-
-class X {
-	var x;
+class Aclass {
+	func Aclass() {
+		println("super constructor");
+	}
 }
 
-func f() {
-	return g();
-}
-
-func g() {
-	return "hey from g() in lib";
+class L {
+	func L(){
+		println("L called");
+	}
 }

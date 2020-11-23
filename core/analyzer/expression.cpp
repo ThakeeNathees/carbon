@@ -45,7 +45,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 
 		case Parser::Node::Type::IDENTIFIER: {
 			_reduce_identifier(p_expr);
-			_analyze_identifier(p_expr);
+			_check_identifier(p_expr);
 		} break;
 
 		// reduce ArrayNode

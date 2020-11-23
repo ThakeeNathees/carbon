@@ -45,6 +45,12 @@ class RuntimeInstance : public Object {
 		members[pos] = p_value;
 	}
 
+	RuntimeInstance() {}
+	RuntimeInstance(ptr<Bytecode>& p_blueprint) {
+		blueprint = p_blueprint;
+		members.resize(blueprint->get_member_count());
+	}
+
 	// TODO: implement all the operator methods here.
 
 private:

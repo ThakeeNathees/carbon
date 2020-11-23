@@ -65,7 +65,11 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 		context.self = p_self;
 		p_self->_self_ptr = &p_self;
 	}
-	context.bytecode = p_bytecode;
+	if (p_bytecode->is_class()) {
+		context.bytecode_file = p_bytecode->get_file().get();
+	} else {
+		context.bytecode_file = p_bytecode;
+	}
 
 	uint32_t ip = 0; // instruction pointer
 
@@ -106,17 +110,6 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 
 				on->__set_mapped(*key, *value);
 			} break;
-			case Opcode::GET_MEMBER: {
-				CHECK_OPCODE_SIZE(3);
-				var* member = context.get_var_at(opcodes[++ip]);
-				var* dst = context.get_var_at(opcodes[++ip]);
-				ip++;
-
-				*dst = *member;
-			} break;
-			case Opcode::SET_MEMBER: {
-				THROW_BUG("TODO:"); // TODO:
-			} break;
 			case Opcode::SET_TRUE: {
 				CHECK_OPCODE_SIZE(2);
 				var* dst = context.get_var_at(opcodes[++ip]);
@@ -156,7 +149,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 						} else if (left->get_type() == var::FLOAT) {
 							*dst = -left->operator double();
 						} else {
-							// TODO: throw runtime error.
+							THROW_BUG("TODO: throw runtime error.");
 						}
 					} break;
 					case var::OP_EQ_CHECK: { *dst = *left == *right; } break;
@@ -217,7 +210,30 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				*dst = NativeClasses::singleton()->construct(class_name, args);
 			} break;
 			case Opcode::CONSTRUCT_CARBON: {
-				THROW_BUG("TODO:"); // TODO:
+				CHECK_OPCODE_SIZE(4);
+				const String& name = context.get_name_at(opcodes[++ip]);
+				uint32_t argc = opcodes[++ip];
+				stdvec<var*> args;
+				for (int i = 0; i < (int)argc; i++) {
+					var* arg = context.get_var_at(opcodes[++ip]);
+					args.push_back(arg);
+				}
+				var* dst = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				stdmap<String, ptr<Bytecode>>* classes;
+				if (p_bytecode->is_class()) classes = &p_bytecode->get_file()->get_classes();
+				else classes = &p_bytecode->get_classes();
+				if (classes->find(name) == classes->end()) THROW_BUG("cannot find classes the class");
+
+				ptr<Bytecode> blueprint = classes->at(name);
+				ptr<RuntimeInstance> instance = newptr<RuntimeInstance>(blueprint);
+
+				// TODO: super constructor never called (automatically).
+				const CarbonFunction* constructor = blueprint->get_constructor();
+				if (constructor) call_carbon_function(constructor, blueprint.get(), instance, args);
+
+				*dst = instance;
 			} break;
 			case Opcode::CONSTRUCT_LITERAL_ARRAY: {
 				CHECK_OPCODE_SIZE(3);
@@ -334,8 +350,27 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				BuiltinFunctions::call((BuiltinFunctions::Type)func, args, *ret);
 				ip++;
 			} break;
-			case Opcode::CALL_SUPER: {
-				THROW_BUG("TODO:"); // TODO: implement super(); add opcode call_super_func super.f();
+			case Opcode::CALL_SUPER_CTOR: {
+				CHECK_OPCODE_SIZE(2);
+				uint32_t argc = opcodes[++ip];
+				stdvec<var*> args;
+				for (int i = 0; i < (int)argc; i++) {
+					var* arg = context.get_var_at(opcodes[++ip]);
+					args.push_back(arg);
+				}
+				ip++;
+
+				if (p_self->blueprint->is_base_native()) {
+					const StaticFuncBind* ctor = NativeClasses::singleton()->get_constructor(p_self->blueprint->get_base_native());
+					// TODO: implement native instance.
+					// ctor->call(p_self->native_member);
+					THROW_BUG("TODO:");
+				} else {
+					const CarbonFunction* ctor = p_self->blueprint->get_base_binary()->get_constructor();
+					// TODO: initialize members before calling ctor
+					if (ctor) call_carbon_function(ctor, p_self->blueprint->get_base_binary().get(), p_self, args);
+				}
+
 			} break;
 			case Opcode::JUMP: {
 				CHECK_OPCODE_SIZE(2);
@@ -389,7 +424,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 			} break;
 
 		}
-		MISSED_ENUM_CHECK(Opcode::END, 26);
+		MISSED_ENUM_CHECK(Opcode::END, 24);
 
 	}
 	THROW_BUG("can't reach here");
@@ -440,8 +475,8 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 		} break;
 		case Address::EXTERN: {
 			const String& name = get_name_at(index);
-			ASSERT(bytecode->get_externs().find(name) != bytecode->get_externs().end());
-			return bytecode->_get_member_var_ptr(name);
+			ASSERT(bytecode_file->get_externs().find(name) != bytecode_file->get_externs().end());
+			return bytecode_file->_get_member_var_ptr(name);
 		} break;
 		case Address::NATIVE_CLASS: {
 			const String& name = get_name_at(index);
@@ -463,11 +498,11 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 			const String& name = get_name_at(index);
 			var* member = nullptr;
 			if (self.get_type() == var::OBJECT) member = self.cast_to<RuntimeInstance>()->blueprint->_get_member_var_ptr(name);
-			if (member == nullptr) member = bytecode->_get_member_var_ptr(name);
+			if (member == nullptr) member = bytecode_file->_get_member_var_ptr(name);
 			return member;
 		} break;
 		case Address::CONST_VALUE: {
-			return bytecode->get_global_const_value(index);
+			return bytecode_file->get_global_const_value(index);
 		} break;
 
 		MISSED_ENUM_CHECK(Address::CONST_VALUE, 10);
@@ -476,7 +511,7 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 }
 
 const String& RuntimeContext::get_name_at(uint32_t p_pos) {
-	return bytecode->get_global_name(p_pos);
+	return bytecode_file->get_global_name(p_pos);
 }
 
 var* VM::_get_native_ref(const String& p_name) {

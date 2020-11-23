@@ -43,10 +43,29 @@ ptr<Bytecode> CodeGen::generate(ptr<Analyzer> p_analyzer) {
 	}
 
 	for (ptr<Parser::ClassNode>& class_node : root->classes) {
+		// TODO: base class
 		ptr<Bytecode>_class = newptr<Bytecode>();
 		_class->_file = bytecode;
+		_class->_is_class = true;
+		_class->_name = class_node->name;
+
+		switch (class_node->base_type) {
+			case Parser::ClassNode::NO_BASE:
+				break;
+			case Parser::ClassNode::BASE_LOCAL:
+				THROW_BUG("TODO:"); // assign after generation.
+			case Parser::ClassNode::BASE_NATIVE:
+				_class->_is_base_native = true;
+				_class->_base_native = class_node->base_class_name;
+				break;
+			case Parser::ClassNode::BASE_EXTERN:
+				_class->_is_base_native = false;
+				_class->_base = class_node->base_binary;
+				break;
+		}
+
 		_generate_members(static_cast<Parser::MemberContainer*>(class_node.get()), _class.get());
-		bytecode->_classes[class_node->name] = _class;
+		bytecode->_classes[_class->_name] = _class;
 	}
 	_context.curr_class = nullptr;
 
