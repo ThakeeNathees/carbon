@@ -46,19 +46,9 @@ public:
 	inline int get_member_count() const {
 		return get_member_offset() + (int)_members.size();
 	}
-	inline int get_member_offset() const {
-		return (_base != nullptr ? _base->get_member_count() : 0);
-	}
+	int get_member_offset() const;
 
-	uint32_t get_member_index(const String& p_name) {
-		auto it = _members.find(p_name);
-		if (it == _members.end()) {
-			ASSERT(_base != nullptr); // TODO: _base==nullptr -> throw runtime error here <-- no member named p_name
-			return _base->get_member_index(p_name);
-		} else {
-			return get_member_offset() + it->second;
-		}
-	}
+	uint32_t get_member_index(const String& p_name);
 
 	const ptr<MemberInfo> get_member_info(const String& p_member_name);
 	const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list();
@@ -101,6 +91,7 @@ private:
 	bool _has_base = false;
 	bool _is_base_native = false;
 	ptr<Bytecode> _base = nullptr;
+	void* _pending_base = nullptr; // incase base isn't fully compiled yet. Parser::ClassNode*
 	String _base_native;
 	ptr<Bytecode> _file = nullptr;
 

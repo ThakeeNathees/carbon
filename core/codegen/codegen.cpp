@@ -42,18 +42,22 @@ ptr<Bytecode> CodeGen::generate(ptr<Analyzer> p_analyzer) {
 		_bytecode->_externs[import_node->name] = import_node->bytecode;
 	}
 
+	stdmap<Bytecode*, String> pending_inheritance;
 	for (ptr<Parser::ClassNode>& class_node : root->classes) {
-		// TODO: base class
 		ptr<Bytecode>_class = newptr<Bytecode>();
 		_class->_file = bytecode;
 		_class->_is_class = true;
 		_class->_name = class_node->name;
 
+		// set inheritance.
+		_class->_has_base = class_node->base_type != Parser::ClassNode::NO_BASE;
 		switch (class_node->base_type) {
 			case Parser::ClassNode::NO_BASE:
 				break;
 			case Parser::ClassNode::BASE_LOCAL:
-				THROW_BUG("TODO:"); // assign after generation.
+				pending_inheritance[_class.get()] = class_node->base_class->name;
+				_class->_pending_base = (void*)class_node->base_class;
+				break;
 			case Parser::ClassNode::BASE_NATIVE:
 				_class->_is_base_native = true;
 				_class->_base_native = class_node->base_class_name;
@@ -63,10 +67,15 @@ ptr<Bytecode> CodeGen::generate(ptr<Analyzer> p_analyzer) {
 				_class->_base = class_node->base_binary;
 				break;
 		}
-
 		_generate_members(static_cast<Parser::MemberContainer*>(class_node.get()), _class.get());
+		_class->_pending_base = nullptr;
 		bytecode->_classes[_class->_name] = _class;
 	}
+
+	for (auto it : pending_inheritance) {
+		it.first->_base = bytecode->_classes.at(it.second);
+	}
+
 	_context.curr_class = nullptr;
 
 	bytecode->_build_global_names_array();
@@ -123,7 +132,7 @@ void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* 
 		cfn->_stack_size = _context.stack_max_size;
 		p_bytecode->_functions[cfn->_name] = cfn;
 
-		if (fn->name == "main") p_bytecode->_main = cfn.get();
+		if (fn->name == "main") p_bytecode->_main = cfn.get(); // TODO: move literal string "main" to constants.
 		if (class_node && class_node->constructor == fn.get()) p_bytecode->_constructor = cfn.get();
 	}
 }

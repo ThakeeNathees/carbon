@@ -25,6 +25,7 @@
 
 #include "bytecode.h"
 
+#include "parser/parser.h"
 #include "carbon_function.h"
 #include "vm/vm.h"
 
@@ -159,6 +160,29 @@ const stdmap<size_t, ptr<MemberInfo>>& Bytecode::get_member_info_list() {
 
 	_member_info_built = true;
 	return _member_info;
+}
+
+int Bytecode::get_member_offset() const {
+	if (_base != nullptr) return _base->get_member_count();
+	if (_pending_base != nullptr) {
+		Parser::ClassNode* cls = (Parser::ClassNode*)_pending_base;
+		return cls->get_member_offset() + (uint32_t)cls->vars.size();
+	}
+	return 0;
+}
+
+uint32_t Bytecode::get_member_index(const String& p_name) {
+	auto it = _members.find(p_name);
+	if (it == _members.end()) {
+		if (_base == nullptr) {
+			if (_pending_base != nullptr) return ((Parser::ClassNode*)_pending_base)->get_member_index(p_name);
+			THROW_BUG("TODO:"); // TODO: _base==nullptr -> throw runtime error here <-- no member named p_name
+		} else {
+			return _base->get_member_index(p_name);
+		}
+	} else {
+		return get_member_offset() + it->second;
+	}
 }
 
 const ptr<MemberInfo> Bytecode::get_member_info(const String& p_member_name) {

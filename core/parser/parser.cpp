@@ -546,7 +546,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	ASSERT(p_parent->type == Node::Type::FILE || p_parent->type == Node::Type::CLASS);
 
 	ptr<FunctionNode> func_node = new_node<FunctionNode>();
-	func_node->parent_node = p_parent;
+	func_node->parent_node = p_parent.get();
 	if (p_parent->type == Node::Type::FILE || tokenizer->peek(-2, true).type == Token::KWORD_STATIC) {
 		func_node->is_static = true;
 	}

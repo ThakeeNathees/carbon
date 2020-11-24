@@ -260,7 +260,13 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					}
 					if (func == nullptr) THROW_ANALYZER_ERROR(Error::NOT_IMPLEMENTED, String::format("operator method __call not implemented on base %s", curr_class->name.c_str()), call->pos);
 					_check_arg_count((int)func->args.size(), (int)func->default_args.size(), (int)call->args.size(), call->pos);
-				} else { // super(); // TODO: check if it's the first statement.
+				} else { // super();
+					if (parser->parser_context.current_class == nullptr || parser->parser_context.current_class->base_type == Parser::ClassNode::NO_BASE ||
+						(parser->parser_context.current_class->constructor != parser->parser_context.current_func))
+						THROW_ANALYZER_ERROR(Error::SYNTAX_ERROR, "invalid super call.", call->pos);
+					if ((parser->parser_context.current_statement_ind != 0) || (parser->parser_context.current_block->statements[0].get() != p_expr.get()))
+						THROW_ANALYZER_ERROR(Error::SYNTAX_ERROR, "super call should be the first and stand-alone statement of a constructor.", call->pos);
+
 					switch (curr_class->base_type) {
 						case Parser::ClassNode::NO_BASE:
 							THROW_BUG("it should be an analyzer error");

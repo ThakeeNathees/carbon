@@ -162,7 +162,24 @@ public:
 		ClassNode* base_class = nullptr;
 		ptr<Bytecode> base_binary = nullptr;
 
+		bool has_super_ctor_call = false;
 		FunctionNode* constructor = nullptr;
+
+		uint32_t get_member_offset() {
+			if (base_type == BASE_EXTERN) return base_binary->get_member_count();
+			else if (base_type == BASE_LOCAL) return base_class->get_member_offset() + (uint32_t)base_class->vars.size();
+			else return 0;
+		}
+
+		uint32_t get_member_index(const String& p_name) {
+			for (uint32_t i = 0; i < (uint32_t)vars.size(); i++) {
+				if (vars[i]->name == p_name) return get_member_offset() + i;
+			}
+			if (base_type == BASE_EXTERN) return base_binary->get_member_index(p_name);
+			else if (base_type == BASE_LOCAL) return base_class->get_member_index(p_name);
+
+			THROW_BUG("member not found");
+		}
 
 		ClassNode() : MemberContainer(Type::CLASS) { }
 	};
@@ -208,7 +225,7 @@ public:
 		stdvec<ParameterNode> args;
 		stdvec<var> default_args;
 		ptr<BlockNode> body;
-		ptr<Node> parent_node;
+		Node* parent_node;
 		FunctionNode() {
 			type = Type::FUNCTION;
 		}
@@ -570,6 +587,7 @@ private:
 		FunctionNode* current_func = nullptr;
 		BlockNode* current_block = nullptr;
 		EnumNode* current_enum = nullptr;
+		int current_statement_ind = -1;
 
 		ControlFlowNode* current_break = nullptr;
 		ControlFlowNode* current_continue = nullptr;

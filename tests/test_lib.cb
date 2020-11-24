@@ -4,9 +4,3 @@ class Aclass {
 		println("super constructor");
 	}
 }
-
-class L {
-	func L(){
-		println("L called");
-	}
-}

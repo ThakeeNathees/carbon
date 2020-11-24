@@ -1,20 +1,24 @@
 /* TODO:
 -- super call check
+-- member/static initialization 
 */
 //////////////////////////////////////////
 
-import lib = "test_lib.cb";
+//import lib = "test_lib.cb";
 
-
-class Child : lib.L {
-	func Child() {
-		super();
-		println("child constructed");
+class X {
+	func X(a) {
+		println("testing");
 	}
 }
 
+class Z : X {
+	func f() { println("Z::f"); }
+}
+
+
 func main() {
-	var c = Child();
-	println(c);
+	var z = Z();
+	z.f();
 }
 

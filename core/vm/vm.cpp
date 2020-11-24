@@ -37,14 +37,32 @@ void VM::cleanup() {
 }
 
 var RuntimeInstance::__call_method(const String& p_method_name, stdvec<var*>& p_args) {
-	auto& functions = blueprint->get_functions();
-	auto it = functions.find(p_method_name);
-	if (it == functions.end());   // TODO: throw runtime error method not found.
 
-	if (it->second->is_static()) { // calling static method using instance (acceptable)
-		return VM::singleton()->call_carbon_function(it->second.get(), blueprint.get(), nullptr, p_args);
+	CarbonFunction* fn = nullptr;
+	Bytecode* _class = blueprint.get();
+	while (_class) {
+		auto& functions = _class->get_functions();
+		auto it = functions.find(p_method_name);
+		if (it != functions.end()) {
+			fn = it->second.get();
+			break;
+		} else {
+			if (!_class->has_base()) THROW_ERROR(Error::ATTRIBUTE_ERROR, "TODO: method not found msg");
+			if (_class->is_base_native()) {
+				BindData* bd = NativeClasses::singleton()->get_bind_data(_class->get_base_native(), p_method_name).get();
+				THROW_BUG("TODO: call the method here");
+				return var();
+			} else {
+				_class = _class->get_base_binary().get();
+			}
+		}
+	}
+
+	ASSERT(fn != nullptr);
+	if (fn->is_static()) { // calling static method using instance (acceptable)
+		return VM::singleton()->call_carbon_function(fn, blueprint.get(), nullptr, p_args);
 	} else {
-		return VM::singleton()->call_carbon_function(it->second.get(), blueprint.get(), *_self_ptr, p_args);
+		return VM::singleton()->call_carbon_function(fn, blueprint.get(), *_self_ptr, p_args);
 	}
 }
 
@@ -228,6 +246,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 
 				ptr<Bytecode> blueprint = classes->at(name);
 				ptr<RuntimeInstance> instance = newptr<RuntimeInstance>(blueprint);
+				instance->_self_ptr = &instance;
 
 				// TODO: super constructor never called (automatically).
 				const CarbonFunction* constructor = blueprint->get_constructor();
@@ -360,15 +379,16 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				}
 				ip++;
 
-				if (p_self->blueprint->is_base_native()) {
-					const StaticFuncBind* ctor = NativeClasses::singleton()->get_constructor(p_self->blueprint->get_base_native());
+				ASSERT(p_bytecode->is_class());
+				if (p_bytecode->is_base_native()) {
+					const StaticFuncBind* ctor = NativeClasses::singleton()->get_constructor(p_bytecode->get_base_native());
 					// TODO: implement native instance.
 					// ctor->call(p_self->native_member);
 					THROW_BUG("TODO:");
 				} else {
-					const CarbonFunction* ctor = p_self->blueprint->get_base_binary()->get_constructor();
+					const CarbonFunction* ctor = p_bytecode->get_base_binary()->get_constructor();
 					// TODO: initialize members before calling ctor
-					if (ctor) call_carbon_function(ctor, p_self->blueprint->get_base_binary().get(), p_self, args);
+					if (ctor) call_carbon_function(ctor, p_bytecode->get_base_binary().get(), p_self, args);
 				}
 
 			} break;

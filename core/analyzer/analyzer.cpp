@@ -142,8 +142,45 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 			parser->parser_context.current_func = file_node->classes[i]->functions[j].get();
 			_reduce_block(file_node->classes[i]->functions[j]->body);
 		}
+
+		// add default constructor
+		Parser::ClassNode* cls = file_node->classes[i].get();
+		if (!cls->has_super_ctor_call && cls->base_type != Parser::ClassNode::NO_BASE) {
+
+			bool can_add_default_ctor = true;
+			switch (cls->base_type) {
+				case Parser::ClassNode::BASE_LOCAL: {
+					if (cls->base_class->constructor && cls->base_class->constructor->args.size() != 0) can_add_default_ctor = false;
+				} break;
+				case Parser::ClassNode::BASE_NATIVE: {
+					const StaticFuncBind* ctor = NativeClasses::singleton()->get_constructor(cls->base_class_name);
+					if (ctor && ctor->get_argc() != 0) can_add_default_ctor = false;
+				} break;
+				case Parser::ClassNode::BASE_EXTERN: {
+					const CarbonFunction* ctor = cls->base_binary->get_constructor();
+					if (ctor && ctor->get_arg_count() != 0) can_add_default_ctor = false;
+				} break;
+			}
+			if (!can_add_default_ctor)
+				THROW_ANALYZER_ERROR(Error::TYPE_ERROR, "super constructor call needed since base class doesn't have a default constructor.", cls->pos);
+
+			Parser::FunctionNode* fn = cls->constructor;
+			if (fn == nullptr) {
+				ptr<Parser::FunctionNode> new_fn = newptr<Parser::FunctionNode>();
+				new_fn->name = cls->name;
+				new_fn->is_reduced = true;
+				new_fn->parent_node = cls;
+				new_fn->pos = cls->pos;
+				new_fn->body = newptr<Parser::BlockNode>();
+				cls->functions.push_back(new_fn);
+				cls->constructor = new_fn.get();
+				fn = new_fn.get();
+			}
+			ptr<Parser::CallNode> super_call = newptr<Parser::CallNode>(); super_call->pos = cls->pos;
+			super_call->base = newptr<Parser::SuperNode>(); super_call->base->pos = cls->pos;
+			fn->body->statements.insert(fn->body->statements.begin(), super_call);
+		}
 	}
-	// TODO: if super(); call needed and no constructor found throw error.
 	parser->parser_context.current_class = nullptr;
 	parser->parser_context.current_func = nullptr;
 }
@@ -330,7 +367,7 @@ void Analyzer::_check_super_constructor_call(const Parser::BlockNode* p_block) {
 	int constructor_argc = 0;
 	int default_argc = 0;
 
-	const Parser::ClassNode* current_class = parser->parser_context.current_class;
+	Parser::ClassNode* current_class = parser->parser_context.current_class;
 	switch (parser->parser_context.current_class->base_type) {
 		case Parser::ClassNode::BASE_LOCAL: {
 			Parser::FunctionNode* constructor = current_class->base_class->constructor;
@@ -355,12 +392,16 @@ void Analyzer::_check_super_constructor_call(const Parser::BlockNode* p_block) {
 		if ((p_block->statements.size() == 0) || (p_block->statements[0]->type != Parser::Node::Type::CALL))
 			THROW_ANALYZER_ERROR(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", p_block->pos);
 		const Parser::CallNode* call = static_cast<const Parser::CallNode*>(p_block->statements[0].get());
-		if (call->base->type != Parser::Node::Type::SUPER)
+		if (call->base->type != Parser::Node::Type::SUPER || call->method != nullptr)
 			THROW_ANALYZER_ERROR(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", call->pos);
+		current_class->has_super_ctor_call = true;
 		_check_arg_count(constructor_argc, default_argc, (int)call->args.size(), call->pos);
 	}
 
-	
+	if ((p_block->statements.size() > 0) && (p_block->statements[0]->type == Parser::Node::Type::CALL)) {
+		const Parser::CallNode* call = static_cast<const Parser::CallNode*>(p_block->statements[0].get());
+		if (call->base->type == Parser::Node::Type::SUPER && call->method == nullptr) current_class->has_super_ctor_call = true;
+	}
 }
 
 void Analyzer::_check_arg_count(int p_argc, int p_default_argc, int p_args_given, Vect2i p_err_pos) {
@@ -404,6 +445,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 	}
 
 	for (int i = 0; i < (int)p_block->statements.size(); i++) {
+		parser->parser_context.current_statement_ind = i;
 
 		switch (p_block->statements[i]->type) {
 			case Parser::Node::Type::UNKNOWN:
@@ -594,6 +636,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 			} break;
 		} // statement switch ends.
 	}
+	parser->parser_context.current_statement_ind = -1;
 
 	// remove reduced && un-wanted statements.
 	for (int i = 0; i < (int)p_block->statements.size(); i++) {
@@ -617,7 +660,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 				if (cf->args[0]->type == Parser::Node::Type::CONST_VALUE && ptrcast<Parser::ConstValueNode>(cf->args[0])->value.operator bool() == false) {
 					ADD_WARNING(Warning::UNREACHABLE_CODE, "", p_block->statements[i]->pos);
 					if (cf->body_else == nullptr) p_block->statements.erase(p_block->statements.begin() + i--);
-					// TODO: if release build -> move else body to if body and set condition to true.
+					// TODO: move else body to if body and set condition to true.
 				}
 			}
 
