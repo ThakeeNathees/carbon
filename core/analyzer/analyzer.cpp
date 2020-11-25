@@ -150,15 +150,16 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 			bool can_add_default_ctor = true;
 			switch (cls->base_type) {
 				case Parser::ClassNode::BASE_LOCAL: {
-					if (cls->base_class->constructor && cls->base_class->constructor->args.size() != 0) can_add_default_ctor = false;
+					const Parser::FunctionNode* ctor = cls->base_class->constructor;
+					if (ctor && ctor->args.size() - ctor->default_args.size() != 0) can_add_default_ctor = false;
 				} break;
 				case Parser::ClassNode::BASE_NATIVE: {
-					const StaticFuncBind* ctor = NativeClasses::singleton()->get_constructor(cls->base_class_name);
-					if (ctor && ctor->get_argc() != 0) can_add_default_ctor = false;
+					const MethodInfo* ctor = NativeClasses::singleton()->get_constructor(cls->base_class_name)->get_method_info();
+					if (ctor && ctor->get_arg_count() - ctor->get_default_arg_count() - 1 != 0) can_add_default_ctor = false; // -1 for self argument
 				} break;
 				case Parser::ClassNode::BASE_EXTERN: {
 					const CarbonFunction* ctor = cls->base_binary->get_constructor();
-					if (ctor && ctor->get_arg_count() != 0) can_add_default_ctor = false;
+					if (ctor && ctor->get_arg_count() - ctor->get_default_args().size() != 0) can_add_default_ctor = false;
 				} break;
 			}
 			if (!can_add_default_ctor)

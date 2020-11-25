@@ -24,8 +24,14 @@
 //------------------------------------------------------------------------------
 
 #include "carbon_function.h"
+#include "vm/vm.h"
 
 namespace carbon {
+
+
+var CarbonFunction::__call(stdvec<var*>& p_args) {
+	return VM::singleton()->call_carbon_function(this, _owner, nullptr, p_args);
+}
 
 String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names_array, const stdvec<var>* _global_const_values) const {
 	String ret;
@@ -78,7 +84,11 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 				ip++;
 			} break;
 			case Opcode::SET: {
-				THROW_BUG("TODO:"); // TODO:
+				CHECK_OPCODE_SIZE(4);
+				ADD_ADDR();
+				ADD_GLOBAL_NAME();
+				ADD_ADDR();
+				ip++;
 			} break;
 			case Opcode::GET_MAPPED: {
 				CHECK_OPCODE_SIZE(4);
@@ -177,7 +187,9 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 				ip++;
 			} break;
 			case Opcode::CALL_SUPER_CTOR: {
-				THROW_BUG("TODO:"); // TODO:
+				CHECK_OPCODE_SIZE(2);
+				ADD_ADDR_LIST();
+				ip++;
 			} break;
 			case Opcode::JUMP: {
 				CHECK_OPCODE_SIZE(2);

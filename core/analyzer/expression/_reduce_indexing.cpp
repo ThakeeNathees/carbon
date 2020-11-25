@@ -59,7 +59,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 			switch (mi->get_type()) {
 				// var x = String.format;
 				case MemberInfo::METHOD:
-					break; // TODO: FuncRef?
+					break;
 
 				// var x = int.something ? <-- is this even valid
 				case MemberInfo::PROPERTY: {
@@ -111,10 +111,13 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 					_id->ref = Parser::IdentifierNode::REF_CARBON_CLASS;
 					_id->_class = parser->parser_context.current_class->base_class;
 					index->base = _id;
-					_base_class_ref = _SUPER;
 				} else if (parser->parser_context.current_class->base_type == Parser::ClassNode::BASE_EXTERN) {
-					THROW_BUG("TODO:");
+					ptr<Parser::IdentifierNode> _id = newptr<Parser::IdentifierNode>(parser->parser_context.current_class->base_class->name);
+					_id->ref = Parser::IdentifierNode::REF_EXTERN;
+					_id->_bytecode = parser->parser_context.current_class->base_binary.get();
+					index->base = _id;
 				}
+				_base_class_ref = _SUPER;
 			}
 
 			if (index->base->type == Parser::Node::Type::INDEX) {
@@ -187,34 +190,52 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 							if (_base_class_ref != _THIS && !_id._var->is_static) {
 								THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("non-static attribute \"%s\" cannot be access with a class reference \"%s\".", member->name.c_str(), base->name.c_str()), member->pos);
 							}
-							index->member = newptr<Parser::IdentifierNode>(_id);
-							index->_ref_reduced = true;
+							if (_base_class_ref == _THIS) {
+								p_expr = newptr<Parser::IdentifierNode>(_id);
+							} else {
+								index->member = newptr<Parser::IdentifierNode>(_id);
+								index->_ref_reduced = true;
+							}
 						} break;
 
 						// Aclass.CONST;
 						case Parser::IdentifierNode::REF_MEMBER_CONST: {
-							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(_id._const->value);
+							var value;
+							if (_id.ref_base == Parser::IdentifierNode::BASE_LOCAL) value = _id._const->value;
+							else value = _id._prop_info->get_value();
+							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(value);
 							cv->pos = member->pos; p_expr = cv;
 						} break;
 
 						// Aclass.EnumClass;
 						case Parser::IdentifierNode::REF_ENUM_NAME: {
 							_id.pos = member->pos;
-							index->member = newptr<Parser::IdentifierNode>(_id);
-							index->_ref_reduced = true;
+							if (_base_class_ref == _THIS) {
+								p_expr = newptr<Parser::IdentifierNode>(_id);
+							} else {
+								index->member = newptr<Parser::IdentifierNode>(_id);
+								index->_ref_reduced = true;
+							}
 						} break;
 
 						// Aclass.ENUM_VALUE
 						case Parser::IdentifierNode::REF_ENUM_VALUE: {
-							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(_id._enum_value);
+							uint64_t value = 0;
+							if (_id.ref_base == Parser::IdentifierNode::BASE_LOCAL) value = _id._enum_value->value;
+							else value = _id._enum_value_info->get_value();
+							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(value);
 							cv->pos = member->pos; p_expr = cv;
 						} break;
 
 						// Aclass.a_function;
 						case Parser::IdentifierNode::REF_FUNCTION: {
 							_id.pos = member->pos;
-							index->member = newptr<Parser::IdentifierNode>(_id);
-							index->_ref_reduced = true;
+							if (_base_class_ref == _THIS) {
+								p_expr = newptr<Parser::IdentifierNode>(_id);
+							} else {
+								index->member = newptr<Parser::IdentifierNode>(_id);
+								index->_ref_reduced = true;
+							}
 						} break;
 
 						case Parser::IdentifierNode::REF_CARBON_CLASS:
@@ -252,14 +273,15 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 
 				} break;
 
+				// f.attrib;
 				case Parser::IdentifierNode::REF_FUNCTION: {
-					THROW_BUG("TODO:"); // <-- not sure if needed.
 					// at runtime it'll return a ptr<CarbonFunction> reference.
+					// TODO: check attribute.
 				} break;
 
 				// extern_class.prop;
 				case Parser::IdentifierNode::REF_EXTERN: {
-					THROW_BUG("TODO:"); // check if exists and set const if enum/constant.
+					// TODO: check attrib
 				} break;
 			}
 		}

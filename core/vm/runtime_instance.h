@@ -57,6 +57,7 @@ private:
 	friend class VM;
 	friend struct RuntimeContext;
 	ptr<Bytecode> blueprint;
+	ptr<Object> native_instance;
 	stdvec<var> members;
 	
 	ptr<RuntimeInstance>* _self_ptr = nullptr; // not sure if it's a good idea.

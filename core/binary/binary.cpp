@@ -320,6 +320,13 @@ void Opcodes::write_get_index(const Address& p_on, uint32_t p_name, const Addres
 	insert(p_dst);
 }
 
+void Opcodes::write_set_index(const Address& p_on, uint32_t p_name, const Address& p_value) {
+	insert(Opcode::SET);
+	insert(p_on);
+	insert(p_name);
+	insert(p_value);
+}
+
 void Opcodes::write_get_mapped(const Address& p_on, const Address& p_key, const Address& p_dst) {
 	insert(Opcode::GET_MAPPED);
 	insert(p_on);

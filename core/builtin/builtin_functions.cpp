@@ -97,15 +97,17 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var*>& p_args, var& r_ret)
 
 		case Type::PRINT: {
 			for (int i = 0; i < (int)p_args.size(); i++) {
-				printf("%s", p_args[i]->to_string().c_str());
+				//printf("%s", p_args[i]->to_string().c_str());
+				std::cout << p_args[i]->to_string().c_str();
 			}
 		} break;
 
 		case Type::PRINTLN: {
 			for (int i = 0; i < (int)p_args.size(); i++) {
-				printf("%s", p_args[i]->to_string().c_str());
+				//printf("%s", p_args[i]->to_string().c_str());
+				std::cout << p_args[i]->to_string().c_str();
 			}
-			printf("\n");
+			std::cout << std::endl; // printf("\n");
 		} break;
 
 		case Type::INPUT: {
@@ -115,9 +117,9 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var*>& p_args, var& r_ret)
 				if (p_args[0]->get_type() != var::STRING) THROW_ERROR(Error::TYPE_ERROR, "expected a string value at argument 0.");
 				std::cout << p_args[0]->operator String();
 			}
-			String input;
-			std::cin >> input;
-			r_ret = input;
+			std::string inp;
+			std::getline(std::cin, inp);
+			r_ret = String(inp);
 		} break;
 
 		case Type::MATH_MAX: {

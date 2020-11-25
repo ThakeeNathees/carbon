@@ -3,4 +3,8 @@ class Aclass {
 	func Aclass() {
 		println("super constructor");
 	}
+
+	func f() { println("f"); g(); }
+	func g() { println("g"); }
 }
+

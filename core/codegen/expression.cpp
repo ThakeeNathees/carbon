@@ -272,21 +272,31 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				_addr_operator_assign_:
 					// indexing, mapped indexing is special case.
 					if (op->args[0]->type == Parser::Node::Type::INDEX) {
-						//	TODO:
+						const Parser::IndexNode* index = static_cast<Parser::IndexNode*>(op->args[0].get());
+						Address on = _generate_expression(index->base.get());
+						uint32_t name = add_global_name(ptrcast<Parser::IdentifierNode>(index->member)->name);
+						Address value = _generate_expression(op->args[1].get());
+
+						_context.opcodes->write_set_index(on, name, value);
+
+						_POP_ADDR_IF_TEMP(on);
+						return value;
+
 					} else if (op->args[0]->type == Parser::Node::Type::MAPPED_INDEX) {
 						const Parser::MappedIndexNode* mapped = static_cast<const Parser::MappedIndexNode*>(op->args[0].get());
-						Address value = _generate_expression(op->args[1].get());
 						Address on = _generate_expression(mapped->base.get());
 						Address key = _generate_expression(mapped->key.get());
+						Address value = _generate_expression(op->args[1].get());
 
 						_context.opcodes->write_set_mapped(on, key, value);
 
 						_POP_ADDR_IF_TEMP(on);
 						_POP_ADDR_IF_TEMP(key);
 						return value;
-					} else {
 
+					} else {
 						Address left = _generate_expression(op->args[0].get());
+						if (left.is_temp()) THROW_ERROR(Error::SYNTAX_ERROR, "invalid assignment to an expression"); // f() = 12; TODO: throw with dbg info.
 						if (var_op != var::_OP_MAX_) {
 							Address right = _generate_expression(op->args[1].get());
 							_context.opcodes->write_operator(left, var_op, left, right);

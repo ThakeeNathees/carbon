@@ -478,11 +478,11 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							switch (id->ref_base) {
 								case Parser::IdentifierNode::BASE_UNKNOWN: ASSERT(false && "I must forgotten here");
 								case Parser::IdentifierNode::BASE_LOCAL:
-									_is_member_static = id->_var->is_static; break;
+									_is_member_static = id->_var->is_static;
+									break;
 								case Parser::IdentifierNode::BASE_NATIVE:
-									_is_member_static = id->_prop_info->is_static(); break;
 								case Parser::IdentifierNode::BASE_EXTERN:
-									// TODO: extending an extern class.
+									_is_member_static = id->_prop_info->is_static();
 									break;
 							}
 
@@ -574,7 +574,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 
 				// fn.get_default_args(), fn.get_name(), ...
 				case Parser::IdentifierNode::REF_FUNCTION: {
-					THROW_BUG("TODO:"); // CarbonFunction*
+					// TODO: check if method exists and args.
 				} break;
 
 				case Parser::IdentifierNode::REF_EXTERN: {

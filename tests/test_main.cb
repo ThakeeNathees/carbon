@@ -1,24 +1,37 @@
-/* TODO:
--- super call check
+/* TODO: //////////////////////////////////////////
 -- member/static initialization 
-*/
-//////////////////////////////////////////
+-- class A{} var a = A; println(a.get_type_name()); // RuntimeInstance
+-- empty line input not working
+-- "".substr() check index limit
+-- get_func()() <-- parser thinks this is an error
+
+-- float("") <-- crash
+
+----- TODO ADDNL -----
+
+-- reverse list, string, slice array
+-- " ".join(arr), strip, trim... try dir("") in python and implement all.
+-- python like range().
+-- dir() function
+-- and or not in is 
+
+-- func f(x) = 2*x + 1; for lambda and function
+-- [expr(i) for i in expr]
+-- a, b = b, a
+-- map(f, arr) -> arr // can implement in carbon too.
+-- implement __repr__() // print array of string / or add "" manually in arr/dict
+-- trinary if else
+-- return a, b, c // maybe
+//////////////////////////////////////////////////// */
 
 //import lib = "test_lib.cb";
 
-class X {
-	func X(a) {
-		println("testing");
-	}
+func map(f, arr) {
+	var ret = [];
+	for (var e : arr) ret.append(f(e));
+	return ret;
 }
 
-class Z : X {
-	func f() { println("Z::f"); }
+func main(args) {
+	println(input("> ").split());
 }
-
-
-func main() {
-	var z = Z();
-	z.f();
-}
-

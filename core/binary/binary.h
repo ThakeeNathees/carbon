@@ -174,6 +174,7 @@ struct Opcodes {
 
 	//void write_get_member(const Address& p_name, const Address& p_dst);
 	void write_get_index(const Address& p_on, uint32_t p_name, const Address& p_dst);
+	void write_set_index(const Address& p_on, uint32_t p_name, const Address& p_value);
 	void write_get_mapped(const Address& p_on, const Address& p_key, const Address& p_dst);
 	void write_set_mapped(const Address& p_on, const Address& p_key, const Address& p_value);
 	void write_array_literal(const Address& p_dst, const stdvec<Address>& p_values);

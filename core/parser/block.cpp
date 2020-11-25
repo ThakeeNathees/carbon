@@ -261,7 +261,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 					}
 				}
 				ptr<ControlFlowNode> _return = new_node<ControlFlowNode>(ControlFlowNode::RETURN);
-				_return->args.push_back(_parse_expression(block_node, true));
+				if (tokenizer->peek().type != Token::SYM_SEMI_COLLON)  _return->args.push_back(_parse_expression(block_node, false));
 				_return->parernt_node = p_parent;
 				_return->_return = parser_context.current_func;
 				if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");

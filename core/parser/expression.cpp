@@ -28,6 +28,7 @@
 namespace carbon {
 
 ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_allow_assign) {
+	p_allow_assign = true; // all expressions suport assignment now (test for any bugs)
 	ASSERT(p_parent != nullptr);
 
 	stdvec<Expr> expressions;
