@@ -46,9 +46,9 @@ public:
 	String _get_native_ref() const { return _name; }
 
 	var __call(stdvec<var*>& p_args) override; // construct
-	var __call_method(const String& p_name, stdvec<var*>& p_args) override; // static method call
-	var __get_member(const String& p_name) override; // static member, constants, functions, ...
-	void __set_member(const String& p_name, var& p_value) override; // static members
+	var call_method(const String& p_name, stdvec<var*>& p_args) override; // static method call
+	var get_member(const String& p_name) override; // static member, constants, functions, ...
+	void set_member(const String& p_name, var& p_value) override; // static members
 };
 
 class BuiltinFuncRef : public Object {

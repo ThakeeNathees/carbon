@@ -28,9 +28,10 @@
 using namespace carbon;
 
 // TODO: define RUN_TESTS from build system.
-//#if DEBUG_BUILD
-//#define RUN_TESTS
-//#endif
+// TODO: get_member and get_member() in var inconsisntance names.
+#if DEBUG_BUILD
+#define RUN_TESTS
+#endif
 
 
 #ifdef RUN_TESTS
@@ -40,7 +41,7 @@ using namespace carbon;
 
 int _main(int argc, char** argv) {
 
-	initialize();
+	carbon_initialize();
 
 #ifdef RUN_TESTS
 	int res = _test_main(argc, argv);
@@ -73,7 +74,7 @@ int _main(int argc, char** argv) {
 	//Logger::log("\nPress enter to exit...", Logger::VERBOSE, Logger::Color::L_SKYBLUE);
 	//getchar(); // pause
 
-	cleanup();
+	carbon_cleanup();
 
 	return 0;
 }

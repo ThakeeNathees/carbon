@@ -49,7 +49,7 @@
 
 namespace carbon {
 
-inline void initialize() {
+inline void carbon_initialize() {
 
 	// Register native classes.
 	NativeClasses::singleton()->register_class<Object>();
@@ -63,7 +63,7 @@ inline void initialize() {
 
 }
 
-inline void cleanup() {
+inline void carbon_cleanup() {
 	NativeClasses::cleanup();
 	VM::cleanup();
 	Compiler::cleanup();

@@ -28,7 +28,7 @@ TEST_CASE("[parser_tests]:invalid_syntax_test") {
 	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = this", NO_PATH));
 	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = super", NO_PATH));
 	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = \"abc\"[]", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = \"abc\"[0] = \"A\"", NO_PATH));
+	// CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = \"abc\"[0] = \"A\"", NO_PATH)); // assign in expr is valid now
 	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = print(1 2);", NO_PATH));
 	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = print(1,, 2);", NO_PATH));
 	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x += 1;", NO_PATH));

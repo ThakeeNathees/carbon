@@ -39,9 +39,9 @@ public:
 	Bytecode() {}
 
 	var __call(stdvec<var*>& p_args) override; // constructor
-	var __call_method(const String& p_method_name, stdvec<var*>& p_args) override; // static methods.
-	var __get_member(const String& p_member_name) override; // static member, constants, enums, functions ...
-	void __set_member(const String& p_member_name, var& p_value) override; // static members.
+	var call_method(const String& p_method_name, stdvec<var*>& p_args) override; // static methods.
+	var get_member(const String& p_member_name) override; // static member, constants, enums, functions ...
+	void set_member(const String& p_member_name, var& p_value) override; // static members.
 
 	inline int get_member_count() const {
 		return get_member_offset() + (int)_members.size();
@@ -57,9 +57,14 @@ public:
 	String get_name() const { return _name; }
 	var* _get_member_var_ptr(const String& p_member_name);
 
+	stdmap<String, ptr<Bytecode>>& get_classes() { ASSERT(!_is_class); return _classes; }
+	stdmap<String, ptr<Bytecode>>& get_externs() { ASSERT(!_is_class); return _externs; }
 	const stdmap<String, ptr<CarbonFunction>>& get_functions() const { return _functions; }
-	stdmap<String, ptr<Bytecode>>& get_classes() { return _classes; }
-	stdmap<String, ptr<Bytecode>>& get_externs() { return _externs; }
+
+	// TODO: check if name exists and if not return nullptr / throw error.
+	ptr<Bytecode> get_class(const String& p_name)  { ASSERT(!_is_class); return _classes.at(p_name); }
+	ptr<Bytecode> get_import(const String& p_name) { ASSERT(!_is_class); return _externs.at(p_name); }
+	ptr<CarbonFunction> get_function(const String& p_name) { return _functions.at(p_name); }
 
 	bool has_base() const { ASSERT(_is_class); return _has_base; }
 	bool is_base_native() const { ASSERT(_is_class); return _is_base_native; }

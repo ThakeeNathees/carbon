@@ -36,7 +36,7 @@ var Bytecode::__call(stdvec<var*>& p_args) {
 	return var(); // TODO:
 }
 
-var Bytecode::__call_method(const String& p_method_name, stdvec<var*>& p_args) {
+var Bytecode::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 
 	auto it_f = _functions.find(p_method_name);
 	if (it_f != _functions.end()) {
@@ -52,17 +52,17 @@ var Bytecode::__call_method(const String& p_method_name, stdvec<var*>& p_args) {
 	throw "TODO: throw error here";
 }
 
-var Bytecode::__get_member(const String& p_member_name) {
+var Bytecode::get_member(const String& p_member_name) {
 
 	var* _member = _get_member_var_ptr(p_member_name);
 	if (_member != nullptr) return *_member;
 	
-	//return _base->__get_member(p_member_name);
+	//return _base->get_member(p_member_name);
 	THROW_ERROR(Error::ATTRIBUTE_ERROR,
 		String::format("%s %s has no member named \"%s\".", ((_is_class) ? "type" : "file at"), _name.c_str(), p_member_name.c_str()));
 }
 
-void Bytecode::__set_member(const String& p_member_name, var& p_value) {
+void Bytecode::set_member(const String& p_member_name, var& p_value) {
 
 	auto it = _static_vars.find(p_member_name);
 	if (it != _static_vars.end()) {
@@ -88,7 +88,7 @@ void Bytecode::__set_member(const String& p_member_name, var& p_value) {
 		String::format("cannot assign to a function pointer named \"%s\".", p_member_name.c_str()));
 
 	if (_base != nullptr) {
-		_base->__set_member(p_member_name, p_value);
+		_base->set_member(p_member_name, p_value);
 	} else {
 		THROW_ERROR(Error::ATTRIBUTE_ERROR,
 			String::format("%s %s has no member named \"%s\".", ((_is_class) ? "type" : "file at"), _name.c_str(), p_member_name.c_str()));

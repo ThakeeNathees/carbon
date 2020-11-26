@@ -32,6 +32,7 @@ func map(f, arr) {
 	return ret;
 }
 
-func main(args) {
-	println(input("> ").split());
+
+func main() {
+	println(Path.parent(Path.get_cwd()));
 }

@@ -95,7 +95,7 @@ public:
 		}
 	}
 
-	var __call_method(const String& p_method_name, stdvec<var*>& p_args) override {
+	var call_method(const String& p_method_name, stdvec<var*>& p_args) override {
 		switch ((int)p_args.size()) {
 			case 0: return _call(p_method_name.c_str());
 			case 1: return  call(p_method_name, *p_args[0]);
@@ -113,7 +113,7 @@ public:
 			THROW_ERROR(Error::TYPE_ERROR, "first argument of call() must be string (name of the function).");
 		const String& method_name = *p_args[0];
 		p_args.erase(p_args.begin());
-		return __call_method(method_name, p_args);
+		return call_method(method_name, p_args);
 	}
 
 	int call(const String& p_func) {

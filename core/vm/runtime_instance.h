@@ -34,13 +34,13 @@ namespace carbon {
 class RuntimeInstance : public Object {
 	REGISTER_CLASS(RuntimeInstance, Object) {}
 
-	var __call_method(const String& p_method_name, stdvec<var*>& p_args) override;
+	var call_method(const String& p_method_name, stdvec<var*>& p_args) override;
 	var __call(stdvec<var*>& p_args) override;
-	var __get_member(const String& p_name) override {
+	var get_member(const String& p_name) override {
 		uint32_t pos = blueprint->get_member_index(p_name);
 		return members[pos];
 	}
-	void __set_member(const String& p_name, var& p_value) override {
+	void set_member(const String& p_name, var& p_value) override {
 		uint32_t pos = blueprint->get_member_index(p_name);
 		members[pos] = p_value;
 	}

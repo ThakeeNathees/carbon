@@ -28,6 +28,10 @@ def USER_DATA(env):
 	else:
 		env.Append(CPPDEFINES=['RELEASE_BUILD'])
 
+	if env.BUILD != Target.EXECUTABLE:
+		env.Append(CPPDEFINES=['TARGET_LIB'])
+		
+
 
 	env.Append(CPPPATH=[Dir("./")])
 

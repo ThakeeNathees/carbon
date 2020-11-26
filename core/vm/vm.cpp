@@ -36,7 +36,7 @@ void VM::cleanup() {
 	if (_singleton != nullptr) delete _singleton;
 }
 
-var RuntimeInstance::__call_method(const String& p_method_name, stdvec<var*>& p_args) {
+var RuntimeInstance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 
 	CarbonFunction* fn = nullptr;
 	Bytecode* _class = blueprint.get();

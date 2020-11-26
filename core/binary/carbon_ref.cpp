@@ -38,8 +38,8 @@ var NativeClassRef::__call(stdvec<var*>& p_args) {
 }
 
 // TODO:
-var  NativeClassRef::__call_method(const String& p_name, stdvec<var*>& p_args) { return var(); }
-var  NativeClassRef::__get_member(const String& p_name) { return var(); }
-void NativeClassRef::__set_member(const String& p_name, var& p_value) {}
+var  NativeClassRef::call_method(const String& p_name, stdvec<var*>& p_args) { return var(); }
+var  NativeClassRef::get_member(const String& p_name) { return var(); }
+void NativeClassRef::set_member(const String& p_name, var& p_value) {}
 
 }

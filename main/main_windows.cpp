@@ -27,6 +27,7 @@
 
 int _main(int argc, char** argv);
 
+#ifndef TARGET_LIB
 int main(int argc, char** argv)
 {
 #ifdef CRASH_HANDLER_EXCEPTION
@@ -40,3 +41,4 @@ int main(int argc, char** argv)
     return _main(argc, argv);
 #endif
 }
+#endif
