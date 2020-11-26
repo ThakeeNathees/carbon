@@ -27,7 +27,6 @@
 
 int _main(int argc, char** argv);
 
-#ifndef TARGET_LIB
 int main(int argc, char** argv)
 {
 
@@ -38,5 +37,4 @@ int main(int argc, char** argv)
 
 	return 0;
 }
-#endif
 

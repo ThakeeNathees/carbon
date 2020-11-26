@@ -77,8 +77,12 @@ static KeywordName _keyword_name_list[] = {
 	{ "this",     Token::KWORD_THIS          },
 	{ "super",    Token::KWORD_SUPER         },
 	{ "return",   Token::KWORD_RETURN	     },
+	{ "and",      Token::KWORD_AND	         },
+	{ "or",       Token::KWORD_OR	         },
+	{ "not",      Token::KWORD_NOT	         },
+
 };
-MISSED_ENUM_CHECK(Token::_TK_MAX_, 76);
+MISSED_ENUM_CHECK(Token::_TK_MAX_, 79);
 
 void Tokenizer::_eat_escape(String& p_str) {
 	char c = GET_CHAR(0);
@@ -155,16 +159,32 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 	for (const KeywordName& kw : _keyword_name_list) {
 		if (kw.name == p_idf) {
 			tk.type = kw.tk;
-			if (tk.type == Token::KWORD_TRUE) {
-				tk.type = Token::VALUE_BOOL;
-				tk.constant = var(true);
-			} else if (tk.type == Token::KWORD_FALSE) {
-				tk.type = Token::VALUE_BOOL;
-				tk.constant = var(false);
-			} else if (tk.type == Token::KWORD_NULL) {
-				tk.type = Token::VALUE_NULL;
-				tk.constant = var();
+
+			// remap tokens.
+			switch (tk.type) {
+				case Token::KWORD_TRUE:
+					tk.type = Token::VALUE_BOOL;
+					tk.constant = var(true);
+					break;
+				case Token::KWORD_FALSE:
+					tk.type = Token::VALUE_BOOL;
+					tk.constant = var(false);
+					break;
+				case Token::KWORD_NULL:
+					tk.type = Token::VALUE_NULL;
+					tk.constant = var();
+					break;
+				case Token::KWORD_AND:
+					tk.type = Token::OP_AND;
+					break;
+				case Token::KWORD_OR:
+					tk.type = Token::OP_OR;
+					break;
+				case Token::KWORD_NOT:
+					tk.type = Token::OP_NOT;
+					break;
 			}
+
 			break;
 		}
 	}

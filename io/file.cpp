@@ -131,8 +131,8 @@ var File::read() {
 
 void File::write(const var& p_what) {
 	if (mode & BINARY) {
-		if (p_what.get_type() != var::OBJECT || p_what.get_type_name() != Buffer::get_class_name_s()) {
-			THROW_ERROR(Error::TYPE_ERROR, String::format("expected type %s at argument 0.", Buffer::get_class_name_s()));
+		if (p_what.get_type() != var::OBJECT || p_what.get_type_name() != Buffer::get_type_name_s()) {
+			THROW_ERROR(Error::TYPE_ERROR, String::format("expected type %s at argument 0.", Buffer::get_type_name_s()));
 		}
 		return write_bytes(ptrcast<Buffer>(p_what.operator ptr<Object>()));
 	} else {

@@ -38,6 +38,8 @@ void Compiler::cleanup() {
 
 ptr<Bytecode> Compiler::compile(const String& p_path) {
 
+	if (!Path::exists(p_path)) THROW_ERROR(Error::IO_ERROR, String::format("path \"%s\" does not exists.", p_path.c_str()));
+
 	String path = Path::absolute(p_path);
 	auto it = _cache.find(path);
 	if (it != _cache.end()) {

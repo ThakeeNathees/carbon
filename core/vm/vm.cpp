@@ -66,7 +66,7 @@ var RuntimeInstance::call_method(const String& p_method_name, stdvec<var*>& p_ar
 					case BindData::ENUM_VALUE:
 						THROW_BUG("TODO: enum value not callable error msg here.");
 				}
-				THROW_BUG("TODO: call the method here");
+				THROW_BUG("can't reach here");
 				return var();
 			} else {
 				_class = _class->get_base_binary().get();

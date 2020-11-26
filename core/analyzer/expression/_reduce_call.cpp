@@ -431,12 +431,16 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 			
 		} break;
 
-		// base().method(); [o1, o2][1].method(); (x + y).method();
+		// get_func()(); arr[0](); (a + b)(); base().method(); [o1, o2][1].method(); (x + y).method();
 		case Parser::Node::Type::CALL:
 		case Parser::Node::Type::INDEX:
+		case Parser::Node::Type::MAPPED_INDEX:
+		case Parser::Node::Type::OPERATOR:
+			ASSERT(call->method == nullptr || call->method->type == Parser::Node::Type::IDENTIFIER);
+			break;
+
 		case Parser::Node::Type::ARRAY: // TODO: the method could be validated.
 		case Parser::Node::Type::MAP:   // TODO: the method could be validated.
-		case Parser::Node::Type::OPERATOR:
 			ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
 			break;
 

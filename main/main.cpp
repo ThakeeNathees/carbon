@@ -27,12 +27,6 @@
 #include "core/carbon.h"
 using namespace carbon;
 
-// TODO: define RUN_TESTS from build system.
-// TODO: get_member and get_member() in var inconsisntance names.
-#if DEBUG_BUILD
-#define RUN_TESTS
-#endif
-
 
 #ifdef RUN_TESTS
 #include "tests/carbon_tests.h"
@@ -54,11 +48,16 @@ int _main(int argc, char** argv) {
 		}
 		CLEAR_GETCHAR_BUFFER();
 	}
-#endif // DEBUG_BUILD
+#endif // RUN_TESTS
 
-	try {
-		ptr<Bytecode> bytecode = Compiler::singleton()->compile("tests/test_main.cb");
-		VM* vm = VM::singleton(); vm->run(bytecode, {});
+	stdvec<String> args;
+	for (int i = 0; i < argc; i++) args.push_back(argv[i]);
+
+	try { // for now.
+		ptr<Bytecode> bytecode;
+		if (argc < 2) bytecode = Compiler::singleton()->compile("tests/test_main.cb");
+		else bytecode = Compiler::singleton()->compile(argv[1]);
+		VM* vm = VM::singleton(); vm->run(bytecode, args);
 
 	} catch (Error& err) {
 		Logger::logf_error("ERROR(%s): %s ", Error::get_err_name(err.get_type()).c_str(), err.get_msg().c_str());
@@ -70,9 +69,8 @@ int _main(int argc, char** argv) {
 		Logger::logf_info("%s\n%s\n", err.get_line().c_str(), err.get_line_pos().c_str());
 	}
 	
-
-	//Logger::log("\nPress enter to exit...", Logger::VERBOSE, Logger::Color::L_SKYBLUE);
-	//getchar(); // pause
+	Logger::log("\nPress enter to exit...", Logger::VERBOSE, Logger::Color::L_SKYBLUE);
+	getchar(); // pause
 
 	carbon_cleanup();
 

@@ -60,7 +60,8 @@ public:
 
 	var __call(stdvec<var*>& p_args) override;
 
-	String get_opcodes_as_string(const stdvec<String>* _global_names_array = nullptr, const stdvec<var>* _global_const_values = nullptr) const;
+	//String get_opcodes_as_string(const stdvec<String>* _global_names_array = nullptr, const stdvec<var>* _global_const_values = nullptr) const;
+	String get_opcodes_as_string() const;
 
 };
 

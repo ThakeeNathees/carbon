@@ -2,7 +2,7 @@
 import os, subprocess
 Import('cbenv')
 
-cbenv.SOURCES += [ 
+cbenv.SOURCES_MAIN += [ 
 	Glob('*.cpp'),
 	Glob('native_classes/*.cpp'),
 	Glob('parser/*.cpp'),

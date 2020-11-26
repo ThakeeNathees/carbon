@@ -75,9 +75,9 @@ struct CGContext {
 	Address add_stack_local(const String& p_name) {
 		ASSERT(stack_locals.find(p_name) == stack_locals.end());
 
-		uint32_t stack_size = (uint32_t)stack_locals.size();
+		uint32_t stack_size = (uint32_t)stack_locals.size() + curr_stack_temps;
 		stack_locals[p_name] = stack_size;
-		stack_max_size = std::max(stack_max_size, (stack_size + curr_stack_temps) + 1);
+		stack_max_size = std::max(stack_max_size, stack_size + 1);
 		return Address(Address::STACK, stack_size);
 	}
 

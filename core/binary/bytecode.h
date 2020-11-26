@@ -88,6 +88,7 @@ public:
 private:
 	friend class CodeGen;
 	friend struct CGContext;
+	friend class CarbonFunction;
 	bool _is_class = false;
 
 	String _name; // name for class, path for file.
@@ -148,16 +149,13 @@ private:
 	}
 
 	uint32_t _global_const_value_get(const var& p_value) {
-		stdvec<var>::iterator it = std::find(_global_const_values.begin(), _global_const_values.end(), p_value);
-		uint32_t pos = 0;
-		if (it == _global_const_values.end()) {
-			pos = (uint32_t)_global_const_values.size();
-			_global_const_values.push_back(p_value);
-		} else {
-			pos = (uint32_t)std::distance(_global_const_values.begin(), it);
+		for (int i = 0; i < (int)_global_const_values.size(); i++) {
+			if (_global_const_values[i].get_type() == p_value.get_type() && _global_const_values[i] == p_value) {
+				return i;
+			}
 		}
-
-		return pos;
+		_global_const_values.push_back(p_value);
+		return (uint32_t)(_global_const_values.size() - 1);
 	}
 
 };

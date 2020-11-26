@@ -50,6 +50,7 @@ class Path : public Object {
 		BIND_STATIC_FUNC("remove",    &Path::remove,    PARAMS("path", "recursive"), DEFVALUES(false));
 		BIND_STATIC_FUNC("rename",    &Path::rename,    PARAMS("old", "new")); // move and rename are the same.
 		BIND_STATIC_FUNC("move",      &Path::rename,    PARAMS("old", "new"));
+		BIND_STATIC_FUNC("listdir",   &Path::listdir,   PARAMS("path", "recursive"), DEFVALUES(false));
 
 	}
 
@@ -106,6 +107,22 @@ do {													   \
 
 	static void rename(const String& p_path, const String& p_new) {
 		PATH_TRY(fs::rename(p_path.operator std::string(), p_new.operator std::string()));
+	}
+
+	static Array listdir(const String& p_path, bool p_recursive = false) {
+		Array ret;
+		try {
+			if (p_recursive) {
+				for (auto entry : fs::recursive_directory_iterator(p_path.operator std::string()))
+					ret.append(String(entry.path().string()));
+			} else {
+				for (auto entry : fs::directory_iterator(p_path.operator std::string()))
+					ret.append(String(entry.path().string()));
+			}
+		} catch (std::exception& err) {
+			THROW_ERROR(Error::IO_ERROR, err.what());
+		}
+		return ret;
 	}
 
 };

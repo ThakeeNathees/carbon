@@ -1,20 +1,12 @@
 #!python
 import os, subprocess, sys
 
-class Target:
-	SHARED_LIB = 0
-	LIBRARY    = 1
-	EXECUTABLE = 2
-
 ###### USER DATA #############################################################################
 def USER_DATA(env):
 	env.PROJECT_NAME = 'carbon'
-	env.BUILD = Target.EXECUTABLE
 	
-	env.SOURCES  = [
-		'main/main_%s.cpp' % env['platform'],
-		'main/main.cpp'
-	]
+	env.Append(CPPPATH=[Dir("./")])
+	env.SOURCES = []
 	env.SCONSCRIPTS = [
 		'thirdparty/SConstruct',
 		'io/SConstruct',
@@ -22,18 +14,19 @@ def USER_DATA(env):
 		'os/SConstruct',
 	]
 
+	env.SOURCES_MAIN = [
+		'main/main_%s.cpp' % env['platform'],
+		'main/main.cpp'
+	]
+	env.Append(CPPDEFINES=['RUN_TESTS'])
+	env.SCONSCRIPTS += [ 'tests/SConstruct' ]
+
 	if env['target'] == 'debug':
 		env.Append(CPPDEFINES=['DEBUG_BUILD'])
-		env.SCONSCRIPTS += [ 'tests/SConstruct' ]
 	else:
 		env.Append(CPPDEFINES=['RELEASE_BUILD'])
 
-	if env.BUILD != Target.EXECUTABLE:
-		env.Append(CPPDEFINES=['TARGET_LIB'])
-		
 
-
-	env.Append(CPPPATH=[Dir("./")])
 
 
 #################################################################################################
@@ -187,15 +180,16 @@ Export('cbenv')
 for script in cbenv.SCONSCRIPTS:
 	SConscript(script)
 
-build_command = None
-if   cbenv.BUILD == Target.EXECUTABLE: build_command = cbenv.Program
-elif cbenv.BUILD == Target.SHARED_LIB: build_command = cbenv.SharedLibrary
-elif cbenv.BUILD == Target.LIBRARY:    build_command = cbenv.Library
-
-target = build_command(
-	target = os.path.join( cbenv['target_path'], cbenv.PROJECT_NAME),
+carbon_lib = cbenv.Library(
+	target = os.path.join(cbenv['target_path'], cbenv.PROJECT_NAME),
 	source = cbenv.SOURCES)
+cbenv.Prepend(LIBS=[carbon_lib])
 
+carbon_exec = cbenv.Program(
+	target = os.path.join(cbenv['target_path'], cbenv.PROJECT_NAME),
+	source = cbenv.SOURCES_MAIN
+)
+		
 ## --------------------------------------------------------------------------------
 
 ## visual studio targets

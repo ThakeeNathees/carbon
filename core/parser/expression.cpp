@@ -221,7 +221,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 					
 					call->base = expr;
 					call->method = new_node<IdentifierNode>(tk->identifier);
-					tk = &tokenizer->next();
+					tk = &tokenizer->next(); // eat "("
 					call->args = _parse_arguments(p_parent);
 					expr = call;
 
@@ -238,7 +238,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			} else if (tk->type == Token::BRACKET_LSQ) {
 				ptr<MappedIndexNode> ind_mapped = new_node<MappedIndexNode>();
 
-				tk = &tokenizer->next();
+				tk = &tokenizer->next(); // eat "["
 				ptr<Node> key = _parse_expression(p_parent, false);
 				tk = &tokenizer->next();
 				if (tk->type != Token::BRACKET_RSQ) {
@@ -248,6 +248,16 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 				ind_mapped->base = expr;
 				ind_mapped->key = key;
 				expr = ind_mapped;
+
+			// get_func()(...);
+			} else if (tk->type == Token::BRACKET_LPARAN) {
+				ptr<CallNode> call = new_node<CallNode>();
+
+				call->base = expr;
+				call->method = nullptr;
+				tk = &tokenizer->next(); // eat "("
+				call->args = _parse_arguments(p_parent);
+				expr = call;
 
 			} else {
 				break;

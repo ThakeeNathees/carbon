@@ -1,11 +1,19 @@
 /* TODO: //////////////////////////////////////////
--- member/static initialization 
--- class A{} var a = A; println(a.get_type_name()); // RuntimeInstance
--- empty line input not working
--- "".substr() check index limit
--- get_func()() <-- parser thinks this is an error
 
+-- member/static initialization 
+-- super method call
+
+-- refactor throw error to function from macros
+-- undef THROW_ANLAYZER_ERROR, TOKENIZER_ERROR, ... (not THROW_BUG)
+-- "string %s literal"_s % {"replace"}
+-- ext_lib.lib.lib;
+
+-- class A{} var a = A; println(a.get_type_name()); // RuntimeInstance
+
+-- a rich typecheck api
+-- "".substr() check index limit
 -- float("") <-- crash
+-- _self_ptr in runtime instance fix
 
 ----- TODO ADDNL -----
 
@@ -13,9 +21,9 @@
 -- " ".join(arr), strip, trim... try dir("") in python and implement all.
 -- python like range().
 -- dir() function
--- and or not in is 
+-- in, is 
 
--- func f(x) = 2*x + 1; for lambda and function
+-- func f(x) = 2*x + 1; lambda
 -- [expr(i) for i in expr]
 -- a, b = b, a
 -- map(f, arr) -> arr // can implement in carbon too.
@@ -26,13 +34,8 @@
 
 //import lib = "test_lib.cb";
 
-func map(f, arr) {
-	var ret = [];
-	for (var e : arr) ret.append(f(e));
-	return ret;
-}
+func f(x) = x + 2;
 
-
-func main() {
-	println(Path.parent(Path.get_cwd()));
+func main(args) {
+	println("done main");
 }

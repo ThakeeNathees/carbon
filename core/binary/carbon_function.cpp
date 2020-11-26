@@ -33,7 +33,15 @@ var CarbonFunction::__call(stdvec<var*>& p_args) {
 	return VM::singleton()->call_carbon_function(this, _owner, nullptr, p_args);
 }
 
-String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names_array, const stdvec<var>* _global_const_values) const {
+String CarbonFunction::get_opcodes_as_string() const {
+
+	Bytecode* _bytecode_file = nullptr;
+	if (_owner->is_class()) _bytecode_file = _owner->get_file().get();
+	else _bytecode_file = _owner;
+
+	const stdvec<String>* _global_names_array = &_bytecode_file->_global_names_array;
+	const stdvec<var>* _global_const_values = &_bytecode_file->_global_const_values;
+
 	String ret;
 	uint32_t ip = 0;
 #define CHECK_OPCODE_SIZE(m_size) ASSERT(ip + m_size < _opcodes.size())
@@ -45,7 +53,7 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 			THROW_INVALID_INDEX(_global_names_array->size(), index);										\
 			ret += String(std::to_string(index)) + " // \"" + (*_global_names_array)[index] + "\"\n";		\
 		} else {																							\
-			ret += std::to_string(index);																	\
+			ret += std::to_string(index) +"\n";																\
 		}																									\
 	} while (false)
 
@@ -71,6 +79,7 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 
 	while (ip < _opcodes.size()) {
 
+		if (_opcodes[ip] > Opcode::END) std::cout << ret << std::endl;
 		ASSERT(_opcodes[ip] <= Opcode::END);
 		ret += String("---- addr:") + std::to_string(ip) + " ----\n";
 		ret += Opcodes::get_opcode_name((Opcode)_opcodes[ip]) + '\n';
@@ -220,7 +229,8 @@ String CarbonFunction::get_opcodes_as_string(const stdvec<String>* _global_names
 				ip++;
 			} break;
 			case Opcode::ITER_NEXT: {
-				CHECK_OPCODE_SIZE(3);
+				CHECK_OPCODE_SIZE(4);
+				ADD_ADDR();
 				ADD_ADDR();
 				ADD_ADDR();
 				ip++;

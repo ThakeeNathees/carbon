@@ -608,13 +608,37 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 		}
 	}
 
-	if (tokenizer->next().type != Token::BRACKET_LCUR) {
+	const TokenData& _next = tokenizer->next();
+	bool _single_expr = false;
+
+	if (_next.type == Token::OP_EQ) {
+		_single_expr = true;
+	} else if (_next.type != Token::BRACKET_LCUR) {
 		THROW_UNEXP_TOKEN("symbol \"{\"");
 	}
 
-	func_node->body = _parse_block(func_node);
-	if (tokenizer->next().type != Token::BRACKET_RCUR) {
-		THROW_UNEXP_TOKEN("symbol \"}\"");
+	if (_single_expr) {
+
+		ptr<BlockNode> block_node = newptr<BlockNode>();
+		block_node->parernt_node = func_node;
+
+		ptr<ControlFlowNode> _return = new_node<ControlFlowNode>(ControlFlowNode::RETURN);
+		_return->args.push_back(_parse_expression(func_node, false));
+		_return->parernt_node = func_node;
+		_return->_return = parser_context.current_func;
+		parser_context.current_func->has_return = true;
+		block_node->statements.push_back(_return);
+
+		tk = &tokenizer->next();
+		if (tk->type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+
+		func_node->body = block_node;
+
+	} else {
+		func_node->body = _parse_block(func_node);
+		if (tokenizer->next().type != Token::BRACKET_RCUR) {
+			THROW_UNEXP_TOKEN("symbol \"}\"");
+		}
 	}
 
 	return func_node;

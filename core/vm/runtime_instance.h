@@ -34,8 +34,8 @@ namespace carbon {
 class RuntimeInstance : public Object {
 	REGISTER_CLASS(RuntimeInstance, Object) {}
 
+	bool _is_registered() const override { return false; }
 	var call_method(const String& p_method_name, stdvec<var*>& p_args) override;
-	var __call(stdvec<var*>& p_args) override;
 	var get_member(const String& p_name) override {
 		uint32_t pos = blueprint->get_member_index(p_name);
 		return members[pos];
@@ -52,6 +52,8 @@ class RuntimeInstance : public Object {
 	}
 
 	// TODO: implement all the operator methods here.
+	var __call(stdvec<var*>& p_args) override;
+
 
 private:
 	friend class VM;
