@@ -119,10 +119,13 @@ void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* 
 		p_bytecode->_enums[en->name] = ei;
 	}
 
-
-	// TODO: static var initialization function (called when the byte code initialized) Binary::_static_var_initializer_f
-	// TODO: member var initialization function (called before construction)            Binary::_member_var_initializer_f
-	//if (static_var_init_fn_need) {}
+	if (member_var_init_fn_need) {
+		ASSERT(p_bytecode->is_class());
+		p_bytecode->_member_initializer = _generate_initializer(false, p_bytecode, p_container);
+	}
+	if (static_var_init_fn_need) {
+		p_bytecode->_static_initializer = _generate_initializer(true, p_bytecode, p_container);
+	}
 
 	// functions
 	for (ptr<Parser::FunctionNode> fn : p_container->functions) {
@@ -135,6 +138,44 @@ void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* 
 		if (fn->name == "main") p_bytecode->_main = cfn.get(); // TODO: move literal string "main" to constants.
 		if (class_node && class_node->constructor == fn.get()) p_bytecode->_constructor = cfn.get();
 	}
+}
+
+
+ptr<CarbonFunction> CodeGen::_generate_initializer(bool p_static, Bytecode* p_bytecode, Parser::MemberContainer* p_container) {
+
+	ptr<CarbonFunction> cfn = newptr<CarbonFunction>();
+
+	const Parser::ClassNode* class_node = nullptr;
+	if (p_container->type == Parser::Node::Type::CLASS) class_node = static_cast<const Parser::ClassNode*>(p_container);
+
+	_context.clear();
+	_context.function = cfn.get();
+	_context.bytecode = p_bytecode;
+	_context.curr_class = class_node;
+
+
+	cfn->_name = (p_static) ? "@static_initializer" : "@member_initializer";
+	cfn->_is_static = p_static;
+	cfn->_owner = _context.bytecode;
+
+	for (ptr<Parser::VarNode>& var_node : p_container->vars) {
+		if (var_node->is_static == p_static && var_node->assignment != nullptr) {
+			Address member;
+			if (p_static) {
+				Bytecode* bytecode_file = (p_bytecode->is_class()) ? p_bytecode->get_file().get() : p_bytecode;
+				member = Address(Address::STATIC_MEMBER, bytecode_file->_global_name_get(var_node->name));
+			} else {
+				member = Address(Address::MEMBER_VAR, _context.bytecode->get_member_index(var_node->name));
+			}
+			Address value = _generate_expression(var_node->assignment.get(), &member);
+			if (member != value) _context.opcodes->write_assign(member, value);
+			_POP_ADDR_IF_TEMP(value);
+		}
+	}
+
+	_context.opcodes->insert(Opcode::END);
+	cfn->_opcodes = _context.opcodes->opcodes;
+	return cfn;
 }
 
 ptr<CarbonFunction> CodeGen::_generate_function(const Parser::FunctionNode* p_func, const Parser::ClassNode* p_class, Bytecode* p_bytecode) {

@@ -1,4 +1,7 @@
 
+const dst_path = "C:/Users/Thakee Nathees/Desktop/test/c test/VSMain/libs/carbon/";
+var  src_path  = "C:/dev/carbon/";
+
 func should_copy(entry) {
 	if (Path.is_dir(entry)) return false;
 	for (var ends : [".hpp", ".h", ".inc", "carbon.lib", ".pdb"]) {
@@ -8,14 +11,12 @@ func should_copy(entry) {
 }
 
 func main(args) {
-	var dst = "C:/Users/Thakee Nathees/Desktop/test/c test/VSMain/libs/";
-
-	dst = Path.join(dst, "carbon");
-	Path.mkdir(dst, true);
+	Path.mkdir(dst_path, true);
+	Path.set_cwd(src_path);
 	for (var entry : Path.listdir(Path.get_cwd(), true)) {
 		if (should_copy(entry)){
 			var src = Path.relative(entry);
-			var new_folder = Path.join(dst, Path.parent(src));
+			var new_folder = Path.join(dst_path, Path.parent(src));
 			Path.mkdir(new_folder, true);
 			Path.copy_file(entry, Path.join(new_folder, Path.filename(entry)));
 		}

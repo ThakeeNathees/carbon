@@ -115,6 +115,7 @@ private:
 	void _generate_members(Parser::MemberContainer* p_container, Bytecode* p_bytecode);
 
 	ptr<CarbonFunction> _generate_function(const Parser::FunctionNode* p_func, const Parser::ClassNode* p_class, Bytecode* p_bytecode);
+	ptr<CarbonFunction> _generate_initializer(bool p_static, Bytecode* p_bytecode, Parser::MemberContainer* p_container);
 	void _generate_block(const Parser::BlockNode* p_block);
 	void _generate_control_flow(const Parser::ControlFlowNode* p_cflow);
 	Address _generate_expression(const Parser::Node* p_expr, Address* p_dst = nullptr);

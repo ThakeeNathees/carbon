@@ -36,7 +36,7 @@ void VM::cleanup() {
 	if (_singleton != nullptr) delete _singleton;
 }
 
-var RuntimeInstance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
+var Instance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 
 	CarbonFunction* fn = nullptr;
 	Bytecode* _class = blueprint.get();
@@ -78,27 +78,31 @@ var RuntimeInstance::call_method(const String& p_method_name, stdvec<var*>& p_ar
 	if (fn->is_static()) { // calling static method using instance (acceptable)
 		return VM::singleton()->call_carbon_function(fn, _class, nullptr, p_args);
 	} else {
-		return VM::singleton()->call_carbon_function(fn, _class, *_self_ptr, p_args);
+		return VM::singleton()->call_carbon_function(fn, _class, shared_from_this(), p_args);
 	}
 }
 
-var RuntimeInstance::__call(stdvec<var*>& p_args) {
+var Instance::__call(stdvec<var*>& p_args) {
 	//	TODO:
 	return var();
 }
 
-var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<RuntimeInstance> p_self, stdvec<var*> p_args) {
+String Instance::to_string() {
+	ptr<CarbonFunction> fn = blueprint->get_function("to_string");
+	if (fn != nullptr) return VM::singleton()->call_carbon_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
+	return Super::to_string();
+}
+
+var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*> p_args) {
+
+	p_bytecode->initialize();
 
 	Stack stack(p_func->get_stack_size());
-
 	RuntimeContext context;
 	context.vm = this;
 	context.stack = &stack;
 	context.args = &p_args;
-	if (p_self != nullptr) {
-		context.self = p_self;
-		p_self->_self_ptr = &p_self;
-	}
+	if (p_self != nullptr) context.self = p_self;
 	if (p_bytecode->is_class()) {
 		context.bytecode_class = p_bytecode;
 		context.bytecode_file = p_bytecode->get_file().get();
@@ -109,6 +113,23 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 	uint32_t ip = 0; // instruction pointer
 
 	const stdvec<uint32_t>& opcodes = p_func->get_opcodes();
+
+	// check argc and add default args
+	stdvec<var> default_args_copy;
+	if (p_args.size() > p_func->get_arg_count()) {
+		THROW_BUG("TODO: too many arguments error msg here");
+	} else if (p_args.size() < p_func->get_arg_count()) {
+		const stdvec<var>& defaults = p_func->get_default_args();
+		if (p_args.size() + defaults.size() < p_func->get_arg_count()) {
+			THROW_BUG("TODO: too few arguments error msg here");
+		}
+
+		int args_needed = p_func->get_arg_count() - (int)p_args.size();
+		while (args_needed > 0) {
+			default_args_copy.push_back(defaults[defaults.size() - args_needed--]);
+		}
+		for (var& v : default_args_copy) p_args.push_back(&v);
+	}
 
 #define CHECK_OPCODE_SIZE(m_size) ASSERT(ip + m_size < opcodes.size())
 	while (ip < opcodes.size()) {
@@ -233,7 +254,6 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				ip++;
 
 				ASSERT(b_type < BuiltinTypes::_TYPE_MAX_);
-				// TODO: add default args before call
 				*dst = BuiltinTypes::construct((BuiltinTypes::Type)b_type, args);
 			} break;
 
@@ -249,7 +269,6 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				var* dst = context.get_var_at(opcodes[++ip]);
 				ip++;
 
-				// TODO: add default args before call
 				*dst = NativeClasses::singleton()->construct(class_name, args);
 			} break;
 			case Opcode::CONSTRUCT_CARBON: {
@@ -270,10 +289,11 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				if (classes->find(name) == classes->end()) THROW_BUG("cannot find classes the class");
 
 				ptr<Bytecode> blueprint = classes->at(name);
-				ptr<RuntimeInstance> instance = newptr<RuntimeInstance>(blueprint);
-				instance->_self_ptr = &instance;
+				ptr<Instance> instance = newptr<Instance>(blueprint);
 
-				// TODO: add default args before call
+				const CarbonFunction* member_initializer = blueprint->get_member_initializer();
+				if (member_initializer) call_carbon_function(member_initializer, blueprint.get(), instance, stdvec<var*>());
+
 				const CarbonFunction* constructor = blueprint->get_constructor();
 				if (constructor) call_carbon_function(constructor, blueprint.get(), instance, args);
 
@@ -320,7 +340,6 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				var* ret_value = context.get_var_at(opcodes[++ip]);
 				ip++;
 
-				// TODO: add default args before call
 				*ret_value = on->__call(args);
 			} break;
 			case Opcode::CALL_FUNC: {
@@ -336,9 +355,10 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				var* ret_value = context.get_var_at(opcodes[++ip]);
 				ip++;
 
-				// search function throught inheritance first, then file
 				Bytecode* call_base;
 				ptr<CarbonFunction> func_ptr;
+
+				// first search through inheritance
 				if (p_self != nullptr) {
 					call_base = p_self->blueprint.get();
 					while (call_base != nullptr) {
@@ -349,17 +369,28 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 						}
 						call_base = call_base->get_base_binary().get();
 					}
-				} else {
-					if (p_bytecode->is_class()) call_base = p_bytecode->get_file().get();
-					else call_base = p_bytecode;
 
-					auto& functions = call_base->get_functions();
-					auto it = functions.find(func);
-					if (it == functions.end()) THROW_BUG("can't find the function");
-					func_ptr = it->second;
+				// search in static class functions
+				} else if (p_bytecode->is_class()) {
+					call_base = p_bytecode;
+					auto it = call_base->get_functions().find(func);
+					if (it != call_base->get_functions().end() && it->second->is_static()) {
+						func_ptr = it->second;
+					}
 				}
 
-				// TODO: add default args before call
+				// search in the file
+				if (func_ptr == nullptr) {
+					if (p_bytecode->is_class()) call_base = p_bytecode->get_file().get();
+					else call_base = p_bytecode;
+				
+					auto& functions = call_base->get_functions();
+					auto it = functions.find(func);
+					if (it != functions.end()) func_ptr = it->second;
+				}
+
+				if (func_ptr == nullptr) THROW_BUG("can't find the function");
+
 				*ret_value = call_carbon_function(func_ptr.get(), call_base, (func_ptr->is_static()) ? nullptr : p_self, args);
 
 			} break;
@@ -377,7 +408,6 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				var* ret_value = context.get_var_at(opcodes[++ip]);
 				ip++;
 
-				// TODO: add default args before call
 				*ret_value = on->call_method(method, args);
 
 			} break;
@@ -394,7 +424,6 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				var* ret = context.get_var_at(opcodes[++ip]);
 
 				ASSERT(func < BuiltinFunctions::_FUNC_MAX_);
-				// TODO: add default args before call
 				BuiltinFunctions::call((BuiltinFunctions::Type)func, args, *ret);
 				ip++;
 			} break;
@@ -409,17 +438,17 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				}
 				ip++;
 
-
-				// TODO: add default args before call
 				ASSERT(p_bytecode->is_class());
 				if (p_bytecode->is_base_native()) {
 					p_self->native_instance = NativeClasses::singleton()->construct(p_bytecode->get_base_native(), args);
 				} else {
+
+					const CarbonFunction* member_initializer = p_bytecode->get_base_binary()->get_member_initializer();
+					if (member_initializer) call_carbon_function(member_initializer, p_bytecode->get_base_binary().get(), p_self, stdvec<var*>());
+
 					const CarbonFunction* ctor = p_bytecode->get_base_binary()->get_constructor();
 					if (ctor) call_carbon_function(ctor, p_bytecode->get_base_binary().get(), p_self, args);
 				}
-
-				// TODO: initialize members
 
 			} break;
 			case Opcode::JUMP: {
@@ -484,7 +513,7 @@ int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 	
 	const CarbonFunction* main = bytecode->get_main();
 	if (main == nullptr) {
-		ASSERT(false); // TODO: error no main function to run.
+		THROW_ERROR(Error::NULL_POINTER, "entry point was null");
 	}
 
 	//printf("%s\n", main->get_opcodes_as_string().c_str());
@@ -496,10 +525,11 @@ int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 		for (const String& str : args) argv.operator Array().push_back(str);
 		call_args.push_back(&argv);
 	}
-	call_carbon_function(main, bytecode.get(), nullptr, call_args);
+	var main_ret = call_carbon_function(main, bytecode.get(), nullptr, call_args);
 
-	// TODO: return what main returns in int.
-	return 0;
+	if (main_ret.get_type() == var::_NULL) return 0;
+	if (main_ret.get_type() != var::INT) THROW_ERROR(Error::TYPE_ERROR, "main function returned a non integer value");
+	return main_ret.operator int();
 }
 
 var* RuntimeContext::get_var_at(const Address& p_addr) {
@@ -540,14 +570,14 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 		} break;
 		case Address::MEMBER_VAR: {
 			// TODO: ASSERT self is runtime instance
-			stdvec<var>& members = self.cast_to<RuntimeInstance>()->members;
+			stdvec<var>& members = self.cast_to<Instance>()->members;
 			THROW_INVALID_INDEX(members.size(), index);
 			return &members[index];
 		} break;
 		case Address::STATIC_MEMBER: {
 			const String& name = get_name_at(index);
 			var* member = nullptr;
-			if (self.get_type() != var::_NULL) member = self.cast_to<RuntimeInstance>()->blueprint->_get_member_var_ptr(name);
+			if (self.get_type() != var::_NULL) member = self.cast_to<Instance>()->blueprint->_get_member_var_ptr(name);
 			if (!member && bytecode_class) member = bytecode_class->_get_member_var_ptr(name);
 			if (!member) member = bytecode_file->_get_member_var_ptr(name);
 			return member;

@@ -38,6 +38,8 @@ class Bytecode : public Object {
 public:
 	Bytecode() {}
 
+	void initialize();
+
 	var __call(stdvec<var*>& p_args) override; // constructor
 	var call_method(const String& p_method_name, stdvec<var*>& p_args) override; // static methods.
 	var get_member(const String& p_member_name) override; // static member, constants, enums, functions ...
@@ -61,10 +63,9 @@ public:
 	stdmap<String, ptr<Bytecode>>& get_externs() { ASSERT(!_is_class); return _externs; }
 	const stdmap<String, ptr<CarbonFunction>>& get_functions() const { return _functions; }
 
-	// TODO: check if name exists and if not return nullptr / throw error.
-	ptr<Bytecode> get_class(const String& p_name)  { ASSERT(!_is_class); return _classes.at(p_name); }
-	ptr<Bytecode> get_import(const String& p_name) { ASSERT(!_is_class); return _externs.at(p_name); }
-	ptr<CarbonFunction> get_function(const String& p_name) { return _functions.at(p_name); }
+	ptr<Bytecode> get_class(const String& p_name);
+	ptr<Bytecode> get_import(const String& p_name);
+	ptr<CarbonFunction> get_function(const String& p_name);
 
 	bool has_base() const { ASSERT(_is_class); return _has_base; }
 	bool is_base_native() const { ASSERT(_is_class); return _is_base_native; }
@@ -74,6 +75,8 @@ public:
 	const ptr<Bytecode>& get_file() const { ASSERT(_is_class); return _file; }
 	const CarbonFunction* get_main() const { ASSERT(!_is_class); return _main; }
 	const CarbonFunction* get_constructor() const { ASSERT(_is_class); return _constructor; }
+	const CarbonFunction* get_member_initializer() const { ASSERT(_is_class); return _member_initializer.get(); }
+	const CarbonFunction* get_static_initializer() const { return _static_initializer.get(); }
 
 	const String& get_global_name(uint32_t p_pos) {
 		THROW_INVALID_INDEX(_global_names_array.size(), p_pos);
@@ -123,8 +126,9 @@ private:
 		CarbonFunction* _main = nullptr; // file
 		CarbonFunction* _constructor;    // class
 	};
-	CarbonFunction* _static_initializer;
-	CarbonFunction* _member_initialization; // class
+	ptr<CarbonFunction> _static_initializer = nullptr;
+	ptr<CarbonFunction> _member_initializer = nullptr; // class
+	bool _static_initialized = false;
 
 	bool _is_compiled = false;
 	bool _is_compiling = false;

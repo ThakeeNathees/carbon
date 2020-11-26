@@ -31,8 +31,8 @@
 
 namespace carbon {
 
-class RuntimeInstance : public Object {
-	REGISTER_CLASS(RuntimeInstance, Object) {}
+class Instance : public Object, public std::enable_shared_from_this<Instance> {
+	REGISTER_CLASS(Instance, Object) {}
 
 	bool _is_registered() const override { return false; }
 	var call_method(const String& p_method_name, stdvec<var*>& p_args) override;
@@ -45,24 +45,25 @@ class RuntimeInstance : public Object {
 		members[pos] = p_value;
 	}
 
-	RuntimeInstance() {}
-	RuntimeInstance(ptr<Bytecode>& p_blueprint) {
+	Instance() {}
+	Instance(ptr<Bytecode>& p_blueprint) {
 		blueprint = p_blueprint;
 		members.resize(blueprint->get_member_count());
 	}
 
 	// TODO: implement all the operator methods here.
 	var __call(stdvec<var*>& p_args) override;
-
+	String to_string() override;
 
 private:
 	friend class VM;
 	friend struct RuntimeContext;
+
 	ptr<Bytecode> blueprint;
 	ptr<Object> native_instance;
 	stdvec<var> members;
 	
-	ptr<RuntimeInstance>* _self_ptr = nullptr; // not sure if it's a good idea.
+	//ptr<Instance>* _self_ptr = nullptr; // not sure if it's a good idea.
 
 };
 

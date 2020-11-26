@@ -304,6 +304,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 						} else {
 							Address right = _generate_expression(op->args[1].get(), &left);
 							if (left != right) _context.opcodes->write_assign(left, right);
+							_POP_ADDR_IF_TEMP(right);
 						}
 						return left;
 					}

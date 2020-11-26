@@ -31,6 +31,28 @@
 
 namespace carbon {
 
+void Bytecode::initialize() {
+	if (_static_initialized) return;
+	_static_initialized = true;
+
+	if (is_class()) {
+		_file->initialize();
+		if (_static_initializer) VM::singleton()->call_carbon_function(_static_initializer.get(), this, nullptr, stdvec<var*>());
+	} else {
+		for (auto p : _externs) p.second->initialize();
+		if (_static_initializer) VM::singleton()->call_carbon_function(_static_initializer.get(), this, nullptr, stdvec<var*>());
+		for (auto p : _classes) p.second->initialize();
+	}
+}
+
+#define _GET_OR_NULL(m_map)                 \
+	auto it = m_map.find(p_name);			\
+	if (it == m_map.end()) return nullptr;	\
+	return it->second
+ptr<Bytecode> Bytecode::get_class(const String& p_name) { ASSERT(!_is_class); _GET_OR_NULL(_classes); }
+ptr<Bytecode> Bytecode::get_import(const String& p_name) { ASSERT(!_is_class); _GET_OR_NULL(_externs); }
+ptr<CarbonFunction> Bytecode::get_function(const String& p_name) { _GET_OR_NULL(_functions); }
+
 var Bytecode::__call(stdvec<var*>& p_args) {
 	throw "TODO:";
 	return var(); // TODO:

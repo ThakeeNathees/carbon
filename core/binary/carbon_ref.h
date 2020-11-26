@@ -65,7 +65,7 @@ public:
 		return ret;
 	}
 
-	String to_string() const override {
+	String to_string() override {
 		return String("[builtin_function:") + BuiltinFunctions::get_func_name(_type) + "]";
 	}
 
@@ -86,7 +86,7 @@ public:
 		return BuiltinTypes::construct(_type, p_args);
 	}
 
-	String to_string() const override {
+	String to_string() override {
 		return String("[builtin_type:") + BuiltinTypes::get_type_name(_type) + "]";
 	}
 
