@@ -154,8 +154,8 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 					if (ctor && ctor->args.size() - ctor->default_args.size() != 0) can_add_default_ctor = false;
 				} break;
 				case Parser::ClassNode::BASE_NATIVE: {
-					const MethodInfo* ctor = NativeClasses::singleton()->get_constructor(cls->base_class_name)->get_method_info();
-					if (ctor && ctor->get_arg_count() - ctor->get_default_arg_count() - 1 != 0) can_add_default_ctor = false; // -1 for self argument
+					const StaticFuncBind* ctor = NativeClasses::singleton()->get_constructor(cls->base_class_name);
+					if (ctor && ctor->get_method_info()->get_arg_count() - ctor->get_method_info()->get_default_arg_count() - 1 != 0) can_add_default_ctor = false; // -1 for self argument
 				} break;
 				case Parser::ClassNode::BASE_EXTERN: {
 					const CarbonFunction* ctor = cls->base_binary->get_constructor();
@@ -263,7 +263,9 @@ void Analyzer::_check_member_var_shadow(void* p_base, Parser::ClassNode::BaseTyp
 		case Parser::ClassNode::BASE_LOCAL: {
 			Parser::ClassNode* base = (Parser::ClassNode*)p_base;
 			for (const ptr<Parser::VarNode>& v : p_vars) {
+				if (v->is_static) continue;
 				for (const ptr<Parser::VarNode>& _v : base->vars) {
+					if (_v->is_static) continue;
 					if (_v->name == v->name) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR,
 						String::format("member named \"%s\" already exists in base \"%s\"", v->name.c_str(), base->name.c_str()), v->pos);
 				}
@@ -384,8 +386,8 @@ void Analyzer::_check_super_constructor_call(const Parser::BlockNode* p_block) {
 		} break;
 		case Parser::ClassNode::BASE_NATIVE: {
 			const StaticFuncBind* constructor = NativeClasses::singleton()->get_constructor(current_class->base_class_name);
-			constructor_argc = constructor->get_argc();
-			default_argc = constructor->get_method_info()->get_default_arg_count();
+			constructor_argc = (constructor) ? constructor->get_argc() : 0;
+			default_argc = (constructor) ? constructor->get_method_info()->get_default_arg_count() : 0;
 		} break;
 	}
 

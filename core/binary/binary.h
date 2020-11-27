@@ -45,7 +45,7 @@ struct Address {
 		PARAMETER,
 		THIS,
 
-		EXTERN,         // cruurent translation unit or imported one
+		EXTERN,         // current translation unit or imported one
 		NATIVE_CLASS,   // native class ref
 		BUILTIN_FUNC,   // builtin function ref
 		BUILTIN_TYPE,   // builtin type ref
@@ -105,11 +105,12 @@ enum Opcode {
 	CONSTRUCT_LITERAL_MAP,
 
 	// Native and other types constructed from calling
-	CALL,       // a_var(...); -> a_var.__call(...);
-	CALL_FUNC,  // f(...); calling a function
-	CALL_METHOD,
-	CALL_BUILTIN,
-	CALL_SUPER_CTOR,
+	CALL,                // a_var(...); -> a_var.__call(...);
+	CALL_FUNC,           // f(...); calling a function
+	CALL_METHOD,         // a.method(...)
+	CALL_BUILTIN,        // pritnln(...)
+	CALL_SUPER_CTOR,     // super();
+	CALL_SUPER_METHOD,   // super.method(...);
 
 	JUMP,
 	JUMP_IF,
@@ -187,6 +188,7 @@ struct Opcodes {
 	void write_call_func(const Address& p_ret, uint32_t p_name, const stdvec<Address>& p_args);
 	void write_call_method(const Address& p_ret, Address& p_on, uint32_t p_method, const stdvec<Address>& p_args);
 	void write_call_super_constructor(const stdvec<Address>& p_args);
+	void write_call_super_method(const Address& p_ret, uint32_t p_method, const stdvec<Address>& p_args);
 	void write_operator(const Address& p_dst, var::Operator p_op, const Address& p_left, const Address& p_right);
 
 };

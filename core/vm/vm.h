@@ -27,7 +27,7 @@
 #define VM_H
 
 #include "core.h"
-#include "runtime_instance.h"
+#include "instance.h"
 #include "binary/carbon_function.h"
 #include "binary/bytecode.h"
 #include "binary/carbon_ref.h"

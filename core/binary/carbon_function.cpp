@@ -200,6 +200,13 @@ String CarbonFunction::get_opcodes_as_string() const {
 				ADD_ADDR_LIST();
 				ip++;
 			} break;
+			case Opcode::CALL_SUPER_METHOD: {
+				CHECK_OPCODE_SIZE(5);
+				ADD_GLOBAL_NAME();
+				ADD_ADDR_LIST();
+				ADD_ADDR();
+				ip++;
+			} break;
 			case Opcode::JUMP: {
 				CHECK_OPCODE_SIZE(2);
 				ret += String(std::to_string(_opcodes[++ip])) + " // addr\n";
@@ -241,7 +248,7 @@ String CarbonFunction::get_opcodes_as_string() const {
 
 		}
 		ret += "\n";
-		MISSED_ENUM_CHECK(Opcode::END, 24);
+		MISSED_ENUM_CHECK(Opcode::END, 25);
 	}
 	return ret;
 }

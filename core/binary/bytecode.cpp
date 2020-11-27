@@ -45,13 +45,14 @@ void Bytecode::initialize() {
 	}
 }
 
-#define _GET_OR_NULL(m_map)                 \
+#define _GET_OR_NULL(m_map, m_addr)         \
 	auto it = m_map.find(p_name);			\
 	if (it == m_map.end()) return nullptr;	\
-	return it->second
-ptr<Bytecode> Bytecode::get_class(const String& p_name) { ASSERT(!_is_class); _GET_OR_NULL(_classes); }
-ptr<Bytecode> Bytecode::get_import(const String& p_name) { ASSERT(!_is_class); _GET_OR_NULL(_externs); }
-ptr<CarbonFunction> Bytecode::get_function(const String& p_name) { _GET_OR_NULL(_functions); }
+	return m_addr it->second
+ptr<Bytecode> Bytecode::get_class(const String& p_name) { ASSERT(!_is_class); _GET_OR_NULL(_classes, PLACE_HOLDER_MACRO); }
+ptr<Bytecode> Bytecode::get_import(const String& p_name) { ASSERT(!_is_class); _GET_OR_NULL(_externs, PLACE_HOLDER_MACRO); }
+ptr<CarbonFunction> Bytecode::get_function(const String& p_name) { _GET_OR_NULL(_functions, PLACE_HOLDER_MACRO); }
+var* Bytecode::get_static_var(const String& p_name) { _GET_OR_NULL(_static_vars, &); }
 
 var Bytecode::__call(stdvec<var*>& p_args) {
 	throw "TODO:";
@@ -71,7 +72,36 @@ var Bytecode::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 		return it_sm->second.__call(p_args);
 	}
 
-	throw "TODO: throw error here";
+	if (_has_base) {
+		if (_is_base_native) {
+			ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(_base_native, p_method_name);
+			if (bd != nullptr) {
+				switch (bd->get_type()) {
+					case BindData::METHOD:
+					case BindData::MEMBER_VAR:
+						throw "TODO: error msg: can't call non static attrib statically";
+
+					case BindData::STATIC_FUNC: {
+						const StaticFuncBind* sf = static_cast<const StaticFuncBind*>(bd.get());
+						return sf->call(p_args);
+					} break;
+
+					case BindData::STATIC_VAR: {
+						const StaticPropertyBind* pb = static_cast<const StaticPropertyBind*>(bd.get());
+						return pb->get().__call(p_args);
+					} break;
+
+					case BindData::STATIC_CONST:
+					case BindData::ENUM:
+					case BindData::ENUM_VALUE:
+						throw "TODO: error msg: is not callable";
+				}
+			}
+		} else {
+			_base->call_method(p_method_name, p_args);
+		}
+	}
+	throw "TODO: throw error here -> no method named ...";
 }
 
 var Bytecode::get_member(const String& p_member_name) {
@@ -188,7 +218,9 @@ int Bytecode::get_member_offset() const {
 	if (_base != nullptr) return _base->get_member_count();
 	if (_pending_base != nullptr) {
 		Parser::ClassNode* cls = (Parser::ClassNode*)_pending_base;
-		return cls->get_member_offset() + (uint32_t)cls->vars.size();
+		uint32_t member_count = 0;
+		for (auto& v : cls->vars) if (!v->is_static) member_count++;
+		return cls->get_member_offset() + member_count;
 	}
 	return 0;
 }

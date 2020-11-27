@@ -143,6 +143,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				// a_var(); call `__call` method on the variable.
 				case Parser::IdentifierNode::REF_PARAMETER:
 				case Parser::IdentifierNode::REF_LOCAL_VAR:
+				case Parser::IdentifierNode::REF_STATIC_VAR:
 				case Parser::IdentifierNode::REF_MEMBER_VAR: {
 					call->base = call->method; // param(args...); -> will call param.__call(args...);
 					call->method = nullptr;
@@ -378,7 +379,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						// super.method(); // super is native
 						case Parser::ClassNode::BASE_NATIVE: {
 							// TODO: can also check types at compile time it arg is constvalue.
-							ptr<BindData> bd = NativeClasses::singleton()->get_bind_data(curr_class->base_class_name, method_name);
+							ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(curr_class->base_class_name, method_name);
 							if (bd == nullptr) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->base_class_name.c_str()), call->pos);
 							switch (bd->get_type()) {
 								case BindData::METHOD: { // super.method();
@@ -471,7 +472,8 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				// Aclass.id();
 				case Parser::IdentifierNode::REF_CARBON_CLASS: {
 
-					Parser::IdentifierNode _id = _find_member(base->_class, id->name); _id.pos = id->pos;
+					Parser::IdentifierNode _id = _find_member(base->_class, id->name);
+					_id.pos = id->pos; id = &_id;
 					switch (_id.ref) {
 						case Parser::IdentifierNode::REF_UNKNOWN:
 							THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s", id->name.c_str(), base->_class->name.c_str()), id->pos);
@@ -490,7 +492,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 									break;
 							}
 
-							if (_id._var->is_static) {
+							if (_is_member_static) {
 								break; // Class.var(args...);
 							} else {
 								THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", id->name.c_str()), id->pos);
@@ -508,7 +510,20 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						case Parser::IdentifierNode::REF_ENUM_VALUE: THROW_ANALYZER_ERROR(Error::TYPE_ERROR, String::format("enum value (\"%s.%s()\") is not callable.", base->name.c_str(), id->name.c_str()), id->pos);
 
 						case Parser::IdentifierNode::REF_FUNCTION: {
-							if (_id._func->is_static) {
+
+							bool _is_func_static = false;
+							switch (id->ref_base) {
+								case Parser::IdentifierNode::BASE_UNKNOWN: ASSERT(false && "I must forgotten here");
+								case Parser::IdentifierNode::BASE_LOCAL:
+									_is_func_static = _id._func->is_static;
+									break;
+								case Parser::IdentifierNode::BASE_NATIVE:
+								case Parser::IdentifierNode::BASE_EXTERN:
+									_is_func_static = id->_method_info->is_static();
+									break;
+							}
+
+							if (_is_func_static) {
 								break; // Class.static_func(args...);
 							} else {
 								THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't call non-static method\"%s\" statically", id->name.c_str()), id->pos);
@@ -525,7 +540,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				// File.method(); base is a native class.
 				case Parser::IdentifierNode::REF_NATIVE_CLASS: {
 
-					BindData* bd = NativeClasses::singleton()->get_bind_data(base->name, id->name).get();
+					BindData* bd = NativeClasses::singleton()->find_bind_data(base->name, id->name).get();
 					if (!bd) THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" does not exists on base %s.", id->name.c_str(), base->name.c_str()), id->pos);
 					switch (bd->get_type()) {
 						case BindData::STATIC_FUNC: {

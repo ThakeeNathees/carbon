@@ -62,10 +62,12 @@ public:
 	stdmap<String, ptr<Bytecode>>& get_classes() { ASSERT(!_is_class); return _classes; }
 	stdmap<String, ptr<Bytecode>>& get_externs() { ASSERT(!_is_class); return _externs; }
 	const stdmap<String, ptr<CarbonFunction>>& get_functions() const { return _functions; }
+	stdmap<String, var>& get_static_vars() { return _static_vars; }
 
 	ptr<Bytecode> get_class(const String& p_name);
 	ptr<Bytecode> get_import(const String& p_name);
 	ptr<CarbonFunction> get_function(const String& p_name);
+	var* get_static_var(const String& p_name);
 
 	bool has_base() const { ASSERT(_is_class); return _has_base; }
 	bool is_base_native() const { ASSERT(_is_class); return _is_base_native; }

@@ -46,7 +46,8 @@ String Opcodes::get_opcode_name(Opcode p_opcode) {
 		"CALL_FUNC",
 		"CALL_METHOD",
 		"CALL_BUILTIN",
-		"CALL_SUPER",
+		"CALL_SUPER_CTOR",
+		"CALL_SUPER_METHOD",
 		"JUMP",
 		"JUMP_IF",
 		"JUMP_IF_NOT",
@@ -55,7 +56,7 @@ String Opcodes::get_opcode_name(Opcode p_opcode) {
 		"ITER_NEXT",
 		"END",
 	};
-	MISSED_ENUM_CHECK(END, 24);
+	MISSED_ENUM_CHECK(END, 25);
 	return _names[p_opcode];
 }
 
@@ -436,6 +437,16 @@ void Opcodes::write_call_super_constructor(const stdvec<Address>& p_args) {
 	for (const Address& addr : p_args) {
 		insert(addr);
 	}
+}
+
+void Opcodes::write_call_super_method(const Address& p_ret, uint32_t p_method, const stdvec<Address>& p_args) {
+	insert(Opcode::CALL_SUPER_METHOD);
+	insert(p_method);
+	insert((uint32_t)p_args.size());
+	for (const Address& addr : p_args) {
+		insert(addr);
+	}
+	insert(p_ret);
 }
 
 void Opcodes::write_operator(const Address& p_dst, var::Operator p_op, const Address& p_left, const Address& p_right) {

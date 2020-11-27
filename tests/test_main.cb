@@ -1,6 +1,4 @@
 /* TODO: //////////////////////////////////////////
--- rename runtime instance to instance
--- super method call
 -- refactor throw error to function from macros
 -- undef THROW_ANLAYZER_ERROR, TOKENIZER_ERROR, ... (not THROW_BUG)
 -- error print and dbg info (stack trace)
@@ -13,6 +11,7 @@
 -- a rich typecheck api
 -- "".substr() check index limit
 -- float("") <-- crash
+-- try super.EnumClass(); <-- check error msg
 
 ----- TODO ADDNL -----
 -- i++, i--
@@ -56,17 +55,18 @@
 		- "%s - %s" % "first", "second"; // <-- TODO:
 //////////////////////////////////////////////////// */
 
-import lib = "test_lib.cb";
 
-class A {
-	var x;
-	func A(x) {
-		this.x = x;
-	}
-	func to_string() = "to_string can't be const func";
+//import lib = "test_lib.cb";
+
+class Base : Path {
+}
+
+class Derived : Base {
+	static func get_cwd() = "overriden";
 }
 
 func main(args) {
-	var a = A("val");
-	println(a);
+	var instance = Derived();
+	println(Base.get_cwd());
 }
+

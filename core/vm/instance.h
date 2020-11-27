@@ -23,8 +23,8 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef RUNTIME_INSTANCE_H
-#define RUNTIME_INSTANCE_H
+#ifndef INSTANCE_H
+#define INSTANCE_H
 
 #include "core.h"
 #include "binary/bytecode.h"
@@ -69,4 +69,4 @@ private:
 
 }
 
-#endif // RUNTIME_INSTANCE_H
+#endif // INSTANCE_H

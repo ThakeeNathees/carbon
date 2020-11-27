@@ -190,7 +190,10 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 					if (call->method == nullptr) { // super(...); if used in constructor -> super constructor else call same func on super.
 						_context.opcodes->write_call_super_constructor(args);
 					} else { // super.f();
-						// TODO:
+						ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
+						const Parser::IdentifierNode* method = ptrcast<Parser::IdentifierNode>(call->method).get();
+						uint32_t name = add_global_name(method->name);
+						_context.opcodes->write_call_super_method(ret, name, args);
 					}
 
 				} break;

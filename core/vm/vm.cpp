@@ -42,6 +42,7 @@ var Instance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 	Bytecode* _class = blueprint.get();
 	while (_class) {
 		auto& functions = _class->get_functions();
+		// TODO: if not found in functions check in member/static members too.
 		auto it = functions.find(p_method_name);
 		if (it != functions.end()) {
 			fn = it->second.get();
@@ -49,7 +50,8 @@ var Instance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 		} else {
 			if (!_class->has_base()) THROW_ERROR(Error::ATTRIBUTE_ERROR, "TODO: method not found msg"); // TODO: throw error with debug info.
 			if (_class->is_base_native()) {
-				BindData* bd = NativeClasses::singleton()->get_bind_data(_class->get_base_native(), p_method_name).get();
+				// TODO: 
+				BindData* bd = NativeClasses::singleton()->find_bind_data(_class->get_base_native(), p_method_name).get();
 				switch (bd->get_type()) {
 					case BindData::METHOD:
 						return static_cast<MethodBind*>(bd)->call(native_instance, p_args);
@@ -373,9 +375,9 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				// search in static class functions
 				} else if (p_bytecode->is_class()) {
 					call_base = p_bytecode;
-					auto it = call_base->get_functions().find(func);
-					if (it != call_base->get_functions().end() && it->second->is_static()) {
-						func_ptr = it->second;
+					func_ptr = call_base->get_function(func);
+					if (func_ptr != nullptr && !func_ptr->is_static() && p_func->is_static()) {
+						THROW_BUG("can't call a non static function from static function");
 					}
 				}
 
@@ -451,6 +453,43 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				}
 
 			} break;
+			case Opcode::CALL_SUPER_METHOD: {
+				CHECK_OPCODE_SIZE(4);
+
+				const String& method = context.get_name_at(opcodes[++ip]);
+				uint32_t argc = opcodes[++ip];
+				stdvec<var*> args;
+				for (int i = 0; i < (int)argc; i++) {
+					var* arg = context.get_var_at(opcodes[++ip]);
+					args.push_back(arg);
+				}
+				var* ret_value = context.get_var_at(opcodes[++ip]);
+				ip++;
+
+				ASSERT(p_self->blueprint->has_base());
+
+				if (p_self->blueprint->is_base_native()) {
+					ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(p_self->blueprint->get_base_native(), method);
+					THROW_BUG("TODO:");
+				} else {
+					ptr<CarbonFunction> fn = p_self->blueprint->get_base_binary()->get_function(method);
+					var* sv = nullptr; if (fn == nullptr) sv = p_self->blueprint->get_base_binary()->get_static_var(method);
+
+					if (fn != nullptr) {
+						if (fn->is_static()) {
+							*ret_value = call_carbon_function(fn.get(), p_self->blueprint.get(), p_self, args);
+						} else {
+							if (p_self == nullptr) THROW_BUG("can't call non-static method statically");
+							*ret_value = call_carbon_function(fn.get(), p_self->blueprint.get(), nullptr, args);
+						}
+					} else if (sv != nullptr) {
+						*ret_value = sv->__call(args);
+					} else {
+						THROW_BUG("attribute not found in super");
+					}
+				}
+
+			} break;
 			case Opcode::JUMP: {
 				CHECK_OPCODE_SIZE(2);
 				uint32_t addr = opcodes[++ip];
@@ -503,7 +542,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 			} break;
 
 		}
-		MISSED_ENUM_CHECK(Opcode::END, 24);
+		MISSED_ENUM_CHECK(Opcode::END, 25);
 
 	}
 	THROW_BUG("can't reach here");

@@ -78,7 +78,7 @@ TEST_CASE("[native_classes]:method_bind+") {
 		CHECK(a.get_member("member").operator Array() == Array(1, "2", 3.0));
 
 		CHECK(a.get_member("static_member").operator String() == "static member");
-		ptr<BindData> bd = NativeClasses::singleton()->get_bind_data(a.get_type_name(), "static_member");
+		ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(a.get_type_name(), "static_member");
 		REQUIRE(bd != nullptr);
 		REQUIRE(bd->get_type() == BindData::STATIC_VAR);
 		CHECK(ptrcast<StaticPropertyBind>(bd)->get() == "static member");
@@ -142,7 +142,4 @@ TEST_CASE("[native_classes]:method_bind-") {
 
 	CHECK_THROWS_ERR(Error::ATTRIBUTE_ERROR, c.call_method("blah blah..."));
 	CHECK_THROWS_ERR(Error::INVALID_ARG_COUNT, c.call_method("C_member_func"));
-
-	// TODO: var error -> carbon error : invalid type casting.
-	//CHECK_THROWS_CARBON_ERR(Error::INVALID_ARG_COUNT, b2.call_method("B2_member_func", 1));
 }

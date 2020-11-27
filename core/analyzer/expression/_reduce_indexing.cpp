@@ -248,7 +248,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 				// File.prop;
 				case Parser::IdentifierNode::REF_NATIVE_CLASS: {
 					ASSERT(NativeClasses::singleton()->is_class_registered(base->name));
-					BindData* bd = NativeClasses::singleton()->get_bind_data(base->name, member->name).get();
+					BindData* bd = NativeClasses::singleton()->find_bind_data(base->name, member->name).get();
 					if (!bd) THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s.", member->name.c_str(), base->name.c_str()), member->pos);
 					switch (bd->get_type()) {
 						case BindData::METHOD:

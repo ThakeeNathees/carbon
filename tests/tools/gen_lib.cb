@@ -1,6 +1,6 @@
 
-const dst_path = "C:/Users/Thakee Nathees/Desktop/test/c test/VSMain/libs/carbon/";
-var  src_path  = "C:/dev/carbon/";
+const DST_PATH = "C:/Users/Thakee Nathees/Desktop/test/c test/VSMain/libs/carbon/";
+const SRC_PATH  = "C:/dev/carbon/";
 
 func should_copy(entry) {
 	if (Path.is_dir(entry)) return false;
@@ -11,12 +11,12 @@ func should_copy(entry) {
 }
 
 func main(args) {
-	Path.mkdir(dst_path, true);
-	Path.set_cwd(src_path);
+	Path.mkdir(DST_PATH, true);
+	Path.set_cwd(SRC_PATH);
 	for (var entry : Path.listdir(Path.get_cwd(), true)) {
-		if (should_copy(entry)){
+		if (should_copy(entry)) {
 			var src = Path.relative(entry);
-			var new_folder = Path.join(dst_path, Path.parent(src));
+			var new_folder = Path.join(DST_PATH, Path.parent(src));
 			Path.mkdir(new_folder, true);
 			Path.copy_file(entry, Path.join(new_folder, Path.filename(entry)));
 		}
