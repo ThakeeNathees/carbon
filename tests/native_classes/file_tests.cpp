@@ -31,13 +31,13 @@ TEST_CASE("[native_classes]:file+") {
 	// bind method test
 	stdvec<var*> args;
 	var file2 = NativeClasses::singleton()->construct("File", args);
-	file2.call_method("open", TEST_FILE_PATH, File::APPEND);
-	file2.call_method("write", "\nappended by FILE2.");
-	file2.call_method("close");
+	call_method(file2, "open", TEST_FILE_PATH, File::APPEND);
+	call_method(file2, "write", "\nappended by FILE2.");
+	call_method(file2, "close");
 	
-	file2.call_method("open", TEST_FILE_PATH, File::READ);
-	String read2 = file2.call_method("read");
-	file2.call_method("close");
+	call_method(file2, "open", TEST_FILE_PATH, File::READ);
+	String read2 = call_method(file2, "read");
+	call_method(file2, "close");
 	CHECK(read2 == "FILE1\nLINE2\nappended by FILE2.");
 }
 

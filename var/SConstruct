@@ -1,0 +1,13 @@
+#!python
+import os, subprocess
+Import('cbenv')
+
+## project includes
+cbenv.Append(CPPPATH=[Dir("./")])
+
+## os env
+env_var = cbenv.Clone()
+env_var.SOURCES = [ Glob('*.cpp') ]
+
+## source files
+cbenv.SOURCES += env_var.SOURCES

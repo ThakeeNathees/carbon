@@ -103,6 +103,34 @@ void Tokenizer::_eat_escape(String& p_str) {
 	}
 }
 
+
+const TokenData& Tokenizer::next(int p_offset) {
+	if (token_ptr + p_offset >= (int)tokens.size()) { THROW_BUG("invalid index."); }
+	token_ptr += p_offset;
+	cur_line = tokens[token_ptr].line; cur_col = tokens[token_ptr].col;
+	return tokens[token_ptr++];
+}
+
+const TokenData& Tokenizer::peek(int p_offset, bool p_safe) const {
+	static TokenData tmp = { Token::_EOF };
+	if (token_ptr + p_offset < 0 || token_ptr + p_offset >= (int)tokens.size()) {
+		if (p_safe) return tmp;
+		else THROW_TOKENIZE_ERROR(Error::INVALID_INDEX, "Internal Bug: TokenData::peek() index out of bounds");
+	}
+	return tokens[token_ptr + p_offset];
+}
+
+Vect2i Tokenizer::get_pos() const { return Vect2i(cur_line, cur_col); }
+const TokenData& Tokenizer::get_token_at(const Vect2i& p_pos) const {
+	for (size_t i = 0; i < tokens.size(); i++) {
+		if (tokens[i].line == p_pos.x && tokens[i].col == p_pos.y) {
+			return tokens[i];
+		}
+	}
+	THROW_TOKENIZE_ERROR(Error::BUG, "TokenData::get_token_at() called with invalid position.");
+}
+
+
 void Tokenizer::_eat_token(Token p_tk, int p_eat_size) {
 	TokenData tk;
 	tk.type = p_tk;

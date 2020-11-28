@@ -119,6 +119,18 @@ String Address::as_string(const stdvec<String>* _global_names_array, const stdve
 	THROW_BUG("can't reach here");
 }
 
+uint32_t Opcodes::last() { return (uint32_t)opcodes.size() - 1; }
+uint32_t Opcodes::next() { return (uint32_t)opcodes.size(); }
+
+void Opcodes::insert(uint32_t p_opcode) {
+	opcodes.push_back(p_opcode);
+}
+void Opcodes::insert(const Address& p_addr) {
+	opcodes.push_back(p_addr.get_address());
+}
+void Opcodes::insert(Opcode p_opcode) {
+	opcodes.push_back((uint32_t)p_opcode);
+}
 
 void Opcodes::write_assign(const Address& dst, const Address& src) {
 	insert(Opcode::ASSIGN);

@@ -24,7 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "analyzer.h"
-#include "binary/carbon_function.h"
+#include "carbon_function.h"
 
 namespace carbon {
 

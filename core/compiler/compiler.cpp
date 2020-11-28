@@ -32,8 +32,18 @@ Compiler* Compiler::singleton() {
 	if (_singleton == nullptr) _singleton = new Compiler();
 	return _singleton;
 }
+
 void Compiler::cleanup() {
 	if (_singleton != nullptr) delete _singleton;
+}
+
+void Compiler::add_flag(CompileFlags p_flag) { _flags |= p_flag; }
+void Compiler::add_include_dir(const String& p_dir) {
+	if (!Path::exists(p_dir) || !Path::is_dir(p_dir)) {
+		// TODO: throw error / warning (ignore for now)
+	} else {
+		_include_dirs.push_back(Path::absolute(p_dir));
+	}
 }
 
 ptr<Bytecode> Compiler::compile(const String& p_path) {
@@ -51,9 +61,7 @@ ptr<Bytecode> Compiler::compile(const String& p_path) {
 	}
 
 	String extension = Path::extension(path);
-	if (extension != source_extension) {
-		// TODO: error or warning.
-	}
+	// TODO: check endswith .cb
 
 	class ScopeDestruct {
 	public:

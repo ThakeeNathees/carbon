@@ -5,12 +5,16 @@ import os, subprocess, sys
 def USER_DATA(env):
 	env.PROJECT_NAME = 'carbon'
 	
-	env.Append(CPPPATH=[Dir("./")])
+	env.Append(CPPPATH=[Dir(path) for path in [
+			"./", "./include/", "./include/core/", "./include/var/", "./include/native/", "./include/compiler/",
+	]])
 	env.SOURCES = []
 	env.SCONSCRIPTS = [
 		'thirdparty/SConstruct',
-		'io/SConstruct',
+
 		'core/SConstruct',
+		'var/SConstruct',
+		'io/SConstruct',
 		'os/SConstruct',
 	]
 
@@ -25,8 +29,6 @@ def USER_DATA(env):
 		env.Append(CPPDEFINES=['DEBUG_BUILD'])
 	else:
 		env.Append(CPPDEFINES=['RELEASE_BUILD'])
-
-
 
 
 #################################################################################################

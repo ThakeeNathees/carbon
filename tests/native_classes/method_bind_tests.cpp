@@ -13,7 +13,7 @@ public:
 	static int A_static_func() { return 1; }
 	virtual int A_virtual_func() { return 2; }
 
-	var member = Array(1, "2", 3.0);
+	var member = Array(make_stdvec<var>(1, "2", 3.0));
 	static var static_member;
 	static const int _const;
 };
@@ -70,12 +70,12 @@ TEST_CASE("[native_classes]:method_bind+") {
 	register_classes();
 
 	var r;
-	r = a.call_method("A_virtual_func");
+	r = call_method(a, "A_virtual_func");
 	REQUIRE(r.get_type() == var::INT);
 	CHECK(r.operator int() == 2);
 
 	{
-		CHECK(a.get_member("member").operator Array() == Array(1, "2", 3.0));
+		CHECK(a.get_member("member").operator Array() == Array(make_stdvec<var>(1, "2", 3.0)));
 
 		CHECK(a.get_member("static_member").operator String() == "static member");
 		ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(a.get_type_name(), "static_member");
@@ -91,46 +91,46 @@ TEST_CASE("[native_classes]:method_bind+") {
 		CHECK(ptrcast<ConstantBind>(bd)->get() == 42);
 	}
 
-	r = b1.call_method("A_virtual_func");
+	r = call_method(b1, "A_virtual_func");
 	REQUIRE(r.get_type() == var::INT);
 	CHECK(r.operator int() == 4);
-	r = b2.call_method("A_virtual_func");
+	r = call_method(b2, "A_virtual_func");
 	REQUIRE(r.get_type() == var::INT);
 	CHECK(r.operator int() == 2);
 
-	r = a.call_method("A_static_func");
+	r = call_method(a, "A_static_func");
 	REQUIRE(r.get_type() == var::INT);
 	CHECK(r.operator int() == 1);
 
-	r = b1.call_method("A_static_func");
+	r = call_method(b1, "A_static_func");
 	REQUIRE(r.get_type() == var::INT);
 	CHECK(r.operator int() == 3);
 
-	r = b2.call_method("B2_static_func");
+	r = call_method(b2, "B2_static_func");
 	REQUIRE(r.get_type() == var::STRING);
 	CHECK(r.to_string() == "B2-static");
 
-	Array arr(1, 2.1, String("test"));
-	r = c.call_method("C_member_func", arr);
+	Array arr(make_stdvec<var>(1, 2.1, String("test")));
+	r = call_method(c, "C_member_func", arr);
 	REQUIRE(r.get_type() == var::ARRAY);
 	CHECK(r.operator Array()[0].operator int() == 1);
 	CHECK(r.operator Array()[1].operator double() == 2.1);
 	CHECK(r.operator Array()[2].to_string() == "test");
 
 	// default value tests
-	c.call_method("C_default_arg_func", 42);
-	c.call_method("C_default_arg_func", 42, 3.14);
-	c.call_method("C_default_arg_func", 42, 3.14, "str");
-	CHECK_THROWS(c.call_method("C_default_arg_func", 42, "invalid type")); // INVALID TYPE.
+	call_method(c, "C_default_arg_func", 42);
+	call_method(c, "C_default_arg_func", 42, 3.14);
+	call_method(c, "C_default_arg_func", 42, 3.14, "str");
+	CHECK_THROWS(call_method(c, "C_default_arg_func", 42, "invalid type")); // INVALID TYPE.
 
 	// built in types ///////////////////
 
 	var str = "hello world!";
-	r = str.call_method("substr", 0, 2);
+	r = call_method(str, "substr", 0, 2);
 	REQUIRE(r.get_type() == var::STRING);
 	CHECK(r.operator String() == "he");
 	
-	r = r.call_method("hash");
+	r = call_method(r, "hash");
 	REQUIRE(r.get_type() == var::INT);
 	CHECK(628906390544363382l == r.operator int64_t());
 }
@@ -140,6 +140,6 @@ TEST_CASE("[native_classes]:method_bind-") {
 	var b2 = newptr<_TestClass_B2>();
 	register_classes();
 
-	CHECK_THROWS_ERR(Error::ATTRIBUTE_ERROR, c.call_method("blah blah..."));
-	CHECK_THROWS_ERR(Error::INVALID_ARG_COUNT, c.call_method("C_member_func"));
+	CHECK_THROWS_ERR(Error::ATTRIBUTE_ERROR, call_method(c, "blah blah..."));
+	CHECK_THROWS_ERR(Error::INVALID_ARG_COUNT, call_method(c, "C_member_func"));
 }

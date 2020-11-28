@@ -1,4 +1,6 @@
 /* TODO: //////////////////////////////////////////
+-- create a common parent for warning and error first
+-- switch statement (jump table impl)
 -- refactor throw error to function from macros
 -- undef THROW_ANLAYZER_ERROR, TOKENIZER_ERROR, ... (not THROW_BUG)
 -- error print and dbg info (stack trace)
@@ -58,15 +60,7 @@
 
 //import lib = "test_lib.cb";
 
-class Base : Path {
-}
-
-class Derived : Base {
-	static func get_cwd() = "overriden";
-}
-
 func main(args) {
-	var instance = Derived();
-	println(Base.get_cwd());
+	println(OS.unix_time());
 }
 

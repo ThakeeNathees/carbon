@@ -24,26 +24,10 @@
 //------------------------------------------------------------------------------
 
 #include "carbon_function.h"
-#include "vm/vm.h"
+#include "vm.h"
 
 namespace carbon {
 
-
-var CarbonFunction::__call(stdvec<var*>& p_args) {
-	return VM::singleton()->call_carbon_function(this, _owner, nullptr, p_args);
-}
-
-String CarbonFunction::get_opcodes_as_string() const {
-
-	Bytecode* _bytecode_file = nullptr;
-	if (_owner->is_class()) _bytecode_file = _owner->get_file().get();
-	else _bytecode_file = _owner;
-
-	const stdvec<String>* _global_names_array = &_bytecode_file->_global_names_array;
-	const stdvec<var>* _global_const_values = &_bytecode_file->_global_const_values;
-
-	String ret;
-	uint32_t ip = 0;
 #define CHECK_OPCODE_SIZE(m_size) ASSERT(ip + m_size < _opcodes.size())
 #define ADD_ADDR() ret += Address(_opcodes[++ip]).as_string(_global_names_array, _global_const_values) + '\n'
 #define ADD_GLOBAL_NAME()																					\
@@ -76,6 +60,32 @@ String CarbonFunction::get_opcodes_as_string() const {
 		}									             \
 	} while (false)
 
+//---------------------------------------------------------------------------------------------------
+
+
+const String& CarbonFunction::get_name() const { return _name; }
+bool CarbonFunction::is_static() const { return _is_static; }
+int CarbonFunction::get_arg_count() const { return _arg_count; }
+const stdvec<var>& CarbonFunction::get_default_args() const { return _default_args; }
+
+uint32_t CarbonFunction::get_stack_size() const { return _stack_size; }
+const stdvec<uint32_t>& CarbonFunction::get_opcodes() const { return _opcodes; }
+
+var CarbonFunction::__call(stdvec<var*>& p_args) {
+	return VM::singleton()->call_carbon_function(this, _owner, nullptr, p_args);
+}
+
+String CarbonFunction::get_opcodes_as_string() const {
+
+	Bytecode* _bytecode_file = nullptr;
+	if (_owner->is_class()) _bytecode_file = _owner->get_file().get();
+	else _bytecode_file = _owner;
+
+	const stdvec<String>* _global_names_array = &_bytecode_file->_global_names_array;
+	const stdvec<var>* _global_const_values = &_bytecode_file->_global_const_values;
+
+	String ret;
+	uint32_t ip = 0;
 
 	while (ip < _opcodes.size()) {
 

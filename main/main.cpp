@@ -24,7 +24,7 @@
 //------------------------------------------------------------------------------
 
 
-#include "core/carbon.h"
+#include "carbon.h"
 using namespace carbon;
 
 
@@ -36,6 +36,9 @@ using namespace carbon;
 int _main(int argc, char** argv) {
 
 	carbon_initialize();
+
+#define PRINT_SIZE(m) std::cout << "#define CLASS_SIZE_" << #m << " " << sizeof(m) << std::endl;
+
 
 #ifdef RUN_TESTS
 	int res = _test_main(argc, argv);
@@ -62,10 +65,10 @@ int _main(int argc, char** argv) {
 	} catch (Error& err) {
 		Logger::logf_error("ERROR(%s): %s ", Error::get_err_name(err.get_type()).c_str(), err.get_msg().c_str());
 		Logger::logf_info("at: (%s:%i)\n", err.get_file().c_str(), err.get_pos().x);
-		Logger::log(
-			String::format("    at: %s (%s:%i)\n", err.get_dbg_func().c_str(), err.get_dbg_file().c_str(), err.get_dbg_line()).c_str(),
-			Logger::ERROR, Logger::Color::L_SKYBLUE
-		);
+		//Logger::log(
+		//	String::format("    at: %s (%s:%i)\n", err.get_dbg_func().c_str(), err.get_dbg_file().c_str(), err.get_dbg_line()).c_str(),
+		//	Logger::ERROR, Logger::Color::L_SKYBLUE
+		//);
 		Logger::logf_info("%s\n%s\n", err.get_line().c_str(), err.get_line_pos().c_str());
 	}
 	

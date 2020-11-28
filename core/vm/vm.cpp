@@ -24,6 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "vm.h"
+#include "carbon_ref.h"
 
 namespace carbon {
 
@@ -32,74 +33,22 @@ VM* VM::singleton() {
 	if (_singleton == nullptr) _singleton = new VM();
 	return _singleton;
 }
+
 void VM::cleanup() {
 	if (_singleton != nullptr) delete _singleton;
 }
 
-var Instance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
-
-	CarbonFunction* fn = nullptr;
-	Bytecode* _class = blueprint.get();
-	while (_class) {
-		auto& functions = _class->get_functions();
-		// TODO: if not found in functions check in member/static members too.
-		auto it = functions.find(p_method_name);
-		if (it != functions.end()) {
-			fn = it->second.get();
-			break;
-		} else {
-			if (!_class->has_base()) THROW_ERROR(Error::ATTRIBUTE_ERROR, "TODO: method not found msg"); // TODO: throw error with debug info.
-			if (_class->is_base_native()) {
-				// TODO: 
-				BindData* bd = NativeClasses::singleton()->find_bind_data(_class->get_base_native(), p_method_name).get();
-				switch (bd->get_type()) {
-					case BindData::METHOD:
-						return static_cast<MethodBind*>(bd)->call(native_instance, p_args);
-					case BindData::STATIC_FUNC:
-						return static_cast<StaticFuncBind*>(bd)->call(p_args);
-					case BindData::MEMBER_VAR:
-						return static_cast<PropertyBind*>(bd)->get(native_instance).__call(p_args);
-					case BindData::STATIC_VAR:
-						return static_cast<StaticPropertyBind*>(bd)->get().__call(p_args);
-					case BindData::STATIC_CONST:
-						return static_cast<ConstantBind*>(bd)->get().__call(p_args);
-					case BindData::ENUM:
-						return static_cast<EnumBind*>(bd)->get()->__call(p_args);
-					case BindData::ENUM_VALUE:
-						THROW_BUG("TODO: enum value not callable error msg here.");
-				}
-				THROW_BUG("can't reach here");
-				return var();
-			} else {
-				_class = _class->get_base_binary().get();
-			}
-		}
-	}
-
-	ASSERT(fn != nullptr);
-	if (fn->is_static()) { // calling static method using instance (acceptable)
-		return VM::singleton()->call_carbon_function(fn, _class, nullptr, p_args);
-	} else {
-		return VM::singleton()->call_carbon_function(fn, _class, shared_from_this(), p_args);
-	}
-}
-
-var Instance::__call(stdvec<var*>& p_args) {
-	//	TODO:
-	return var();
-}
-
-String Instance::to_string() {
-	ptr<CarbonFunction> fn = blueprint->get_function("to_string");
-	if (fn != nullptr) return VM::singleton()->call_carbon_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
-	return Super::to_string();
+VMStack::VMStack(uint32_t p_max_size) { _stack.resize(p_max_size); }
+var* VMStack::get_at(uint32_t p_pos) {
+	THROW_INVALID_INDEX(_stack.size(), p_pos);
+	return &_stack[p_pos];
 }
 
 var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*> p_args) {
 
 	p_bytecode->initialize();
 
-	Stack stack(p_func->get_stack_size());
+	VMStack stack(p_func->get_stack_size());
 	RuntimeContext context;
 	context.vm = this;
 	context.stack = &stack;
@@ -490,6 +439,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				}
 
 			} break;
+
 			case Opcode::JUMP: {
 				CHECK_OPCODE_SIZE(2);
 				uint32_t addr = opcodes[++ip];
@@ -509,6 +459,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				if (!cond->operator bool()) ip = addr;
 				else ip++;
 			} break;
+
 			case Opcode::RETURN: {
 				CHECK_OPCODE_SIZE(2);
 				var* val = context.get_var_at(opcodes[++ip]);

@@ -23,8 +23,8 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "core.h"
-#include "io/logger.h"
+#include "core/core.h"
+#include "native/logger.h"
 
 namespace carbon {
 
