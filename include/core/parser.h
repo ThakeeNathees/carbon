@@ -26,9 +26,9 @@
 #ifndef PARSER_H
 #define PARSER_H
 
-#include "tokenizer/tokenizer.h"
-#include "binary/bytecode.h"
-#include "io/logger.h"
+#include "tokenizer.h"
+#include "bytecode.h"
+#include "native/logger.h"
 
 namespace carbon {
 
@@ -66,7 +66,6 @@ namespace carbon {
 
 class Parser {
 public:
-	
 	struct Node {
 		enum class Type {
 			UNKNOWN,
@@ -593,8 +592,12 @@ private:
 		ControlFlowNode* current_continue = nullptr;
 	};
 
-	// Methods.
+	// members.
+	ptr<FileNode> file_node;
+	ptr<Tokenizer> tokenizer;
+	ParserContext parser_context;
 
+	// methods.
 	template<typename T=Node, typename... Targs>
 	ptr<T> new_node(Targs... p_args) {
 		ptr<T> ret = newptr<T>(p_args...);
@@ -618,11 +621,6 @@ private:
 	ptr<Node> _build_operator_tree(stdvec<Expr>& p_expr);
 	static int _get_operator_precedence(OperatorNode::OpType p_op);
 	void _check_identifier_predefinition(const String& p_name, Node* p_scope) const;
-
-	// Members.
-	ptr<FileNode> file_node;
-	ptr<Tokenizer> tokenizer;
-	ParserContext parser_context;
 };
 
 

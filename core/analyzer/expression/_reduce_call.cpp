@@ -23,8 +23,8 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "../analyzer.h"
-#include "binary/carbon_function.h"
+#include "analyzer.h"
+#include "carbon_function.h"
 
 namespace carbon {
 

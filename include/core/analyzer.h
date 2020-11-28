@@ -27,7 +27,7 @@
 #define ANALYZER_H
 
 #include "core.h"
-#include "parser/parser.h"
+#include "parser.h"
 
 
 #define THROW_ANALYZER_ERROR(m_err_type, m_msg, m_pos)                                                                      \

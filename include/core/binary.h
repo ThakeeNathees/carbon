@@ -27,65 +27,11 @@
 #define BINARY_H
 
 #include "core.h"
-#include "builtin/builtin_functions.h"
-#include "builtin/builtin_types.h"
+#include "builtin_functions.h"
+#include "builtin_types.h"
 
 namespace carbon {
 
-struct Address {
-	static constexpr int ADDR_BITS = 32;
-	static constexpr int ADDR_TYPE_BITS = 8;
-	static constexpr int ADDR_INDEX_BITS = ADDR_BITS - ADDR_TYPE_BITS;
-	static constexpr int ADDR_TYPE_MASK = ((1 << ADDR_TYPE_BITS) - 1) << ADDR_INDEX_BITS;
-	static constexpr int ADDR_INDEX_MASK = (1 << ADDR_INDEX_BITS) - 1;
-
-	enum Type {
-		_NULL = 0,
-		STACK,
-		PARAMETER,
-		THIS,
-
-		EXTERN,         // current translation unit or imported one
-		NATIVE_CLASS,   // native class ref
-		BUILTIN_FUNC,   // builtin function ref
-		BUILTIN_TYPE,   // builtin type ref
-
-		MEMBER_VAR,     // only member variables with index with offset
-		STATIC_MEMBER,  // constant, function, enums, enum value, static vars, static function ... are static var
-
-		CONST_VALUE, // searched in _global_const_values
-
-	};
-
-	Address() {}
-	Address(Type p_type, uint32_t p_index, bool p_temp = false) :type(p_type), index(p_index), temp(p_temp) {}
-
-	Address(uint32_t p_addr) {
-		type = get_type_s(p_addr);
-		index = get_index_s(p_addr);
-	}
-
-	static Type get_type_s(uint32_t p_addr) { return  (Type)((p_addr & ADDR_TYPE_MASK) >> ADDR_INDEX_BITS); }
-	static uint32_t get_index_s(uint32_t p_addr) { return p_addr & ADDR_INDEX_MASK; }
-	static String get_type_name_s(Type p_type);
-
-	Type get_type() const { return type; }
-	uint32_t get_index() const { return index; }
-	uint32_t get_address() const { return index | (type << ADDR_INDEX_BITS); }
-	bool is_temp() const { return temp; }
-
-	bool operator==(const Address& p_other) const {
-		return type == p_other.type && index == p_other.index;
-	}
-	bool operator!=(const Address& p_other) const { return !operator==(p_other); }
-
-	String as_string(const stdvec<String>* _global_names_array = nullptr, const stdvec<var>* _global_const_values = nullptr) const;
-
-private:
-	Type type = _NULL;
-	bool temp = false;
-	uint32_t index = 0;
-};
 
 enum Opcode {
 	GET,
@@ -122,6 +68,55 @@ enum Opcode {
 	END,
 };
 
+struct Address {
+	static constexpr int ADDR_BITS = 32;
+	static constexpr int ADDR_TYPE_BITS = 8;
+	static constexpr int ADDR_INDEX_BITS = ADDR_BITS - ADDR_TYPE_BITS;
+	static constexpr int ADDR_TYPE_MASK = ((1 << ADDR_TYPE_BITS) - 1) << ADDR_INDEX_BITS;
+	static constexpr int ADDR_INDEX_MASK = (1 << ADDR_INDEX_BITS) - 1;
+
+	enum Type {
+		_NULL = 0,
+		STACK,
+		PARAMETER,
+		THIS,
+
+		EXTERN,         // current translation unit or imported one
+		NATIVE_CLASS,   // native class ref
+		BUILTIN_FUNC,   // builtin function ref
+		BUILTIN_TYPE,   // builtin type ref
+
+		MEMBER_VAR,     // only member variables with index with offset
+		STATIC_MEMBER,  // constant, function, enums, enum value, static vars, static function ... are static var
+
+		CONST_VALUE, // searched in _global_const_values
+
+	};
+
+private:
+	Type type = _NULL;
+	bool temp = false;
+	uint32_t index = 0;
+
+public:
+	Address() {}
+	Address(Type p_type, uint32_t p_index, bool p_temp = false) :type(p_type), index(p_index), temp(p_temp) {}
+	Address(uint32_t p_addr) :type(get_type_s(p_addr)), index(get_index_s(p_addr)) {}
+
+	static Type get_type_s(uint32_t p_addr) { return  (Type)((p_addr & ADDR_TYPE_MASK) >> ADDR_INDEX_BITS); }
+	static uint32_t get_index_s(uint32_t p_addr) { return p_addr & ADDR_INDEX_MASK; }
+	static String get_type_name_s(Type p_type);
+
+	Type get_type() const { return type; }
+	uint32_t get_index() const { return index; }
+	uint32_t get_address() const { return index | (type << ADDR_INDEX_BITS); }
+	bool is_temp() const { return temp; }
+	String as_string(const stdvec<String>* _global_names_array = nullptr, const stdvec<var>* _global_const_values = nullptr) const;
+
+	bool operator==(const Address& p_other) const { return type == p_other.type && index == p_other.index; }
+	bool operator!=(const Address& p_other) const { return !operator==(p_other); }
+};
+
 struct Opcodes {
 	stdvec<uint32_t> opcodes;
 
@@ -131,27 +126,18 @@ struct Opcodes {
 	std::stack<uint32_t> jump_out_for;
 	std::stack<uint32_t> jump_out_foreach;
 	std::stack<uint32_t> jump_to_continue;
-
 	std::stack<uint32_t> jump_out_and;
 	std::stack<uint32_t> jump_out_or;
-
 	std::stack<stdvec<uint32_t>> jump_out_break; // multiple break statement jump out to one addr.
 
-	uint32_t last() { return (uint32_t)opcodes.size() - 1; } // last instruction
-	uint32_t next() { return (uint32_t)opcodes.size(); }     // next instruction
+	uint32_t last(); // last instruction
+	uint32_t next(); // next instruction
 
 	static String get_opcode_name(Opcode p_opcode);
 
-	void insert(uint32_t p_opcode) {
-		opcodes.push_back(p_opcode);
-	}
-	void insert(const Address& p_addr) {
-		opcodes.push_back(p_addr.get_address());
-	}
-	void insert(Opcode p_opcode) {
-		opcodes.push_back((uint32_t)p_opcode);
-	}
-
+	void insert(uint32_t p_opcode);
+	void insert(const Address& p_addr);
+	void insert(Opcode p_opcode);
 
 	void write_assign(const Address& dst, const Address& src);
 	void write_if(const Address& p_cond);

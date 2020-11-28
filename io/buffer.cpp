@@ -23,50 +23,10 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef INSTANCE_H
-#define INSTANCE_H
 
-#include "core.h"
-#include "binary/bytecode.h"
+#include "buffer.h"
 
 namespace carbon {
 
-class Instance : public Object, public std::enable_shared_from_this<Instance> {
-	REGISTER_CLASS(Instance, Object) {}
-
-	bool _is_registered() const override { return false; }
-	var call_method(const String& p_method_name, stdvec<var*>& p_args) override;
-	var get_member(const String& p_name) override {
-		uint32_t pos = blueprint->get_member_index(p_name);
-		return members[pos];
-	}
-	void set_member(const String& p_name, var& p_value) override {
-		uint32_t pos = blueprint->get_member_index(p_name);
-		members[pos] = p_value;
-	}
-
-	Instance() {}
-	Instance(ptr<Bytecode>& p_blueprint) {
-		blueprint = p_blueprint;
-		members.resize(blueprint->get_member_count());
-	}
-
-	// TODO: implement all the operator methods here.
-	var __call(stdvec<var*>& p_args) override;
-	String to_string() override;
-
-private:
-	friend class VM;
-	friend struct RuntimeContext;
-
-	ptr<Bytecode> blueprint;
-	ptr<Object> native_instance;
-	stdvec<var> members;
-	
-	//ptr<Instance>* _self_ptr = nullptr; // not sure if it's a good idea.
-
-};
 
 }
-
-#endif // INSTANCE_H

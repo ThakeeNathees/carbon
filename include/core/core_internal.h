@@ -48,6 +48,7 @@
 #include <type_traits>
 #include <typeinfo>
 
+#include <chrono>
 #include <iostream>
 #include <ostream>
 #include <sstream>
@@ -170,6 +171,34 @@ namespace carbon {
 		return __const_hash(s);
 	}
 
+	// TODO: define a custom ptr class and for other stl types as well for shared lib.
+	//template<typename T>
+	//class _ptr {
+	//	std::shared_ptr<T> _data;
+	//public:
+	//	_ptr() {}
+	//	_ptr(std::shared_ptr<T>& other) { _data = other; }
+	//	_ptr(std::nullptr_t other) { _data = other; }
+	//	template<typename T2> _ptr(T* other) { _data = other; }
+	//
+	//	template<typename T2> void operator =(const _ptr<T2> other) { _data = other; }
+	//	template<typename T2> void operator =(const T* other) { _data = other; }
+	//
+	//	void operator =(std::nullptr_t other) { _data = other; }
+	//	bool operator == (std::nullptr_t other) { return _data == other; }
+	//	bool operator != (std::nullptr_t other) { return _data != other; }
+	//	operator bool() const { return _data.operator bool(); }
+	//
+	//	template<typename T2> operator _ptr<T2>() const { return std::static_pointer_cast<T2>(_data); }
+	//	template<typename T2> _ptr<T2> _to() { return std::static_pointer_cast<T2>(_data); }
+	//
+	//	T* get() const { return _data.get(); }
+	//	T* operator->() const { return _data.get(); }
+	//	T& operator*() const { return *_data; }
+	//};
+	//template<typename T> bool operator ==(_ptr<T> p, std::nullptr_t) { return p.operator==(nullptr); }
+	//template<typename T> bool operator !=(_ptr<T> p, std::nullptr_t) { return p.operator!=(nullptr); }
+
 	template<typename T>
 	using ptr = std::shared_ptr<T>;
 
@@ -186,7 +215,7 @@ namespace carbon {
 	inline ptr<T> newptr(Targs... p_args) {
 		return std::make_shared<T>(p_args...);
 	}
-
+	
 	template<typename T1, typename T2>
 	inline ptr<T1> ptrcast(T2 p_ptr) {
 		return std::static_pointer_cast<T1>(p_ptr);

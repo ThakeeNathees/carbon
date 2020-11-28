@@ -23,53 +23,62 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_H
-#define CARBON_H
+#ifndef VM_H
+#define VM_H
 
-// core imports
-#include "core/core.h"
-
-// compilation pipeline
-#include "core/tokenizer/tokenizer.h"
-#include "core/parser/parser.h"
-#include "core/analyzer/analyzer.h"
-#include "core/codegen/codegen.h"
-#include "core/vm/vm.h"
-#include "compiler/compiler.h"
-
-#include "core/binary/carbon_function.h"
-#include "core/binary/bytecode.h"
-
-// native imports
-#include "io/logger.h"
-#include "io/file.h"
-#include "io/path.h"
-//#include "io/dynamic_library.h" <-- depricated
-#include "os/os.h"
+#include "core.h"
+#include "instance.h"
+#include "carbon_function.h"
+#include "bytecode.h"
+#include "carbon_ref.h"
 
 namespace carbon {
 
-inline void carbon_initialize() {
+class VMStack {
+private: // members
+	stdvec<var> _stack;
 
-	// Register native classes.
-	NativeClasses::singleton()->register_class<Object>();
-	NativeClasses::singleton()->register_class<Bytecode>();
-	NativeClasses::singleton()->register_class<CarbonFunction>();
+public:
+	VMStack(uint32_t p_max_size = 0);
+	var* get_at(uint32_t p_pos);
+};
 
-	NativeClasses::singleton()->register_class<OS>();
-	NativeClasses::singleton()->register_class<File>();
-	NativeClasses::singleton()->register_class<Path>();
-	NativeClasses::singleton()->register_class<Buffer>();
+struct RuntimeContext {
+	VM* vm = nullptr;
+	VMStack* stack = nullptr;
+	stdvec<var*>* args = nullptr;
+	var self;
+	Bytecode* bytecode_class = nullptr;  // static member reference
+	Bytecode* bytecode_file = nullptr;   // file node blueprint
+
+	var* get_var_at(const Address& p_addr);
+	const String& get_name_at(uint32_t p_pos);
+};
+
+class VM {
+	friend struct RuntimeContext;
+
+private: // members
+	stdmap<String, var> _native_ref;
+	stdmap<uint32_t, var> _builtin_func_ref;
+	stdmap<uint32_t, var> _builtin_type_ref;
+
+public:
+	int run(ptr<Bytecode> bytecode, stdvec<String> args);
+	var call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*> p_args);
+
+	static VM* singleton();
+	static void cleanup();
+
+private:
+	VM() {} // singleton
+	var* _get_native_ref(const String& p_name);
+	var* _get_builtin_func_ref(uint32_t p_type);
+	var* _get_builtin_type_ref(uint32_t p_type);
+	static VM* _singleton;
+
+};
 
 }
 
-inline void carbon_cleanup() {
-	NativeClasses::cleanup();
-	VM::cleanup();
-	Compiler::cleanup();
-}
-
-}
-
-
-#endif // CARBON_H
+#endif // VM_H

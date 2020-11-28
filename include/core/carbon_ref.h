@@ -27,8 +27,8 @@
 #define CARBON_REF_H
 
 #include "binary.h"
-#include "builtin/builtin_functions.h"
-#include "builtin/builtin_types.h"
+#include "builtin_functions.h"
+#include "builtin_types.h"
 
 namespace carbon {
 
@@ -53,21 +53,16 @@ public:
 
 class BuiltinFuncRef : public Object {
 	REGISTER_CLASS(BuiltinFuncRef, Object) {}
-private:
+
+private: // members
 	BuiltinFunctions::Type _type;
+
 public:
-	BuiltinFuncRef() {}
-	BuiltinFuncRef(BuiltinFunctions::Type p_type) : _type(p_type) {}
+	BuiltinFuncRef();
+	BuiltinFuncRef(BuiltinFunctions::Type p_type);
 
-	var __call(stdvec<var*>& p_args) override {
-		var ret;
-		BuiltinFunctions::call(_type, p_args, ret);
-		return ret;
-	}
-
-	String to_string() override {
-		return String("[builtin_function:") + BuiltinFunctions::get_func_name(_type) + "]";
-	}
+	var __call(stdvec<var*>& p_args) override;
+	String to_string() override;
 
 	// TODO: add wrapper methods.
 };
@@ -75,20 +70,15 @@ public:
 class BuiltinTypeRef : public Object {
 	REGISTER_CLASS(BuiltinTypeRef, Object) {}
 
-private:
+private: // members
 	BuiltinTypes::Type _type;
 
 public:
-	BuiltinTypeRef() {}
-	BuiltinTypeRef(BuiltinTypes::Type p_type) :_type(p_type) {}
+	BuiltinTypeRef();
+	BuiltinTypeRef(BuiltinTypes::Type p_type);
 
-	var __call(stdvec<var*>& p_args) override {
-		return BuiltinTypes::construct(_type, p_args);
-	}
-
-	String to_string() override {
-		return String("[builtin_type:") + BuiltinTypes::get_type_name(_type) + "]";
-	}
+	var __call(stdvec<var*>& p_args) override;
+	String to_string() override;
 
 };
 

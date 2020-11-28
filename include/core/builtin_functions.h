@@ -41,6 +41,7 @@ public:
 		__LINE,
 		__FILE,
 
+		// runtime functions.
 		PRINT,
 		PRINTLN,
 		INPUT,
@@ -52,6 +53,11 @@ public:
 		_FUNC_MAX_,
 	};
 
+private: // members
+	static stdmap<Type, String> _func_list;
+
+public:
+
 	// Methods.
 	static String get_func_name(Type p_func);
 	static Type get_func_type(const String& p_func); // returns UNKNOWN if not valid 
@@ -59,9 +65,6 @@ public:
 	static bool can_const_fold(Type p_func);
 	static bool is_compiletime(Type p_func);
 	static void call(Type p_func, const stdvec<var*>& p_args, var& r_ret);
-
-private:
-	static stdmap<Type, String> _func_list;
 };
 
 }

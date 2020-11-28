@@ -23,66 +23,24 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef VM_H
-#define VM_H
+#ifndef OS_H
+#define OS_H
 
 #include "core.h"
-#include "instance.h"
-#include "binary/carbon_function.h"
-#include "binary/bytecode.h"
-#include "binary/carbon_ref.h"
 
 namespace carbon {
 
-class Stack {
-private:
-	stdvec<var> _stack;
-	uint32_t _sp = 0; // stack pointer
+class OS : public Object {
+	REGISTER_CLASS(OS, Object) {
+		BIND_STATIC_FUNC("unix_time", &OS::unix_time);
+	}
 
 public:
-	Stack(uint32_t p_max_size = 0) { _stack.resize(p_max_size); }
-	var* get_at(uint32_t p_pos) {
-		THROW_INVALID_INDEX(_stack.size(), p_pos);
-		return &_stack[p_pos];
+	static uint64_t unix_time() {
+		using namespace std::chrono;
+		return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
 	}
 };
 
-struct RuntimeContext {
-	VM* vm = nullptr;
-	Stack* stack = nullptr;
-	stdvec<var*>* args = nullptr;
-	var self;
-	Bytecode* bytecode_class = nullptr; // static member reference
-	Bytecode* bytecode_file = nullptr; // file node blueprint
-
-	var* get_var_at(const Address& p_addr);
-	const String& get_name_at(uint32_t p_pos);
-};
-
-class VM {
-
-public:
-	VM() {} // if wanted multiple instance could be created
-	int run(ptr<Bytecode> bytecode, stdvec<String> args);
-	var call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*> p_args);
-
-	static VM* singleton();
-	static void cleanup();
-
-private:
-	friend struct RuntimeContext;
-
-	var* _get_native_ref(const String& p_name);
-	var* _get_builtin_func_ref(uint32_t p_type);
-	var* _get_builtin_type_ref(uint32_t p_type);
-
-	stdmap<String, var> _native_ref;
-	stdmap<uint32_t, var> _builtin_func_ref;
-	stdmap<uint32_t, var> _builtin_type_ref;
-
-	static VM* _singleton;
-};
-
 }
-
-#endif // VM_H
+#endif // OS_H

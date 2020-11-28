@@ -49,9 +49,10 @@ if (m_ptr == nullptr){                                                          
 #define THROW_BUG(m_msg) do{ DEBUG_BREAK(); THROW_ERROR(Error::BUG, m_msg); } while (false)
 
 #include "core_internal.h"
-//#include "var/_var.h"
 #include "var/_string.h"
 #include "var/_vector.h"
+
+// TODO: create a common parent for warning and error first
 
 namespace carbon {
 

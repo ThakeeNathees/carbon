@@ -27,6 +27,70 @@
 
 namespace carbon {
 
+
+void CGContext::clear() {
+	curr_class = nullptr;
+	function = nullptr;
+	while (!stack_locals_frames.empty()) stack_locals_frames.pop();
+	stack_locals.clear();
+	parameters.clear();
+	curr_stack_temps = 0;
+	stack_max_size = 0;
+	opcodes = newptr<Opcodes>();
+}
+
+void CGContext::push_stack_locals() {
+	stack_locals_frames.push(stack_locals);
+}
+
+void CGContext::pop_stack_locals() {
+	stack_locals = stack_locals_frames.top();
+	stack_locals_frames.pop();
+}
+
+void CGContext::pop_stack_temp() {
+	curr_stack_temps--;
+}
+
+Address CGContext::add_stack_local(const String& p_name) {
+	ASSERT(stack_locals.find(p_name) == stack_locals.end());
+
+	uint32_t stack_size = (uint32_t)stack_locals.size() + curr_stack_temps;
+	stack_locals[p_name] = stack_size;
+	stack_max_size = std::max(stack_max_size, stack_size + 1);
+	return Address(Address::STACK, stack_size);
+}
+
+Address CGContext::get_stack_local(const String& p_name) {
+	ASSERT(stack_locals.find(p_name) != stack_locals.end());
+	return Address(Address::STACK, stack_locals[p_name]);
+}
+
+Address CGContext::get_parameter(const String& p_name) {
+	for (int i = 0; i < (int)parameters.size(); i++) {
+		if (parameters[i] == p_name) {
+			return Address(Address::PARAMETER, i);
+		}
+	}
+	THROW_BUG("parameter not found."); // TODO: refactor all throw bugs.
+}
+
+Address CGContext::add_stack_temp() {
+	uint32_t temp_pos = (uint32_t)stack_locals.size() + (curr_stack_temps++);
+	stack_max_size = std::max(stack_max_size, temp_pos + 1);
+	return Address(Address::STACK, temp_pos, true);
+}
+//--------------------------------------------------------------------
+
+Address CodeGen::add_global_const_value(const var& p_value) {
+	uint32_t pos = _bytecode->_global_const_value_get(p_value);
+	return Address(Address::CONST_VALUE, pos);
+}
+
+uint32_t CodeGen::add_global_name(const String& p_name) {
+	return _bytecode->_global_name_get(p_name);
+}
+
 ptr<Bytecode> CodeGen::generate(ptr<Analyzer> p_analyzer) {
 	ptr<Bytecode> bytecode = newptr<Bytecode>();
 	_bytecode = bytecode.get();

@@ -1,3 +1,4 @@
+
 //------------------------------------------------------------------------------
 // MIT License
 //------------------------------------------------------------------------------
@@ -23,14 +24,41 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CORE_H
-#define CORE_H
+#ifndef BUILTIN_CLASSES_H
+#define BUILTIN_CLASSES_H
 
-#include "core_internal.h"
-#include "error/error.h"
-#include "var/var.h"
-#include "var/type_info.h"
-#include "var/native.h"
+#include "core.h"
 
+namespace carbon {
 
-#endif // CORE_H
+class BuiltinTypes {
+public:
+	enum Type {
+		UNKNOWN,
+
+		_NULL,
+		BOOL,
+		INT,
+		FLOAT,
+		STRING,
+		ARRAY,
+		MAP,
+		//OBJECT,
+
+		_TYPE_MAX_,
+	};
+
+private: // members
+	static stdmap<Type, String> _type_list;
+
+public:
+
+	static String get_type_name(Type p_type);
+	static Type get_type_type(const String& p_type);
+	static var::Type get_var_type(Type p_type);
+	static var construct(Type p_type, const stdvec<var*>& p_args);
+};
+
+}
+
+#endif // BUILTIN_CLASSES_H

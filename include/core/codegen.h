@@ -26,15 +26,16 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 
-#include "analyzer/analyzer.h"
-#include "binary/bytecode.h"
-#include "binary/carbon_function.h"
+#include "analyzer.h"
+#include "bytecode.h"
+#include "carbon_function.h"
 
 #define _POP_ADDR_IF_TEMP(m_addr)if (m_addr.is_temp()) _context.pop_stack_temp();
 
 namespace carbon {
 
 struct CGContext {
+	// members
 	Bytecode* bytecode = nullptr;
 	const Parser::ClassNode* curr_class = nullptr;
 	CarbonFunction* function = nullptr;
@@ -43,75 +44,33 @@ struct CGContext {
 	stdmap<String, uint32_t> stack_locals;
 	stdvec<String> parameters;
 	uint32_t curr_stack_temps = 0;
-	//curr_stack_size = curr_stack_temps + stack_frame.size();
 	uint32_t stack_max_size = 0;
 
 	ptr<Opcodes> opcodes;
 
-	void clear() {
-		curr_class = nullptr;
-		function = nullptr;
-		while (!stack_locals_frames.empty()) stack_locals_frames.pop();
-		stack_locals.clear();
-		parameters.clear();
-		curr_stack_temps = 0;
-		stack_max_size = 0;
-		opcodes = newptr<Opcodes>();
-	}
+	void clear();
+	void push_stack_locals();
+	void pop_stack_locals();
+	void pop_stack_temp();
 
-	void push_stack_locals() {
-		stack_locals_frames.push(stack_locals);
-	}
-
-	void pop_stack_locals() {
-		stack_locals = stack_locals_frames.top();
-		stack_locals_frames.pop();
-	}
-
-	void pop_stack_temp() {
-		curr_stack_temps--;
-	}
-
-	Address add_stack_local(const String& p_name) {
-		ASSERT(stack_locals.find(p_name) == stack_locals.end());
-
-		uint32_t stack_size = (uint32_t)stack_locals.size() + curr_stack_temps;
-		stack_locals[p_name] = stack_size;
-		stack_max_size = std::max(stack_max_size, stack_size + 1);
-		return Address(Address::STACK, stack_size);
-	}
-
-	Address get_stack_local(const String& p_name) {
-		ASSERT(stack_locals.find(p_name) != stack_locals.end());
-		return Address(Address::STACK, stack_locals[p_name]);
-	}
-
-	Address get_parameter(const String& p_name) {
-		for (int i = 0; i < (int)parameters.size(); i++) {
-			if (parameters[i] == p_name) {
-				return Address(Address::PARAMETER, i);
-			}
-		}
-		THROW_BUG("parameter not found."); // TODO: refactor all throw bugs.
-	}
-
-	Address add_stack_temp() {
-		uint32_t temp_pos = (uint32_t)stack_locals.size() + (curr_stack_temps++);
-		stack_max_size = std::max(stack_max_size, temp_pos + 1);
-		return Address(Address::STACK, temp_pos, true);
-	}
+	Address add_stack_local(const String& p_name);
+	Address get_stack_local(const String& p_name);
+	Address get_parameter(const String& p_name);
+	Address add_stack_temp();
 
 };
 
 class CodeGen {
-public:
-	ptr<Bytecode> generate(ptr<Analyzer> p_analyzer);
 
-private:
+private: // members
 	CGContext _context;
 	Bytecode* _bytecode = nullptr; // the file node version.
 	const Parser::FileNode* _file_node = nullptr;
 
+public:
+	ptr<Bytecode> generate(ptr<Analyzer> p_analyzer);
+
+private:
 	void _generate_members(Parser::MemberContainer* p_container, Bytecode* p_bytecode);
 
 	ptr<CarbonFunction> _generate_function(const Parser::FunctionNode* p_func, const Parser::ClassNode* p_class, Bytecode* p_bytecode);
@@ -120,14 +79,8 @@ private:
 	void _generate_control_flow(const Parser::ControlFlowNode* p_cflow);
 	Address _generate_expression(const Parser::Node* p_expr, Address* p_dst = nullptr);
 
-	Address add_global_const_value(const var& p_value) {
-		uint32_t pos = _bytecode->_global_const_value_get(p_value);
-		return Address(Address::CONST_VALUE, pos);
-	}
-
-	uint32_t add_global_name(const String& p_name) {
-		return _bytecode->_global_name_get(p_name);
-	}
+	Address add_global_const_value(const var& p_value);
+	uint32_t add_global_name(const String& p_name);
 };
 
 }

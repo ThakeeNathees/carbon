@@ -25,9 +25,9 @@
 
 #include "parser.h"
 
-#include "analyzer/analyzer.h"
-#include "compiler/compiler.h"
-#include "io/path.h"
+#include "analyzer.h"
+#include "compiler.h"
+#include "native/path.h"
 
 #define THROW_PREDEFINED(m_what, m_name, m_pos)             \
 	THROW_PARSER_ERR(Error::NAME_ERROR,                     \

@@ -27,8 +27,8 @@
 #define TOKENIZER_H
 
 #include "core.h"
-#include "builtin/builtin_functions.h"
-#include "builtin/builtin_types.h"
+#include "builtin_functions.h"
+#include "builtin_types.h"
 
 #define THROW_TOKENIZE_ERROR(m_err_type, m_msg)                                                                      \
 	do {                                                                                                             \
@@ -151,61 +151,35 @@ struct TokenData {
 };
 
 class Tokenizer {
+
+private: // members.
+	String source;
+	String source_path;
+	stdvec<TokenData> tokens;
+	int cur_line = 1, cur_col = 1;
+	int char_ptr = 0;
+	int token_ptr = 0;
+	// The float .3 length must be 2 but constant.to_string() result a longer size
+	// and it'll set wrong token column. here is a dirty way to prevent that.
+	int __const_val_token_len = 0;
+
 public:
-	// Methods.
+	// methods.
 	const void tokenize(const String& p_source, const String& p_source_path = "<PATH-NOT-SET>");
-
-	const TokenData& next(int p_offset = 0) { 
-		if (token_ptr + p_offset >= (int)tokens.size()) { THROW_BUG("invalid index."); }
-		token_ptr += p_offset;
-		cur_line = tokens[token_ptr].line; cur_col = tokens[token_ptr].col;
-		return tokens[token_ptr++];
-	}
-
-	const TokenData& peek(int p_offset = 0, bool p_safe = false) const {
-		static TokenData tmp = { Token::_EOF };
-		if (token_ptr + p_offset  < 0 || token_ptr + p_offset >= (int)tokens.size()) {
-			if (p_safe) return tmp;
-			else THROW_TOKENIZE_ERROR(Error::INVALID_INDEX, "Internal Bug: TokenData::peek() index out of bounds");
-		}
-		return tokens[token_ptr + p_offset];
-	}
-
-	Vect2i get_pos() const { return Vect2i(cur_line, cur_col); }
-	const TokenData& get_token_at(const Vect2i& p_pos) const {
-		for (size_t i = 0; i < tokens.size(); i++) {
-			if (tokens[i].line == p_pos.x && tokens[i].col == p_pos.y) {
-				return tokens[i];
-			}
-		}
-		THROW_TOKENIZE_ERROR(Error::BUG, "TokenData::get_token_at() called with invalid position.");
-	}
+	const TokenData& next(int p_offset = 0);
+	const TokenData& peek(int p_offset = 0, bool p_safe = false) const;
+	Vect2i get_pos() const;
+	const TokenData& get_token_at(const Vect2i& p_pos) const;
 
 	static const char* get_token_name(Token p_tk);
 
-protected:
-
 private:
-	// Methods.
+	// methods.
 	void _eat_escape(String& p_str);
 	void _eat_token(Token p_tk, int p_eat_size = 1);
 	void _eat_eof();
 	void _eat_const_value(const var& p_value, int p_eat_size = 0);
 	void _eat_identifier(const String& p_idf, int p_eat_size = 0);
-
-	// Members.
-	String source;
-	String source_path;
-	stdvec<TokenData> tokens;
-
-	int cur_line = 1, cur_col = 1;
-	
-	int char_ptr = 0;
-	int token_ptr = 0; // for next()
-
-	// The float .3 length must be 2 but constant.to_string() result a longer size
-	// and it'll set wrong token column. here is a dirty way to prevent that.
-	int __const_val_token_len = 0;
 
 };
 

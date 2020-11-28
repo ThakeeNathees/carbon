@@ -25,9 +25,9 @@
 
 #include "bytecode.h"
 
-#include "parser/parser.h"
+#include "parser.h"
 #include "carbon_function.h"
-#include "vm/vm.h"
+#include "vm.h"
 
 namespace carbon {
 
@@ -43,6 +43,36 @@ void Bytecode::initialize() {
 		if (_static_initializer) VM::singleton()->call_carbon_function(_static_initializer.get(), this, nullptr, stdvec<var*>());
 		for (auto p : _classes) p.second->initialize();
 	}
+}
+bool Bytecode::is_class() const { return _is_class; }
+String Bytecode::get_name() const { return _name; }
+
+bool Bytecode::has_base() const { ASSERT(_is_class); return _has_base; }
+bool Bytecode::is_base_native() const { ASSERT(_is_class); return _is_base_native; }
+const ptr<Bytecode>& Bytecode::get_base_binary() const { ASSERT(_is_class); return _base; }
+const String& Bytecode::get_base_native() const { return _base_native; }
+
+int Bytecode::get_member_count() const { return get_member_offset() + (int)_members.size(); }
+stdmap<String, ptr<Bytecode>>& Bytecode::get_classes() { ASSERT(!_is_class); return _classes; }
+stdmap<String, ptr<Bytecode>>& Bytecode::get_externs() { ASSERT(!_is_class); return _externs; }
+const stdmap<String, ptr<CarbonFunction>>& Bytecode::get_functions() const { return _functions; }
+stdmap<String, var>& Bytecode::get_static_vars() { return _static_vars; }
+
+
+const ptr<Bytecode>&  Bytecode::get_file() const { ASSERT(_is_class); return _file; }
+const CarbonFunction* Bytecode::get_main() const { ASSERT(!_is_class); return _main; }
+const CarbonFunction* Bytecode::get_constructor() const { ASSERT(_is_class); return _constructor; }
+const CarbonFunction* Bytecode::get_member_initializer() const { ASSERT(_is_class); return _member_initializer.get(); }
+const CarbonFunction* Bytecode::get_static_initializer() const { return _static_initializer.get(); }
+
+const String& Bytecode::get_global_name(uint32_t p_pos) {
+	THROW_INVALID_INDEX(_global_names_array.size(), p_pos);
+	return _global_names_array[p_pos];
+}
+
+var* Bytecode::get_global_const_value(uint32_t p_index) {
+	THROW_INVALID_INDEX(_global_const_values.size(), p_index);
+	return &_global_const_values[p_index];
 }
 
 #define _GET_OR_NULL(m_map, m_addr)         \
@@ -247,6 +277,37 @@ const ptr<MemberInfo> Bytecode::get_member_info(const String& p_member_name) {
 	if (it != _member_info.end()) return it->second;
 	
 	return nullptr;
+}
+
+// ------------ private -------------------
+
+uint32_t Bytecode::_global_name_get(const String& p_name) {
+	ASSERT(!_is_class); // global names only available at file.
+	stdmap<String, uint32_t>::iterator it = _global_names.find(p_name);
+	if (it == _global_names.end()) {
+		uint32_t pos = (uint32_t)_global_names.size();
+		_global_names[p_name] = pos;
+		return pos;
+	} else {
+		return it->second;
+	}
+}
+
+void Bytecode::_build_global_names_array() {
+	_global_names_array.resize(_global_names.size());
+	for (auto& it : _global_names) {
+		_global_names_array[it.second] = it.first;
+	}
+}
+
+uint32_t Bytecode::_global_const_value_get(const var& p_value) {
+	for (int i = 0; i < (int)_global_const_values.size(); i++) {
+		if (_global_const_values[i].get_type() == p_value.get_type() && _global_const_values[i] == p_value) {
+			return i;
+		}
+	}
+	_global_const_values.push_back(p_value);
+	return (uint32_t)(_global_const_values.size() - 1);
 }
 
 }

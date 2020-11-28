@@ -27,6 +27,7 @@
 
 namespace carbon {
 
+
 NativeClassRef::NativeClassRef(const String& p_native_class) {
 	_name = p_native_class;
 	if (!NativeClasses::singleton()->is_class_registered(_name))
@@ -41,5 +42,35 @@ var NativeClassRef::__call(stdvec<var*>& p_args) {
 var  NativeClassRef::call_method(const String& p_name, stdvec<var*>& p_args) { return var(); }
 var  NativeClassRef::get_member(const String& p_name) { return var(); }
 void NativeClassRef::set_member(const String& p_name, var& p_value) {}
+
+//---------------------------------------------------------------------------
+
+BuiltinFuncRef::BuiltinFuncRef() {}
+BuiltinFuncRef::BuiltinFuncRef(BuiltinFunctions::Type p_type) : _type(p_type) {}
+
+var BuiltinFuncRef::__call(stdvec<var*>& p_args) {
+	var ret;
+	BuiltinFunctions::call(_type, p_args, ret);
+	return ret;
+}
+
+String BuiltinFuncRef::to_string() {
+	return String("[builtin_function:") + BuiltinFunctions::get_func_name(_type) + "]";
+}
+
+//---------------------------------------------------------------------------
+
+BuiltinTypeRef::BuiltinTypeRef() {}
+BuiltinTypeRef::BuiltinTypeRef(BuiltinTypes::Type p_type) :_type(p_type) {}
+
+var BuiltinTypeRef::__call(stdvec<var*>& p_args) {
+	return BuiltinTypes::construct(_type, p_args);
+}
+
+String BuiltinTypeRef::to_string() {
+	return String("[builtin_type:") + BuiltinTypes::get_type_name(_type) + "]";
+}
+
+
 
 }

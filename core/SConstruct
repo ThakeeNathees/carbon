@@ -4,14 +4,12 @@ Import('cbenv')
 
 ## project includes
 cbenv.Append(CPPPATH=[Dir("./")])
-cbenv.Append(CPPPATH=[Dir("var/")])
 
 ## core env
 env_core = cbenv.Clone()
 env_core.SOURCES = [
 
     Glob('*.cpp'),
-    Glob('var/*.cpp'),
     Glob('error/*.cpp'),
     Glob('builtin/*.cpp'),
     Glob('binary/*.cpp'),

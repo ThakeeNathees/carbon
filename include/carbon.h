@@ -23,48 +23,51 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_FUNCTION_H
-#define CARBON_FUNCTION_H
+#ifndef CARBON_H
+#define CARBON_H
 
-#include "binary.h"
+
+
+// core compilation pipeline
+#include "core/core.h"
+#include "core/tokenizer.h"
+#include "core/parser.h"
+#include "core/analyzer.h"
+#include "core/codegen.h"
+#include "core/vm.h"
+#include "core/compiler.h"
+#include "core/carbon_function.h"
+#include "core/bytecode.h"
+
+// native imports
+#include "native/logger.h"
+#include "native/file.h"
+#include "native/path.h"
+#include "native/os.h"
 
 namespace carbon {
 
-class Bytecode;
+inline void carbon_initialize() {
 
-class CarbonFunction : public Object {
-	REGISTER_CLASS(CarbonFunction, Object) {
-	}
+	// Register native classes.
+	NativeClasses::singleton()->register_class<Object>();
+	NativeClasses::singleton()->register_class<Bytecode>();
+	NativeClasses::singleton()->register_class<CarbonFunction>();
 
-private:
-	friend class CodeGen;
-	Bytecode* _owner;
-
-	String _name;
-	bool _is_static;
-	int _arg_count;
-	stdvec<var> _default_args;
-
-	stdvec<uint32_t> _opcodes;
-	uint32_t _stack_size;
-	
-public:
-	const String& get_name() const { return _name; }
-	bool is_static() const { return _is_static; }
-	int get_arg_count() const { return _arg_count; }
-	const stdvec<var>& get_default_args() const { return _default_args; }
-	// parameter names : only in debug build
-
-	uint32_t get_stack_size() const { return _stack_size; }
-	const stdvec<uint32_t>& get_opcodes() const { return _opcodes; }
-
-	var __call(stdvec<var*>& p_args) override;
-
-	//String get_opcodes_as_string(const stdvec<String>* _global_names_array = nullptr, const stdvec<var>* _global_const_values = nullptr) const;
-	String get_opcodes_as_string() const;
-
-};
+	NativeClasses::singleton()->register_class<OS>();
+	NativeClasses::singleton()->register_class<File>();
+	NativeClasses::singleton()->register_class<Path>();
+	NativeClasses::singleton()->register_class<Buffer>();
 
 }
 
-#endif // CARBON_FUNCTION_H
+inline void carbon_cleanup() {
+	NativeClasses::cleanup();
+	VM::cleanup();
+	Compiler::cleanup();
+}
+
+}
+
+
+#endif // CARBON_H

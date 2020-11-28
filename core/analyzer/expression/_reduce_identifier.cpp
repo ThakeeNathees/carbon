@@ -23,7 +23,7 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "../analyzer.h"
+#include "analyzer.h"
 
 namespace carbon {
 
