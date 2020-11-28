@@ -26,7 +26,6 @@
 #ifndef CARBON_REF_H
 #define CARBON_REF_H
 
-#include "binary.h"
 #include "builtin_functions.h"
 #include "builtin_types.h"
 

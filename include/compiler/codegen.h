@@ -26,6 +26,7 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 
+#include "core/core.h"
 #include "analyzer.h"
 #include "bytecode.h"
 #include "carbon_function.h"

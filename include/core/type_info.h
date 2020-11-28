@@ -246,6 +246,34 @@ public:
 };
 
 
+// ---------------------------------------------------------------------------------
+
+class TypeInfo {
+
+public:
+	static const ptr<MemberInfo> get_member_info(const var& p_var, const String& p_name);
+	static const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list(const var& p_var);
+
+	static const ptr<MemberInfo> get_member_info(var::Type p_type, const String& p_name);
+	static const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list(var::Type p_type);
+
+	static const ptr<MemberInfo> get_member_info_object(const Object* p_instance, const String& p_member);
+	static const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list_object(const Object* p_instance);
+
+	static const ptr<MemberInfo> get_member_info_string(const String& p_member);
+	static const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list_string();
+
+	static const ptr<MemberInfo> get_member_info_array(const String& p_member);
+	static const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list_array();
+
+	static const ptr<MemberInfo> get_member_info_map(const String& p_member);
+	static const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list_map();
+
+};
+
+
+
+
 }
 
 #endif _TYPE_INFO_H

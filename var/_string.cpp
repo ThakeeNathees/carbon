@@ -32,7 +32,7 @@
 
 namespace carbon {
 
-const stdmap<size_t, ptr<MemberInfo>>& String::get_member_info_list() {
+const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_string() {
 	static stdmap<size_t, ptr<MemberInfo>> member_info_s = {
 		_NEW_METHOD_INFO("size",                                                             var::INT     ),
 		_NEW_METHOD_INFO("length",                                                           var::INT     ),
@@ -50,7 +50,7 @@ const stdmap<size_t, ptr<MemberInfo>>& String::get_member_info_list() {
 }
 
 var String::call_method(const String& p_method, const stdvec<var*>& p_args) {
-	_check_method_and_args<String>(p_method, p_args);
+	_check_method_and_args<String>(p_method, p_args, TypeInfo::get_member_info_string(p_method));
 	switch (p_method.const_hash()) {
 		case "size"_hash:        // [[fallthrough]]
 		case "length"_hash:     return (int64_t)size();
@@ -70,8 +70,51 @@ var String::call_method(const String& p_method, const stdvec<var*>& p_args) {
 	THROW_ERROR(Error::BUG, "can't reach here.");
 }
 
-bool String::has_member(const String& p_member) { return _has_member_impl<String>(p_member); }
-const ptr<MemberInfo> String::get_member_info(const String& p_member) { return _get_member_info_impl<String>(p_member); }
+
+String::String() : _data(new std::string("")) {}
+String::String(const std::string& p_copy) { _data = new std::string(p_copy); }
+String::String(const char* p_copy) { _data = new std::string(p_copy); }
+String::String(const String& p_copy) { if (p_copy._data) _data = new std::string(*p_copy._data); }
+String::String(char p_char) { _data = new std::string(1, p_char); }
+String::String(int p_i) { _data = new std::string(std::to_string(p_i).c_str()); }
+String::String(int64_t p_i) { _data = new std::string(std::to_string(p_i).c_str()); }
+String::String(size_t p_i) { _data = new std::string(std::to_string(p_i).c_str()); }
+String::String(double p_d) { _data = new std::string(std::to_string(p_d).c_str()); }
+String::~String() { delete _data; }
+
+double String::to_float() const { return std::stod(*_data); }
+size_t String::hash() const { return std::hash<std::string>{}(*_data); }
+size_t String::const_hash() const { return __const_hash(_data->c_str()); }
+
+bool String::operator==(const String& p_other) const { return *_data == *p_other._data; }
+bool String::operator!=(const String& p_other) const { return *_data != *p_other._data; }
+bool String::operator<(const String& p_other) const { return *_data < *p_other._data; }
+bool String::operator<=(const String& p_other) const { return *_data <= *p_other._data; }
+bool String::operator>(const String& p_other) const { return *_data > * p_other._data; }
+bool String::operator>=(const String& p_other) const { return *_data >= *p_other._data; }
+
+String String::operator+(char p_c) const              { return *_data + p_c; }
+String String::operator+(int p_i) const               { return *_data + std::to_string(p_i); }
+String String::operator+(double p_d) const            { return *_data + std::to_string(p_d); }
+String String::operator+(const char* p_cstr) const    { return *_data + p_cstr; }
+String String::operator+(const String& p_other) const { return *_data + *p_other._data; }
+
+String& String::operator+=(char p_c)              { *_data += p_c;                 return *this; }
+String& String::operator+=(int p_i)               { *_data += std::to_string(p_i); return *this; }
+String& String::operator+=(double p_d)            { *_data += std::to_string(p_d); return *this; }
+String& String::operator+=(const char* p_cstr)    { *_data += p_cstr;              return *this; }
+String& String::operator+=(const String& p_other) { *_data += *p_other._data;      return *this; }
+
+String& String::operator=(char p_c)              { *_data = p_c;                 return *this; }
+String& String::operator=(int p_i)               { *_data = std::to_string(p_i); return *this; }
+String& String::operator=(double p_d)            { *_data = std::to_string(p_d); return *this; }
+String& String::operator=(const char* p_cstr)    { *_data = p_cstr;              return *this; }
+String& String::operator=(const String& p_other) { *_data = *p_other._data;      return *this; }
+
+
+size_t String::size() const { return _data->size(); }
+const char* String::c_str() const { return _data->c_str(); }
+String& String::append(const String& p_other) { _data->append(p_other); return *this; }
 
 int64_t String::to_int() const {
 	// TODO: this should throw std::exceptions

@@ -26,11 +26,12 @@
 #ifndef CORE_H
 #define CORE_H
 
-#include "core_internal.h"
-#include "error.h"
 #include "var/var.h"
-#include "var/type_info.h"
-#include "var/native.h"
-
+#include "error.h"
+#include "native.h"
+#include "builtin_types.h"
+#include "runtime_types.h"
+#include "builtin_functions.h"
+#include "type_info.h"
 
 #endif // CORE_H

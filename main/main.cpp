@@ -37,6 +37,9 @@ int _main(int argc, char** argv) {
 
 	carbon_initialize();
 
+#define PRINT_SIZE(m) std::cout << "#define CLASS_SIZE_" << #m << " " << sizeof(m) << std::endl;
+
+
 #ifdef RUN_TESTS
 	int res = _test_main(argc, argv);
 	if (res) {

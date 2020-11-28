@@ -23,39 +23,40 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef INSTANCE_H
-#define INSTANCE_H
+#ifndef  PTR_H
+#define  PTR_H
 
-#include "core.h"
-#include "bytecode.h"
+#include <memory>
 
 namespace carbon {
 
-class Instance : public Object, public std::enable_shared_from_this<Instance> {
-	REGISTER_CLASS(Instance, Object) {}
-	friend class VM;
-	friend struct RuntimeContext;
-
-private: // members
-	ptr<Bytecode> blueprint;
-	ptr<Object> native_instance;
-	stdvec<var> members;
-
+template<typename T>
+class _ptr {
+	std::shared_ptr<T> _data;
 public:
-	Instance();
-	Instance(ptr<Bytecode>& p_blueprint);
+	_ptr() {}
+	_ptr(std::shared_ptr<T>& other) { _data = other; }
+	_ptr(std::nullptr_t other) { _data = other; }
+	template<typename T2> _ptr(T* other) { _data = other; }
 
-	bool _is_registered() const override;
-	var call_method(const String& p_method_name, stdvec<var*>& p_args) override;
-	var get_member(const String& p_name) override;
-	void set_member(const String& p_name, var& p_value) override;
+	template<typename T2> void operator =(const _ptr<T2> other) { _data = other; }
+	template<typename T2> void operator =(const T* other) { _data = other; }
 
-	// TODO: implement all the operator methods here.
-	var __call(stdvec<var*>& p_args) override;
-	String to_string() override;
+	void operator =(std::nullptr_t other) { _data = other; }
+	bool operator == (std::nullptr_t other) { return _data == other; }
+	bool operator != (std::nullptr_t other) { return _data != other; }
+	operator bool() const { return _data.operator bool(); }
 
+	template<typename T2> operator _ptr<T2>() const { return std::static_pointer_cast<T2>(_data); }
+	template<typename T2> _ptr<T2> _to() { return std::static_pointer_cast<T2>(_data); }
+
+	T* get() const { return _data.get(); }
+	T* operator->() const { return _data.get(); }
+	T& operator*() const { return *_data; }
 };
+template<typename T> bool operator ==(_ptr<T> p, std::nullptr_t) { return p.operator==(nullptr); }
+template<typename T> bool operator !=(_ptr<T> p, std::nullptr_t) { return p.operator!=(nullptr); }
 
 }
 
-#endif // INSTANCE_H
+#endif // PTR_H

@@ -30,14 +30,14 @@
 
 // core compilation pipeline
 #include "core/core.h"
-#include "core/tokenizer.h"
-#include "core/parser.h"
-#include "core/analyzer.h"
-#include "core/codegen.h"
-#include "core/vm.h"
-#include "core/compiler.h"
-#include "core/carbon_function.h"
-#include "core/bytecode.h"
+#include "compiler/tokenizer.h"
+#include "compiler/parser.h"
+#include "compiler/analyzer.h"
+#include "compiler/codegen.h"
+#include "compiler/vm.h"
+#include "compiler/compiler.h"
+#include "compiler/carbon_function.h"
+#include "compiler/bytecode.h"
 
 // native imports
 #include "native/logger.h"

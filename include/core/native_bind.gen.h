@@ -53,7 +53,7 @@ template<typename T> struct is_shared_ptr<std::shared_ptr<T>> : std::true_type {
 	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, var>::value) {               \
 		m_var_type = var::VAR;																					              \
 	} else if constexpr (is_shared_ptr<m_T>::value) {																	      \
-		m_var_type = { var::OBJECT, m_T::element_type::get_type_name_s() };                                                  \
+		m_var_type = { var::OBJECT, m_T::element_type::get_type_name_s() };                                                   \
 	}
 
 

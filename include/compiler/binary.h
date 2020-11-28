@@ -26,9 +26,9 @@
 #ifndef BINARY_H
 #define BINARY_H
 
-#include "core.h"
-#include "builtin_functions.h"
-#include "builtin_types.h"
+#include "core/core.h"
+#include "core/builtin_functions.h"
+#include "core/builtin_types.h"
 
 namespace carbon {
 

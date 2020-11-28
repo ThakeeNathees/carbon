@@ -97,6 +97,12 @@ bool Object::__eq(const var& p_other) const {
 }
 
 
+String Object::to_string() /*const*/ { return String::format("[%s:%i]", get_type_name(), this); }
+bool Object::_is_native_ref() const { return false; }
+String Object::_get_native_ref() const { return ""; }
+bool Object::_is_registered() const { return true; }
+
+
 void Object::_bind_data(NativeClasses* p_native_classes) {
 	BIND_METHOD("get_type_name", &Object::get_type_name);
 	BIND_METHOD("get_base_type_name", &Object::get_base_type_name);
@@ -205,15 +211,6 @@ void Object::set_member_s(ptr<Object> p_self, const String& p_name, var& p_value
 		return;
 	}
 	//THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("type %s has no member named \"%s\".", p_self->get_type_name(), member_name.c_str()));
-}
-
-const stdmap<size_t, ptr<MemberInfo>>& Object::get_member_info_list(const Object* p_instance) {
-	if (p_instance) return NativeClasses::singleton()->get_member_info_list(p_instance->get_type_name());
-	else return NativeClasses::singleton()->get_member_info_list(Object::get_type_name_s());
-}
-const ptr<MemberInfo> Object::get_member_info(const Object* p_instance, const String& p_member) {
-	if (p_instance) return NativeClasses::singleton()->get_member_info(p_instance->get_type_name(), p_member);
-	else return NativeClasses::singleton()->get_member_info(Object::get_type_name_s(), p_member);
 }
 
 #undef _OBJ_THROW_NOT_IMPL

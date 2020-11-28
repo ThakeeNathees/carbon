@@ -30,7 +30,7 @@
 #include "var_private.h"
 
 namespace carbon {
-const stdmap<size_t, ptr<MemberInfo>>& Array::get_member_info_list() {
+const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_array() {
 	static stdmap<size_t, ptr<MemberInfo>> member_info_s = {
 		_NEW_METHOD_INFO("size",                                                    var::INT   ),
 		_NEW_METHOD_INFO("empty",                                                   var::BOOL  ),
@@ -48,7 +48,7 @@ const stdmap<size_t, ptr<MemberInfo>>& Array::get_member_info_list() {
 }
 
 var Array::call_method(const String& p_method, const stdvec<var*>& p_args) {
-	_check_method_and_args<Array>(p_method, p_args);
+	_check_method_and_args<Array>(p_method, p_args, TypeInfo::get_member_info_array(p_method));
 	switch (p_method.const_hash()) {
 		case "size"_hash:      return (int64_t)size();
 		case "empty"_hash:     return empty();
@@ -67,8 +67,26 @@ var Array::call_method(const String& p_method, const stdvec<var*>& p_args) {
 	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
 }
 
-bool Array::has_member(const String& p_member) { return _has_member_impl<Array>(p_member); }
-const ptr<MemberInfo> Array::get_member_info(const String& p_member) { return _get_member_info_impl<Array>(p_member); }
+Array::Array() { _data = newptr<stdvec<var>>(); }
+Array::Array(const ptr<stdvec<var>>& p_data) { _data = p_data; }
+Array::Array(const Array& p_copy) { _data = p_copy._data; }
+
+void* Array::get_data() const {
+	return _data.operator->();
+}
+
+size_t Array::size() const { return _data->size(); }
+bool   Array::empty() const { return _data->empty(); }
+void   Array::push_back(const var& p_var) { _data->push_back(p_var); }
+void   Array::pop_back() { _data->pop_back(); }
+Array& Array::append(const var& p_var) { push_back(p_var); return *this; }
+void   Array::clear() { (*_data).clear(); }
+void   Array::insert(int64_t p_index, const var& p_var) { _data->insert(_data->begin() + p_index, p_var); }
+void   Array::resize(size_t p_size) { _data->resize(p_size); }
+void   Array::reserve(size_t p_size) { _data->reserve(p_size); }
+Array& Array::sort() { std::sort(_data->begin(), _data->end()); return *this; }
+var&   Array::back() { return (*_data).back(); }
+var&   Array::front() { return (*_data).front(); }
 
 var& Array::at(int64_t p_index) {
 	if (0 <= p_index && p_index < (int64_t)size())
@@ -135,6 +153,8 @@ Array Array::copy(bool p_deep) const {
 	}
 	return ret;
 }
+
+Array::operator bool() const { return empty(); }
 
 Array Array::operator+(const Array& p_other) const {
 	Array ret = copy();

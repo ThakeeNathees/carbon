@@ -24,6 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "carbon_ref.h"
+#include "native.h"
 
 namespace carbon {
 

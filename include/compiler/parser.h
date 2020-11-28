@@ -26,6 +26,7 @@
 #ifndef PARSER_H
 #define PARSER_H
 
+#include "core/core.h"
 #include "tokenizer.h"
 #include "bytecode.h"
 #include "native/logger.h"

@@ -33,11 +33,11 @@ namespace carbon {
 #define _NEW_METHOD_INFO(m_name, ...) { String(m_name).hash(), newptr<MethodInfo>(m_name, __VA_ARGS__) }
 
 template <typename T>
-static void _check_method_and_args(const String& p_method, const stdvec<var*>& p_args) {
-	if (T::has_member(p_method)) {
-		if (T::get_member_info(p_method)->get_type() != MemberInfo::METHOD)
+static void _check_method_and_args(const String& p_method, const stdvec<var*>& p_args, ptr<MemberInfo> p_mi) {
+	if (p_mi != nullptr) {
+		if (p_mi->get_type() != MemberInfo::METHOD)
 			THROW_ERROR(Error::TYPE_ERROR, String::format("member \"%s\" is not callable.", p_method.c_str()));
-		const MethodInfo* mp = (MethodInfo*)T::get_member_info(p_method).get();
+		const MethodInfo* mp = static_cast<const MethodInfo*>(p_mi.get());
 		int arg_count = mp->get_arg_count();
 		int default_arg_count = mp->get_default_arg_count();
 		if (arg_count != -1) {
@@ -60,18 +60,6 @@ static void _check_method_and_args(const String& p_method, const stdvec<var*>& p
 	} else {
 		THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" not exists on base %s.", p_method.c_str(), T::get_type_name_s()));
 	}
-}
-
-template <typename T>
-static bool _has_member_impl(const String& p_member) {
-	return T::get_member_info_list().find(p_member.hash()) != T::get_member_info_list().end();
-}
-
-template <typename T>
-static const ptr<MemberInfo> _get_member_info_impl(const String& p_member) {
-	if (!T::has_member(p_member))
-		THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" not exists on base %s .", p_member.c_str(), T::get_type_name_s()));
-	return T::get_member_info_list().at(p_member.hash());
 }
 
 

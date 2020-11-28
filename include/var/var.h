@@ -42,6 +42,7 @@ namespace carbon {
 
 class var {
 public:
+	enum Operator;
 	enum Type {
 		_NULL, // not initialized.
 		VAR,   // any type used only for member info.
@@ -72,6 +73,7 @@ public:
 	var(const String& p_string);
 	var(const Array& p_array);
 	var(const Map& p_map);
+	var(const ptr<Object>& p_other);
 	~var();
 	
 	template <typename T=Object>
@@ -80,55 +82,36 @@ public:
 		new(&_data._obj) ptr<Object>(p_ptr);
 	}
 
-	template <typename... Targs>
-	var operator()(Targs... p_args) {
-		return __call(p_args...);
-	}
-
-	// Methods.
-	inline Type get_type() const { return type; }
-	String get_type_name() const;
-	//const char* get_parent_class_name() const;
-	size_t hash() const;
-	static bool is_hashable(var::Type p_type);
-	void clear();
-	var copy(bool p_deep = false) const;
-
-	constexpr static const char* get_type_name_s(var::Type p_type) {
-		switch (p_type) {
-			case var::_NULL:  return "null";
-			case var::VAR:    return "var";
-			case var::BOOL:   return "bool";
-			case var::INT:    return "int";
-			case var::FLOAT:  return "float";
-			case var::STRING: return "String";
-			case var::ARRAY:  return "Array";
-			case var::MAP:    return "Map";
-			case var::OBJECT: return "Object";
-			default:
-				return "";
-		}
-	}
-
-	// Operators.
-	operator bool() const;
-	operator int64_t() const;
-	operator int() const { return (int)operator int64_t(); }
-	operator size_t() const { return (size_t)operator int64_t(); }
-	operator float() const { return (float)operator double(); }
-	operator double() const;
-	operator String() const;   // int.operator String() is invalid casting.
-	String to_string() const;  // int.to_string() is valid.
-	// this treated as: built-in C++ operator[](const char *, int), conflict with operator[](size_t)
-	// operator const char* () const;
-	operator Array() const;
-	operator Map() const;
-	operator ptr<Object>() const;
-
 	template <typename T>
 	ptr<T> cast_to() const {
 		return ptrcast<T>(operator ptr<Object>());
 	}
+
+	static bool is_hashable(var::Type p_type);
+	static const char* get_type_name_s(var::Type p_type);
+	static String get_op_name_s(Operator op);
+
+	// methods.
+	inline Type get_type() const;
+	String get_type_name() const;
+	size_t hash() const;
+	void clear();
+	var copy(bool p_deep = false) const;
+
+	// Operators.
+	operator bool() const;
+	operator int64_t() const;
+	operator double() const;
+	operator int() const    { return (int)operator int64_t(); }
+	operator size_t() const { return (size_t)operator int64_t(); }
+	operator float() const  { return (float)operator double(); }
+
+	// operator const char* () const; <-- never implement this
+	String to_string() const;
+	operator String() const;
+	operator Array() const;
+	operator Map() const;
+	operator ptr<Object>() const;
 
 	enum Operator {
 
@@ -163,7 +146,7 @@ public:
 
 		_OP_MAX_,
 	};
-	static String get_op_name_s(Operator op);
+	
 
 #define _VAR_OP_DECL(m_ret, m_op, m_access)                                                        \
 	m_ret operator m_op (bool p_other) m_access { return operator m_op (var(p_other)); }           \
@@ -196,34 +179,29 @@ public:
 	bool __iter_has_next();
 	var __iter_next();
 
-	template <typename... Targs>
-	var __call(Targs... p_args) {
-		stdvec<var> _args = make_stdvec<var>(p_args...);
-		stdvec<var*> args; for (var& v : _args) args.push_back(&v);
-		return __call_internal(args);
-	}
-	var __call(stdvec<var*>& p_args) { return __call_internal(p_args); }
+	//template <typename... Targs>
+	//var __call(Targs... p_args) {
+	//	stdvec<var> _args = make_stdvec<var>(p_args...);
+	//	stdvec<var*> args; for (var& v : _args) args.push_back(&v);
+	//	return __call_internal(args);
+	//}
+	//template <typename... Targs>
+	//var operator()(Targs... p_args) {
+	//	return __call(p_args...);
+	//}
 
-	template <typename... Targs>
-	var call_method(const String& p_method, Targs... p_args) {
-		stdvec<var> _args = make_stdvec<var>(p_args...);
-		stdvec<var*> args; for (var& v : _args) args.push_back(&v);
-		return call_method_internal(p_method, args);
-	}
-	var call_method(const String& p_method, stdvec<var*>& p_args) { return call_method_internal(p_method, p_args); }
+	//template <typename... Targs>
+	//var call_method(const String& p_method, Targs... p_args) {
+	//	stdvec<var> _args = make_stdvec<var>(p_args...);
+	//	stdvec<var*> args; for (var& v : _args) args.push_back(&v);
+	//	return call_method_internal(p_method, args);
+	//}
+
+	var __call(stdvec<var*>& p_args);
+	var call_method(const String& p_method, stdvec<var*>& p_args);
 
 	var get_member(const String& p_name);
 	void set_member(const String& p_name, var& p_value);
-
-	const ptr<MemberInfo> get_member_info(const String& p_name) const;
-	static const ptr<MemberInfo> get_member_info_s(var::Type p_type, const String& p_name);
-	const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list() const;
-	static const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list_s(var::Type p_type);
-
-private:
-	var __call_internal(stdvec<var*>& p_args);
-	var call_method_internal(const String& p_method, stdvec<var*>& p_args);
-public:
 
 	VAR_OP_DECL(var, +, const);
 	VAR_OP_DECL(var, -, const);
@@ -264,30 +242,25 @@ private:
 		};
 	};
 
-	// Methods.
+	// private methods.
 	void copy_data(const var& p_other);
 	void clear_data();
 
-	// Members.
-	static var tmp;
+	// private members.
 	Type type = _NULL;
 	VarData _data;
 	friend std::ostream& operator<<(std::ostream& p_ostream, const var& p_var);
 };
 
-// Map internal pair struct
+
+// THIS NEEDS TO BE DEFINED HERE (NEED VAR DEFINITION BEFORE)
 struct Map::_KeyValue {
 	var key;
 	var value;
 	_KeyValue() {}
 	_KeyValue(const var& p_key, const var& p_value) : key(p_key), value(p_value) {}
 };
+
 }
-
-
-// ******** MEMBER INFO IMPLEMENTATIONS ******************* //
-//#include "runtime_types.h"
-//#include "type_info.h"
-//#include "native.h"
 
 #endif // _VAR_H

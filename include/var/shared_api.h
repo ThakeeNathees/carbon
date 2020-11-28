@@ -23,57 +23,16 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef  MAP_H
-#define  MAP_H
+// TODO: generate this file.
 
-#include "internal.h"
+#ifndef  SHARED_API_H
+#define  SHARED_API_H
 
-namespace carbon {
+#define CLASS_SIZE_STRING   8
+#define CLASS_SIZE_ARRAY   16
+#define CLASS_SIZE_MAP     16
+#define CLASS_SIZE_OBJECT   8
+#define CLASS_SIZE_VAR     24
 
-class String;
 
-class Map {
-	friend class var;
-public:
-	struct _KeyValue;
-	typedef stdmap<size_t, _KeyValue> _map_internal_t;
-
-	constexpr static  const char* get_type_name_s() { return "Map"; }
-
-	// methods.
-	Map();
-	Map(const ptr<_map_internal_t>& p_data);
-	Map(const Map& p_copy);
-
-	void* get_data() const;
-	Map copy(bool p_deep = true) const;
-	var call_method(const String& p_method, const stdvec<var*>& p_args);
-
-	// Wrappers.
-	size_t size() const;
-	bool empty() const;
-	void insert(const var& p_key, const var& p_value);
-	void clear();
-	bool has(const var& p_key) const;
-
-	String to_string() const;
-	operator bool() const;
-	bool operator ==(const Map& p_other) const;
-	Map& operator=(const Map& p_other);
-	var operator[](const var& p_key) const;
-	var& operator[](const var& p_key);
-	var operator[](const char* p_key) const;
-	var& operator[](const char* p_key);
-
-private:
-	_map_internal_t::iterator begin() const;
-	_map_internal_t::iterator end() const;
-	_map_internal_t::iterator find(const var& p_key) const;
-
-	ptr<_map_internal_t> _data;
-	friend std::ostream& operator<<(std::ostream& p_ostream, const Map& p_dict);
-};
-
-}
-
-#endif // MAP_H
+#endif // SHARED_API_H

@@ -26,6 +26,7 @@
 #ifndef BYTECODE_H
 #define BYTECODE_H
 
+#include "core/core.h"
 #include "binary.h"
 
 namespace carbon {

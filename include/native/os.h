@@ -26,7 +26,7 @@
 #ifndef OS_H
 #define OS_H
 
-#include "core.h"
+#include "core/core.h"
 
 namespace carbon {
 

@@ -26,7 +26,7 @@
 #ifndef	PATH_H
 #define	PATH_H
 
-#include "core.h"
+#include "core/core.h"
 
 namespace carbon {
 

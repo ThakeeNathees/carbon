@@ -26,8 +26,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-#include "core_internal.h"
-#include "_string.h"
+#include "internal.h"
 
 #define REGISTER_CLASS(m_class, m_inherits)                                                          \
 public:                                                                                              \
@@ -42,15 +41,23 @@ public:                                                                         
 namespace carbon {
 
 class var;
-class MemberInfo;
+class String;
 class NativeClasses;
 
 class Object {
 public:
 
+	// REGISTER_CLASS methods.
+	static ptr<Object> __new() { return newptr<Object>(); }
+	constexpr static  const char* get_type_name_s() { return "Object"; }
+	constexpr static  const char* get_base_type_name_s() { return ""; }
+	virtual const char* get_type_name() const { return get_type_name_s(); }
+	virtual const char* get_base_type_name() const { return get_base_type_name_s(); }
+	static void _bind_data(NativeClasses* p_native_classes);
+
 	// Operators.
 	Object& operator=(const Object& p_copy) = default;
-	operator String(); // const;
+	operator String(); // const
 	var operator()(stdvec<var*>& p_args);
 
 	bool operator==(const var& p_other) const;
@@ -73,23 +80,18 @@ public:
 	var operator[](const var& p_key) const;
 	var& operator[](const var& p_key);
 
-	// REGISTER_CLASS methods.
-	static ptr<Object> __new() { return newptr<Object>(); }
-	constexpr static  const char* get_type_name_s() { return "Object"; }
-	constexpr static  const char* get_base_type_name_s() { return ""; }
-	virtual const char* get_type_name() const { return get_type_name_s(); }
-	virtual const char* get_base_type_name() const { return get_base_type_name_s(); }
-	static void _bind_data(NativeClasses* p_native_classes);
-
+	// TODO: move them to native
 	static var call_method_s(ptr<Object> p_self, const String& p_name, stdvec<var*>& p_args);
 	static var get_member_s(ptr<Object> p_self, const String& p_name);
 	static void set_member_s(ptr<Object> p_self, const String& p_name, var& p_value);
+
+	virtual ptr<Object> copy(bool p_deep) const;
 
 	virtual var call_method(const String& p_method_name, stdvec<var*>& p_args);
 	virtual var get_member(const String& p_member_name);
 	virtual void set_member(const String& p_member_name, var& p_value);
 
-	// Virtual methods.
+	// operators.
 	virtual var __call(stdvec<var*>& p_vars);
 
 	virtual var __iter_begin();
@@ -114,19 +116,12 @@ public:
 	virtual bool __lt(const var& p_other) const;
 	virtual bool __eq(const var& p_other) const;
 
-	virtual String to_string() /*const*/ { return String::format("[%s:%i]", get_type_name(), this);  }
+	virtual String to_string() /*const*/ ;
 
 	// this could be a bad design but a better workaround for now instead of using is_instance_of<Type>();
-	virtual bool _is_native_ref() const { return false; }
-	virtual String _get_native_ref() const { return ""; }
-	virtual bool _is_registered() const { return true; }
-
-	// Methods.
-
-	virtual ptr<Object> copy(bool p_deep) const;
-	static const stdmap<size_t, ptr<MemberInfo>>& get_member_info_list(const Object* p_instance);
-	static const ptr<MemberInfo> get_member_info(const Object* p_instance, const String& p_member);
-
+	virtual bool _is_native_ref() const;
+	virtual String _get_native_ref() const;
+	virtual bool _is_registered() const;
 
 private:
 	friend class var;

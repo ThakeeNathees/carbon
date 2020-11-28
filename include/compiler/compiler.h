@@ -26,7 +26,7 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
-#include "core.h"
+#include "core/core.h"
 #include "codegen.h"
 #include "native/path.h"
 #include "native/file.h"

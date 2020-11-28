@@ -26,6 +26,7 @@
 #ifndef CARBON_FUNCTION_H
 #define CARBON_FUNCTION_H
 
+#include "core/core.h"
 #include "binary.h"
 
 namespace carbon {

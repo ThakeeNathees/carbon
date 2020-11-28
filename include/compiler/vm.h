@@ -30,7 +30,6 @@
 #include "instance.h"
 #include "carbon_function.h"
 #include "bytecode.h"
-#include "carbon_ref.h"
 
 namespace carbon {
 

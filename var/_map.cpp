@@ -31,7 +31,7 @@
 
 namespace carbon {
 	
-const stdmap<size_t, ptr<MemberInfo>>& Map::get_member_info_list()  {
+const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_map() {
 	static stdmap<size_t, ptr<MemberInfo>> member_info = {
 		_NEW_METHOD_INFO("size",                                          var::INT   ),
 		_NEW_METHOD_INFO("empty",                                         var::BOOL  ),
@@ -43,7 +43,7 @@ const stdmap<size_t, ptr<MemberInfo>>& Map::get_member_info_list()  {
 }
 
 var Map::call_method(const String& p_method, const stdvec<var*>& p_args) {
-	_check_method_and_args<Map>(p_method, p_args);
+	_check_method_and_args<Map>(p_method, p_args, TypeInfo::get_member_info_map(p_method));
 	switch (p_method.const_hash()) {
 		case "size"_hash:   return (int64_t)size();
 		case "empty"_hash:  return empty();
@@ -55,9 +55,6 @@ var Map::call_method(const String& p_method, const stdvec<var*>& p_args) {
 	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
 }
 
-bool Map::has_member(const String& p_member) { return _has_member_impl<Map>(p_member); }
-const ptr<MemberInfo> Map::get_member_info(const String& p_member) { return _get_member_info_impl<Map>(p_member); }
-
 Map::Map() {
 	_data = newptr<_map_internal_t>();
 }
@@ -67,6 +64,8 @@ Map::Map(const ptr<_map_internal_t>& p_data) {
 Map::Map(const Map& p_copy) {
 	_data = p_copy._data;
 }
+
+void* Map::get_data() const { return _data.operator->(); }
 
 String Map::to_string() const {
 	std::stringstream ss;
@@ -108,8 +107,12 @@ Map::_map_internal_t::iterator Map::find(const var& p_key) const { return (*_dat
 void Map::insert(const var& p_key, const var& p_value) {
 	(*_data).insert(std::pair<size_t, _KeyValue>(p_key.hash(), _KeyValue(p_key, p_value)));
 }
+
 bool Map::has(const var& p_key) const { return find(p_key) != end(); }
 void Map::clear() { _data->clear(); }
+
+size_t Map::size() const { return _data->size(); }
+bool Map::empty() const { return _data->empty(); }
 
 bool Map::operator ==(const Map& p_other) const {
 	if (size() != p_other.size())
@@ -122,6 +125,8 @@ bool Map::operator ==(const Map& p_other) const {
 	}
 	return true;
 }
+
+Map::operator bool() const { return empty(); }
 
 Map& Map::operator=(const Map& p_other) {
 	_data = p_other._data;

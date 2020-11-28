@@ -27,7 +27,6 @@
 #define CORE_INTERNAL_H
 
 
-#include <string>
 #include <assert.h>
 #include <stdlib.h>
 #include <stdarg.h>
@@ -38,15 +37,15 @@
 
 #include <algorithm>
 #include <functional>
-#include <string>
-#include <cstring>
-#include <vector>
-#include <map>
-#include <stack>
-#include <unordered_map>
-#include <unordered_set>
 #include <type_traits>
 #include <typeinfo>
+
+#include <vector>
+#include <cstring>
+#include <string>
+#include <stack>
+#include <map>
+#include <unordered_map>
 
 #include <chrono>
 #include <iostream>
@@ -57,6 +56,9 @@
 #define _HAS_CXX17 1 // for autocompletion (delete this later).
 #include <filesystem>
 #include <new>
+
+// stl wrapper
+#include "stl_wrapper/ptr.h"
 
 // Reference : https://stackoverflow.com/questions/2111667/compile-time-string-hashing
 #include "compile_time_crc32.inc"
@@ -170,34 +172,6 @@ namespace carbon {
 	std::size_t constexpr operator "" _hash(const char* s, size_t) {
 		return __const_hash(s);
 	}
-
-	// TODO: define a custom ptr class and for other stl types as well for shared lib.
-	//template<typename T>
-	//class _ptr {
-	//	std::shared_ptr<T> _data;
-	//public:
-	//	_ptr() {}
-	//	_ptr(std::shared_ptr<T>& other) { _data = other; }
-	//	_ptr(std::nullptr_t other) { _data = other; }
-	//	template<typename T2> _ptr(T* other) { _data = other; }
-	//
-	//	template<typename T2> void operator =(const _ptr<T2> other) { _data = other; }
-	//	template<typename T2> void operator =(const T* other) { _data = other; }
-	//
-	//	void operator =(std::nullptr_t other) { _data = other; }
-	//	bool operator == (std::nullptr_t other) { return _data == other; }
-	//	bool operator != (std::nullptr_t other) { return _data != other; }
-	//	operator bool() const { return _data.operator bool(); }
-	//
-	//	template<typename T2> operator _ptr<T2>() const { return std::static_pointer_cast<T2>(_data); }
-	//	template<typename T2> _ptr<T2> _to() { return std::static_pointer_cast<T2>(_data); }
-	//
-	//	T* get() const { return _data.get(); }
-	//	T* operator->() const { return _data.get(); }
-	//	T& operator*() const { return *_data; }
-	//};
-	//template<typename T> bool operator ==(_ptr<T> p, std::nullptr_t) { return p.operator==(nullptr); }
-	//template<typename T> bool operator !=(_ptr<T> p, std::nullptr_t) { return p.operator!=(nullptr); }
 
 	template<typename T>
 	using ptr = std::shared_ptr<T>;

@@ -26,7 +26,8 @@
 #ifndef BUILTIN_FUNCTIONS_H
 #define BUILTIN_FUNCTIONS_H
 
-#include "core.h"
+#include "var.h"
+#include "error.h"
 
 namespace carbon {
 

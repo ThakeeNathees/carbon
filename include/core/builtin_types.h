@@ -27,7 +27,8 @@
 #ifndef BUILTIN_CLASSES_H
 #define BUILTIN_CLASSES_H
 
-#include "core.h"
+#include "var.h"
+#include "error.h"
 
 namespace carbon {
 

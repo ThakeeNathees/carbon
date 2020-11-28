@@ -23,57 +23,39 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef  MAP_H
-#define  MAP_H
+#ifndef INSTANCE_H
+#define INSTANCE_H
 
-#include "internal.h"
+#include "core/core.h"
+#include "bytecode.h"
 
 namespace carbon {
 
-class String;
+class Instance : public Object, public std::enable_shared_from_this<Instance> {
+	REGISTER_CLASS(Instance, Object) {}
+	friend class VM;
+	friend struct RuntimeContext;
 
-class Map {
-	friend class var;
+private: // members
+	ptr<Bytecode> blueprint;
+	ptr<Object> native_instance;
+	stdvec<var> members;
+
 public:
-	struct _KeyValue;
-	typedef stdmap<size_t, _KeyValue> _map_internal_t;
+	Instance();
+	Instance(ptr<Bytecode>& p_blueprint);
 
-	constexpr static  const char* get_type_name_s() { return "Map"; }
+	bool _is_registered() const override;
+	var call_method(const String& p_method_name, stdvec<var*>& p_args) override;
+	var get_member(const String& p_name) override;
+	void set_member(const String& p_name, var& p_value) override;
 
-	// methods.
-	Map();
-	Map(const ptr<_map_internal_t>& p_data);
-	Map(const Map& p_copy);
+	// TODO: implement all the operator methods here.
+	var __call(stdvec<var*>& p_args) override;
+	String to_string() override;
 
-	void* get_data() const;
-	Map copy(bool p_deep = true) const;
-	var call_method(const String& p_method, const stdvec<var*>& p_args);
-
-	// Wrappers.
-	size_t size() const;
-	bool empty() const;
-	void insert(const var& p_key, const var& p_value);
-	void clear();
-	bool has(const var& p_key) const;
-
-	String to_string() const;
-	operator bool() const;
-	bool operator ==(const Map& p_other) const;
-	Map& operator=(const Map& p_other);
-	var operator[](const var& p_key) const;
-	var& operator[](const var& p_key);
-	var operator[](const char* p_key) const;
-	var& operator[](const char* p_key);
-
-private:
-	_map_internal_t::iterator begin() const;
-	_map_internal_t::iterator end() const;
-	_map_internal_t::iterator find(const var& p_key) const;
-
-	ptr<_map_internal_t> _data;
-	friend std::ostream& operator<<(std::ostream& p_ostream, const Map& p_dict);
 };
 
 }
 
-#endif // MAP_H
+#endif // INSTANCE_H

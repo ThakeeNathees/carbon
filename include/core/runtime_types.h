@@ -30,7 +30,7 @@
 
 namespace carbon {
 
-class NativeClasses; // void _bind_memebers(NativeClasses*);
+class NativeClasses;
 
 /////////////// ITERATORS //////////////////////
 
@@ -71,7 +71,7 @@ class _Iterator_Array : public Object {
 public:
 	_Iterator_Array() {}
 	_Iterator_Array(const Array* p_array) {
-		_array_data = p_array->get_data();
+		_array_data = (stdvec<var>*)p_array->get_data();
 		_it = _array_data->begin();
 	}
 
@@ -119,7 +119,7 @@ public:
 
 	_Iterator_Map() {}
 	_Iterator_Map(const Map* p_map) {
-		_map_data = p_map->get_data();
+		_map_data = (Map::_map_internal_t*)p_map->get_data();
 		_it = _map_data->begin();
 	}
 

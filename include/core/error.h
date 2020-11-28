@@ -48,9 +48,8 @@ if (m_ptr == nullptr){                                                          
 #define THROW_ERROR(m_type, m_msg) throw Error(m_type, m_msg)_ERR_ADD_DBG_VARS
 #define THROW_BUG(m_msg) do{ DEBUG_BREAK(); THROW_ERROR(Error::BUG, m_msg); } while (false)
 
-#include "core_internal.h"
-#include "var/_string.h"
-#include "var/_vector.h"
+#include "var/var.h"
+
 
 // TODO: create a common parent for warning and error first
 

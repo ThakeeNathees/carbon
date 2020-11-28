@@ -11,6 +11,7 @@ env_core.SOURCES = [
 
     Glob('*.cpp'),
     Glob('error/*.cpp'),
+    Glob('internal/*.cpp'),
     Glob('builtin/*.cpp'),
     Glob('binary/*.cpp'),
 

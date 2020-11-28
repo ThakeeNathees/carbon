@@ -29,8 +29,6 @@
 #include "error.h"
 #include "type_info.h"
 #include "native_bind.gen.h"
-#include "_object.h"
-#include "_string.h"
 
 #define DEFVAL(m_val) m_val
 #define DEFVALUES(...) make_stdvec<var>(__VA_ARGS__)

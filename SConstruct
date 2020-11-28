@@ -6,7 +6,7 @@ def USER_DATA(env):
 	env.PROJECT_NAME = 'carbon'
 	
 	env.Append(CPPPATH=[Dir(path) for path in [
-			"./", "./include/", "./include/core/", "./include/var/", "./include/native/",
+			"./", "./include/", "./include/core/", "./include/var/", "./include/native/", "./include/compiler/",
 	]])
 	env.SOURCES = []
 	env.SCONSCRIPTS = [

@@ -81,6 +81,8 @@ String var::get_op_name_s(Operator op) {
 	return _names[op];
 }
 
+var::Type var::get_type() const { return type; }
+
 size_t var::hash() const {
 	switch (type) {
 		case _NULL:
@@ -115,6 +117,23 @@ bool var::is_hashable(var::Type p_type) {
 	}
 	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);
 	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
+}
+
+const char* var::get_type_name_s(var::Type p_type) {
+	switch (p_type) {
+		case var::_NULL:  return "null";
+		case var::VAR:    return "var";
+		case var::BOOL:   return "bool";
+		case var::INT:    return "int";
+		case var::FLOAT:  return "float";
+		case var::STRING: return "String";
+		case var::ARRAY:  return "Array";
+		case var::MAP:    return "Map";
+		case var::OBJECT: return "Object";
+		default:
+			return "";
+	}
+	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);
 }
 
 void var::clear() {
@@ -203,6 +222,11 @@ var::var(const Array& p_array) {
 var::var(const Map& p_map) {
 	type = MAP;
 	new(&_data._map) Map(p_map);
+}
+
+var::var(const ptr<Object>& p_other) {
+	type = OBJECT;
+	new(&_data._obj) ptr<Object>(p_other);
 }
 
 var::~var() {
@@ -345,7 +369,7 @@ var var::__iter_next() {
 	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
 }
 
-var var::__call_internal(stdvec<var*>& p_args) {
+var var::__call(stdvec<var*>& p_args) {
 	switch (type) {
 		case var::_NULL:  THROW_ERROR(Error::NULL_POINTER, "");
 		case var::BOOL:   THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, "boolean is not callable.");
@@ -360,7 +384,7 @@ var var::__call_internal(stdvec<var*>& p_args) {
 	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
 }
 
-var var::call_method_internal(const String& p_method, stdvec<var*>& p_args) {
+var var::call_method(const String& p_method, stdvec<var*>& p_args) {
 
 	// check var methods.
 	switch (p_method.const_hash()) {
@@ -429,7 +453,7 @@ var var::call_method_internal(const String& p_method, stdvec<var*>& p_args) {
 			return operator ==(*p_args[0]);
 
 		case "__call"_hash:
-			return __call_internal(p_args);
+			return __call(p_args);
 	}
 
 	// type methods.
@@ -476,56 +500,6 @@ void var::set_member(const String& p_name, var& p_value) {
 		case var::OBJECT:
 			Object::set_member_s(_data._obj, p_name, p_value);
 			return;
-	}
-	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);
-	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
-}
-
-const ptr<MemberInfo> var::get_member_info(const String& p_name) const {
-	if (type == OBJECT) return Object::get_member_info(_data._obj.get(), p_name);
-	else return var::get_member_info_s(type, p_name);
-}
-
-const ptr<MemberInfo> var::get_member_info_s(var::Type p_type, const String& p_name) {
-	// TODO: not using member info in var lib for encaptulation
-	THROW_BUG("TODO: not completed yet.");
-	switch (p_type) {
-		case var::_NULL:
-		case var::BOOL:
-		case var::INT:
-		case var::FLOAT:
-			return nullptr;
-		case var::STRING: return String::get_member_info(p_name);
-		case var::ARRAY:  return Array::get_member_info(p_name);
-		case var::MAP:    return Map::get_member_info(p_name);
-		case var::OBJECT: return Object::get_member_info(nullptr, p_name);
-			break;
-	}
-	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);
-	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
-}
-
-const stdmap<size_t, ptr<MemberInfo>>& var::get_member_info_list() const {
-	if (type == OBJECT) return Object::get_member_info_list(_data._obj.get());
-	else return get_member_info_list_s(type);
-}
-
-const stdmap<size_t, ptr<MemberInfo>>& var::get_member_info_list_s(var::Type p_type) {
-	static stdmap<size_t, ptr<MemberInfo>> _null;
-	switch (p_type) {
-		case var::_NULL:
-		case var::BOOL:
-		case var::INT:
-		case var::FLOAT:
-			return _null;
-		case var::STRING:
-			return String::get_member_info_list();
-		case var::ARRAY:
-			return Array::get_member_info_list();
-		case var::MAP:
-			return Map::get_member_info_list();
-		case var::OBJECT:
-			return Object::get_member_info_list(nullptr);
 	}
 	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);
 	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
@@ -705,7 +679,7 @@ bool var::operator<(const var& p_other) const {
 		}
 		case ARRAY: {
 			if (p_other.type == ARRAY)
-				return *_data._arr.get_data() < *p_other.operator Array().get_data();
+				return *_data._arr._data.get() < *p_other.operator Array()._data.get();
 			break;
 		}
 		case MAP: {
@@ -750,7 +724,7 @@ bool var::operator>(const var& p_other) const {
 		}
 		case ARRAY: {
 			if (p_other.type == ARRAY)
-				return *_data._arr.get_data() > *p_other.operator Array().get_data();
+				return *_data._arr._data.get() > *p_other.operator Array()._data.get();
 			break;
 		}
 		case MAP:
@@ -877,7 +851,7 @@ var var::operator *(const var& p_other) const {
 					Array ret;
 					ret._data->reserve(ret._data->size() * _data._int);
 					for (int64_t i = 0; i < _data._int; i++) {
-						ret._data->insert(ret._data->end(), p_other._data._arr.begin(), p_other._data._arr.end());
+						ret._data->insert(ret._data->end(), p_other._data._arr._data->begin(), p_other._data._arr._data->end());
 					}
 					return ret;
 					break;
@@ -905,7 +879,7 @@ var var::operator *(const var& p_other) const {
 				Array ret;
 				ret._data->reserve(_data._arr.size() * p_other._data._int);
 				for (int64_t i = 0; i < p_other._data._int; i++) {
-					ret._data->insert(ret._data->end(), _data._arr.begin(), _data._arr.end());
+					ret._data->insert(ret._data->end(), _data._arr._data->begin(), _data._arr._data->end());
 				}
 				return ret;
 			}
@@ -1101,7 +1075,7 @@ var& var::operator*=(const var& p_other) {
 				case ARRAY: {
 					Array self;
 					for (int64_t i = 0; i < _data._int; i++) {
-						self._data->insert(self.end(), p_other._data._arr.begin(), p_other._data._arr.end());
+						self._data->insert(self._data->end(), p_other._data._arr._data->begin(), p_other._data._arr._data->end());
 					}
 					clear();
 					type = ARRAY; _data._arr = self; return *this;
@@ -1128,7 +1102,7 @@ var& var::operator*=(const var& p_other) {
 			if (p_other.type == INT) {
 				_data._arr.reserve(_data._arr.size() * p_other._data._int);
 				for (int64_t i = 0; i < p_other._data._int -1; i++) {
-					_data._arr._data->insert(_data._arr.end(), _data._arr.begin(), _data._arr.end());
+					_data._arr._data->insert(_data._arr._data->end(), _data._arr._data->begin(), _data._arr._data->end());
 				}
 				return *this;
 			}

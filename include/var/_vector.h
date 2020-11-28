@@ -26,7 +26,7 @@
 #ifndef VECTOR_H
 #define VECTOR_H
 
-#include "core_internal.h"
+#include "internal.h"
 
 #define VECT2_DEFAULT_CMP_OP_OVERLOAD(m_op)            \
 bool operator m_op (const Vect2<T>& p_other) const {   \
