@@ -33,37 +33,37 @@
 
 namespace carbon {
 
-#define THROW_PARSER_ERR(m_err_type, m_msg, m_pos)                                                                         \
-	do {                                                                                                                   \
-		uint32_t err_len = 1;                                                                                              \
-		String token_str = "";                                                                                             \
-		if (m_pos.x > 0 && m_pos.y > 0) token_str = tokenizer->get_token_at(m_pos).to_string();                            \
-		else token_str = tokenizer->peek(-1, true).to_string();                                                            \
-		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;            \
-		else err_len = (uint32_t)token_str.size();                                                                         \
-																														   \
-		if (m_pos.x > 0 && m_pos.y > 0) {                                                                                  \
-			String line = file_node->source.get_line(m_pos.x);                                                             \
-			throw Error(m_err_type, m_msg, file_node->path, line, m_pos, err_len)_ERR_ADD_DBG_VARS;                        \
-		} else {                                                                                                           \
-			String line = file_node->source.get_line(tokenizer->get_pos().x);                                              \
-			throw Error(m_err_type, m_msg, file_node->path, line, tokenizer->peek(-1, true).get_pos(), err_len)            \
-			_ERR_ADD_DBG_VARS;                                                                                             \
-		}                                                                                                                  \
-	} while (false)
+//#define throw PARSER_ERR(m_err_type, m_msg, m_pos)                                                                       \
+//	do {                                                                                                                   \
+//		uint32_t err_len = 1;                                                                                              \
+//		String token_str = "";                                                                                             \
+//		if (m_pos.x > 0 && m_pos.y > 0) token_str = tokenizer->get_token_at(m_pos).to_string();                            \
+//		else token_str = tokenizer->peek(-1, true).to_string();                                                            \
+//		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;            \
+//		else err_len = (uint32_t)token_str.size();                                                                         \
+//																														   \
+//		if (m_pos.x > 0 && m_pos.y > 0) {                                                                                  \
+//			String line = file_node->source.get_line(m_pos.x);                                                             \
+//			throw Error(m_err_type, m_msg, file_node->path, line, m_pos, err_len)_ERR_ADD_DBG_VARS;                        \
+//		} else {                                                                                                           \
+//			String line = file_node->source.get_line(tokenizer->get_pos().x);                                              \
+//			throw Error(m_err_type, m_msg, file_node->path, line, tokenizer->peek(-1, true).get_pos(), err_len)            \
+//			_ERR_ADD_DBG_VARS;                                                                                             \
+//		}                                                                                                                  \
+//	} while (false)
 
-#define THROW_UNEXP_TOKEN(m_tk)                                                                                            \
-	do {                                                                                                                   \
-		Error::Type err_type = Error::SYNTAX_ERROR;                                                                        \
-		if (tokenizer->peek(-1, true).type == Token::_EOF) err_type = Error::UNEXPECTED_EOF;                               \
-		if (m_tk != "") {                                                                                                  \
-			THROW_PARSER_ERR(err_type, String::format("unexpected token(\"%s\"). expected %s.",                            \
-					Tokenizer::get_token_name(tokenizer->peek(-1, true).type), m_tk).c_str(), Vect2i());                   \
-		} else {                                                                                                           \
-			THROW_PARSER_ERR(err_type, String::format("unexpected token(\"%s\").",                                         \
-				Tokenizer::get_token_name(tokenizer->peek(-1, true).type)).c_str(), Vect2i());                             \
-		}                                                                                                                  \
-	} while (false)
+//#define THROW_UNEXP_TOKEN(m_tk)                                                                                            \
+//	do {                                                                                                                   \
+//		Error::Type err_type = Error::SYNTAX_ERROR;                                                                        \
+//		if (tokenizer->peek(-1, true).type == Token::_EOF) err_type = Error::UNEXPECTED_EOF;                               \
+//		if (m_tk != "") {                                                                                                  \
+//			throw PARSER_ERR(err_type, String::format("unexpected token(\"%s\"). expected %s.",                            \
+//					Tokenizer::get_token_name(tokenizer->peek(-1, true).type), m_tk).c_str(), Vect2i());                   \
+//		} else {                                                                                                           \
+//			throw PARSER_ERR(err_type, String::format("unexpected token(\"%s\").",                                         \
+//				Tokenizer::get_token_name(tokenizer->peek(-1, true).type)).c_str(), Vect2i());                             \
+//		}                                                                                                                  \
+//	} while (false)
 
 class Parser {
 public:
@@ -605,6 +605,10 @@ private:
 		ret->pos = tokenizer->get_pos();
 		return ret;
 	}
+
+	CompileTimeError _parser_error(Error::Type p_type, const String& p_msg, Vect2i p_pos = Vect2i()) const;
+	CompileTimeError _unexp_token_error(const char* p_expected = nullptr) const;
+	CompileTimeError _predefined_error(const String& p_what, const String& p_name, Vect2i p_pos = Vect2i()) const;
 
 	ptr<ImportNode> _parse_import();
 	ptr<ClassNode> _parse_class();

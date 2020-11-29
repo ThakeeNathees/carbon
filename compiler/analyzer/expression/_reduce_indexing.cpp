@@ -54,7 +54,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 		case Parser::Node::Type::BUILTIN_TYPE: {
 			Parser::BuiltinTypeNode* bt = ptrcast<Parser::BuiltinTypeNode>(index->base).get();
 			const MemberInfo* mi = TypeInfo::get_member_info(BuiltinTypes::get_var_type(bt->builtin_type), member->name).get();
-			if (!mi) THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s.", member->name.c_str(), BuiltinTypes::get_type_name(bt->builtin_type).c_str()), member->pos);
+			if (!mi) throw _analyzer_error(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s.", member->name.c_str(), BuiltinTypes::get_type_name(bt->builtin_type).c_str()), member->pos);
 
 			switch (mi->get_type()) {
 				// var x = String.format;
@@ -82,7 +82,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 				ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->value.get_member(member->name));
 				cv->pos = member->pos; p_expr = cv;
 			} catch (Error& err) {
-				THROW_ANALYZER_ERROR(err.get_type(), err.what(), index->pos);
+				throw _analyzer_error(err.get_type(), err.what(), index->pos);
 			}
 		} break;
 
@@ -169,7 +169,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 				} break;
 
 				case Parser::IdentifierNode::REF_ENUM_VALUE:
-					THROW_ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED, "enum value doesn't support attribute access.", member->pos);
+					throw _analyzer_error(Error::OPERATOR_NOT_SUPPORTED, "enum value doesn't support attribute access.", member->pos);
 
 				// Aclass.prop;
 				case Parser::IdentifierNode::REF_CARBON_CLASS: {
@@ -178,7 +178,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 
 					switch (_id.ref) {
 						case Parser::IdentifierNode::REF_UNKNOWN:
-							THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", member->name.c_str(), base->name.c_str()), member->pos);
+							throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", member->name.c_str(), base->name.c_str()), member->pos);
 						case Parser::IdentifierNode::REF_PARAMETER:
 						case Parser::IdentifierNode::REF_LOCAL_VAR:
 						case Parser::IdentifierNode::REF_LOCAL_CONST:
@@ -188,7 +188,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 						case Parser::IdentifierNode::REF_MEMBER_VAR: {
 							_id.pos = member->pos;
 							if (_base_class_ref != _THIS && !_id._var->is_static) {
-								THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("non-static attribute \"%s\" cannot be access with a class reference \"%s\".", member->name.c_str(), base->name.c_str()), member->pos);
+								throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("non-static attribute \"%s\" cannot be access with a class reference \"%s\".", member->name.c_str(), base->name.c_str()), member->pos);
 							}
 							if (_base_class_ref == _THIS) {
 								p_expr = newptr<Parser::IdentifierNode>(_id);
@@ -249,7 +249,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 				case Parser::IdentifierNode::REF_NATIVE_CLASS: {
 					ASSERT(NativeClasses::singleton()->is_class_registered(base->name));
 					BindData* bd = NativeClasses::singleton()->find_bind_data(base->name, member->name).get();
-					if (!bd) THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s.", member->name.c_str(), base->name.c_str()), member->pos);
+					if (!bd) throw _analyzer_error(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s.", member->name.c_str(), base->name.c_str()), member->pos);
 					switch (bd->get_type()) {
 						case BindData::METHOD:
 						case BindData::STATIC_FUNC:

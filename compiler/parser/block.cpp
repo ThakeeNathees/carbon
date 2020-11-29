@@ -50,7 +50,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 		tk = &tokenizer->peek();
 		switch (tk->type) {
 			case Token::_EOF: {
-				THROW_PARSER_ERR(Error::UNEXPECTED_EOF, "Unexpected end of file.", Vect2i());
+				throw _parser_error(Error::UNEXPECTED_EOF, "Unexpected end of file.", Vect2i());
 			} break;
 
 			case Token::KWORD_VAR: {
@@ -88,7 +88,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 				parser_context.current_break = switch_block.get();
 
 				switch_block->args.push_back(_parse_expression(block_node, false));
-				if (tokenizer->next().type != Token::BRACKET_LCUR) THROW_UNEXP_TOKEN("symbol \"{\"");
+				if (tokenizer->next().type != Token::BRACKET_LCUR) throw _unexp_token_error("symbol \"{\"");
 
 				while (true) {
 					tk = &tokenizer->next();
@@ -96,14 +96,14 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 						ControlFlowNode::SwitchCase _case;
 						_case.pos = tk->get_pos();
 						_case.expr = _parse_expression(block_node, false);
-						if (tokenizer->next().type != Token::SYM_COLLON) THROW_UNEXP_TOKEN("symbol \":\"");
+						if (tokenizer->next().type != Token::SYM_COLLON) throw _unexp_token_error("symbol \":\"");
 
 						// COMMENTED: `case VALUE: { expr; expr; }` <--- curly brackets are not allowed.
 						//tk = &tokenizer->peek();
 						//if (tk->type == Token::BRACKET_LCUR) {
 						//	tokenizer->next(); // eat "{"
 						//	_case.body = _parse_block(block_node);
-						//	if (tokenizer->next().type != Token::BRACKET_RCUR) THROW_UNEXP_TOKEN("symbol \"}\"");
+						//	if (tokenizer->next().type != Token::BRACKET_RCUR) throw UNEXP_TOKEN("symbol \"}\"");
 						//} else {
 						_case.body = _parse_block(block_node, false, { Token::KWORD_CASE, Token::KWORD_DEFAULT, Token::BRACKET_RCUR });
 						//}
@@ -112,12 +112,12 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 					} else if (tk->type == Token::KWORD_DEFAULT) {
 						ControlFlowNode::SwitchCase _case;
 						_case.default_case = true;
-						if (tokenizer->next().type != Token::SYM_COLLON) THROW_UNEXP_TOKEN("symbol \":\"");
+						if (tokenizer->next().type != Token::SYM_COLLON) throw _unexp_token_error("symbol \":\"");
 						_case.body = _parse_block(block_node, false);
 					} else if (tk->type == Token::BRACKET_RCUR) {
 						break;
 					} else {
-						THROW_UNEXP_TOKEN("keyword \"case\" or symbol \"}\"");
+						throw _unexp_token_error("keyword \"case\" or symbol \"}\"");
 					}
 				}
 				block_node->statements.push_back(switch_block);
@@ -139,7 +139,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 				if (tk->type == Token::BRACKET_LCUR) {
 					tokenizer->next(); // eat "{"
 					while_block->body = _parse_block(block_node);
-					if (tokenizer->next().type != Token::BRACKET_RCUR) THROW_UNEXP_TOKEN("symbol \"}\"");
+					if (tokenizer->next().type != Token::BRACKET_RCUR) throw _unexp_token_error("symbol \"}\"");
 				} else {
 					while_block->body = _parse_block(block_node, true);
 				}
@@ -157,7 +157,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 				parser_context.current_continue = for_block.get();
 
 				for_block->parernt_node = p_parent;
-				if (tokenizer->next().type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
+				if (tokenizer->next().type != Token::BRACKET_LPARAN) throw _unexp_token_error("symbol \"(\"");
 
 				if (tokenizer->peek().type == Token::SYM_SEMI_COLLON) {
 					tokenizer->next(); // eat ";"
@@ -167,7 +167,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 						tokenizer->next(); // eat "var"
 
 						tk = &tokenizer->next();
-						if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+						if (tk->type != Token::IDENTIFIER) throw _unexp_token_error("an identifier");
 						_check_identifier_predefinition(tk->identifier, block_node.get());
 
 						ptr<VarNode> var_node = new_node<VarNode>();
@@ -180,7 +180,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 							ptr<Node> expr = _parse_expression(p_parent, false);
 							parser_context.current_var = nullptr;
 							var_node->assignment = expr;
-							if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+							if (tokenizer->next().type != Token::SYM_SEMI_COLLON) throw _unexp_token_error("symbol \";\"");
 						} else if (tk->type == Token::SYM_SEMI_COLLON) {
 							
 						} else if (tk->type == Token::SYM_COLLON) {
@@ -189,20 +189,20 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 						for_block->args.push_back(var_node);
 					} else {
 						for_block->args.push_back(_parse_expression(block_node, true));
-						if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+						if (tokenizer->next().type != Token::SYM_SEMI_COLLON) throw _unexp_token_error("symbol \";\"");
 					}
 				}
 
 				if (for_block->cf_type == ControlFlowNode::CfType::FOREACH) {
 					for_block->args.push_back(_parse_expression(block_node, false));
-					if (tokenizer->next().type != Token::BRACKET_RPARAN) THROW_UNEXP_TOKEN("symbol \")\"");
+					if (tokenizer->next().type != Token::BRACKET_RPARAN) throw _unexp_token_error("symbol \")\"");
 				} else {
 					if (tokenizer->peek().type == Token::SYM_SEMI_COLLON) {
 						tokenizer->next(); // eat ";"
 						for_block->args.push_back(nullptr);
 					} else {
 						for_block->args.push_back(_parse_expression(block_node, false));
-						if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+						if (tokenizer->next().type != Token::SYM_SEMI_COLLON) throw _unexp_token_error("symbol \";\"");
 					}
 
 					if (tokenizer->peek().type == Token::BRACKET_RPARAN) {
@@ -210,14 +210,14 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 						for_block->args.push_back(nullptr);
 					} else {
 						for_block->args.push_back(_parse_expression(block_node, true));
-						if (tokenizer->next().type != Token::BRACKET_RPARAN) THROW_UNEXP_TOKEN("symbol \")\"");
+						if (tokenizer->next().type != Token::BRACKET_RPARAN) throw _unexp_token_error("symbol \")\"");
 					}
 				}
 
 				if (tokenizer->peek().type == Token::BRACKET_LCUR) {
 					tokenizer->next(); // eat "{"
 					for_block->body = _parse_block(block_node);
-					if (tokenizer->next().type != Token::BRACKET_RCUR) THROW_UNEXP_TOKEN("symbol \"}\"");
+					if (tokenizer->next().type != Token::BRACKET_RCUR) throw _unexp_token_error("symbol \"}\"");
 				} else {
 					for_block->body = _parse_block(block_node, true);
 				}
@@ -234,7 +234,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 
 			case Token::KWORD_BREAK: {
 				tk = &tokenizer->next(); // eat "break"
-				if (!parser_context.current_break) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use break outside a loop/switch.", tk->get_pos());
+				if (!parser_context.current_break) throw _parser_error(Error::SYNTAX_ERROR, "can't use break outside a loop/switch.", tk->get_pos());
 				ptr<ControlFlowNode> _break = new_node<ControlFlowNode>(ControlFlowNode::BREAK);
 				_break->break_continue = parser_context.current_break;
 				parser_context.current_break->has_break = true;
@@ -244,7 +244,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 
 			case Token::KWORD_CONTINUE: {
 				tk = &tokenizer->next(); // eat "continue"
-				if (!parser_context.current_continue) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use continue outside a loop.", tk->get_pos());
+				if (!parser_context.current_continue) throw _parser_error(Error::SYNTAX_ERROR, "can't use continue outside a loop.", tk->get_pos());
 				ptr<ControlFlowNode> _continue = new_node<ControlFlowNode>(ControlFlowNode::CONTINUE);
 				_continue->break_continue = parser_context.current_continue;
 				parser_context.current_continue->has_continue = true;
@@ -254,17 +254,17 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 
 			case Token::KWORD_RETURN: {
 				tk = &tokenizer->next(); // eat "return"
-				if (!parser_context.current_func) THROW_PARSER_ERR(Error::SYNTAX_ERROR, "can't use return outside a function.", tk->get_pos());
+				if (!parser_context.current_func) throw _parser_error(Error::SYNTAX_ERROR, "can't use return outside a function.", tk->get_pos());
 				if (parser_context.current_class && parser_context.current_class->constructor) {
 					if (parser_context.current_class->constructor == parser_context.current_func) {
-						THROW_PARSER_ERR(Error::SYNTAX_ERROR, "constructor can't return anything.", tk->get_pos());
+						throw _parser_error(Error::SYNTAX_ERROR, "constructor can't return anything.", tk->get_pos());
 					}
 				}
 				ptr<ControlFlowNode> _return = new_node<ControlFlowNode>(ControlFlowNode::RETURN);
 				if (tokenizer->peek().type != Token::SYM_SEMI_COLLON)  _return->args.push_back(_parse_expression(block_node, false));
 				_return->parernt_node = p_parent;
 				_return->_return = parser_context.current_func;
-				if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+				if (tokenizer->next().type != Token::SYM_SEMI_COLLON) throw _unexp_token_error("symbol \";\"");
 				parser_context.current_func->has_return = true;
 				block_node->statements.push_back(_return);
 			} break;
@@ -276,7 +276,7 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 					}
 				}
 				ptr<Node> expr = _parse_expression(block_node, true);
-				if (tokenizer->next().type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+				if (tokenizer->next().type != Token::SYM_SEMI_COLLON) throw _unexp_token_error("symbol \";\"");
 				block_node->statements.push_back(expr);
 			}
 		}
@@ -301,7 +301,7 @@ ptr<Parser::ControlFlowNode> Parser::_parse_if_block(const ptr<BlockNode>& p_par
 	if (tk->type == Token::BRACKET_LCUR) {
 		tokenizer->next(); // eat "{"
 		if_block->body = _parse_block(p_parent);
-		if (tokenizer->next().type != Token::BRACKET_RCUR) THROW_UNEXP_TOKEN("symbol \"}\"");
+		if (tokenizer->next().type != Token::BRACKET_RCUR) throw _unexp_token_error("symbol \"}\"");
 	} else {
 		if_block->body = _parse_block(p_parent, true);
 	}
@@ -320,7 +320,7 @@ ptr<Parser::ControlFlowNode> Parser::_parse_if_block(const ptr<BlockNode>& p_par
 			case Token::BRACKET_LCUR: {
 				tokenizer->next(); // eat "{"
 				if_block->body_else = _parse_block(p_parent);
-				if (tokenizer->next().type != Token::BRACKET_RCUR) THROW_UNEXP_TOKEN("symbol \"}\"");
+				if (tokenizer->next().type != Token::BRACKET_RCUR) throw _unexp_token_error("symbol \"}\"");
 			} break;
 			default: {
 				if_block->body_else = _parse_block(p_parent, true);

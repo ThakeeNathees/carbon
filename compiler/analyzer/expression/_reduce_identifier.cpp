@@ -257,7 +257,7 @@ void Analyzer::_check_identifier(ptr<Parser::Node>& p_expr) {
 	ptr<Parser::IdentifierNode> id = ptrcast<Parser::IdentifierNode>(p_expr);
 	switch (id->ref) {
 		case Parser::IdentifierNode::REF_UNKNOWN:
-			THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("identifier \"%s\" isn't defined.", id->name.c_str()), id->pos);
+			throw _analyzer_error(Error::NAME_ERROR, String::format("identifier \"%s\" isn't defined.", id->name.c_str()), id->pos);
 		case Parser::IdentifierNode::REF_LOCAL_CONST:
 		case Parser::IdentifierNode::REF_MEMBER_CONST: {
 			ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->_const->value);
@@ -273,7 +273,7 @@ void Analyzer::_check_identifier(ptr<Parser::Node>& p_expr) {
 		case Parser::IdentifierNode::REF_MEMBER_VAR: {
 			if (id->ref_base == Parser::IdentifierNode::BASE_LOCAL && parser->parser_context.current_var) {
 				if (parser->parser_context.current_var->name == id->name) {
-					THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("invalid attribute access \"%s\" can't be used in it's own initialization.", id->name.c_str()), id->pos);
+					throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("invalid attribute access \"%s\" can't be used in it's own initialization.", id->name.c_str()), id->pos);
 				}
 			}
 		} // [[fallthrought]]

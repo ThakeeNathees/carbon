@@ -55,7 +55,7 @@ public:
 	static String format(const char* p_format, ...);
 	int64_t to_int() const;
 	double to_float() const;
-	String get_line(uint64_t p_line) const;
+	//String get_line(uint64_t p_line) const;
 	size_t hash() const;
 	size_t const_hash() const;
 

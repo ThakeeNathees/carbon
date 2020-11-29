@@ -30,17 +30,6 @@
 #include "builtin_functions.h"
 #include "builtin_types.h"
 
-#define THROW_TOKENIZE_ERROR(m_err_type, m_msg)                                                                      \
-	do {                                                                                                             \
-		uint32_t err_len = 1;                                                                                        \
-		String token_str = peek(-1, true).to_string();                                                               \
-		if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;      \
-		else err_len = (uint32_t)token_str.size();                                                                   \
-		throw Error(m_err_type, m_msg, source_path, source.get_line(cur_line), Vect2i(cur_line, cur_col), err_len)   \
-		_ERR_ADD_DBG_VARS;                                                                                           \
-	} while (false)
-
-
 namespace carbon {
 
 enum class Token {
@@ -162,6 +151,8 @@ private: // members.
 	// The float .3 length must be 2 but constant.to_string() result a longer size
 	// and it'll set wrong token column. here is a dirty way to prevent that.
 	int __const_val_token_len = 0;
+
+	CompileTimeError _tokenize_error(Error::Type m_err_type, const String& m_msg = "") const;
 
 public:
 	// methods.
