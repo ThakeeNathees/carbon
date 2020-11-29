@@ -23,18 +23,50 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "os/x11/crash_handler_x11.h"
+#ifndef BUILTIN_FUNCTIONS_H
+#define BUILTIN_FUNCTIONS_H
 
-int _main(int argc, char** argv);
+#include "core/core.h"
 
-int main(int argc, char** argv)
-{
+namespace carbon {
 
-	CrashHandler crash_handler;
-	crash_handler.initialize();
+class BuiltinFunctions {
+public:
+	enum Type {
+		UNKNOWN,
 
-	_main(argc, argv);
+		// __compiletime_functions.
+		__ASSERT,
+		__FUNC,
+		__LINE,
+		__FILE,
 
-	return 0;
+		// runtime functions.
+		PRINT,
+		PRINTLN,
+		INPUT,
+
+		MATH_MIN,
+		MATH_MAX,
+		MATH_POW,
+
+		_FUNC_MAX_,
+	};
+
+private: // members
+	static stdmap<Type, String> _func_list;
+
+public:
+
+	// Methods.
+	static String get_func_name(Type p_func);
+	static Type get_func_type(const String& p_func); // returns UNKNOWN if not valid 
+	static int get_arg_count(Type p_func); // returns -1 if variadic.
+	static bool can_const_fold(Type p_func);
+	static bool is_compiletime(Type p_func);
+	static void call(Type p_func, const stdvec<var*>& p_args, var& r_ret);
+};
+
 }
 
+#endif // BUILTIN_FUNCTIONS_H

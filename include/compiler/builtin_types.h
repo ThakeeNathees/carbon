@@ -1,3 +1,4 @@
+
 //------------------------------------------------------------------------------
 // MIT License
 //------------------------------------------------------------------------------
@@ -23,51 +24,41 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BUILTIN_FUNCTIONS_H
-#define BUILTIN_FUNCTIONS_H
+#ifndef BUILTIN_CLASSES_H
+#define BUILTIN_CLASSES_H
 
-#include "var.h"
-#include "error.h"
+#include "core/core.h"
 
 namespace carbon {
 
-class BuiltinFunctions {
+class BuiltinTypes {
 public:
 	enum Type {
 		UNKNOWN,
 
-		// __compiletime_functions.
-		__ASSERT,
-		__FUNC,
-		__LINE,
-		__FILE,
+		_NULL,
+		BOOL,
+		INT,
+		FLOAT,
+		STRING,
+		ARRAY,
+		MAP,
+		//OBJECT,
 
-		// runtime functions.
-		PRINT,
-		PRINTLN,
-		INPUT,
-
-		MATH_MIN,
-		MATH_MAX,
-		MATH_POW,
-
-		_FUNC_MAX_,
+		_TYPE_MAX_,
 	};
 
 private: // members
-	static stdmap<Type, String> _func_list;
+	static stdmap<Type, String> _type_list;
 
 public:
 
-	// Methods.
-	static String get_func_name(Type p_func);
-	static Type get_func_type(const String& p_func); // returns UNKNOWN if not valid 
-	static int get_arg_count(Type p_func); // returns -1 if variadic.
-	static bool can_const_fold(Type p_func);
-	static bool is_compiletime(Type p_func);
-	static void call(Type p_func, const stdvec<var*>& p_args, var& r_ret);
+	static String get_type_name(Type p_type);
+	static Type get_type_type(const String& p_type);
+	static var::Type get_var_type(Type p_type);
+	static var construct(Type p_type, const stdvec<var*>& p_args);
 };
 
 }
 
-#endif // BUILTIN_FUNCTIONS_H
+#endif // BUILTIN_CLASSES_H

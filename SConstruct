@@ -6,24 +6,38 @@ def USER_DATA(env):
 	env.PROJECT_NAME = 'carbon'
 	
 	env.Append(CPPPATH=[Dir(path) for path in [
-			"./", "./include/", "./include/core/", "./include/var/", "./include/native/", "./include/compiler/",
+			"./", "./include/",
+			"./include/core/", "./include/var/", "./include/native/", "./include/compiler/",
+			"./thirdparty",
 	]])
-	env.SOURCES = []
+
+	env.SOURCES_CORE     = []
+	env.SOURCES_COMPILER = []
+	env.SOURCES_MAIN = [
+		'core/platform/%s/main.cpp' % env['platform'],
+		'main/main.cpp'
+	]
+	env.SOURCES_TEST     = [
+		'core/platform/%s/main.cpp' % env['platform'],
+		Glob('tests/*.cpp'),
+		Glob('tests/var/*.cpp'),
+		Glob('tests/native_classes/*.cpp'),
+		Glob('tests/parser/*.cpp'),
+		Glob('tests/analyzer/*.cpp'),
+	]
+
 	env.SCONSCRIPTS = [
 		'thirdparty/SConstruct',
 
-		'core/SConstruct',
 		'var/SConstruct',
-		'io/SConstruct',
-		'os/SConstruct',
+		'core/SConstruct',
+		'native/SConstruct',
+		'compiler/SConstruct',
 	]
 
-	env.SOURCES_MAIN = [
-		'main/main_%s.cpp' % env['platform'],
-		'main/main.cpp'
-	]
-	env.Append(CPPDEFINES=['RUN_TESTS'])
-	env.SCONSCRIPTS += [ 'tests/SConstruct' ]
+	# if env['libs'] true -> sources will compile as separate libs as below.
+	env.LIBS = { "cb_core" : env.SOURCES_CORE, "cb_compiler" : env.SOURCES_COMPILER }
+	env.DEBUG_TESTS = True ## if true vsproj run tests to debug.
 
 	if env['target'] == 'debug':
 		env.Append(CPPDEFINES=['DEBUG_BUILD'])
@@ -46,6 +60,8 @@ opts.Add(BoolVariable('use_llvm', "Use the LLVM / Clang compiler", False))
 opts.Add(BoolVariable('vsproj', "make a visual studio project", False))
 opts.Add(PathVariable('target_path', 'The path to the output library.', 'bin/', PathVariable.PathAccept))
 opts.Add(BoolVariable('build_verbose', "use verbose build command", False))
+
+opts.Add(BoolVariable('libs', "include unit tests in main", False))
 
 ## Updates the environment with the option variables.
 opts.Update(cbenv)
@@ -182,16 +198,33 @@ Export('cbenv')
 for script in cbenv.SCONSCRIPTS:
 	SConscript(script)
 
-carbon_lib = cbenv.Library(
-	target = os.path.join(cbenv['target_path'], cbenv.PROJECT_NAME),
-	source = cbenv.SOURCES)
-cbenv.Prepend(LIBS=[carbon_lib])
+## compiler the libs.
+if cbenv['libs']:
+	for lib_name in cbenv.LIBS:
+		lib = cbenv.Library(
+			target = os.path.join(cbenv['target_path'], lib_name),
+			source = cbenv.LIBS[lib_name])
+		cbenv.Prepend(LIBS=[lib])
+else:
+	LIB_SOURCES = []
+	for sources in cbenv.LIBS.values(): LIB_SOURCES += sources
+	lib = cbenv.Library(
+		target = os.path.join(cbenv['target_path'], cbenv.PROJECT_NAME),
+		source = LIB_SOURCES)
+	cbenv.Prepend(LIBS=[lib])
 
-carbon_exec = cbenv.Program(
+## the main application
+main_program = cbenv.Program(
 	target = os.path.join(cbenv['target_path'], cbenv.PROJECT_NAME),
 	source = cbenv.SOURCES_MAIN
 )
-		
+
+## tests
+tests_program = cbenv.Program(
+	target = os.path.join(cbenv['target_path'], "tests"),
+	source = cbenv.SOURCES_TEST
+)
+
 ## --------------------------------------------------------------------------------
 
 ## visual studio targets
@@ -200,12 +233,9 @@ def get_vsproj_context():
 	variants = [] ## ["debug|Win32", "debug|x64", "release|Win32", "release|x64"]
 	for target in 'debug', 'release':
 		for bits in '32', '64':
-			vsproj_targets.append(
-				os.path.join(
-					cbenv['target_path'],
-					cbenv.PROJECT_NAME + '.exe'))
-			variants.append(
-				target+'|'+('Win32' if bits=='32' else 'x64'))
+			run_target = cbenv.PROJECT_NAME if cbenv.DEBUG_TESTS else "tests"
+			vsproj_targets.append(os.path.join( cbenv['target_path'], run_target + '.exe'))
+			variants.append(target+'|'+('Win32' if bits=='32' else 'x64'))
 	return vsproj_targets, variants
 
 def msvs_collect_header():
@@ -228,7 +258,9 @@ def msvs_collect_header():
 
 def msvc_collect_sources():
 	ret = []
-	for src in cbenv.SOURCES:
+	all_sources = cbenv.SOURCES_MAIN + cbenv.SOURCES_TEST
+	for sources in cbenv.LIBS.values(): all_sources += sources
+	for src in all_sources:
 		if (str(src).endswith('.c')  or str(src).endswith('.cpp') or 
 			str(src).endswith('.cc') or str(src).endswith('.cxx')):
 			ret.append(str(src))

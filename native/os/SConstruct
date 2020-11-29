@@ -1,0 +1,14 @@
+#!python
+import os, subprocess
+Import('cbenv')
+
+## project includes
+#cbenv.Append(CPPPATH=[Dir("./")])
+
+## os env
+SOURCES = [ Glob('*.cpp') ]
+
+## source files
+SConscript('%s/SConstruct' % cbenv['platform']) ## windows, x11, osx
+
+cbenv.SOURCES_CORE += SOURCES

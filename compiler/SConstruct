@@ -1,0 +1,22 @@
+#!python
+import os
+Import('cbenv')
+
+## project includes
+cbenv.Append(CPPPATH=[Dir("./")])
+
+SOURCES = [
+
+    Glob('*.cpp'),
+    Glob('types/*.cpp'),
+    Glob('binary/*.cpp'),
+    Glob('tokenizer/*.cpp'),
+    Glob('parser/*.cpp'),
+    Glob('analyzer/*.cpp'),
+    Glob('analyzer/expression/*.cpp'),
+    Glob('codegen/*.cpp'),
+    Glob('compiler/*.cpp'),
+    Glob('vm/*.cpp'),
+]
+
+cbenv.SOURCES_COMPILER += SOURCES

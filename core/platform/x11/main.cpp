@@ -1,4 +1,3 @@
-
 //------------------------------------------------------------------------------
 // MIT License
 //------------------------------------------------------------------------------
@@ -24,42 +23,18 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef BUILTIN_CLASSES_H
-#define BUILTIN_CLASSES_H
+#include "core/platform/x11/crash_handler.h"
 
-#include "var.h"
-#include "error.h"
+int _main(int argc, char** argv);
 
-namespace carbon {
+int main(int argc, char** argv)
+{
 
-class BuiltinTypes {
-public:
-	enum Type {
-		UNKNOWN,
+	CrashHandler crash_handler;
+	crash_handler.initialize();
 
-		_NULL,
-		BOOL,
-		INT,
-		FLOAT,
-		STRING,
-		ARRAY,
-		MAP,
-		//OBJECT,
+	_main(argc, argv);
 
-		_TYPE_MAX_,
-	};
-
-private: // members
-	static stdmap<Type, String> _type_list;
-
-public:
-
-	static String get_type_name(Type p_type);
-	static Type get_type_type(const String& p_type);
-	static var::Type get_var_type(Type p_type);
-	static var construct(Type p_type, const stdvec<var*>& p_args);
-};
-
+	return 0;
 }
 
-#endif // BUILTIN_CLASSES_H

@@ -23,40 +23,16 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-
 #include "carbon.h"
 using namespace carbon;
 
-
-#ifdef RUN_TESTS
-#include "tests/carbon_tests.h"
-#endif
-
-
 int _main(int argc, char** argv) {
-
 	carbon_initialize();
 
-#define PRINT_SIZE(m) std::cout << "#define CLASS_SIZE_" << #m << " " << sizeof(m) << std::endl;
-
-
-#ifdef RUN_TESTS
-	int res = _test_main(argc, argv);
-	if (res) {
-		Logger::log("\nTests failed. continue? [Y/N] (default:N) ", Logger::VERBOSE, Logger::Color::L_WHITE);
-		char _continue = getchar();
-		if (_continue != 'Y' && _continue != 'y') {
-			NativeClasses::cleanup();
-			return res;
-		}
-		CLEAR_GETCHAR_BUFFER();
-	}
-#endif // RUN_TESTS
-
-	stdvec<String> args;
-	for (int i = 0; i < argc; i++) args.push_back(argv[i]);
-
 	try { // for now.
+		stdvec<String> args;
+		for (int i = 0; i < argc; i++) args.push_back(argv[i]);
+
 		ptr<Bytecode> bytecode;
 		if (argc < 2) bytecode = Compiler::singleton()->compile("tests/test_main.cb");
 		else bytecode = Compiler::singleton()->compile(argv[1]);
@@ -71,11 +47,7 @@ int _main(int argc, char** argv) {
 		//);
 		Logger::logf_info("%s\n%s\n", err.get_line().c_str(), err.get_line_pos().c_str());
 	}
-	
-	Logger::log("\nPress enter to exit...", Logger::VERBOSE, Logger::Color::L_SKYBLUE);
-	getchar(); // pause
 
 	carbon_cleanup();
-
 	return 0;
 }

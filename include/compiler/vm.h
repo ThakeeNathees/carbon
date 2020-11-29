@@ -27,9 +27,9 @@
 #define VM_H
 
 #include "core/core.h"
-#include "instance.h"
-#include "carbon_function.h"
 #include "bytecode.h"
+#include "carbon_function.h"
+#include "instance.h"
 
 namespace carbon {
 

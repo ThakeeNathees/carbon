@@ -50,7 +50,6 @@ if (m_ptr == nullptr){                                                          
 
 #include "var/var.h"
 
-
 // TODO: create a common parent for warning and error first
 
 namespace carbon {

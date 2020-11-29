@@ -26,8 +26,6 @@
 #ifndef CARBON_H
 #define CARBON_H
 
-
-
 // core compilation pipeline
 #include "core/core.h"
 #include "compiler/tokenizer.h"
@@ -40,7 +38,6 @@
 #include "compiler/bytecode.h"
 
 // native imports
-#include "native/logger.h"
 #include "native/file.h"
 #include "native/path.h"
 #include "native/os.h"
