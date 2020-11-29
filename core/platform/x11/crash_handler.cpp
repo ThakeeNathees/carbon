@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "crash_handler_x11.h"
+#include "core/platform/x11/crash_handler.h"
 
 #ifdef DEBUG_BUILD
 #include <cxxabi.h>

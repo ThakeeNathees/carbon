@@ -27,11 +27,9 @@
 #define CORE_H
 
 #include "var/var.h"
+#include "logger.h"
 #include "error.h"
-#include "native.h"
-#include "builtin_types.h"
-#include "runtime_types.h"
-#include "builtin_functions.h"
 #include "type_info.h"
+#include "native.h"
 
 #endif // CORE_H

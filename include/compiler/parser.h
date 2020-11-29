@@ -27,9 +27,9 @@
 #define PARSER_H
 
 #include "core/core.h"
+#include "core/logger.h"
 #include "tokenizer.h"
 #include "bytecode.h"
-#include "native/logger.h"
 
 namespace carbon {
 

@@ -27,9 +27,9 @@
 #define COMPILER_H
 
 #include "core/core.h"
-#include "codegen.h"
 #include "native/path.h"
 #include "native/file.h"
+#include "codegen.h"
 
 namespace carbon {
 

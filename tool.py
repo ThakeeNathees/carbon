@@ -23,8 +23,8 @@ REMOVE_DIRS = [
 
     'x64/',
     'debug/'
-    'release',
-    
+    'release/',
+    'debug/',
     'bin/',
 ]
 
@@ -32,6 +32,8 @@ IGNORE_FILES = [
     '.pdb',
     '.idb',
     '.ilk',
+    
+    '.obj',
 ]
 
 VS_DIRS = [

@@ -34,7 +34,7 @@ using namespace carbon;
 #define NO_PATH "<NO-PATH-SET>"
 
 // TODO: handle varerror.
-#define CHECK_THROWS_ERR(m_type, m_statement)																		\
+#define CHECK_THROWS_ERR(m_type, m_statement)																		        \
 	do {																													\
 		try {																												\
 			m_statement;																									\
@@ -54,8 +54,5 @@ var call_method(var & p_var, const String & p_method, Targs... p_args) {
 	stdvec<var*> args; for (var& v : _args) args.push_back(&v);
 	return p_var.call_method(p_method, args);
 }
-
-
-int _test_main(int argc, char** argv);
 
 #endif // CARBON_TESTS_H

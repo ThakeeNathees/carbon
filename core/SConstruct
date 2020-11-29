@@ -2,30 +2,20 @@
 import os
 Import('cbenv')
 
-## project includes
-cbenv.Append(CPPPATH=[Dir("./")])
-
-## core env
-env_core = cbenv.Clone()
-env_core.SOURCES = [
-
+SOURCES = [
     Glob('*.cpp'),
     Glob('error/*.cpp'),
-    Glob('internal/*.cpp'),
-    Glob('builtin/*.cpp'),
-    Glob('binary/*.cpp'),
-
-    Glob('tokenizer/*.cpp'),
-    Glob('parser/*.cpp'),
-    Glob('analyzer/*.cpp'),
-    Glob('analyzer/expression/*.cpp'),
-    Glob('codegen/*.cpp'),
-    Glob('compiler/*.cpp'),
-    Glob('vm/*.cpp'),
-
+    Glob('native/*.cpp'),
+    Glob('platform/%s/*.cpp' % cbenv['platform'] ),
 ]
 
-##Export('env_core')
-##SConscript('parser/SConstruct')
+if cbenv['platform'] == 'windows':
+    cbenv.Append(LIBS=['psapi', 'dbghelp'])
 
-cbenv.SOURCES += env_core.SOURCES
+elif cbenv['platform'] == 'x11':
+    cbnev.Append(LIBS=['dl'])
+
+elif cbenv['platform'] == 'osx':
+    raise Exception("platform not Implemented yet.")
+
+cbenv.SOURCES_CORE += SOURCES

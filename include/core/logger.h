@@ -26,7 +26,7 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include "core/core.h"
+#include "var/var.h"
 
 namespace carbon {
 

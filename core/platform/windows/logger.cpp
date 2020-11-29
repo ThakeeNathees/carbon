@@ -24,11 +24,9 @@
 //------------------------------------------------------------------------------
 
 #include "core/core.h"
-#include "native/logger.h"
 #include <Windows.h>
 
 namespace carbon {
-
 
 class LoggerWindows :public Logger
 {

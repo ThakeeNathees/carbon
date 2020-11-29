@@ -29,7 +29,6 @@
 #include "core/core.h"
 #include "parser.h"
 
-
 #define THROW_ANALYZER_ERROR(m_err_type, m_msg, m_pos)                                                                      \
 	do {																													\
 		uint32_t err_len = 1;																								\

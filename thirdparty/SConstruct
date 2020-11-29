@@ -2,21 +2,17 @@
 import os
 Import('cbenv')
 
-cbenv.Append(CPPPATH=[Dir("./")])
-
-## thirdparty env
-env_thirdparty = cbenv.Clone()
-env_thirdparty.SOURCES = []
+SOURCES = []
 
 ## source files
-if env_thirdparty['platform'] == "osx":
+if cbenv['platform'] == "osx":
     pass
-elif env_thirdparty['platform'] in ('x11', 'linux'):
+elif cbenv['platform'] in ('x11', 'linux'):
     pass
-elif env_thirdparty['platform'] == "windows":
-    env_thirdparty.SOURCES += [
+elif cbenv['platform'] == "windows":
+    SOURCES += [
         File('dlfcn-win32/dlfcn.c')
     ]
     pass
 
-cbenv.SOURCES += env_thirdparty.SOURCES
+cbenv.SOURCES_CORE += SOURCES

@@ -24,7 +24,6 @@
 //------------------------------------------------------------------------------
 
 #include "core/core.h"
-#include "native/logger.h"
 
 namespace carbon {
 
