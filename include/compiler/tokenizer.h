@@ -152,7 +152,7 @@ private: // members.
 	// and it'll set wrong token column. here is a dirty way to prevent that.
 	int __const_val_token_len = 0;
 
-	CompileTimeError _tokenize_error(Error::Type m_err_type, const String& m_msg = "") const;
+	CompileTimeError _tokenize_error(Error::Type m_err_type, const String& m_msg, const DBGSourceInfo& p_dbg_info) const;
 
 public:
 	// methods.

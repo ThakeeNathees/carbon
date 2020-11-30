@@ -63,7 +63,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 		if (call->base->type == Parser::Node::Type::UNKNOWN) {
 			_reduce_expression(call->method);
 			if (call->method->type == Parser::Node::Type::CONST_VALUE)
-				throw _analyzer_error(Error::TYPE_ERROR, String::format("constant value is not callable."), call->pos);
+				throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable."), call->pos);
 			ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
 		} else {
 			_reduce_expression(call->base);
@@ -89,7 +89,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 								BuiltinFunctions::call(bf->func, args, ret);
 								SET_EXPR_CONST_NODE(ret, call->pos);
 							} catch (Error& err) {
-								throw _analyzer_error(err.get_type(), err.what(), call->pos);
+								throw ANALYZER_ERROR(err.get_type(), err.what(), call->pos);
 							}
 						}
 					}
@@ -129,7 +129,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					var ret = ptrcast<Parser::ConstValueNode>(call->base)->value.call_method(ptrcast<Parser::IdentifierNode>(call->method)->name, args);
 					SET_EXPR_CONST_NODE(ret, call->pos);
 				} catch (const Error& err) {
-					throw _analyzer_error(err.get_type(), err.what(), call->method->pos);
+					throw ANALYZER_ERROR(err.get_type(), err.what(), call->method->pos);
 				}
 			}
 		} break;
@@ -167,7 +167,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					if (is_illegal_call) { // can't call a non-static function.
 						if ((parser->parser_context.current_func && parser->parser_context.current_func->is_static) ||
 							(parser->parser_context.current_var && parser->parser_context.current_var->is_static)) {
-							throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", id->name.c_str()), id->pos);
+							throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", id->name.c_str()), id->pos);
 						}
 					}
 
@@ -175,11 +175,11 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					int argc_default = (int)id->_func->default_args.size();
 					int argc_given = (int)call->args.size();
 					if (argc_given + argc_default < argc) {
-						if (argc_default == 0) throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
-						else throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
+						if (argc_default == 0) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+						else throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
 					} else if (argc_given > argc) {
-						if (argc_default == 0) throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
-						else throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
+						if (argc_default == 0) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+						else throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
 					}
 				} break;
 
@@ -190,15 +190,15 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						int argc_default = (int)id->_class->constructor->default_args.size();
 						int argc_given = (int)call->args.size();
 						if (argc_given + argc_default < argc) {
-							if (argc_default == 0) throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
-							else throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
+							if (argc_default == 0) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+							else throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
 						} else if (argc_given > argc) {
-							if (argc_default == 0) throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
-							else throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
+							if (argc_default == 0) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+							else throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
 						}
 					} else {
 						if (call->args.size() != 0)
-							throw _analyzer_error(Error::INVALID_ARG_COUNT, "default constructor takes exactly 0 argument.", id->pos);
+							throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "default constructor takes exactly 0 argument.", id->pos);
 					}
 				} break;
 
@@ -212,11 +212,11 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						int argc_default = initializer->get_method_info()->get_default_arg_count();
 						int argc_given = (int)call->args.size();
 						if (argc_given + argc_default < argc) {
-							if (argc_default == 0) throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
-							else throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
+							if (argc_default == 0) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+							else throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
 						} else if (argc_given > argc) {
-							if (argc_default == 0) throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
-							else throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
+							if (argc_default == 0) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+							else throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
 						}
 						// check arg types.
 						const stdvec<VarTypeInfo>& arg_types = initializer->get_method_info()->get_arg_types();
@@ -224,12 +224,12 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							if (call->args[i]->type == Parser::Node::Type::CONST_VALUE) {
 								var value = ptrcast<Parser::ConstValueNode>(call->args[i])->value;
 								if (value.get_type() != arg_types[i + 1].type) // +1 for skip self argument.
-									throw _analyzer_error(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(arg_types[i].type), i), call->args[i]->pos);
+									throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(arg_types[i].type), i), call->args[i]->pos);
 							}
 						}
 					} else {
 						if (call->args.size() != 0)
-							throw _analyzer_error(Error::INVALID_ARG_COUNT, "default constructor takes exactly 0 argument.", id->pos);
+							throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "default constructor takes exactly 0 argument.", id->pos);
 					}
 				} break;
 
@@ -240,7 +240,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				//case Parser::IdentifierNode::REF_LOCAL_CONST:
 				//case Parser::IdentifierNode::REF_MEMBER_CONST:
 				default: {
-					throw _analyzer_error(Error::TYPE_ERROR, String::format("attribute \"%s\" is not callable.", id->name.c_str()), id->pos);
+					throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("attribute \"%s\" is not callable.", id->name.c_str()), id->pos);
 				}
 			}
 
@@ -259,14 +259,14 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							func = fn.get(); break;
 						}
 					}
-					if (func == nullptr) throw _analyzer_error(Error::NOT_IMPLEMENTED, String::format("operator method __call not implemented on base %s", curr_class->name.c_str()), call->pos);
+					if (func == nullptr) throw ANALYZER_ERROR(Error::NOT_IMPLEMENTED, String::format("operator method __call not implemented on base %s", curr_class->name.c_str()), call->pos);
 					_check_arg_count((int)func->args.size(), (int)func->default_args.size(), (int)call->args.size(), call->pos);
 				} else { // super();
 					if (parser->parser_context.current_class == nullptr || parser->parser_context.current_class->base_type == Parser::ClassNode::NO_BASE ||
 						(parser->parser_context.current_class->constructor != parser->parser_context.current_func))
-						throw _analyzer_error(Error::SYNTAX_ERROR, "invalid super call.", call->pos);
+						throw ANALYZER_ERROR(Error::SYNTAX_ERROR, "invalid super call.", call->pos);
 					if ((parser->parser_context.current_statement_ind != 0) || (parser->parser_context.current_block->statements[0].get() != p_expr.get()))
-						throw _analyzer_error(Error::SYNTAX_ERROR, "super call should be the first and stand-alone statement of a constructor.", call->pos);
+						throw ANALYZER_ERROR(Error::SYNTAX_ERROR, "super call should be the first and stand-alone statement of a constructor.", call->pos);
 
 					switch (curr_class->base_type) {
 						case Parser::ClassNode::NO_BASE:
@@ -296,7 +296,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					Parser::IdentifierNode _id = _find_member(curr_class, method_name);
 					switch (_id.ref) {
 						case Parser::IdentifierNode::REF_UNKNOWN:
-							throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->name.c_str()), call->pos);
+							throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->name.c_str()), call->pos);
 
 						// this.a_var();
 						case Parser::IdentifierNode::REF_MEMBER_VAR: {
@@ -308,12 +308,12 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						case Parser::IdentifierNode::REF_MEMBER_CONST:
 						case Parser::IdentifierNode::REF_ENUM_NAME:
 						case Parser::IdentifierNode::REF_ENUM_VALUE:
-							throw _analyzer_error(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
+							throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
 
 						// this.f(); // function call on this.
 						case Parser::IdentifierNode::REF_FUNCTION: {
 							if (parser->parser_context.current_func->is_static && !_id._func->is_static) {
-								throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", _id.name.c_str()), _id.pos);
+								throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", _id.name.c_str()), _id.pos);
 							}
 
 							int argc = (int)_id._func->args.size();
@@ -341,23 +341,23 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							Parser::IdentifierNode _id = _find_member(curr_class->base_class, method_name);
 							switch (_id.ref) {
 								case Parser::IdentifierNode::REF_UNKNOWN:
-									throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->name.c_str()), call->pos);
+									throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->name.c_str()), call->pos);
 
 								// super.a_var();
 								case Parser::IdentifierNode::REF_MEMBER_VAR: {
-									throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" cannot be access with with \"super\" use \"this\" instead.", method_name.c_str()), call->pos);
+									throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" cannot be access with with \"super\" use \"this\" instead.", method_name.c_str()), call->pos);
 								} break;
 
 								// super.CONST(); inavlid callables.
 								case Parser::IdentifierNode::REF_MEMBER_CONST:
 								case Parser::IdentifierNode::REF_ENUM_NAME:
 								case Parser::IdentifierNode::REF_ENUM_VALUE:
-									throw _analyzer_error(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
+									throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
 
 								// super.f(); // function call on super.
 								case Parser::IdentifierNode::REF_FUNCTION: { // TODO: static function and super -> super.f(); vs SuperClass.f();
 									if (parser->parser_context.current_func->is_static && !_id._func->is_static) {
-										throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", _id.name.c_str()), call->pos);
+										throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", _id.name.c_str()), call->pos);
 									}
 
 									int argc = (int)_id._func->args.size();
@@ -380,11 +380,11 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						case Parser::ClassNode::BASE_NATIVE: {
 							// TODO: can also check types at compile time it arg is constvalue.
 							ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(curr_class->base_class_name, method_name);
-							if (bd == nullptr) throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->base_class_name.c_str()), call->pos);
+							if (bd == nullptr) throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->base_class_name.c_str()), call->pos);
 							switch (bd->get_type()) {
 								case BindData::METHOD: { // super.method();
 									if (parser->parser_context.current_func->is_static) { // calling super method from static function.
-										throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", method_name.c_str()), call->pos);
+										throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", method_name.c_str()), call->pos);
 									}
 									const MethodInfo* mi = ptrcast<MethodBind>(bd)->get_method_info();
 									_check_arg_count(mi->get_arg_count(), mi->get_default_arg_count(), (int)call->args.size(), call->pos);
@@ -394,14 +394,14 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 									_check_arg_count(mi->get_arg_count(), mi->get_default_arg_count(), (int)call->args.size(), call->pos);
 								} break;
 								case BindData::MEMBER_VAR: { // super.a_var();
-									throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" cannot be access with with \"super\" use \"this\" instead.", method_name.c_str()), call->pos);
+									throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" cannot be access with with \"super\" use \"this\" instead.", method_name.c_str()), call->pos);
 								} break;
 								case BindData::STATIC_VAR:
 									break; // OK
 								case BindData::STATIC_CONST:
 								case BindData::ENUM:
 								case BindData::ENUM_VALUE:
-									throw _analyzer_error(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
+									throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
 									break;
 							}
 						} break;
@@ -409,7 +409,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						// super.method() // super is extern
 						case Parser::ClassNode::BASE_EXTERN: {
 							const MemberInfo* info = curr_class->base_binary->get_member_info(method_name).get();
-							if (info == nullptr) throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->base_class_name.c_str()), call->pos);
+							if (info == nullptr) throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->base_class_name.c_str()), call->pos);
 							switch (info->get_type()) {
 								case MemberInfo::METHOD: {
 									const MethodInfo* mi = static_cast<const MethodInfo*>(info);
@@ -417,11 +417,11 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 								} break;
 								case MemberInfo::PROPERTY: {
 									const PropertyInfo* pi = static_cast<const PropertyInfo*>(info);
-									if (!pi->is_static()) throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" cannot be access with with \"super\" use \"this\" instead.", method_name.c_str()), call->pos);
+									if (!pi->is_static()) throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" cannot be access with with \"super\" use \"this\" instead.", method_name.c_str()), call->pos);
 								} break;
 								case MemberInfo::ENUM:
 								case MemberInfo::ENUM_VALUE:
-									throw _analyzer_error(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
+									throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
 								case MemberInfo::CLASS:
 									THROW_BUG("can't be");
 							}
@@ -476,7 +476,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					_id.pos = id->pos; id = &_id;
 					switch (_id.ref) {
 						case Parser::IdentifierNode::REF_UNKNOWN:
-							throw _analyzer_error(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s", id->name.c_str(), base->_class->name.c_str()), id->pos);
+							throw ANALYZER_ERROR(Error::NAME_ERROR, String::format("attribute \"%s\" doesn't exists on base %s", id->name.c_str(), base->_class->name.c_str()), id->pos);
 
 						// Aclass.a_var();
 						case Parser::IdentifierNode::REF_MEMBER_VAR: {
@@ -495,19 +495,19 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							if (_is_member_static) {
 								break; // Class.var(args...);
 							} else {
-								throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", id->name.c_str()), id->pos);
+								throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", id->name.c_str()), id->pos);
 							}
 						} break;
 
 						// Aclass.CONST(args...);
 						case Parser::IdentifierNode::REF_LOCAL_CONST:
 						case Parser::IdentifierNode::REF_MEMBER_CONST: {
-							throw _analyzer_error(Error::TYPE_ERROR, String::format("constant value (\"%s.%s()\") is not callable.", base->name.c_str(), id->name.c_str()), id->pos);
+							throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value (\"%s.%s()\") is not callable.", base->name.c_str(), id->name.c_str()), id->pos);
 						} break;
 
 						// Aclass.Enum();
-						case Parser::IdentifierNode::REF_ENUM_NAME: throw _analyzer_error(Error::TYPE_ERROR, String::format("enums (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
-						case Parser::IdentifierNode::REF_ENUM_VALUE: throw _analyzer_error(Error::TYPE_ERROR, String::format("enum value (\"%s.%s()\") is not callable.", base->name.c_str(), id->name.c_str()), id->pos);
+						case Parser::IdentifierNode::REF_ENUM_NAME: throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("enums (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
+						case Parser::IdentifierNode::REF_ENUM_VALUE: throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("enum value (\"%s.%s()\") is not callable.", base->name.c_str(), id->name.c_str()), id->pos);
 
 						case Parser::IdentifierNode::REF_FUNCTION: {
 
@@ -526,13 +526,13 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							if (_is_func_static) {
 								break; // Class.static_func(args...);
 							} else {
-								throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("can't call non-static method\"%s\" statically", id->name.c_str()), id->pos);
+								throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't call non-static method\"%s\" statically", id->name.c_str()), id->pos);
 							}
 						} break;
 
 						// Aclass.Lib();
 						case Parser::IdentifierNode::REF_EXTERN: {
-							throw _analyzer_error(Error::TYPE_ERROR, String::format("external libraries (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
+							throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("external libraries (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
 						} break;
 					}
 				} break;
@@ -541,7 +541,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				case Parser::IdentifierNode::REF_NATIVE_CLASS: {
 
 					BindData* bd = NativeClasses::singleton()->find_bind_data(base->name, id->name).get();
-					if (!bd) throw _analyzer_error(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" does not exists on base %s.", id->name.c_str(), base->name.c_str()), id->pos);
+					if (!bd) throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" does not exists on base %s.", id->name.c_str(), base->name.c_str()), id->pos);
 					switch (bd->get_type()) {
 						case BindData::STATIC_FUNC: {
 
@@ -553,17 +553,17 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							int argc_given = (int)call->args.size();
 							int argc = mi->get_arg_count(), argc_default = mi->get_default_arg_count();
 							if (argc_given + argc_default < argc) {
-								if (argc_default == 0) throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
-								else throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
+								if (argc_default == 0) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+								else throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
 							} else if (argc_given > argc) {
-								if (argc_default == 0) throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
-								else throw _analyzer_error(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
+								if (argc_default == 0) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
+								else throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
 							}
 
 							for (int i = 0; i < (int)call->args.size(); i++) {
 								if (call->args[i]->type == Parser::Node::Type::CONST_VALUE) {
 									if (mi->get_arg_types()[i].type != ptrcast<Parser::ConstValueNode>(call->args[i])->value.get_type()) {
-										throw _analyzer_error(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(mi->get_arg_types()[i].type), i), call->args[i]->pos);
+										throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(mi->get_arg_types()[i].type), i), call->args[i]->pos);
 									}
 								}
 							}
@@ -582,11 +582,11 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 
 						} break;
 						case BindData::STATIC_VAR: break; // calls the "__call" at runtime.
-						case BindData::STATIC_CONST: throw _analyzer_error(Error::TYPE_ERROR, String::format("constant value \"%s.%s()\" is not callable.", base->name.c_str(), id->name.c_str()), id->pos);
-						case BindData::METHOD: throw _analyzer_error(Error::TYPE_ERROR, String::format("can't call non-static method \"%s.%s()\" statically.", base->name.c_str(), id->name.c_str()), id->pos);
-						case BindData::MEMBER_VAR:  throw _analyzer_error(Error::TYPE_ERROR, String::format("can't call non-static member \"%s.%s()\" statically.", base->name.c_str(), id->name.c_str()), id->pos);
-						case BindData::ENUM:  throw _analyzer_error(Error::TYPE_ERROR, String::format("enums (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
-						case BindData::ENUM_VALUE: throw _analyzer_error(Error::TYPE_ERROR, String::format("enum value (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
+						case BindData::STATIC_CONST: throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value \"%s.%s()\" is not callable.", base->name.c_str(), id->name.c_str()), id->pos);
+						case BindData::METHOD: throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("can't call non-static method \"%s.%s()\" statically.", base->name.c_str(), id->name.c_str()), id->pos);
+						case BindData::MEMBER_VAR:  throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("can't call non-static member \"%s.%s()\" statically.", base->name.c_str(), id->name.c_str()), id->pos);
+						case BindData::ENUM:  throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("enums (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
+						case BindData::ENUM_VALUE: throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("enum value (\"%s.%s()\") are not callable.", base->name.c_str(), id->name.c_str()), id->pos);
 					}
 
 				} break;
@@ -604,7 +604,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				//case Parser::IdentifierNode::REF_ENUM_NAME:
 				//case Parser::IdentifierNode::REF_ENUM_VALUE:
 				default: {
-					throw _analyzer_error(Error::TYPE_ERROR, String::format("attribute \"%s\" doesn't support method calls.", base->name.c_str()), base->pos);
+					throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("attribute \"%s\" doesn't support method calls.", base->name.c_str()), base->pos);
 				}
 			}
 

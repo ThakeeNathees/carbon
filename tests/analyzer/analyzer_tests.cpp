@@ -47,7 +47,7 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 
 	CHECK_NOTHROW__ANALYZE("const C = 1; func fn(a = C){}");
 	CHECK_NOTHROW__ANALYZE("class Aclass { const C = \"str\"; func fn(arg=C){} }");
-	CHECK_NOTHROW__ANALYZE("enum En { V0 = 0b1, V1 = 0b10, V3 = 0b100 } class Aclass{ func fn(arg=En.V2){} }");
+	CHECK_NOTHROW__ANALYZE("enum En { V0 = 0b1, V1 = 0b10, V3 = 0b100 } class Aclass{ func fn(arg=En.V1){} }");
 
 	// mapped index.
 	CHECK_NOTHROW__ANALYZE("const C = \"string\"[0];                __assert(C == \"s\");");

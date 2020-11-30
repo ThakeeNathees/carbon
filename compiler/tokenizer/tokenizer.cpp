@@ -27,6 +27,8 @@
 
 namespace carbon {
 
+#define TOKENIZER_ERROR(m_type, m_msg) _tokenize_error(m_type, m_msg, _DBG_SOURCE)
+
 #define GET_CHAR(m_off)  \
 ( ((size_t)char_ptr + m_off >= source.size())? '\0': source[(size_t)char_ptr + m_off] )
 
@@ -90,7 +92,7 @@ void Tokenizer::_eat_escape(String& p_str) {
 	c = GET_CHAR(1);
 	switch (c) {
 		case 0:
-			throw _tokenize_error(Error::UNEXPECTED_EOF, "");
+			throw TOKENIZER_ERROR(Error::UNEXPECTED_EOF, "");
 			break;
 		case '\\': p_str += '\\'; EAT_CHAR(2); break;
 		case '\'': p_str += '\''; EAT_CHAR(2); break;
@@ -103,15 +105,13 @@ void Tokenizer::_eat_escape(String& p_str) {
 	}
 }
 
-CompileTimeError Tokenizer::_tokenize_error(Error::Type m_err_type, const String& m_msg) const {
+CompileTimeError Tokenizer::_tokenize_error(Error::Type m_err_type, const String& m_msg, const DBGSourceInfo& p_dbg_info) const {
 	uint32_t err_len = 1;
 	String token_str = peek(-1, true).to_string();
 	if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;
 	else err_len = (uint32_t)token_str.size();
 
-	return CompileTimeError(m_err_type, m_msg, 
-		DBGSourceInfo(source_path, source, Vect2i(cur_line, cur_col), err_len),
-		_DBG_SOURCE);
+	return CompileTimeError(m_err_type, m_msg,  DBGSourceInfo(source_path, source, Vect2i(cur_line, cur_col), err_len),p_dbg_info);
 }
 
 const TokenData& Tokenizer::next(int p_offset) {
@@ -125,7 +125,7 @@ const TokenData& Tokenizer::peek(int p_offset, bool p_safe) const {
 	static TokenData tmp = { Token::_EOF };
 	if (token_ptr + p_offset < 0 || token_ptr + p_offset >= (int)tokens.size()) {
 		if (p_safe) return tmp;
-		else throw _tokenize_error(Error::INVALID_INDEX, "Internal Bug: TokenData::peek() index out of bounds");
+		else throw TOKENIZER_ERROR(Error::INVALID_INDEX, "Internal Bug: TokenData::peek() index out of bounds");
 	}
 	return tokens[token_ptr + p_offset];
 }
@@ -137,7 +137,7 @@ const TokenData& Tokenizer::get_token_at(const Vect2i& p_pos) const {
 			return tokens[i];
 		}
 	}
-	throw _tokenize_error(Error::BUG, "TokenData::get_token_at() called with invalid position.");
+	throw TOKENIZER_ERROR(Error::BUG, "TokenData::get_token_at() called with invalid position.");
 }
 
 
@@ -281,7 +281,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 							EAT_CHAR(2);
 							break;
 						} else if (GET_CHAR(0) == 0) {
-							throw _tokenize_error(Error::UNEXPECTED_EOF, ""); // TODO: Error message.
+							throw TOKENIZER_ERROR(Error::UNEXPECTED_EOF, ""); // TODO: Error message.
 						} else if (GET_CHAR(0) == '\n') {
 							EAT_LINE();
 						} else {
@@ -335,7 +335,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 			}
 			// case '/': { } // already hadled
 			case '\\':
-				throw _tokenize_error(Error::SYNTAX_ERROR, "invalid character '\\'.");
+				throw TOKENIZER_ERROR(Error::SYNTAX_ERROR, "invalid character '\\'.");
 				break;
 			case '%': {
 				if (GET_CHAR(1) == '=') _eat_token(Token::OP_MOD_EQ, 2);
@@ -394,10 +394,10 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 					if (GET_CHAR(0) == '\\') {
 						_eat_escape(str);
 					} else if (GET_CHAR(0) == 0) {
-						throw _tokenize_error(Error::UNEXPECTED_EOF, "unexpected EOF while parsing String."); // TODO: Error message.
+						throw TOKENIZER_ERROR(Error::UNEXPECTED_EOF, "unexpected EOF while parsing String."); // TODO: Error message.
 						break;
 					} else if(GET_CHAR(0) == '\n'){
-						throw _tokenize_error(Error::SYNTAX_ERROR, "unexpected EOL while parsing String.");
+						throw TOKENIZER_ERROR(Error::SYNTAX_ERROR, "unexpected EOL while parsing String.");
 						break;
 					} else {
 						str += GET_CHAR(0);
@@ -410,7 +410,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 				break;
 			}
 			case '\'':
-				throw _tokenize_error(Error::SYNTAX_ERROR, "invalid character '\\''.");
+				throw TOKENIZER_ERROR(Error::SYNTAX_ERROR, "invalid character '\\''.");
 				break;
 			default: {
 				
@@ -470,7 +470,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 					}
 
 					// "1." parsed as 1.0 which should be error.
-					if (num[num.size() - 1] == '.') throw _tokenize_error(Error::SYNTAX_ERROR, "invalid numeric value.");
+					if (num[num.size() - 1] == '.') throw TOKENIZER_ERROR(Error::SYNTAX_ERROR, "invalid numeric value.");
 
 					__const_val_token_len = (int)num.size();
 					if (mode == FLOAT)
@@ -496,7 +496,7 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 					break;
 				}
 
-				throw _tokenize_error(Error::SYNTAX_ERROR, String::format("unknown character '%c' in parsing.", GET_CHAR(0)));
+				throw TOKENIZER_ERROR(Error::SYNTAX_ERROR, String::format("unknown character '%c' in parsing.", GET_CHAR(0)));
 
 			} // default case
 

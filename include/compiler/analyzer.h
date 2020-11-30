@@ -29,6 +29,9 @@
 #include "core/core.h"
 #include "parser.h"
 
+#define ANALYZER_ERROR(m_type, m_msg, m_pos) _analyzer_error(m_type, m_msg, m_pos, _DBG_SOURCE)
+#define ANALYZER_WARNING(m_type, m_msg, m_pos) _analyzer_warning(m_type, m_msg, m_pos, _DBG_SOURCE)
+
 namespace carbon {
 
 class Analyzer {
@@ -47,8 +50,8 @@ private:
 		return ret;
 	}
 
-	CompileTimeError _analyzer_error(Error::Type p_type, const String& p_msg, Vect2i p_pos) const;
-	void _add_warning(Warning::Type p_type, const String& p_msg, Vect2i p_pos);
+	CompileTimeError _analyzer_error(Error::Type p_type, const String& p_msg, Vect2i p_pos, const DBGSourceInfo& p_dbg_info) const;
+	Warning _analyzer_warning(Warning::Type p_type, const String& p_msg, Vect2i p_pos, const DBGSourceInfo& p_dbg_info);
 
 	var _call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var*>& args);
 	void _resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p_funcs);

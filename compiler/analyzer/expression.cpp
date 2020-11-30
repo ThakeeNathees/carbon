@@ -79,7 +79,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 				// TODO: if key is const value and two keys are the same throw error.
 				if (map->elements[i].key->type == Parser::Node::Type::CONST_VALUE) {
 					var& key_v = ptrcast<Parser::ConstValueNode>(map->elements[i].key)->value;
-					if (!var::is_hashable(key_v.get_type())) throw _analyzer_error(Error::TYPE_ERROR, String::format("unhasnable type %s used as map key.", key_v.get_type_name().c_str()), map->pos);
+					if (!var::is_hashable(key_v.get_type())) throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("unhasnable type %s used as map key.", key_v.get_type_name().c_str()), map->pos);
 				}
 				_reduce_expression(map->elements[i].value);
 
@@ -121,7 +121,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(base->value.__get_mapped(key->value));
 					cv->pos = base->pos; p_expr = cv;
 				} catch (Error& err) {
-					throw _analyzer_error(err.get_type(), err.what(), key->pos);
+					throw ANALYZER_ERROR(err.get_type(), err.what(), key->pos);
 				}
 			}
 		} break;
@@ -168,18 +168,18 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 							case Parser::IdentifierNode::REF_CARBON_CLASS:
 							case Parser::IdentifierNode::REF_NATIVE_CLASS:
 							case Parser::IdentifierNode::REF_EXTERN:
-								throw _analyzer_error(Error::TYPE_ERROR, "invalid assignment (only assignment on variables/parameters are valid).", op->args[0]->pos);
+								throw ANALYZER_ERROR(Error::TYPE_ERROR, "invalid assignment (only assignment on variables/parameters are valid).", op->args[0]->pos);
 						}
 					} else if (op->args[0]->type == Parser::Node::Type::THIS) {
-						throw _analyzer_error(Error::TYPE_ERROR, "can't assign anything to \"this\".", op->args[0]->pos);
+						throw ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to \"this\".", op->args[0]->pos);
 					} else if (op->args[0]->type == Parser::Node::Type::SUPER) {
-						throw _analyzer_error(Error::TYPE_ERROR, "can't assign anything to \"super\".", op->args[0]->pos);
+						throw ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to \"super\".", op->args[0]->pos);
 					} else if (op->args[0]->type == Parser::Node::Type::CONST_VALUE) {
-						throw _analyzer_error(Error::TYPE_ERROR, "can't assign anything to constant values.", op->args[0]->pos);
+						throw ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to constant values.", op->args[0]->pos);
 					} else if (op->args[0]->type == Parser::Node::Type::ARRAY) {
-						throw _analyzer_error(Error::TYPE_ERROR, "can't assign anything to array literal.", op->args[0]->pos);
+						throw ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to array literal.", op->args[0]->pos);
 					} else if (op->args[0]->type == Parser::Node::Type::MAP) {
-						throw _analyzer_error(Error::TYPE_ERROR, "can't assign anything to map literal.", op->args[0]->pos);
+						throw ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to map literal.", op->args[0]->pos);
 					}
 				} break;
 
@@ -257,7 +257,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 									SET_EXPR_CONST_NODE(*args[0], op->pos);
 								} break;
 								default:
-									throw _analyzer_error(Error::OPERATOR_NOT_SUPPORTED,
+									throw ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
 										String::format("unary operator \"+\" not supported on %s.", args[0]->get_type_name()), op->pos);
 							}
 							break;
@@ -271,7 +271,7 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 									SET_EXPR_CONST_NODE(-args[0]->operator double(), op->pos);
 									break;
 								default:
-									throw _analyzer_error(Error::OPERATOR_NOT_SUPPORTED,
+									throw ANALYZER_ERROR(Error::OPERATOR_NOT_SUPPORTED,
 										String::format("unary operator \"-\" not supported on %s.", args[0]->get_type_name()), op->pos);
 							}
 							break;

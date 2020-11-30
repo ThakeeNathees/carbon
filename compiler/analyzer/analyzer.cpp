@@ -28,7 +28,7 @@
 
 namespace carbon {
 
-CompileTimeError Analyzer::_analyzer_error(Error::Type p_type, const String& p_msg, Vect2i p_pos) const {
+CompileTimeError Analyzer::_analyzer_error(Error::Type p_type, const String& p_msg, Vect2i p_pos, const DBGSourceInfo& p_dbg_info) const {
 	uint32_t err_len = 1;
 	String token_str = "";
 	if (p_pos.x > 0 && p_pos.y > 0) token_str = parser->tokenizer->get_token_at(p_pos).to_string();
@@ -37,10 +37,10 @@ CompileTimeError Analyzer::_analyzer_error(Error::Type p_type, const String& p_m
 	else err_len = (uint32_t)token_str.size();
 
 	Vect2i pos = (p_pos.x > 0 && p_pos.y > 0) ? p_pos : parser->tokenizer->peek(-1, true).get_pos();
-	return CompileTimeError(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source, pos, err_len), _DBG_SOURCE);
+	return CompileTimeError(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source, pos, err_len), p_dbg_info);
 }
 
-void Analyzer::_add_warning(Warning::Type p_type, const String& p_msg, Vect2i p_pos) {
+Warning Analyzer::_analyzer_warning(Warning::Type p_type, const String& p_msg, Vect2i p_pos, const DBGSourceInfo& p_dbg_info) {
 	uint32_t err_len = 1;
 	String token_str = "";
 	if (p_pos.x > 0 && p_pos.y > 0) token_str = parser->tokenizer->get_token_at(p_pos).to_string();
@@ -49,7 +49,7 @@ void Analyzer::_add_warning(Warning::Type p_type, const String& p_msg, Vect2i p_
 	else err_len = (uint32_t)token_str.size();
 
 	Vect2i pos = (p_pos.x > 0 && p_pos.y > 0) ? p_pos : parser->tokenizer->peek(-1, true).get_pos();
-	warnings.push_back(Warning(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source, pos, err_len), _DBG_SOURCE));
+	return Warning(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source, pos, err_len), p_dbg_info);
 }
 
 void Analyzer::analyze(ptr<Parser> p_parser) {
@@ -145,14 +145,28 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 	parser->parser_context.current_var = nullptr;
 	parser->parser_context.current_class = nullptr;
 
+	// resolve parameters.
+	for (size_t i = 0; i < file_node->functions.size(); i++) {
+		Parser::FunctionNode* fn = file_node->functions[i].get();
+		_resolve_parameters(fn);
+	}
+
+	for (size_t i = 0; i < file_node->classes.size(); i++) {
+		parser->parser_context.current_class = file_node->classes[i].get();
+		for (size_t j = 0; j < file_node->classes[i]->functions.size(); j++) {
+			Parser::FunctionNode* fn = file_node->classes[i]->functions[j].get();
+			_resolve_parameters(fn);
+		}
+		parser->parser_context.current_class = nullptr;
+	}
+
 	// File level function.
 	for (size_t i = 0; i < file_node->functions.size(); i++) {
 		parser->parser_context.current_func = file_node->functions[i].get();
 		Parser::FunctionNode* fn = file_node->functions[i].get();
-		_resolve_parameters(fn);
 
-		if (fn->name == "main") {
-			if (fn->args.size() >= 2) throw _analyzer_error(Error::INVALID_ARG_COUNT, "main function takes at most 1 argument.", fn->pos);
+		if (fn->name == "main") { // TODO: string literal.
+			if (fn->args.size() >= 2) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "main function takes at most 1 argument.", fn->pos);
 		}
 
 		_reduce_block(file_node->functions[i]->body);
@@ -187,7 +201,7 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 				} break;
 			}
 			if (!can_add_default_ctor)
-				throw _analyzer_error(Error::TYPE_ERROR, "super constructor call needed since base class doesn't have a default constructor.", cls->pos);
+				throw ANALYZER_ERROR(Error::TYPE_ERROR, "super constructor call needed since base class doesn't have a default constructor.", cls->pos);
 
 			Parser::FunctionNode* fn = cls->constructor;
 			if (fn == nullptr) {
@@ -213,11 +227,11 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 var Analyzer::_call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var*>& args) {
 	switch (p_func->func) {
 		case BuiltinFunctions::__ASSERT: {
-			if (args.size() != 1) throw _analyzer_error(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.", p_func->pos);
-			if (!args[0]->operator bool()) throw _analyzer_error(Error::ASSERTION, "assertion failed.", p_func->pos);
+			if (args.size() != 1) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "expected exactly 1 argument.", p_func->pos);
+			if (!args[0]->operator bool()) throw ANALYZER_ERROR(Error::ASSERTION, "assertion failed.", p_func->pos);
 		} break;
 		case BuiltinFunctions::__FUNC: {
-			if (!parser->parser_context.current_func) throw _analyzer_error(Error::SYNTAX_ERROR, "__func() must be called inside a function.", p_func->pos);
+			if (!parser->parser_context.current_func) throw ANALYZER_ERROR(Error::SYNTAX_ERROR, "__func() must be called inside a function.", p_func->pos);
 			if (parser->parser_context.current_class) return parser->parser_context.current_class->name + "." + parser->parser_context.current_func->name;
 			else  return parser->parser_context.current_func->name;
 		} break;
@@ -242,7 +256,7 @@ void Analyzer::_resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p
 		for (int j = 0; j < (int)call->args.size(); j++) {
 			_reduce_expression(call->args[j]);
 			if (call->args[j]->type != Parser::Node::Type::CONST_VALUE) {
-				throw _analyzer_error(Error::TYPE_ERROR, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->args[j]->pos);
+				throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("compiletime function arguments must be compile time known values."), p_funcs[i]->args[j]->pos);
 			}
 			args.push_back(&ptrcast<Parser::ConstValueNode>(call->args[j])->value);
 		}
@@ -261,7 +275,7 @@ void Analyzer::_check_member_var_shadow(void* p_base, Parser::ClassNode::BaseTyp
 				if (mi == nullptr) continue;
 				if (mi->get_type() == MemberInfo::PROPERTY) {
 					const PropertyInfo* pi = static_cast<const PropertyInfo*>(mi.get());
-					if (!pi->is_static()) throw _analyzer_error(Error::ATTRIBUTE_ERROR,
+					if (!pi->is_static()) throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR,
 						String::format("member named \"%s\" already exists in base \"%s\"", v->name.c_str(), base->c_str()), v->pos);
 				}
 			}
@@ -275,7 +289,7 @@ void Analyzer::_check_member_var_shadow(void* p_base, Parser::ClassNode::BaseTyp
 				if (mi == nullptr) continue;
 				if (mi->get_type() == MemberInfo::PROPERTY) {
 					const PropertyInfo* pi = static_cast<const PropertyInfo*>(mi.get());
-					if (!pi->is_static()) throw _analyzer_error(Error::ATTRIBUTE_ERROR,
+					if (!pi->is_static()) throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR,
 						String::format("member named \"%s\" already exists in base \"%s\"", v->name.c_str(), base->get_name().c_str()), v->pos);
 				}
 			}
@@ -290,7 +304,7 @@ void Analyzer::_check_member_var_shadow(void* p_base, Parser::ClassNode::BaseTyp
 				if (v->is_static) continue;
 				for (const ptr<Parser::VarNode>& _v : base->vars) {
 					if (_v->is_static) continue;
-					if (_v->name == v->name) throw _analyzer_error(Error::ATTRIBUTE_ERROR,
+					if (_v->name == v->name) throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR,
 						String::format("member named \"%s\" already exists in base \"%s\"", v->name.c_str(), base->name.c_str()), v->pos);
 				}
 			}
@@ -305,7 +319,7 @@ void Analyzer::_check_member_var_shadow(void* p_base, Parser::ClassNode::BaseTyp
 void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 
 	if (p_class->is_reduced) return;
-	if (p_class->_is_reducing) throw _analyzer_error(Error::TYPE_ERROR, "cyclic inheritance. class inherits itself isn't allowed.", p_class->pos);
+	if (p_class->_is_reducing) throw ANALYZER_ERROR(Error::TYPE_ERROR, "cyclic inheritance. class inherits itself isn't allowed.", p_class->pos);
 	p_class->_is_reducing = true;
 
 	// resolve inheritance.
@@ -318,7 +332,7 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 				p_class->base_class = file_node->classes[i].get();
 			}
 		}
-		if (!found) throw _analyzer_error(Error::TYPE_ERROR, String::format("base class \"%s\" not found.", p_class->base_class_name.c_str()), p_class->pos);
+		if (!found) throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("base class \"%s\" not found.", p_class->base_class_name.c_str()), p_class->pos);
 	}
 
 	// check if a member is already exists in the parent class.
@@ -332,7 +346,7 @@ void Analyzer::_resolve_inheritance(Parser::ClassNode* p_class) {
 
 void Analyzer::_resolve_constant(Parser::ConstNode* p_const) {
 	if (p_const->is_reduced) return;
-	if (p_const->_is_reducing) throw _analyzer_error(Error::TYPE_ERROR, "cyclic constant value dependancy found.", p_const->pos);
+	if (p_const->_is_reducing) throw ANALYZER_ERROR(Error::TYPE_ERROR, "cyclic constant value dependancy found.", p_const->pos);
 	p_const->_is_reducing = true;
 
 	ASSERT(p_const->assignment != nullptr);
@@ -343,13 +357,13 @@ void Analyzer::_resolve_constant(Parser::ConstNode* p_const) {
 		if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
 			cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING &&
 			cv->value.get_type() != var::_NULL) {
-			throw _analyzer_error(Error::TYPE_ERROR, "expected a constant expression.", p_const->assignment->pos);
+			throw ANALYZER_ERROR(Error::TYPE_ERROR, "expected a constant expression.", p_const->assignment->pos);
 		}
 		p_const->value = cv->value;
 		p_const->_is_reducing = false;
 		p_const->is_reduced = true;
 
-	} else throw _analyzer_error(Error::TYPE_ERROR, "expected a contant expression.", p_const->assignment->pos);
+	} else throw ANALYZER_ERROR(Error::TYPE_ERROR, "expected a contant expression.", p_const->assignment->pos);
 }
 
 void Analyzer::_resolve_parameters(Parser::FunctionNode* p_func) {
@@ -357,12 +371,12 @@ void Analyzer::_resolve_parameters(Parser::FunctionNode* p_func) {
 		if (p_func->args[i].default_value != nullptr) {
 			_reduce_expression(p_func->args[i].default_value);
 			if (p_func->args[i].default_value->type != Parser::Node::Type::CONST_VALUE) 
-				throw _analyzer_error(Error::TYPE_ERROR, "expected a contant expression.", p_func->args[i].default_value->pos);
+				throw ANALYZER_ERROR(Error::TYPE_ERROR, "expected a contant expression.", p_func->args[i].default_value->pos);
 			ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(p_func->args[i].default_value);
 			if (cv->value.get_type() != var::INT && cv->value.get_type() != var::FLOAT &&
 				cv->value.get_type() != var::BOOL && cv->value.get_type() != var::STRING &&
 				cv->value.get_type() != var::_NULL) {
-				throw _analyzer_error(Error::TYPE_ERROR, "expected a constant expression.", p_func->args[i].default_value->pos);
+				throw ANALYZER_ERROR(Error::TYPE_ERROR, "expected a constant expression.", p_func->args[i].default_value->pos);
 			}
 			p_func->default_args.push_back(cv->value);
 		}
@@ -371,15 +385,15 @@ void Analyzer::_resolve_parameters(Parser::FunctionNode* p_func) {
 
 void Analyzer::_resolve_enumvalue(Parser::EnumValueNode& p_enumvalue, int* p_possible) {
 	if (p_enumvalue.is_reduced) return;
-	if (p_enumvalue._is_reducing) throw _analyzer_error(Error::TYPE_ERROR, "cyclic enum value dependancy found.", p_enumvalue.expr->pos);
+	if (p_enumvalue._is_reducing) throw ANALYZER_ERROR(Error::TYPE_ERROR, "cyclic enum value dependancy found.", p_enumvalue.expr->pos);
 	p_enumvalue._is_reducing = true;
 
 	if (p_enumvalue.expr != nullptr) {
 		_reduce_expression(p_enumvalue.expr);
 		if (p_enumvalue.expr->type != Parser::Node::Type::CONST_VALUE)
-			throw _analyzer_error(Error::TYPE_ERROR, "enum value must be a constant integer.", p_enumvalue.expr->pos);
+			throw ANALYZER_ERROR(Error::TYPE_ERROR, "enum value must be a constant integer.", p_enumvalue.expr->pos);
 		ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(p_enumvalue.expr);
-		if (cv->value.get_type() != var::INT) throw _analyzer_error(Error::TYPE_ERROR, "enum value must be a constant integer.", p_enumvalue.expr->pos);
+		if (cv->value.get_type() != var::INT) throw ANALYZER_ERROR(Error::TYPE_ERROR, "enum value must be a constant integer.", p_enumvalue.expr->pos);
 		p_enumvalue.value = cv->value;
 	} else {
 		p_enumvalue.value = (p_possible) ? *p_possible: -1;
@@ -417,10 +431,10 @@ void Analyzer::_check_super_constructor_call(const Parser::BlockNode* p_block) {
 
 	if (constructor_argc - default_argc > 0) { // super call needed.
 		if ((p_block->statements.size() == 0) || (p_block->statements[0]->type != Parser::Node::Type::CALL))
-			throw _analyzer_error(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", p_block->pos);
+			throw ANALYZER_ERROR(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", p_block->pos);
 		const Parser::CallNode* call = static_cast<const Parser::CallNode*>(p_block->statements[0].get());
 		if (call->base->type != Parser::Node::Type::SUPER || call->method != nullptr)
-			throw _analyzer_error(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", call->pos);
+			throw ANALYZER_ERROR(Error::NOT_IMPLEMENTED, "super constructor call expected since base class doesn't have a default constructor.", call->pos);
 		current_class->has_super_ctor_call = true;
 		_check_arg_count(constructor_argc, default_argc, (int)call->args.size(), call->pos);
 	}
@@ -435,12 +449,12 @@ void Analyzer::_check_arg_count(int p_argc, int p_default_argc, int p_args_given
 	int required_min_argc = p_argc - p_default_argc;
 	if (required_min_argc > 0) {
 		if (p_default_argc == 0) {
-			if (p_args_given != p_argc) throw _analyzer_error(Error::INVALID_ARG_COUNT,
+			if (p_args_given != p_argc) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
 				String::format("expected excatly %i argument(s) for super constructor call", p_argc), p_err_pos);
 		} else {
-			if (p_args_given < required_min_argc) throw _analyzer_error(Error::INVALID_ARG_COUNT,
+			if (p_args_given < required_min_argc) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
 				String::format("expected at least %i argument(s) for super constructor call", required_min_argc), p_err_pos);
-			else if (p_args_given > p_argc) throw _analyzer_error(Error::INVALID_ARG_COUNT,
+			else if (p_args_given > p_argc) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
 				String::format("expected at most %i argument(s) for super constructor call", p_argc), p_err_pos);
 		}
 	}
@@ -485,7 +499,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 
 			case Parser::Node::Type::IDENTIFIER: {
 				_reduce_expression(p_block->statements[i]); // to check if the identifier exists.
-				_add_warning(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos);
+				warnings.push_back(ANALYZER_WARNING(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos));
 				p_block->statements.erase(p_block->statements.begin() + i--);
 			} break;
 
@@ -508,19 +522,19 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 			case Parser::Node::Type::CONST_VALUE:
 			case Parser::Node::Type::ARRAY:
 			case Parser::Node::Type::MAP:
-				_add_warning(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos);
+				warnings.push_back(ANALYZER_WARNING(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos));
 				p_block->statements.erase(p_block->statements.begin() + i--);
 				break;
 
 			case Parser::Node::Type::THIS:
 			case Parser::Node::Type::SUPER:
-				_add_warning(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos);
+				warnings.push_back(ANALYZER_WARNING(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos));
 				p_block->statements.erase(p_block->statements.begin() + i--);
 				break;
 
 			case Parser::Node::Type::BUILTIN_FUNCTION:
 			case Parser::Node::Type::BUILTIN_TYPE:
-				_add_warning(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos);
+				warnings.push_back(ANALYZER_WARNING(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos));
 				p_block->statements.erase(p_block->statements.begin() + i--);
 				break;
 
@@ -573,15 +587,15 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 
 							_reduce_expression(cf_node->switch_cases[j].expr);
 							if (cf_node->switch_cases[j].expr->type != Parser::Node::Type::CONST_VALUE)
-								throw _analyzer_error(Error::TYPE_ERROR, "switch case value must be a constant integer.", cf_node->switch_cases[j].expr->pos);
+								throw ANALYZER_ERROR(Error::TYPE_ERROR, "switch case value must be a constant integer.", cf_node->switch_cases[j].expr->pos);
 							ptr<Parser::ConstValueNode> cv = ptrcast<Parser::ConstValueNode>(cf_node->switch_cases[j].expr);
 							if (cv->value.get_type() != var::INT)
-								throw _analyzer_error(Error::TYPE_ERROR, "switch case must be a constant integer.", cf_node->switch_cases[j].expr->pos);
+								throw ANALYZER_ERROR(Error::TYPE_ERROR, "switch case must be a constant integer.", cf_node->switch_cases[j].expr->pos);
 							cf_node->switch_cases[j].value = cv->value;
 
 							for (int _j = 0; _j < j; _j++) {
 								if (cf_node->switch_cases[_j].value == cf_node->switch_cases[j].value) {
-									throw _analyzer_error(Error::TYPE_ERROR, String::format("case value %lli has already defined at line %lli.",
+									throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("case value %lli has already defined at line %lli.",
 										cf_node->switch_cases[j].value, cf_node->switch_cases[_j].pos.y), cf_node->switch_cases[j].pos);
 								}
 							}
@@ -590,7 +604,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 						}
 
 						if (_check_missed_enum && _enum_case_count != _switch_enum->values.size()) {
-							_add_warning(Warning::MISSED_ENUM_IN_SWITCH, "", cf_node->pos);
+							warnings.push_back(ANALYZER_WARNING(Warning::MISSED_ENUM_IN_SWITCH, "", cf_node->pos));
 						}
 
 					} break;
@@ -601,10 +615,10 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 						if (cf_node->args[0]->type == Parser::Node::Type::CONST_VALUE) {
 							if (ptrcast<Parser::ConstValueNode>(cf_node->args[0])->value.operator bool()) {
 								if (!cf_node->has_break) {
-									_add_warning(Warning::NON_TERMINATING_LOOP, "", cf_node->args[0]->pos);
+									warnings.push_back(ANALYZER_WARNING(Warning::NON_TERMINATING_LOOP, "", cf_node->args[0]->pos));
 								}
 							} else {
-								_add_warning(Warning::UNREACHABLE_CODE, "", cf_node->args[0]->pos);
+								warnings.push_back(ANALYZER_WARNING(Warning::UNREACHABLE_CODE, "", cf_node->args[0]->pos));
 								p_block->statements.erase(p_block->statements.begin() + i--);
 							}
 						}
@@ -630,7 +644,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 						// TODO: if it's evaluvated to compile time constant it could be optimized/warned.
 						if (cf_node->args[0] == nullptr && cf_node->args[1] == nullptr && cf_node->args[2] == nullptr) {
 							if (!cf_node->has_break) {
-								_add_warning(Warning::NON_TERMINATING_LOOP, "", cf_node->pos);
+								warnings.push_back(ANALYZER_WARNING(Warning::NON_TERMINATING_LOOP, "", cf_node->pos));
 							}
 						}
 					} break;
@@ -672,7 +686,7 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 			p_block->statements.erase(p_block->statements.begin() + i--);
 
 		} else if (p_block->statements[i]->type == Parser::Node::Type::CONST_VALUE) {
-			_add_warning(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos);
+			warnings.push_back(ANALYZER_WARNING(Warning::STAND_ALONE_EXPRESSION, "", p_block->statements[i]->pos));
 			p_block->statements.erase(p_block->statements.begin() + i--);
 
 		// remove all statements after return
@@ -680,12 +694,12 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 			Parser::ControlFlowNode* cf = ptrcast<Parser::ControlFlowNode>(p_block->statements[i]).get();
 			if (cf->cf_type == Parser::ControlFlowNode::RETURN) {
 				if (i != p_block->statements.size() - 1) {
-					_add_warning(Warning::UNREACHABLE_CODE, "", p_block->statements[i + 1]->pos);
+					warnings.push_back(ANALYZER_WARNING(Warning::UNREACHABLE_CODE, "", p_block->statements[i + 1]->pos));
 					p_block->statements.erase(p_block->statements.begin() + i + 1, p_block->statements.end());
 				}
 			} else if (cf->cf_type == Parser::ControlFlowNode::IF) {
 				if (cf->args[0]->type == Parser::Node::Type::CONST_VALUE && ptrcast<Parser::ConstValueNode>(cf->args[0])->value.operator bool() == false) {
-					_add_warning(Warning::UNREACHABLE_CODE, "", p_block->statements[i]->pos);
+					warnings.push_back(ANALYZER_WARNING(Warning::UNREACHABLE_CODE, "", p_block->statements[i]->pos));
 					if (cf->body_else == nullptr) p_block->statements.erase(p_block->statements.begin() + i--);
 					// TODO: move else body to if body and set condition to true.
 				}
