@@ -110,7 +110,7 @@ void CodeGen::_generate_control_flow(const Parser::ControlFlowNode* p_cflow) {
 
 			_context.opcodes->write_foreach(iter_value, iterator, on);
 			_generate_block(p_cflow->body.get());
-			_POP_ADDR_IF_TEMP(iterator);
+			_pop_addr_if_temp(iterator);
 			_context.opcodes->write_endforeach();
 			if (on.is_temp()) _context.pop_stack_temp();
 

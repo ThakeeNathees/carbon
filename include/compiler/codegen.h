@@ -31,8 +31,6 @@
 #include "bytecode.h"
 #include "carbon_function.h"
 
-#define _POP_ADDR_IF_TEMP(m_addr)if (m_addr.is_temp()) _context.pop_stack_temp();
-
 namespace carbon {
 
 struct CGContext {
@@ -82,6 +80,8 @@ private:
 
 	Address add_global_const_value(const var& p_value);
 	uint32_t add_global_name(const String& p_name);
+
+	void _pop_addr_if_temp(const Address& m_addr);
 };
 
 }

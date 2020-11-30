@@ -1,66 +1,6 @@
-/* TODO: //////////////////////////////////////////
--- create a common parent for warning and error first
--- switch statement (jump table impl)
--- refactor throw error to function from macros
--- undef THROW_ANLAYZER_ERROR, TOKENIZER_ERROR, ... (not THROW_BUG)
--- error print and dbg info (stack trace)
--- opcode string print
--- "string %s literal"_s % {"replace"}
--- ext_lib.lib.lib;
--- change owner pointer from shared to weak
-
--- class A{} var a = A; println(a.get_type_name()); // RuntimeInstance
--- a rich typecheck api
--- "".substr() check index limit
--- float("") <-- crash
--- try super.EnumClass(); <-- check error msg
-
------ TODO ADDNL -----
--- i++, i--
--- reverse list, string, slice array
--- " ".join(arr), strip, trim... try dir("") in python and implement all.
--- python like range().
--- dir() function
--- in, is 
-
--- func f(x) = 2*x + 1; lambda
--- [expr(i) for i in expr]
--- a, b = b, a
--- map(f, arr) -> arr // can implement in carbon too.
--- implement __repr__() // print array of string / or add "" manually in arr/dict
--- trinary if else
--- return a, b, c // maybe
-
-
----- current features -----------------------------------
--- dynamic type (strongly typed) high level
--- object oriented (and functional c++ like)
--- operator overloading support
-       - arighmetic operators
-       - callables
-	   - iterables
--- default argument support
--- first class function/classes/enums and everything
--- easy integration (c++ bindings)
--- no memeory management required
--- a better analyzer (to reduce runtime errors)
--- basic language features:
-	   - enums and switch statements
-	   - for, foreach, while loops, if, else
-	   - static and non static variables/ functions.
-
--- get_func()(); vars_callable();
--- func f(x) = x + 2; // single expr function defn
--- support both `&&`/`and` , `||`/`or`, `!`/`not`
--- python like arithmetic operators in builtin
-        - "str" * 3, [3.14] * 10
-		- "%s - %s" % "first", "second"; // <-- TODO:
-//////////////////////////////////////////////////// */
-
 
 //import lib = "test_lib.cb";
 
-func main(args) {
-	println(OS.unix_time());
+func main() {
+	
 }
-

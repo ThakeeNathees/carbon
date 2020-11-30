@@ -29,34 +29,37 @@
 #include "compiler.h"
 #include "native/path.h"
 
-#define THROW_PREDEFINED(m_what, m_name, m_pos)             \
-	THROW_PARSER_ERR(Error::NAME_ERROR,                     \
-	String::format(m_what " named \"%s\" already exists at (line:%i, col:%i)", m_name.c_str(), m_pos.x, m_pos.y), Vect2i())
+namespace carbon {
 
-#define THROW_IF_NAME_DEFINED(m_parent, m_what, m_identifier, m_members)                                 \
-	for (int i = 0; i < (int)m_parent->m_members.size(); i++) {                                          \
-		if (m_parent->m_members[i]->name == m_identifier) {                                              \
-			THROW_PREDEFINED(m_what, m_parent->m_members[i]->name, m_parent->m_members[i]->pos);         \
-		}										                                                         \
-	}
-
-
-#define THROW_IF_NAME_DEFINED_ENUMVALUES(m_parent)                                                               \
-if (m_parent->unnamed_enum != nullptr) {																		 \
-	for (auto it = m_parent->unnamed_enum->values.begin(); it != m_parent->unnamed_enum->values.end(); it++) {	 \
-		if (it->first == tk->identifier) {																		 \
-			THROW_PREDEFINED("an enum value", tk->identifier, it->second.pos);									 \
-		}																										 \
-	}																											 \
+CompileTimeError Parser::_unexp_token_error(const char* p_exptected, const DBGSourceInfo& p_dbg_info) const {
+	Error::Type err_type = Error::SYNTAX_ERROR;
+	if (tokenizer->peek(-1, true).type == Token::_EOF) err_type = Error::UNEXPECTED_EOF;
+	if (p_exptected != nullptr) {
+		return _parser_error(err_type, String::format("unexpected token(\"%s\"). expected %s.",
+				Tokenizer::get_token_name(tokenizer->peek(-1, true).type), p_exptected).c_str(), Vect2i(), p_dbg_info);
+	} else {
+		return _parser_error(err_type, String::format("unexpected token(\"%s\").",
+			Tokenizer::get_token_name(tokenizer->peek(-1, true).type)).c_str(), Vect2i(), p_dbg_info);
+	}    
 }
 
-#define THROW_IF_NAME_NATIVE(m_name)                                                                                         \
-	if (NativeClasses::singleton()->is_class_registered(m_name)) {                                                           \
-		THROW_PARSER_ERR(Error::NAME_ERROR, String::format("a native type named \"%s\" already exists at (line:%i, col:%i)", \
-			m_name.c_str(), tk->line, tk->col), Vect2i());                                                                   \
-	}
+CompileTimeError Parser::_parser_error(Error::Type p_type, const String& p_msg, Vect2i p_pos, const DBGSourceInfo& p_dbg_info) const {
+	uint32_t err_len = 1;
+	String token_str = "";
+	if (p_pos.x > 0 && p_pos.y > 0) token_str = tokenizer->get_token_at(p_pos).to_string();
+	else token_str = tokenizer->peek(-1, true).to_string();
+	if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;
+	else err_len = (uint32_t)token_str.size();
 
-namespace carbon {
+	Vect2i pos = (p_pos.x > 0 && p_pos.y > 0) ? p_pos : tokenizer->peek(-1, true).get_pos();
+	return CompileTimeError(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source, pos, err_len), p_dbg_info);
+}
+
+CompileTimeError Parser::_predefined_error(const String& p_what, const String& p_name, Vect2i p_pos, const DBGSourceInfo& p_dbg_info) const {
+	return _parser_error(Error::NAME_ERROR,
+		String::format((p_what + " named \"%s\" already exists at (line:%i, col:%i)").c_str(), p_name.c_str(), p_pos.x, p_pos.y),
+		Vect2i(), p_dbg_info);
+}
 
 void Parser::parse(String p_source, String p_file_path) {
 	
@@ -125,7 +128,7 @@ void Parser::parse(String p_source, String p_file_path) {
 				BuiltinFunctions::Type builtin_func = BuiltinFunctions::get_func_type(token.identifier);
 				if (builtin_func != BuiltinFunctions::UNKNOWN && BuiltinFunctions::is_compiletime(builtin_func)) {
 					call->base = new_node<BuiltinFunctionNode>(builtin_func);
-					if (tokenizer->next().type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
+					if (tokenizer->next().type != Token::BRACKET_LPARAN) throw UNEXP_TOKEN_ERROR("symbol \"(\"");
 					call->args = _parse_arguments(file_node);
 					file_node->compiletime_functions.push_back(call);
 					break;
@@ -133,47 +136,81 @@ void Parser::parse(String p_source, String p_file_path) {
 			} // [[fallthrough]]
 
 			default:
-				THROW_UNEXP_TOKEN("");
+				throw UNEXP_TOKEN_ERROR("");
 		}
 
 	} // while true
 }
 
 void Parser::_check_identifier_predefinition(const String& p_name, Node* p_scope) const {
-	const TokenData* tk = &tokenizer->peek(-1, true);
+	const TokenData* tk = &tokenizer->peek(-1, true); // TODO: add pos with tk.
 
-	THROW_IF_NAME_NATIVE(p_name);
-
-	for (ptr<ImportNode>& in : file_node->imports) {
-		if (p_name == in->name) THROW_PREDEFINED("an imported file", p_name, in->pos);
+	if (NativeClasses::singleton()->is_class_registered(p_name)) {
+		throw PARSER_ERROR(Error::NAME_ERROR, String::format("a native type named %s already exists", p_name.c_str()), Vect2i());
 	}
 
-	if (p_scope == nullptr || p_scope->type == Node::Type::FILE) {
-		THROW_IF_NAME_DEFINED(file_node, "a class", p_name, classes);
-		THROW_IF_NAME_DEFINED(file_node, "a variable", p_name, vars);
-		THROW_IF_NAME_DEFINED(file_node, "a constant", p_name, constants);
-		THROW_IF_NAME_DEFINED(file_node, "a function", p_name, functions);
-		THROW_IF_NAME_DEFINED(file_node, "an enum", p_name, enums);
-		THROW_IF_NAME_DEFINED_ENUMVALUES(file_node);
-	} else if (p_scope->type == Node::Type::CLASS) {
-		ClassNode* cn = static_cast<ClassNode*>(p_scope);
-		THROW_IF_NAME_DEFINED(cn, "a variable", p_name, vars);
-		THROW_IF_NAME_DEFINED(cn, "a constant", p_name, constants);
-		THROW_IF_NAME_DEFINED(cn, "a function", p_name, functions);
-		THROW_IF_NAME_DEFINED(cn, "an enum", p_name, enums);
-		THROW_IF_NAME_DEFINED_ENUMVALUES(cn);
+	for (ptr<ImportNode>& in : file_node->imports) {
+		if (p_name == in->name) throw PREDEFINED_ERROR("an imported file", p_name, in->pos);
+	}
+
+	if (p_scope == nullptr || p_scope->type == Node::Type::CLASS || p_scope->type == Node::Type::FILE) {
+		const MemberContainer* scope = nullptr;
+
+		if (p_scope == nullptr) scope = file_node.get();
+		else scope = static_cast<const MemberContainer*>(p_scope);
+
+		for (int i = 0; i < (int)scope->vars.size(); i++) {
+			if (scope->vars[i]->name == p_name) {
+				throw PREDEFINED_ERROR("a var", scope->vars[i]->name, scope->vars[i]->pos);
+			}
+		}
+
+		for (int i = 0; i < (int)scope->constants.size(); i++) {
+			if (scope->constants[i]->name == p_name) {
+				throw PREDEFINED_ERROR("a constant", scope->constants[i]->name, scope->constants[i]->pos);
+			}
+		}
+
+		for (int i = 0; i < (int)scope->functions.size(); i++) {
+			if (scope->functions[i]->name == p_name) {
+				throw PREDEFINED_ERROR("a function", scope->functions[i]->name, scope->functions[i]->pos);
+			}
+		}
+
+		for (int i = 0; i < (int)scope->enums.size(); i++) {
+			if (scope->enums[i]->name == p_name) {
+				throw PREDEFINED_ERROR("an enum", scope->enums[i]->name, scope->enums[i]->pos);
+			}
+		}
+
+		if (scope->unnamed_enum != nullptr) {
+			for (auto it = scope->unnamed_enum->values.begin(); it != scope->unnamed_enum->values.end(); it++) {
+				if (it->first == p_name) {
+					throw PREDEFINED_ERROR("an enum value", p_name, it->second.pos);
+				}
+			}
+		}
+
+		if (scope->type == Node::Type::FILE) {
+			const Parser::FileNode* p_file = static_cast<const Parser::FileNode*>(scope);
+			for (int i = 0; i < (int)p_file->classes.size(); i++) {
+				if (p_file->classes[i]->name == p_name) {
+					throw PREDEFINED_ERROR("a classe", p_file->classes[i]->name, p_file->classes[i]->pos);
+				}
+			}
+		}
 	} else if (p_scope->type == Node::Type::BLOCK) {
 		ASSERT(parser_context.current_func != nullptr);
 		for (int i = 0; i < (int)parser_context.current_func->args.size(); i++) {
 			if (parser_context.current_func->args[i].name == p_name) {
-				THROW_PREDEFINED("an argument", p_name, parser_context.current_func->args[i].pos);
+				throw PREDEFINED_ERROR("an argument", p_name, parser_context.current_func->args[i].pos);
 			}
 		}
-		BlockNode* block = static_cast<BlockNode*>(p_scope);
+		const BlockNode* block = static_cast<const BlockNode*>(p_scope);
 		while (block) {
 			for (int i = 0; i < (int)block->local_vars.size(); i++) {
 				if (block->local_vars[i]->name == p_name) {
-					THROW_PREDEFINED("a variable", p_name, block->local_vars[i]->pos);
+					throw  PREDEFINED_ERROR("a variable", p_name, block->local_vars[i]->pos);
 				}
 			}
 			if (block->parernt_node->type == Node::Type::FUNCTION) break;
@@ -190,21 +227,21 @@ ptr<Parser::ImportNode> Parser::_parse_import() {
 	ptr<ImportNode> import_node = new_node<ImportNode>();
 
 	const TokenData* tk = &tokenizer->next();
-	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+	if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR("an identifier");
 
 	String name = tk->identifier;
 	_check_identifier_predefinition(name, nullptr);
 	import_node->name = name;
 
-	if (tokenizer->next().type != Token::OP_EQ) THROW_UNEXP_TOKEN("symbol \"=\"");
+	if (tokenizer->next().type != Token::OP_EQ) throw UNEXP_TOKEN_ERROR("symbol \"=\"");
 	tk = &tokenizer->next();
-	if (tk->type != Token::VALUE_STRING) THROW_UNEXP_TOKEN("string path to source");
+	if (tk->type != Token::VALUE_STRING) throw UNEXP_TOKEN_ERROR("string path to source");
 	String path = tk->constant.operator String();
 
 	import_node->bytecode = Compiler::singleton()->compile(path);
 
 	tk = &tokenizer->next();
-	if (tk->type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+	if (tk->type != Token::SYM_SEMI_COLLON) throw UNEXP_TOKEN_ERROR("symbol \";\"");
 
 	return import_node;
 }
@@ -228,7 +265,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 	ScopeDestruct destruct = ScopeDestruct(&parser_context);
 
 	const TokenData* tk = &tokenizer->next();
-	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+	if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR("an identifier");
 	_check_identifier_predefinition(tk->identifier, nullptr);
 
 	class_node->name = tk->identifier;
@@ -238,14 +275,14 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 	if (tk->type == Token::SYM_COLLON) {
 
 		tk = &tokenizer->next();
-		if (tk->type == Token::BUILTIN_TYPE) THROW_PARSER_ERR(Error::TYPE_ERROR, "cannot inherit a builtin type.", Vect2i());
-		if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+		if (tk->type == Token::BUILTIN_TYPE) throw PARSER_ERROR(Error::TYPE_ERROR, "cannot inherit a builtin type.", Vect2i());
+		if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR("an identifier");
 		class_node->base_class_name = tk->identifier;
 
 		tk = &tokenizer->next();
 		if (tk->type == Token::SYM_DOT) {
 			tk = &tokenizer->next();
-			if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+			if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR("an identifier");
 
 			String base_file_name  = class_node->base_class_name;
 			String base_class_name = tk->identifier;
@@ -259,7 +296,8 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 				}
 			}
 			if (!base_file)
-				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("base file name \"%s\" not found from the imported libs.", base_file_name.c_str()), Vect2i());
+				throw PARSER_ERROR(Error::NAME_ERROR,
+					String::format("base file name \"%s\" not found from the imported libs.", base_file_name.c_str()), Vect2i());
 
 			ptr<Bytecode> base_binary = nullptr;
 			for (const std::pair<String, ptr<Bytecode>>& cls : base_file->get_classes()) {
@@ -268,8 +306,11 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 					break;
 				}
 			}
-			if (!base_binary)
-				THROW_PARSER_ERR(Error::NAME_ERROR, String::format("base class name \"%s\" not found from the imported lib \"%s\".", base_class_name.c_str(), base_file_name.c_str()), Vect2i());
+			if (!base_binary) {
+				throw PARSER_ERROR(Error::NAME_ERROR,
+					String::format("base class name \"%s\" not found from the imported lib \"%s\".", base_class_name.c_str(), base_file_name.c_str()),
+					Vect2i());
+			}
 
 			class_node->base_binary = base_binary;
 			class_node->base_class_name = base_class_name;
@@ -280,20 +321,20 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 				class_node->base_type = ClassNode::BASE_NATIVE;
 			} else {
 				if (class_node->base_class_name == class_node->name)
-					THROW_PARSER_ERR(Error::TYPE_ERROR, "cyclic inheritance. class inherits itself isn't allowed.", tokenizer->peek(-2, true).get_pos());
+					throw PARSER_ERROR(Error::TYPE_ERROR, "cyclic inheritance. class inherits itself isn't allowed.", tokenizer->peek(-2, true).get_pos());
 				class_node->base_type = ClassNode::BASE_LOCAL;
 			}
 		}
 	}
 
-	if (tk->type != Token::BRACKET_LCUR) THROW_UNEXP_TOKEN("symbol \"{\"");
+	if (tk->type != Token::BRACKET_LCUR) throw UNEXP_TOKEN_ERROR("symbol \"{\"");
 	
 	while (true) {
 		const TokenData& token = tokenizer->next();
 		switch (token.type) {
 
 			case Token::_EOF: {
-				THROW_PARSER_ERR(Error::UNEXPECTED_EOF, "Unexpected end of file.", Vect2i());
+				throw PARSER_ERROR(Error::UNEXPECTED_EOF, "Unexpected end of file.", Vect2i());
 			} break;
 
 			case Token::BRACKET_RCUR: {
@@ -320,7 +361,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 
 			case Token::KWORD_STATIC: {
 				if (tokenizer->peek().type != Token::KWORD_FUNC && tokenizer->peek().type != Token::KWORD_VAR) {
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "expected keyword \"func\" or \"var\" after static", Vect2i());
+					throw PARSER_ERROR(Error::SYNTAX_ERROR, "expected keyword \"func\" or \"var\" after static", Vect2i());
 				}
 
 			} break;
@@ -349,14 +390,14 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 				BuiltinFunctions::Type builtin_func = BuiltinFunctions::get_func_type(token.identifier);
 				if (builtin_func != BuiltinFunctions::UNKNOWN && BuiltinFunctions::is_compiletime(builtin_func)) {
 					call->base = new_node<BuiltinFunctionNode>(builtin_func);
-					if (tokenizer->next().type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
+					if (tokenizer->next().type != Token::BRACKET_LPARAN) throw UNEXP_TOKEN_ERROR("symbol \"(\"");
 					call->args = _parse_arguments(class_node);
 					class_node->compiletime_functions.push_back(call);
 					break;
 				}
 			} // [[fallthrough]]
 			default: {
-				THROW_UNEXP_TOKEN("");
+				throw UNEXP_TOKEN_ERROR("");
 			}
 		}
 	}
@@ -384,7 +425,7 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 
 	const TokenData* tk = &tokenizer->next();
 	if (tk->type != Token::IDENTIFIER && tk->type != Token::BRACKET_LCUR)
-		THROW_UNEXP_TOKEN("an identifier or symbol \"{\"");	
+		throw UNEXP_TOKEN_ERROR("an identifier or symbol \"{\"");	
 
 	if (tk->type == Token::IDENTIFIER) {
 		_check_identifier_predefinition(tk->identifier, p_parent.get());
@@ -394,7 +435,7 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 		tk = &tokenizer->next();
 	}
 
-	if (tk->type != Token::BRACKET_LCUR) THROW_UNEXP_TOKEN("symbol \"{\"");
+	if (tk->type != Token::BRACKET_LCUR) throw UNEXP_TOKEN_ERROR("symbol \"{\"");
 
 	bool comma_valid = false;
 	int64_t next_value = 0;
@@ -403,7 +444,7 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 		switch (token.type) {
 
 			case Token::_EOF: {
-				THROW_PARSER_ERR(Error::UNEXPECTED_EOF, "Unexpected end of file.", Vect2i());
+				throw PARSER_ERROR(Error::UNEXPECTED_EOF, "Unexpected end of file.", Vect2i());
 			} break;
 
 			case Token::BRACKET_RCUR: {
@@ -411,13 +452,13 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 			} break;
 
 			case Token::SYM_COMMA: {
-				if (!comma_valid) THROW_UNEXP_TOKEN("an identifier or symbol \"}\"");
+				if (!comma_valid) throw UNEXP_TOKEN_ERROR("an identifier or symbol \"}\"");
 				comma_valid = false;
 			} break;
 
 			case Token::IDENTIFIER: {
 				for (const std::pair<String, EnumValueNode>& value : enum_node->values) {
-					if (value.first == token.identifier) THROW_PREDEFINED("an enum value", value.first, value.second.pos);
+					if (value.first == token.identifier) throw PREDEFINED_ERROR("an enum value", value.first, value.second.pos);
 				}
 
 				if (!enum_node->named_enum) {
@@ -437,7 +478,7 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 			} break;
 
 			default: {
-				THROW_UNEXP_TOKEN("an identifier");
+				throw UNEXP_TOKEN_ERROR("an identifier");
 			} break;
 		}
 	}
@@ -456,7 +497,7 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_parent) {
 	while (true) {
 		tk = &tokenizer->next();
 
-		if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+		if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR("an identifier");
 		_check_identifier_predefinition(tk->identifier, p_parent.get());
 
 		ptr<VarNode> var_node = new_node<VarNode>();
@@ -488,14 +529,14 @@ stdvec<ptr<Parser::VarNode>> Parser::_parse_var(ptr<Node> p_parent) {
 				vars.push_back(var_node);
 				break;
 			} else {
-				THROW_UNEXP_TOKEN("symbol \",\" or \";\"");
+				throw UNEXP_TOKEN_ERROR("symbol \",\" or \";\"");
 			}
 		} else if (tk->type == Token::SYM_COMMA) {
 		} else if (tk->type == Token::SYM_SEMI_COLLON) {
 			vars.push_back(var_node);
 			break;
 		} else {
-			THROW_UNEXP_TOKEN("symbol \",\" or \";\"");
+			throw UNEXP_TOKEN_ERROR("symbol \",\" or \";\"");
 		}
 		vars.push_back(var_node);
 	}
@@ -510,7 +551,7 @@ ptr<Parser::ConstNode> Parser::_parse_const(ptr<Node> p_parent) {
 	const TokenData* tk;
 	tk = &tokenizer->next();
 
-	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+	if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR("an identifier");
 	_check_identifier_predefinition(tk->identifier, p_parent.get());
 
 	ptr<ConstNode> const_node = new_node<ConstNode>();
@@ -531,12 +572,12 @@ ptr<Parser::ConstNode> Parser::_parse_const(ptr<Node> p_parent) {
 	ScopeDestruct destruct = ScopeDestruct(&parser_context);
 
 	tk = &tokenizer->next();
-	if (tk->type != Token::OP_EQ) THROW_UNEXP_TOKEN("symbol \"=\"");
+	if (tk->type != Token::OP_EQ) throw UNEXP_TOKEN_ERROR("symbol \"=\"");
 	ptr<Node> expr = _parse_expression(p_parent, false);
 	const_node->assignment = expr;
 
 	tk = &tokenizer->next();
-	if (tk->type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+	if (tk->type != Token::SYM_SEMI_COLLON) throw UNEXP_TOKEN_ERROR("symbol \";\"");
 
 	return const_node;
 }
@@ -565,7 +606,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	ScopeDestruct destruct = ScopeDestruct(&parser_context);
 
 	const TokenData* tk = &tokenizer->next();
-	if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+	if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR("an identifier");
 	_check_identifier_predefinition(tk->identifier, p_parent.get());
 
 	func_node->name = tk->identifier;
@@ -574,16 +615,16 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	}
 
 	tk = &tokenizer->next();
-	if (tk->type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
+	if (tk->type != Token::BRACKET_LPARAN) throw UNEXP_TOKEN_ERROR("symbol \"(\"");
 	tk = &tokenizer->next();
 
 	bool has_default = false;
 	if (tk->type != Token::BRACKET_RPARAN) {
 		while (true) {
-			if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("an identifier");
+			if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR("an identifier");
 			for (int i = 0; i < (int)func_node->args.size(); i++) {
 				if (func_node->args[i].name == tk->identifier)
-					THROW_PARSER_ERR(Error::NAME_ERROR, String::format("identifier \"%s\" already defined in arguments", tk->identifier.c_str()), Vect2i());
+					throw PARSER_ERROR(Error::NAME_ERROR, String::format("identifier \"%s\" already defined in arguments", tk->identifier.c_str()), Vect2i());
 			}
 
 			ParameterNode parameter = ParameterNode(tk->identifier, tk->get_pos());
@@ -594,7 +635,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 				tk = &tokenizer->next();
 			} else {
 				if (has_default)
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "default parameter expected.", Vect2i());
+					throw PARSER_ERROR(Error::SYNTAX_ERROR, "default parameter expected.", Vect2i());
 			}
 			func_node->args.push_back(parameter);
 
@@ -603,7 +644,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 			} else if (tk->type == Token::BRACKET_RPARAN) {
 				break;
 			} else {
-				THROW_UNEXP_TOKEN("");
+				throw UNEXP_TOKEN_ERROR("");
 			}
 		}
 	}
@@ -614,10 +655,16 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 	if (_next.type == Token::OP_EQ) {
 		_single_expr = true;
 	} else if (_next.type != Token::BRACKET_LCUR) {
-		THROW_UNEXP_TOKEN("symbol \"{\"");
+		throw UNEXP_TOKEN_ERROR("symbol \"{\"");
 	}
 
 	if (_single_expr) {
+
+		if (parser_context.current_class && parser_context.current_class->constructor) {
+			if (parser_context.current_class->constructor == parser_context.current_func) {
+				throw PARSER_ERROR(Error::SYNTAX_ERROR, "constructor can't return anything.", _next.get_pos());
+			}
+		}
 
 		ptr<BlockNode> block_node = newptr<BlockNode>();
 		block_node->parernt_node = func_node;
@@ -630,14 +677,14 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 		block_node->statements.push_back(_return);
 
 		tk = &tokenizer->next();
-		if (tk->type != Token::SYM_SEMI_COLLON) THROW_UNEXP_TOKEN("symbol \";\"");
+		if (tk->type != Token::SYM_SEMI_COLLON) throw UNEXP_TOKEN_ERROR("symbol \";\"");
 
 		func_node->body = block_node;
 
 	} else {
 		func_node->body = _parse_block(func_node);
 		if (tokenizer->next().type != Token::BRACKET_RCUR) {
-			THROW_UNEXP_TOKEN("symbol \"}\"");
+			throw UNEXP_TOKEN_ERROR("symbol \"}\"");
 		}
 	}
 

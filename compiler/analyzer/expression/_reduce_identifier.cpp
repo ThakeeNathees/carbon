@@ -189,7 +189,11 @@ void Analyzer::_reduce_identifier(ptr<Parser::Node>& p_expr) {
 	Parser::BlockNode* outer_block = parser->parser_context.current_block;
 	while (outer_block && id->ref == Parser::IdentifierNode::REF_UNKNOWN) {
 		for (int i = 0; i < (int)outer_block->local_vars.size(); i++) {
-			if (outer_block->local_vars[i]->name == id->name) {
+			Parser::VarNode* local_var = outer_block->local_vars[i].get();
+			if (local_var->name == id->name) {
+
+				if (p_expr->pos.x < local_var->pos.x || (p_expr->pos.x == local_var->pos.x && p_expr->pos.y < local_var->pos.y))
+					throw ANALYZER_ERROR(Error::NAME_ERROR, String::format("local variable \"%s\" referenced before assigned", local_var->name.c_str()), id->pos);
 				id->ref = Parser::IdentifierNode::REF_LOCAL_VAR;
 				id->ref_base = Parser::IdentifierNode::BASE_LOCAL;
 				id->_var = outer_block->local_vars[i].get();
@@ -257,7 +261,7 @@ void Analyzer::_check_identifier(ptr<Parser::Node>& p_expr) {
 	ptr<Parser::IdentifierNode> id = ptrcast<Parser::IdentifierNode>(p_expr);
 	switch (id->ref) {
 		case Parser::IdentifierNode::REF_UNKNOWN:
-			THROW_ANALYZER_ERROR(Error::NAME_ERROR, String::format("identifier \"%s\" isn't defined.", id->name.c_str()), id->pos);
+			throw ANALYZER_ERROR(Error::NAME_ERROR, String::format("identifier \"%s\" isn't defined.", id->name.c_str()), id->pos);
 		case Parser::IdentifierNode::REF_LOCAL_CONST:
 		case Parser::IdentifierNode::REF_MEMBER_CONST: {
 			ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(id->_const->value);
@@ -273,7 +277,7 @@ void Analyzer::_check_identifier(ptr<Parser::Node>& p_expr) {
 		case Parser::IdentifierNode::REF_MEMBER_VAR: {
 			if (id->ref_base == Parser::IdentifierNode::BASE_LOCAL && parser->parser_context.current_var) {
 				if (parser->parser_context.current_var->name == id->name) {
-					THROW_ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("invalid attribute access \"%s\" can't be used in it's own initialization.", id->name.c_str()), id->pos);
+					throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("invalid attribute access \"%s\" can't be used in it's own initialization.", id->name.c_str()), id->pos);
 				}
 			}
 		} // [[fallthrought]]

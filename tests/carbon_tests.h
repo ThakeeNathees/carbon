@@ -38,9 +38,9 @@ using namespace carbon;
 	do {																													\
 		try {																												\
 			m_statement;																									\
-		} catch (Error& err) {																								\
+		} catch (Throwable& err) {																							\
 			CHECK_MESSAGE(err.get_type() == m_type, String::format("expected error: \"%s\" got \"%s\"\n     msg: %s",		\
-				Error::get_err_name(m_type).c_str(), Error::get_err_name(err.get_type()).c_str(), err.get_msg().c_str()));  \
+				Error::get_err_name(m_type).c_str(), Error::get_err_name(err.get_type()).c_str(), err.what()));             \
 			break;																											\
 		}																													\
 		CHECK_MESSAGE(false, String::format("expected error: \"%s\" but no error has thrown",								\

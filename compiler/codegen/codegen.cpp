@@ -82,6 +82,10 @@ Address CGContext::add_stack_temp() {
 }
 //--------------------------------------------------------------------
 
+void CodeGen::_pop_addr_if_temp(const Address& m_addr) {
+	if (m_addr.is_temp()) _context.pop_stack_temp();
+}
+
 Address CodeGen::add_global_const_value(const var& p_value) {
 	uint32_t pos = _bytecode->_global_const_value_get(p_value);
 	return Address(Address::CONST_VALUE, pos);
@@ -233,7 +237,7 @@ ptr<CarbonFunction> CodeGen::_generate_initializer(bool p_static, Bytecode* p_by
 			}
 			Address value = _generate_expression(var_node->assignment.get(), &member);
 			if (member != value) _context.opcodes->write_assign(member, value);
-			_POP_ADDR_IF_TEMP(value);
+			_pop_addr_if_temp(value);
 		}
 	}
 
@@ -293,7 +297,7 @@ void CodeGen::_generate_block(const Parser::BlockNode* p_block) {
 					if (assign_value != local_var) {
 						_context.opcodes->write_assign(local_var, assign_value);
 					}
-					_POP_ADDR_IF_TEMP(assign_value);
+					_pop_addr_if_temp(assign_value);
 				}
 			} break;
 
@@ -316,7 +320,7 @@ void CodeGen::_generate_block(const Parser::BlockNode* p_block) {
 			case Parser::Node::Type::MAPPED_INDEX:
 			case Parser::Node::Type::OPERATOR: {
 				Address expr = _generate_expression(statement);
-				_POP_ADDR_IF_TEMP(expr);
+				_pop_addr_if_temp(expr);
 			} break;
 
 			case Parser::Node::Type::CONTROL_FLOW: {

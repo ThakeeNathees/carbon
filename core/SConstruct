@@ -4,8 +4,6 @@ Import('cbenv')
 
 SOURCES = [
     Glob('*.cpp'),
-    Glob('error/*.cpp'),
-    Glob('native/*.cpp'),
     Glob('platform/%s/*.cpp' % cbenv['platform'] ),
 ]
 

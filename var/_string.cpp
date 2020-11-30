@@ -39,7 +39,6 @@ const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_string() {
 		_NEW_METHOD_INFO("length",                                                           var::INT     ),
 		_NEW_METHOD_INFO("to_int",                                                           var::INT     ),
 		_NEW_METHOD_INFO("to_float",                                                         var::FLOAT   ),
-		_NEW_METHOD_INFO("get_line",   _PARAMS("line"),         _TYPES(var::INT),            var::STRING  ),
 		_NEW_METHOD_INFO("hash",                                                             var::INT     ),
 		_NEW_METHOD_INFO("substr",     _PARAMS("start", "end"), _TYPES(var::INT, var::INT),  var::STRING  ),
 		_NEW_METHOD_INFO("endswith",   _PARAMS("what" ),        _TYPES(var::STRING),         var::BOOL    ),
@@ -56,7 +55,6 @@ var String::call_method(const String& p_method, const stdvec<var*>& p_args) {
 		case "length"_hash:     return (int64_t)size();
 		case "to_int"_hash:     return to_int();
 		case "to_float"_hash:   return to_float();
-		case "get_line"_hash:   return get_line(p_args[0]->operator int64_t());
 		case "hash"_hash:       return (int64_t)hash();
 		case "substr"_hash:     return substr((size_t)p_args[0]->operator int64_t(), (size_t)p_args[1]->operator int64_t());
 		case "endswith"_hash:   return endswith(p_args[0]->operator String());
@@ -141,25 +139,6 @@ String String::format(const char* p_format, ...) {
 
 	if (len == 0) return String();
 	return String(buffer);
-}
-
-String String::get_line(uint64_t p_line) const {
-	const char* source = _data->c_str();
-	uint64_t cur_line = 1;
-	std::stringstream ss_line;
-
-	while (char c = *source) {
-		if (c == '\n') {
-			if (cur_line >= p_line) break;
-			cur_line++;
-		} else if (cur_line == p_line) {
-			ss_line << c;
-		}
-		source++;
-	}
-
-	ss_line << '\n';
-	return ss_line.str();
 }
 
 String String::substr(size_t p_start, size_t p_end) const {

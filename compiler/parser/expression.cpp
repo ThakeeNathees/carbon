@@ -43,13 +43,13 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 
 			tk = &tokenizer->next();
 			if (tk->type != Token::BRACKET_RPARAN) {
-				THROW_UNEXP_TOKEN("symbol \")\"");
+				throw UNEXP_TOKEN_ERROR("symbol \")\"");
 			}
 
 		} else if (tk->type == Token::KWORD_THIS) {
 			if (parser_context.current_class == nullptr || (parser_context.current_func && parser_context.current_func->is_static) ||
 				(parser_context.current_var && parser_context.current_var->is_static))
-				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "keyword \"this\" only be used in non-static member function.", Vect2i());
+				throw PARSER_ERROR(Error::SYNTAX_ERROR, "keyword \"this\" only be used in non-static member function.", Vect2i());
 			if (tokenizer->peek().type == Token::BRACKET_LPARAN) { // super();
 				tk = &tokenizer->next(); // eat "("
 				ptr<CallNode> call = new_node<CallNode>();
@@ -63,9 +63,9 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 		} else if (tk->type == Token::KWORD_SUPER) {
 			// if super is inside class function, it calls the same function in it's base.
 			if (parser_context.current_class == nullptr || (parser_context.current_func == nullptr))
-				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "keyword \"super\" can only be used in class function.", Vect2i());
+				throw PARSER_ERROR(Error::SYNTAX_ERROR, "keyword \"super\" can only be used in class function.", Vect2i());
 			if (parser_context.current_class->base_type == ClassNode::NO_BASE) {
-				THROW_PARSER_ERR(Error::SYNTAX_ERROR, "invalid use of \"super\". Can only used inside classes with a base type.", Vect2i());
+				throw PARSER_ERROR(Error::SYNTAX_ERROR, "invalid use of \"super\". Can only used inside classes with a base type.", Vect2i());
 			}
 			if (tokenizer->peek().type == Token::BRACKET_LPARAN) { // super();
 				tk = &tokenizer->next(); // eat "("
@@ -117,7 +117,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			}
 
 			tk = &tokenizer->next();
-			if (tk->type != Token::BRACKET_LPARAN) THROW_UNEXP_TOKEN("symbol \"(\"");
+			if (tk->type != Token::BRACKET_LPARAN) throw UNEXP_TOKEN_ERROR("symbol \"(\"");
 			call->args = _parse_arguments(p_parent);
 			expr = call;
 
@@ -145,12 +145,12 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 				switch (tk->type) {
 					case Token::_EOF:
 						tk = &tokenizer->next(); // eat eof
-						THROW_UNEXP_TOKEN("");
+						throw UNEXP_TOKEN_ERROR("");
 						break;
 					case Token::SYM_COMMA:
 						tk = &tokenizer->next(); // eat comma
 						if (!comma_valid) {
-							THROW_UNEXP_TOKEN("");
+							throw UNEXP_TOKEN_ERROR("");
 						}
 						comma_valid = false;
 						break;
@@ -159,7 +159,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 						done = true;
 						break;
 					default:
-						if (comma_valid) THROW_UNEXP_TOKEN("symbol \",\"");
+						if (comma_valid) throw UNEXP_TOKEN_ERROR("symbol \",\"");
 						
 						ptr<Node> subexpr = _parse_expression(p_parent, false);
 						arr->elements.push_back(subexpr);
@@ -177,11 +177,11 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 				switch (tk->type) {
 					case Token::_EOF:
 						tk = &tokenizer->next(); // eat eof
-						THROW_UNEXP_TOKEN("");
+						throw UNEXP_TOKEN_ERROR("");
 						break;
 					case Token::SYM_COMMA:
 						tk = &tokenizer->next(); // eat comma
-						if (!comma_valid) THROW_UNEXP_TOKEN("");
+						if (!comma_valid) throw UNEXP_TOKEN_ERROR("");
 						comma_valid = false;
 						break;
 					case Token::BRACKET_RCUR:
@@ -189,11 +189,11 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 						done = true;
 						break;
 					default:
-						if (comma_valid) THROW_UNEXP_TOKEN("symbol \",\"");
+						if (comma_valid) throw UNEXP_TOKEN_ERROR("symbol \",\"");
 
 						ptr<Node> key = _parse_expression(p_parent, false);
 						tk = &tokenizer->next();
-						if (tk->type != Token::SYM_COLLON) THROW_UNEXP_TOKEN("symbol \":\"");
+						if (tk->type != Token::SYM_COLLON) throw UNEXP_TOKEN_ERROR("symbol \":\"");
 						ptr<Node> value = _parse_expression(p_parent, false);
 						map->elements.push_back( Parser::MapNode::Pair(key, value) );
 						comma_valid = true;
@@ -201,7 +201,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			}
 			expr = map;
 		} else {
-			THROW_UNEXP_TOKEN("");
+			throw UNEXP_TOKEN_ERROR("");
 		}
 
 		// -- PARSE INDEXING -------------------------------------------------------
@@ -213,7 +213,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			if (tk->type == Token::SYM_DOT) {
 				tk = &tokenizer->next(1);
 
-				if (tk->type != Token::IDENTIFIER) THROW_UNEXP_TOKEN("");
+				if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR("");
 
 				// call
 				if (tokenizer->peek().type == Token::BRACKET_LPARAN) {
@@ -242,7 +242,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 				ptr<Node> key = _parse_expression(p_parent, false);
 				tk = &tokenizer->next();
 				if (tk->type != Token::BRACKET_RSQ) {
-					THROW_UNEXP_TOKEN("symbol \"]\"");
+					throw UNEXP_TOKEN_ERROR("symbol \"]\"");
 				}
 
 				ind_mapped->base = expr;
@@ -324,7 +324,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 	ptr<Node> op_tree = _build_operator_tree(expressions);
 	if (op_tree->type == Node::Type::OPERATOR) {
 		if (!p_allow_assign && OperatorNode::is_assignment(ptrcast<OperatorNode>(op_tree)->op_type)) {
-			THROW_PARSER_ERR(Error::SYNTAX_ERROR, "assignment is not allowed inside expression.", op_tree->pos);
+			throw PARSER_ERROR(Error::SYNTAX_ERROR, "assignment is not allowed inside expression.", op_tree->pos);
 		}
 	}
 	return op_tree;
@@ -351,7 +351,7 @@ stdvec<ptr<Parser::Node>> Parser::_parse_arguments(const ptr<Node>& p_parent) {
 			} else if (tk->type == Token::BRACKET_RPARAN) {
 				break;
 			} else {
-				THROW_UNEXP_TOKEN("");
+				throw UNEXP_TOKEN_ERROR("");
 			}
 		}
 	}
@@ -447,7 +447,7 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 			int next_expr = next_op;
 			while (p_expr[next_expr].is_op()) {
 				if (++next_expr == p_expr.size()) {
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "expected an expression.", Vect2i());
+					throw PARSER_ERROR(Error::SYNTAX_ERROR, "expected an expression.", Vect2i());
 				}
 			}
 
@@ -469,14 +469,14 @@ ptr<Parser::Node> Parser::_build_operator_tree(stdvec<Expr>& p_expr) {
 			if (p_expr[(size_t)next_op - 1].get_expr()->type == Node::Type::OPERATOR) {
 				if (OperatorNode::is_assignment(ptrcast<OperatorNode>(p_expr[(size_t)next_op - 1].get_expr())->op_type)) {
 					Vect2i pos = ptrcast<OperatorNode>(p_expr[(size_t)next_op - 1].get_expr())->pos;
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "unexpected assignment.", Vect2i(pos.x, pos.y));
+					throw PARSER_ERROR(Error::SYNTAX_ERROR, "unexpected assignment.", Vect2i(pos.x, pos.y));
 				}
 			}
 
 			if (p_expr[(size_t)next_op + 1].get_expr()->type == Node::Type::OPERATOR) {
 				if (OperatorNode::is_assignment(ptrcast<OperatorNode>(p_expr[(size_t)next_op + 1].get_expr())->op_type)) {
 					Vect2i pos = ptrcast<OperatorNode>(p_expr[(size_t)next_op + 1].get_expr())->pos;
-					THROW_PARSER_ERR(Error::SYNTAX_ERROR, "unexpected assignment.", Vect2i(pos.x, pos.y));
+					throw PARSER_ERROR(Error::SYNTAX_ERROR, "unexpected assignment.", Vect2i(pos.x, pos.y));
 				}
 			}
 
