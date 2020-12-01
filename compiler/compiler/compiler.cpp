@@ -84,8 +84,15 @@ ptr<Bytecode> Compiler::compile(const String& p_path) {
 	ptr<CodeGen> codegen = newptr<CodeGen>();
 
 	File file(path, File::READ);
+	Logger::log(String::format("compiling: %s\n", path.c_str()).c_str());
+
 	parser->parse(file.read_text(), path);
 	analyzer->analyze(parser);
+
+	for (const Warning& warning : analyzer->get_warnings()) {
+		warning.console_log(); // TODO: conditional.
+	}
+
 	ptr<Bytecode> bytecode = codegen->generate(analyzer);
 
 	_cache[path].bytecode = bytecode;

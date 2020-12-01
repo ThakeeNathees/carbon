@@ -49,9 +49,11 @@ static const char* _error_names[Error::_ERROR_MAX_] = {
 	"NON_TERMINATING_LOOP",
 	"UNREACHABLE_CODE",
 	"STAND_ALONE_EXPRESSION",
+	"RETHROW",
+	"STACK_OVERFLOW",
 	//_ERROR_MAX_
 };
-MISSED_ENUM_CHECK(Error::Type::_ERROR_MAX_, 20);
+MISSED_ENUM_CHECK(Error::Type::_ERROR_MAX_, 22);
 
 String Throwable::get_err_name(Throwable::Type p_type) {
 	THROW_INVALID_INDEX(_ERROR_MAX_, (int)p_type);
@@ -97,39 +99,77 @@ Warning::Warning(Type p_type, const String& p_what, const DBGSourceInfo& p_cb_db
 	: _cb_dbg_info(p_cb_dbg), Throwable(p_type, p_what, p_dbg_info) {}
 
 
+TraceBack::TraceBack(Type p_type, const String& p_what,
+	const DBGSourceInfo& p_cb_info, const DBGSourceInfo& p_dbg_info)
+	: _cb_dbg_info(p_cb_info), Throwable(p_type, p_what, p_dbg_info) {
+	_nested->_set_owner(this);
+}
+
+TraceBack::TraceBack(const ptr<Throwable> p_nested,
+	const DBGSourceInfo& p_cb_info, const DBGSourceInfo& p_dbg_info)
+	: _cb_dbg_info(p_cb_info), Throwable(RETHROW, "", p_dbg_info) {
+	p_nested->_set_owner(this);
+	_add_nested(p_nested);
+}
+const ptr<Throwable> TraceBack::get_nested() const { return _nested; }
 
 // TODO: log levels may prevent from logging. just log independently of the log level.
 void Error::console_log() const {
+	Logger::set_level(Logger::JUST_LOG);
 	Logger::logf_error("Error(%s) : %s\n", Error::get_err_name(get_type()).c_str(), what());
 	Logger::log(String::format(  "    source : %s (%s:%i)\n", source_info.func.c_str(), source_info.file.c_str(), source_info.line).c_str(),
-		Logger::ERROR, Logger::Color::L_SKYBLUE
+		Logger::Color::L_SKYBLUE
 	);
+	Logger::reset_level();
 }
 
 void CompileTimeError::console_log() const {
+	Logger::set_level(Logger::JUST_LOG);
 	Logger::logf_error("Error(%s) : %s\n",      Error::get_err_name(get_type()).c_str(), what());
 	Logger::log( String::format("    source : %s (%s:%i)\n", source_info.func.c_str(), source_info.file.c_str(), source_info.line).c_str(),
-		Logger::ERROR, Logger::Color::L_SKYBLUE);
-	Logger::log(String::format("    at     : (%s:%i)\n", _cb_dbg_info.file.c_str(), _cb_dbg_info.line).c_str(),
-		Logger::ERROR, Logger::Color::L_WHITE);
+		Logger::Color::L_SKYBLUE);
+	Logger::log(String::format("        at : (%s:%i)\n", _cb_dbg_info.file.c_str(), _cb_dbg_info.line).c_str(), Logger::Color::L_WHITE);
 
 	if (_cb_dbg_info.line - 1 >= 1) // first line may not be available to log
 	Logger::logf_info("%3i | %s\n",           _cb_dbg_info.line - 1,  _cb_dbg_info.line_before.c_str());
 	Logger::logf_info("%3i | %s\n    | %s\n", _cb_dbg_info.line, _cb_dbg_info.line_str.c_str(), _cb_dbg_info.get_pos_str().c_str());
 	Logger::logf_info("%3i | %s\n",           _cb_dbg_info.line + 1,  _cb_dbg_info.line_after.c_str());
+	Logger::reset_level();
 }
 
 void Warning::console_log() const {
+	Logger::set_level(Logger::JUST_LOG);
 	Logger::logf_warning("Warning(%s) : %s\n", Error::get_err_name(get_type()).c_str(), what());
 	Logger::log(String::format("    source : %s (%s:%i)\n", source_info.func.c_str(), source_info.file.c_str(), source_info.line).c_str(),
-		Logger::ERROR, Logger::Color::L_SKYBLUE);
-	Logger::log(String::format("    at     : (%s:%i)\n", _cb_dbg_info.file.c_str(), _cb_dbg_info.line).c_str(),
-		Logger::ERROR, Logger::Color::L_WHITE);
+		Logger::Color::L_SKYBLUE);
+	Logger::log(String::format("        at : (%s:%i)\n", _cb_dbg_info.file.c_str(), _cb_dbg_info.line).c_str(), Logger::Color::L_WHITE);
 
 	if (_cb_dbg_info.line - 1 >= 1) // first line may not be available to log
 		Logger::logf_info("%3i | %s\n", _cb_dbg_info.line - 1, _cb_dbg_info.line_before.c_str());
 	Logger::logf_info("%3i | %s\n    | %s\n", _cb_dbg_info.line, _cb_dbg_info.line_str.c_str(), _cb_dbg_info.get_pos_str().c_str());
 	Logger::logf_info("%3i | %s\n", _cb_dbg_info.line + 1, _cb_dbg_info.line_after.c_str());
+	Logger::reset_level();
+}
+
+void TraceBack::console_log() const {
+	
+	// can't use recursion if already stack overflowed
+	// if (_nested != nullptr) _nested->console_log();
+
+	const Throwable* base_err = _get_nested();
+	while (base_err != nullptr) {
+		if (base_err->_get_nested() == nullptr) break;
+		base_err = base_err->_get_nested();
+	}
+
+	while (base_err != nullptr) {
+		base_err->console_log();
+		base_err = base_err->_get_owner();
+	}
+
+	Logger::set_level(Logger::JUST_LOG);
+	Logger::logf_info(" > %s (%s:%i)\n", _cb_dbg_info.func.c_str(), _cb_dbg_info.file.c_str(), _cb_dbg_info.line);
+	Logger::reset_level();
 }
 
 //-----------------------------------------------

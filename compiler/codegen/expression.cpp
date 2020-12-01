@@ -99,7 +99,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				Address val = _generate_expression(arr->elements[i].get());
 				values.push_back(val);
 			}
-
+			_context.insert_dbg(p_expr);
 			_context.opcodes->write_array_literal(arr_dst, values);
 
 			for (Address& addr : values) {
@@ -122,7 +122,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				keys.push_back(key);
 				values.push_back(value);
 			}
-
+			_context.insert_dbg(p_expr);
 			_context.opcodes->write_map_literal(map_dst, keys, values);
 
 			for (Address& addr : keys) _pop_addr_if_temp(addr);
@@ -162,11 +162,13 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				// print(); builtin func call
 				case Parser::Node::Type::BUILTIN_FUNCTION: {
 					if (call->method == nullptr) { // print(...);
+						_context.insert_dbg(p_expr);
 						_context.opcodes->write_call_builtin(ret, static_cast<const Parser::BuiltinFunctionNode*>(call->base.get())->func, args);
 					} else { // print.member(...);
 						Address base = _generate_expression(call->base.get());
 						ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
 						uint32_t name = add_global_name(static_cast<const Parser::IdentifierNode*>(call->method.get())->name);
+						_context.insert_dbg(call->method.get());
 						_context.opcodes->write_call_method(ret, base, name,  args);
 						_pop_addr_if_temp(base);
 					}
@@ -175,11 +177,13 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				// Array(); builtin type constructor
 				case Parser::Node::Type::BUILTIN_TYPE: {
 					if (call->method == nullptr) { // Array(); constructor
+						_context.insert_dbg(p_expr);
 						_context.opcodes->write_construct_builtin_type(ret, static_cast<const Parser::BuiltinTypeNode*>(call->base.get())->builtin_type, args);
 					} else { // String.format(); // static method call on builtin type
 						Address base = _generate_expression(call->base.get());
 						ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
 						uint32_t name = add_global_name(static_cast<const Parser::IdentifierNode*>(call->method.get())->name);
+						_context.insert_dbg(call->method.get());
 						_context.opcodes->write_call_method(ret, base, name, args);
 						_pop_addr_if_temp(base);
 					}
@@ -188,11 +192,13 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				case Parser::Node::Type::SUPER: {
 
 					if (call->method == nullptr) { // super(...); if used in constructor -> super constructor else call same func on super.
+						_context.insert_dbg(p_expr);
 						_context.opcodes->write_call_super_constructor(args);
 					} else { // super.f();
 						ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
 						const Parser::IdentifierNode* method = ptrcast<Parser::IdentifierNode>(call->method).get();
 						uint32_t name = add_global_name(method->name);
+						_context.insert_dbg(call->method.get());
 						_context.opcodes->write_call_super_method(ret, name, args);
 					}
 
@@ -204,12 +210,15 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 					uint32_t name = add_global_name(func->name);
 					switch (func->ref) {
 						case  Parser::IdentifierNode::REF_FUNCTION: {
+							_context.insert_dbg(p_expr);
 							_context.opcodes->write_call_func(ret, name, args);
 						} break;
 						case  Parser::IdentifierNode::REF_CARBON_CLASS: {
+							_context.insert_dbg(p_expr);
 							_context.opcodes->write_construct_carbon(ret, name, args);
 						} break;
 						case Parser::IdentifierNode::REF_NATIVE_CLASS: {
+							_context.insert_dbg(p_expr);
 							_context.opcodes->write_construct_native(ret, name, args);
 						} break;
 						default: {
@@ -223,8 +232,10 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 					if (call->method != nullptr) {
 						ASSERT(call->method->type == Parser::Node::Type::IDENTIFIER);
 						uint32_t name = add_global_name(static_cast<const Parser::IdentifierNode*>(call->method.get())->name);
+						_context.insert_dbg(call->method.get());
 						_context.opcodes->write_call_method(ret, base, name, args);
 					} else {
+						_context.insert_dbg(p_expr);
 						_context.opcodes->write_call(ret, base, args);
 					}
 					_pop_addr_if_temp(base);
@@ -239,6 +250,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 			const Parser::IndexNode* index_node = static_cast<const Parser::IndexNode*>(p_expr);
 			Address on = _generate_expression(index_node->base.get());
 			uint32_t name = add_global_name(index_node->member->name);
+			_context.insert_dbg(index_node->member.get());
 			_context.opcodes->write_get_index(on, name, dst);
 			_pop_addr_if_temp(on);
 			return dst;
@@ -250,6 +262,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 			Address on = _generate_expression(index_node->base.get());
 			Address key = _generate_expression(index_node->key.get());
 
+			_context.insert_dbg(index_node->key.get());
 			_context.opcodes->write_get_mapped(on, key, dst);
 
 			_pop_addr_if_temp(on);
@@ -280,6 +293,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 						uint32_t name = add_global_name(ptrcast<Parser::IdentifierNode>(index->member)->name);
 						Address value = _generate_expression(op->args[1].get());
 
+						_context.insert_dbg(index->member.get());
 						_context.opcodes->write_set_index(on, name, value);
 
 						_pop_addr_if_temp(on);
@@ -291,6 +305,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 						Address key = _generate_expression(mapped->key.get());
 						Address value = _generate_expression(op->args[1].get());
 
+						_context.insert_dbg(mapped->key.get());
 						_context.opcodes->write_set_mapped(on, key, value);
 
 						_pop_addr_if_temp(on);
@@ -302,10 +317,12 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 						if (left.is_temp()) THROW_ERROR(Error::SYNTAX_ERROR, "invalid assignment to an expression"); // f() = 12; TODO: throw with dbg info.
 						if (var_op != var::_OP_MAX_) {
 							Address right = _generate_expression(op->args[1].get());
+							_context.insert_dbg(p_expr);
 							_context.opcodes->write_operator(left, var_op, left, right);
 							_pop_addr_if_temp(right);
 						} else {
 							Address right = _generate_expression(op->args[1].get(), &left);
+							_context.insert_dbg(p_expr);
 							if (left != right) _context.opcodes->write_assign(left, right);
 							_pop_addr_if_temp(right);
 						}
@@ -315,10 +332,13 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 
 				case Parser::OperatorNode::OP_AND: {
 					Address dst = ADDR_DST();
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_assign_bool(dst, false);
 					Address left = _generate_expression(op->args[0].get());
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_and_left(left);
 					Address right = _generate_expression(op->args[1].get());
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_and_right(right, dst);
 					_pop_addr_if_temp(left);
 					_pop_addr_if_temp(right);
@@ -327,10 +347,13 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 
 				case Parser::OperatorNode::OP_OR: {
 					Address dst = ADDR_DST();
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_assign_bool(dst, true);
 					Address left = _generate_expression(op->args[0].get());
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_or_left(left);
 					Address right = _generate_expression(op->args[1].get());
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_or_right(right, dst);
 					_pop_addr_if_temp(left);
 					_pop_addr_if_temp(right);
@@ -357,6 +380,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 					Address dst = ADDR_DST();
 					Address left = _generate_expression(op->args[0].get());
 					Address right = _generate_expression(op->args[1].get());
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_operator(dst, var_op, left, right);
 					_pop_addr_if_temp(left);
 					_pop_addr_if_temp(right);
@@ -366,6 +390,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				case Parser::OperatorNode::OP_NOT: {
 					Address dst = ADDR_DST();
 					Address left = _generate_expression(op->args[0].get());
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_operator(dst, var::OP_NOT, left, Address());
 					_pop_addr_if_temp(left);
 					return dst;
@@ -374,6 +399,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				case Parser::OperatorNode::OP_BIT_NOT: {
 					Address dst = ADDR_DST();
 					Address left = _generate_expression(op->args[0].get());
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_operator(dst, var::OP_BIT_NOT, left, Address());
 					_pop_addr_if_temp(left);
 					return dst;
@@ -382,6 +408,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				case Parser::OperatorNode::OP_POSITIVE: {
 					Address dst = ADDR_DST();
 					Address left = _generate_expression(op->args[0].get());
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_operator(dst, var::OP_POSITIVE, left, Address());
 					_pop_addr_if_temp(left);
 					return dst;
@@ -389,6 +416,7 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 				case Parser::OperatorNode::OP_NEGATIVE: {
 					Address dst = ADDR_DST();
 					Address left = _generate_expression(op->args[0].get());
+					_context.insert_dbg(p_expr);
 					_context.opcodes->write_operator(dst, var::OP_NEGATIVE, left, Address());
 					_pop_addr_if_temp(left);
 					return dst;

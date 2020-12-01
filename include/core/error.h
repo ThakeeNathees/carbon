@@ -74,8 +74,8 @@ public:
 	enum Kind {
 		ERROR,
 		COMPILE_TIME,
-		RUN_TIME,
 		WARNING,
+		TRACEBACK,
 	};
 
 	enum Type {
@@ -105,10 +105,14 @@ public:
 		UNREACHABLE_CODE,
 		STAND_ALONE_EXPRESSION,
 
+		// runtime error
+		RETHROW,
+		STACK_OVERFLOW,
+
 		_ERROR_MAX_,
 	};
 
-	Throwable(Type p_type, const String& p_what = "", const DBGSourceInfo& p_source_info = DBGSourceInfo());
+	Throwable(Type p_type, const String& p_what, const DBGSourceInfo& p_source_info = DBGSourceInfo());
 	static String get_err_name(Throwable::Type p_type);
 
 	const char* what() const noexcept override { return _what.c_str(); }
@@ -118,26 +122,33 @@ public:
 	void set_source_info(const DBGSourceInfo& p_source_info);
 	Type get_type() const { return _type; }
 
+	void _add_nested(ptr<Throwable> p_err) { _nested = p_err; }
+	void _set_owner(Throwable* p_owner) { _owner = p_owner; }
+	const Throwable* _get_owner() const { return _owner; }
+	const Throwable* _get_nested() const { return _nested.get(); }
+
 protected:
 	Type _type;
 	String _what;
 	DBGSourceInfo source_info;
+
+	ptr<Throwable> _nested;
+	Throwable* _owner = nullptr; // for throwable TODO: move nested here
 };
 
 // ---------------------------------------------------
 
 class Error : public Throwable {
 public:
-	Error(Type p_type = BUG, const String& p_what = "", const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
+	Error(Type p_type, const String& p_what, const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
 	virtual Kind get_kind() const { return ERROR; }
 	void console_log() const override;
 };
 
 class CompileTimeError : public Throwable {
 public:
-
-	CompileTimeError(Type p_type, const String& p_what = "",
-		const DBGSourceInfo& p_dbg_info = DBGSourceInfo(), const DBGSourceInfo& p_cb_dbg = DBGSourceInfo());
+	CompileTimeError(Type p_type, const String& p_what,
+		const DBGSourceInfo& p_cb_info = DBGSourceInfo(), const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
 	virtual Kind get_kind() const { return COMPILE_TIME; }
 	void console_log() const override;
 
@@ -147,15 +158,29 @@ private:
 
 class Warning : public Throwable {
 public:
-
-	Warning(Type p_type, const String& p_what = "",
-		const DBGSourceInfo& p_dbg_info = DBGSourceInfo(), const DBGSourceInfo& p_cb_dbg = DBGSourceInfo());
+	Warning(Type p_type, const String& p_what,
+		const DBGSourceInfo& p_cb_info = DBGSourceInfo(), const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
 	virtual Kind get_kind() const { return WARNING; }
 	void console_log() const override;
 
 private:
 	DBGSourceInfo _cb_dbg_info;
-	
+};
+
+class TraceBack : public Throwable {
+public:
+	TraceBack(Type p_type, const String& p_what,
+		const DBGSourceInfo& p_cb_info = DBGSourceInfo(), const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
+	TraceBack(const ptr<Throwable> p_nested,
+		const DBGSourceInfo& p_cb_info = DBGSourceInfo(), const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
+
+	virtual Kind get_kind() const { return TRACEBACK; }
+	void console_log() const override;
+
+	const ptr<Throwable> get_nested() const;
+
+private:
+	DBGSourceInfo _cb_dbg_info;
 };
 
 

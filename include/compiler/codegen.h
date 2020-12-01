@@ -46,6 +46,7 @@ struct CGContext {
 	uint32_t stack_max_size = 0;
 
 	ptr<Opcodes> opcodes;
+	void insert_dbg(const Parser::Node* p_node);
 
 	void clear();
 	void push_stack_locals();

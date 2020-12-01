@@ -64,8 +64,6 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("func fn() { __assert(__func() == \"fn\"); }");
 	CHECK_NOTHROW__ANALYZE("class Aclass { func fn() { __assert(__func() == \"Aclass.fn\"); } }");
 	CHECK_NOTHROW__ANALYZE("enum E { V = 1 } __assert(E.V == 1);");
-	//CHECK_NOTHROW__ANALYZE("__assert(__file() == \"" NO_PATH "\");");
-	//CHECK_NOTHROW__ANALYZE("const C = __file(); __assert(C == \"" NO_PATH "\")");
 
 	// indexing reduced at compile time.
 	CHECK_NOTHROW__ANALYZE("enum E { V = 42 } const C = E.V;");
@@ -116,7 +114,7 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("func fn(arg1, arg2 = 1, arg3 = \"str\"){} func g(){ fn(false); fn(1.0, 2); fn(1, \"str\", true); } ");
 	CHECK_NOTHROW__ANALYZE("func call(f) { f(); } func fn(){ print(\"fn() called.\"); } var tmp = call(fn);");
 	CHECK_NOTHROW__ANALYZE("func f(){} var v = f;");
-	CHECK_NOTHROW__ANALYZE("class Aclass { func f(){} } var v = Aclass.f;");
+	CHECK_NOTHROW__ANALYZE("class Aclass { static func f(){} } var v = Aclass.f;");
 	CHECK_NOTHROW__ANALYZE("func f(x) { while (x) { if (false) break; } }");
 	//CHECK_NOTHROW__ANALYZE("func fn() {} var v = fn.get_name();");
 	// if ref of identifier is func pass it as callable object.
@@ -128,5 +126,8 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("var file = File(\"the/path/to/file.txt\");");
 	CHECK_NOTHROW__ANALYZE("var buffer = Buffer();");
 	CHECK_NOTHROW__ANALYZE("var buffer = Buffer(1000);");
+
+	// attribute access tests.
+
 
 }

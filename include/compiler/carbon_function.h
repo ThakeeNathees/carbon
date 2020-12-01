@@ -44,6 +44,7 @@ private: // members
 	int _arg_count;
 	stdvec<var> _default_args;
 	stdvec<uint32_t> _opcodes;
+	stdmap<int, Opcodes::OpcodePos> op_dbg;
 	uint32_t _stack_size;
 	
 public:
@@ -53,10 +54,13 @@ public:
 	const stdvec<var>& get_default_args() const;
 	// TODO: parameter names : only for debugging
 	uint32_t get_stack_size() const;
+	const Bytecode* get_owner() const;
+	
 	const stdvec<uint32_t>& get_opcodes() const;
-	var __call(stdvec<var*>& p_args) override;
+	const stdmap<int, Opcodes::OpcodePos>& get_op_dbg() const;
 	String get_opcodes_as_string() const;
 
+	var __call(stdvec<var*>& p_args) override;
 };
 
 }

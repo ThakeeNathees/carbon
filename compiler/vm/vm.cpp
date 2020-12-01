@@ -44,7 +44,12 @@ var* VMStack::get_at(uint32_t p_pos) {
 	return &_stack[p_pos];
 }
 
-var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*> p_args) {
+var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*> p_args, int __stack) {
+
+	if (__stack >= STACK_MAX) {
+		// TODO: throw RuntimeError here.
+		throw Error(Error::STACK_OVERFLOW, "stack was overflowed.", _DBG_SOURCE);
+	}
 
 	p_bytecode->initialize();
 
@@ -85,7 +90,8 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 #define CHECK_OPCODE_SIZE(m_size) ASSERT(ip + m_size < opcodes.size())
 	while (ip < opcodes.size()) {
 		ASSERT(opcodes[ip] <= Opcode::END);
-
+		uint32_t last_ip = ip;
+		try {
 		switch (opcodes[ip]) {
 			case Opcode::GET: {
 				CHECK_OPCODE_SIZE(4);
@@ -243,10 +249,10 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				ptr<Instance> instance = newptr<Instance>(blueprint);
 
 				const CarbonFunction* member_initializer = blueprint->get_member_initializer();
-				if (member_initializer) call_carbon_function(member_initializer, blueprint.get(), instance, stdvec<var*>());
+				if (member_initializer) call_carbon_function(member_initializer, blueprint.get(), instance, stdvec<var*>(), __stack + 1);
 
 				const CarbonFunction* constructor = blueprint->get_constructor();
-				if (constructor) call_carbon_function(constructor, blueprint.get(), instance, args);
+				if (constructor) call_carbon_function(constructor, blueprint.get(), instance, args, __stack + 1);
 
 				*dst = instance;
 			} break;
@@ -342,7 +348,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 
 				if (func_ptr == nullptr) THROW_BUG("can't find the function");
 
-				*ret_value = call_carbon_function(func_ptr.get(), call_base, (func_ptr->is_static()) ? nullptr : p_self, args);
+				*ret_value = call_carbon_function(func_ptr.get(), call_base, (func_ptr->is_static()) ? nullptr : p_self, args, __stack + 1);
 
 			} break;
 			case Opcode::CALL_METHOD: {
@@ -395,10 +401,10 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				} else {
 
 					const CarbonFunction* member_initializer = p_bytecode->get_base_binary()->get_member_initializer();
-					if (member_initializer) call_carbon_function(member_initializer, p_bytecode->get_base_binary().get(), p_self, stdvec<var*>());
+					if (member_initializer) call_carbon_function(member_initializer, p_bytecode->get_base_binary().get(), p_self, stdvec<var*>(), __stack + 1);
 
 					const CarbonFunction* ctor = p_bytecode->get_base_binary()->get_constructor();
-					if (ctor) call_carbon_function(ctor, p_bytecode->get_base_binary().get(), p_self, args);
+					if (ctor) call_carbon_function(ctor, p_bytecode->get_base_binary().get(), p_self, args, __stack + 1);
 				}
 
 			} break;
@@ -426,10 +432,10 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 
 					if (fn != nullptr) {
 						if (fn->is_static()) {
-							*ret_value = call_carbon_function(fn.get(), p_self->blueprint.get(), p_self, args);
+							*ret_value = call_carbon_function(fn.get(), p_self->blueprint.get(), p_self, args, __stack + 1);
 						} else {
 							if (p_self == nullptr) THROW_BUG("can't call non-static method statically");
-							*ret_value = call_carbon_function(fn.get(), p_self->blueprint.get(), nullptr, args);
+							*ret_value = call_carbon_function(fn.get(), p_self->blueprint.get(), nullptr, args, __stack + 1);
 						}
 					} else if (sv != nullptr) {
 						*ret_value = sv->__call(args);
@@ -491,9 +497,36 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 			case Opcode::END: {
 				return var();
 			} break;
+			MISSED_ENUM_CHECK(Opcode::END, 25);
 
+		}} catch (Throwable& err) {
+			ptr<Throwable> nested;
+			switch (err.get_kind()) {
+				case Throwable::ERROR:
+					nested = newptr<Error>(static_cast<Error&>(err));
+					break;
+				case Throwable::COMPILE_TIME:
+					nested = newptr<CompileTimeError>(static_cast<CompileTimeError&>(err));
+					break;
+				case Throwable::WARNING:
+					nested = newptr<Warning>(static_cast<Warning&>(err));
+					break;
+				case Throwable::TRACEBACK:
+					nested = newptr<TraceBack>(static_cast<TraceBack&>(err));
+					break;
+			}
+
+			auto it = p_func->get_op_dbg().lower_bound(last_ip);
+			uint32_t line = (it != p_func->get_op_dbg().end()) ? line = (uint32_t)it->second.pos.x : 0;
+			String func;
+			if (p_func->get_owner() != nullptr && p_func->get_owner()->is_class()) {
+				func = p_func->get_owner()->get_name() + "." + p_func->get_name();
+			} else {
+				func = p_func->get_name();
+			}
+
+			throw TraceBack (nested, DBGSourceInfo(context.bytecode_file->get_name(), line, func), _DBG_SOURCE);
 		}
-		MISSED_ENUM_CHECK(Opcode::END, 25);
 
 	}
 	THROW_BUG("can't reach here");

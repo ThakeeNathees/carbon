@@ -67,9 +67,12 @@ const String& CarbonFunction::get_name() const { return _name; }
 bool CarbonFunction::is_static() const { return _is_static; }
 int CarbonFunction::get_arg_count() const { return _arg_count; }
 const stdvec<var>& CarbonFunction::get_default_args() const { return _default_args; }
-
 uint32_t CarbonFunction::get_stack_size() const { return _stack_size; }
+const Bytecode* CarbonFunction::get_owner() const { return _owner; }
+
 const stdvec<uint32_t>& CarbonFunction::get_opcodes() const { return _opcodes; }
+const stdmap<int, Opcodes::OpcodePos>& CarbonFunction::get_op_dbg() const { return op_dbg; }
+
 
 var CarbonFunction::__call(stdvec<var*>& p_args) {
 	return VM::singleton()->call_carbon_function(this, _owner, nullptr, p_args);

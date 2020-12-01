@@ -28,30 +28,22 @@ using namespace carbon;
 
 int _main(int argc, char** argv) {
 	carbon_initialize();
+	log_copyright_and_license();
 
-	try { // for now.
-		stdvec<String> args;
-		for (int i = 0; i < argc; i++) args.push_back(argv[i]);
+	if (argc < 2) log_help();
+	else {
+		// TODO: parse command line args.
+		try {
+			stdvec<String> args;
+			for (int i = 0; i < argc; i++) args.push_back(argv[i]);
 
-		ptr<Bytecode> bytecode;
-		if (argc < 2) bytecode = Compiler::singleton()->compile("tests/test_main.cb");
-		else bytecode = Compiler::singleton()->compile(argv[1]);
-		VM* vm = VM::singleton(); vm->run(bytecode, args);
+			ptr<Bytecode> bytecode = Compiler::singleton()->compile(argv[1]);
+			VM::singleton()->run(bytecode, args);
 
-	} catch (Throwable& err) {
-		err.console_log();
-		
-		//Logger::logf_error("ERROR(%s): %s ", Error::get_err_name(err.get_type()).c_str(), err.get_msg().c_str());
-		//Logger::logf_info("at: (%s:%i)\n", err.get_file().c_str(), err.get_pos().x);
-		
-		//Logger::log(
-		//	String::format("    at: %s (%s:%i)\n", err.get_dbg_func().c_str(), err.get_dbg_file().c_str(), err.get_dbg_line()).c_str(),
-		//	Logger::ERROR, Logger::Color::L_SKYBLUE
-		//);
-		
-		//Logger::logf_info("%s\n%s\n", err.get_line().c_str(), err.get_line_pos().c_str());
+		} catch (Throwable& err) {
+			err.console_log();
+		}
 	}
-
 	carbon_cleanup();
 	return 0;
 }

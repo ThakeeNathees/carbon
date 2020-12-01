@@ -69,6 +69,7 @@ public:
 		};
 		Type type = Type::UNKNOWN;
 		Vect2i pos;
+		uint32_t width = 1; // width of the node ^^^^ (dbg).
 		ptr<Node> parernt_node;
 		bool is_reduced = false;
 		bool _is_reducing = false;
@@ -368,6 +369,7 @@ public:
 		// should be Node (instead of identifier node) for reduce the identifier.
 		// if the method is nullptr and base is a var `a_var(...)` -> `a_var.__call(...)` will be called.
 		ptr<Node> method;
+		bool is_compilttime = false;
 		stdvec<ptr<Node>> args;
 		CallNode() {
 			type = Node::Type::CALL;
@@ -575,6 +577,7 @@ private:
 	ptr<T> new_node(Targs... p_args) {
 		ptr<T> ret = newptr<T>(p_args...);
 		ret->pos = tokenizer->get_pos();
+		ret->width = tokenizer->get_pos();
 		return ret;
 	}
 

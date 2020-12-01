@@ -26,8 +26,9 @@
 #ifndef CARBON_H
 #define CARBON_H
 
-// core compilation pipeline
 #include "core/core.h"
+
+// compilation pipeline
 #include "compiler/tokenizer.h"
 #include "compiler/parser.h"
 #include "compiler/analyzer.h"
@@ -55,13 +56,35 @@ inline void carbon_initialize() {
 	NativeClasses::singleton()->register_class<File>();
 	NativeClasses::singleton()->register_class<Path>();
 	NativeClasses::singleton()->register_class<Buffer>();
-
 }
 
 inline void carbon_cleanup() {
 	NativeClasses::cleanup();
 	VM::cleanup();
 	Compiler::cleanup();
+}
+
+// =================================================================
+
+inline void log_copyright_and_license() {
+	Logger::log(1 + R"(
+Carbon 1.0.0 (https://github.com/ThakeeNathees/carbon/)
+Copyright (c) 2020 ThakeeNathees.
+Free and open source software under the terms of the MIT license.
+
+)");
+}
+
+inline void log_help() {
+	Logger::log(1 + R"(
+usage: carbon [options] file ...
+Options:
+    -h, --help     : Display this help message.
+    -v, --version  : Display the version.
+    -o             : Output path.
+    -w             : Warnings are treated as errors.
+    -I(path)       : Import search path.
+)");
 }
 
 }

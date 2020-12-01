@@ -1,14 +1,7 @@
 
-func f() = println("lib.f called");
-var x = f();
-
 class Aclass {
-	static var y = g();
 	func Aclass() {
-		println("super constructor");
+		println("Aclass constructor");
 	}
-
-	func f() { println("f"); g(); }
-	static func g() { println("Aclass::g called"); }
 }
 

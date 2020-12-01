@@ -130,13 +130,24 @@ const TokenData& Tokenizer::peek(int p_offset, bool p_safe) const {
 	return tokens[token_ptr + p_offset];
 }
 
-Vect2i Tokenizer::get_pos() const { return Vect2i(cur_line, cur_col); }
-const TokenData& Tokenizer::get_token_at(const Vect2i& p_pos) const {
+Vect2i Tokenizer::get_pos() const {
+	return Vect2i(cur_line, cur_col);
+}
+
+uint32_t Tokenizer::get_width() const {
+	int last_token_ind = token_ptr - 1;
+	if (last_token_ind < 0 || tokens.size() <= last_token_ind) return 1;
+	return tokens[last_token_ind].get_width();
+}
+
+const TokenData& Tokenizer::get_token_at(const Vect2i& p_pos, bool p_safe) const {
+	static TokenData tmp = { Token::_EOF };
 	for (size_t i = 0; i < tokens.size(); i++) {
 		if (tokens[i].line == p_pos.x && tokens[i].col == p_pos.y) {
 			return tokens[i];
 		}
 	}
+	if (p_safe) return tmp;
 	throw TOKENIZER_ERROR(Error::BUG, "TokenData::get_token_at() called with invalid position.");
 }
 

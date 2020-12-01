@@ -27,6 +27,10 @@
 
 namespace carbon {
 
+void CGContext::insert_dbg(const Parser::Node* p_node) {
+	if (p_node == nullptr) return;
+	opcodes->insert_dbg(p_node->pos, p_node->width);
+}
 
 void CGContext::clear() {
 	curr_class = nullptr;
@@ -236,13 +240,17 @@ ptr<CarbonFunction> CodeGen::_generate_initializer(bool p_static, Bytecode* p_by
 				member = Address(Address::MEMBER_VAR, _context.bytecode->get_member_index(var_node->name));
 			}
 			Address value = _generate_expression(var_node->assignment.get(), &member);
-			if (member != value) _context.opcodes->write_assign(member, value);
+			if (member != value) {
+				_context.insert_dbg(var_node.get());
+				_context.opcodes->write_assign(member, value);
+			}
 			_pop_addr_if_temp(value);
 		}
 	}
 
 	_context.opcodes->insert(Opcode::END);
 	cfn->_opcodes = _context.opcodes->opcodes;
+	cfn->op_dbg = _context.opcodes->op_dbg;
 	return cfn;
 }
 
@@ -266,6 +274,7 @@ ptr<CarbonFunction> CodeGen::_generate_function(const Parser::FunctionNode* p_fu
 	_context.opcodes->insert(Opcode::END);
 
 	cfn->_opcodes = _context.opcodes->opcodes;
+	cfn->op_dbg = _context.opcodes->op_dbg;
 	return cfn;
 }
 
@@ -295,6 +304,7 @@ void CodeGen::_generate_block(const Parser::BlockNode* p_block) {
 				if (var_node->assignment != nullptr) {
 					Address assign_value = _generate_expression(var_node->assignment.get(), &local_var);
 					if (assign_value != local_var) {
+						_context.insert_dbg(var_node);
 						_context.opcodes->write_assign(local_var, assign_value);
 					}
 					_pop_addr_if_temp(assign_value);

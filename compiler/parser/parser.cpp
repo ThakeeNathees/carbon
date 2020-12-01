@@ -44,12 +44,10 @@ CompileTimeError Parser::_unexp_token_error(const char* p_exptected, const DBGSo
 }
 
 CompileTimeError Parser::_parser_error(Error::Type p_type, const String& p_msg, Vect2i p_pos, const DBGSourceInfo& p_dbg_info) const {
-	uint32_t err_len = 1;
 	String token_str = "";
 	if (p_pos.x > 0 && p_pos.y > 0) token_str = tokenizer->get_token_at(p_pos).to_string();
 	else token_str = tokenizer->peek(-1, true).to_string();
-	if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;
-	else err_len = (uint32_t)token_str.size();
+	uint32_t err_len = (uint32_t)token_str.size();
 
 	Vect2i pos = (p_pos.x > 0 && p_pos.y > 0) ? p_pos : tokenizer->peek(-1, true).get_pos();
 	return CompileTimeError(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source, pos, err_len), p_dbg_info);
@@ -124,12 +122,13 @@ void Parser::parse(String p_source, String p_file_path) {
 
 			// compile time function call.
 			case Token::IDENTIFIER: {
-				ptr<CallNode> call = new_node<CallNode>();
 				BuiltinFunctions::Type builtin_func = BuiltinFunctions::get_func_type(token.identifier);
 				if (builtin_func != BuiltinFunctions::UNKNOWN && BuiltinFunctions::is_compiletime(builtin_func)) {
+					ptr<CallNode> call = new_node<CallNode>();
 					call->base = new_node<BuiltinFunctionNode>(builtin_func);
 					if (tokenizer->next().type != Token::BRACKET_LPARAN) throw UNEXP_TOKEN_ERROR("symbol \"(\"");
 					call->args = _parse_arguments(file_node);
+					call->is_compilttime = true;
 					file_node->compiletime_functions.push_back(call);
 					break;
 				}
@@ -392,6 +391,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 					call->base = new_node<BuiltinFunctionNode>(builtin_func);
 					if (tokenizer->next().type != Token::BRACKET_LPARAN) throw UNEXP_TOKEN_ERROR("symbol \"(\"");
 					call->args = _parse_arguments(class_node);
+					call->is_compilttime = true;
 					class_node->compiletime_functions.push_back(call);
 					break;
 				}
@@ -462,6 +462,20 @@ ptr<Parser::EnumNode> Parser::_parse_enum(ptr<Node> p_parent) {
 				}
 
 				if (!enum_node->named_enum) {
+
+					// TODO: check if it's compile time function.
+					//BuiltinFunctions::Type builtin_func = BuiltinFunctions::get_func_type(token.identifier);
+					//if (builtin_func != BuiltinFunctions::UNKNOWN && BuiltinFunctions::is_compiletime(builtin_func)) {
+					//	ptr<CallNode> call = new_node<CallNode>();
+					//	call->base = new_node<BuiltinFunctionNode>(builtin_func);
+					//	if (tokenizer->next().type != Token::BRACKET_LPARAN) throw UNEXP_TOKEN_ERROR("symbol \"(\"");
+					//	call->args = _parse_arguments(file_node);
+					//	call->is_compilttime = true;
+					//	if (parser_context.current_class != nullptr) parser_context.current_class->compiletime_functions.push_back(call);
+					//	else file_node->compiletime_functions.push_back(call);
+					//	break;
+					//}
+
 					_check_identifier_predefinition(token.identifier, p_parent.get());
 				}
 				

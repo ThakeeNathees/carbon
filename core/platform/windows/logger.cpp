@@ -48,13 +48,13 @@ protected:
 	}
 
 	virtual void log_verbose_impl(const char* p_msg) const override { log(p_msg, false); }
-	virtual void log_info_impl(const char* p_msg)    const override { log(p_msg, false, Color::D_WHITE); }
+	virtual void log_info_impl(const char* p_msg)    const override { log(p_msg, false, Color::L_WHITE); }
 	virtual void log_success_impl(const char* p_msg) const override { log(p_msg, false, Color::L_GREEN); }
 	virtual void log_warning_impl(const char* p_msg) const override { log(p_msg, true, Color::D_YELLOW); }
 	virtual void log_error_impl(const char* p_msg)   const override { log(p_msg, true, Color::D_RED); }
 
 	virtual void logf_verbose_impl(const char* p_fmt, va_list p_list) const override { logf(p_fmt, p_list, false); }
-	virtual void logf_info_impl(const char* p_fmt, va_list p_list)    const override { logf(p_fmt, p_list, false, Color::D_WHITE); }
+	virtual void logf_info_impl(const char* p_fmt, va_list p_list)    const override { logf(p_fmt, p_list, false, Color::L_WHITE); }
 	virtual void logf_success_impl(const char* p_fmt, va_list p_list) const override { logf(p_fmt, p_list, false, Color::L_GREEN); }
 	virtual void logf_warning_impl(const char* p_fmt, va_list p_list) const override { logf(p_fmt, p_list, true, Color::D_YELLOW); }
 	virtual void logf_error_impl(const char* p_fmt, va_list p_list)   const override { logf(p_fmt, p_list, true, Color::D_RED); }

@@ -64,7 +64,7 @@ private: // members
 
 public:
 	int run(ptr<Bytecode> bytecode, stdvec<String> args);
-	var call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*> p_args);
+	var call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*> p_args, int __stack = 0);
 
 	static VM* singleton();
 	static void cleanup();
@@ -75,6 +75,7 @@ private:
 	var* _get_builtin_func_ref(uint32_t p_type);
 	var* _get_builtin_type_ref(uint32_t p_type);
 	static VM* _singleton;
+	const int STACK_MAX = 1024; // TODO: increase
 
 };
 

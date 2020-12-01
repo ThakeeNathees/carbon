@@ -32,12 +32,14 @@ void CodeGen::_generate_control_flow(const Parser::ControlFlowNode* p_cflow) {
 		case Parser::ControlFlowNode::CfType::IF: {
 			ASSERT(p_cflow->args.size() == 1);
 			Address cond = _generate_expression(p_cflow->args[0].get());
+			_context.insert_dbg(p_cflow);
 			_context.opcodes->write_if(cond);
 			if (cond.is_temp()) _context.pop_stack_temp();
 
 			_generate_block(p_cflow->body.get());
 
 			if (p_cflow->body_else != nullptr) {
+				_context.insert_dbg(p_cflow->body_else.get());
 				_context.opcodes->write_else();
 				_generate_block(p_cflow->body_else.get());
 			}
@@ -53,6 +55,7 @@ void CodeGen::_generate_control_flow(const Parser::ControlFlowNode* p_cflow) {
 			ASSERT(p_cflow->args.size() == 1);
 			_context.opcodes->jump_to_continue.push(_context.opcodes->next());
 			Address cond = _generate_expression(p_cflow->args[0].get());
+			_context.insert_dbg(p_cflow);
 			_context.opcodes->write_while(cond);
 			if (cond.is_temp()) _context.pop_stack_temp();
 			_generate_block(p_cflow->body.get());
@@ -69,6 +72,7 @@ void CodeGen::_generate_control_flow(const Parser::ControlFlowNode* p_cflow) {
 				Address iterator = _context.add_stack_local(var_node->name);
 				if (var_node->assignment != nullptr) {
 					Address assign_value = _generate_expression(var_node->assignment.get());
+					_context.insert_dbg(var_node);
 					_context.opcodes->write_assign(iterator, assign_value);
 					if (assign_value.is_temp()) _context.pop_stack_temp();
 				}
@@ -81,6 +85,7 @@ void CodeGen::_generate_control_flow(const Parser::ControlFlowNode* p_cflow) {
 				const Parser::Node* cond_node = p_cflow->args[1].get();
 				cond = _generate_expression(cond_node);
 			}
+			_context.insert_dbg(p_cflow);
 			_context.opcodes->write_for(cond);
 			if (cond.is_temp()) _context.pop_stack_temp();
 
@@ -108,6 +113,7 @@ void CodeGen::_generate_control_flow(const Parser::ControlFlowNode* p_cflow) {
 			Address iterator = _context.add_stack_temp();
 			Address on = _generate_expression(p_cflow->args[1].get());
 
+			_context.insert_dbg(p_cflow);
 			_context.opcodes->write_foreach(iter_value, iterator, on);
 			_generate_block(p_cflow->body.get());
 			_pop_addr_if_temp(iterator);
@@ -119,16 +125,19 @@ void CodeGen::_generate_control_flow(const Parser::ControlFlowNode* p_cflow) {
 
 		case Parser::ControlFlowNode::CfType::BREAK: {
 			ASSERT(p_cflow->args.size() == 0);
+			_context.insert_dbg(p_cflow);
 			_context.opcodes->write_break();
 		} break;
 		case Parser::ControlFlowNode::CfType::CONTINUE: {
 			ASSERT(p_cflow->args.size() == 0);
+			_context.insert_dbg(p_cflow);
 			_context.opcodes->write_continue();
 		} break;
 		case Parser::ControlFlowNode::CfType::RETURN: {
 			ASSERT(p_cflow->args.size() <= 1);
 			Address ret;
 			if (p_cflow->args.size() == 1) ret = _generate_expression(p_cflow->args[0].get());
+			_context.insert_dbg(p_cflow);
 			_context.opcodes->write_return(ret);
 			if (ret.is_temp()) _context.pop_stack_temp();
 			

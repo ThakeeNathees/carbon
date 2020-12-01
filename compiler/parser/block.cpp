@@ -71,9 +71,18 @@ ptr<Parser::BlockNode> Parser::_parse_block(const ptr<Node>& p_parent, bool p_si
 
 			// Ignore.
 			case Token::SYM_SEMI_COLLON:
-			case Token::VALUE_STRING: // should I include VALUE_INT, VALUE_FLOAT ??
-				tokenizer->next(); // eat ";" or "string literal"
+				tokenizer->next(); // eat ";"
 				break;
+
+			case Token::VALUE_NULL:
+			case Token::VALUE_BOOL:
+			case Token::VALUE_INT:
+			case Token::VALUE_FLOAT:
+			case Token::VALUE_STRING: {
+				tk = &tokenizer->next(); // will be ignored by analyzer
+				ptr<ConstValueNode> value = new_node<ConstValueNode>(tk->constant);
+				block_node->statements.push_back(value);
+			} break;
 
 			case Token::KWORD_IF: {
 				tokenizer->next(); // eat "if"

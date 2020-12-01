@@ -34,11 +34,13 @@ class Logger {
 public:
 	enum LogLevel 
 	{
-		VERBOSE = 0,
-		INFO    = 1,
-		SUCCESS = 2,
-		WARNING = 3,
-		ERROR   = 4,
+		JUST_LOG = 0,
+
+		VERBOSE = 1,
+		INFO    = 2,
+		SUCCESS = 3,
+		WARNING = 4,
+		ERROR   = 5,
 	};
 
 	enum class Color {
@@ -65,35 +67,26 @@ public:
 		__COLOR_MAX__,
 	};
 
-	static void set_level(LogLevel p_level) { level = p_level; }
-	static LogLevel get_level() { return level; }
-	static bool is_level(LogLevel p_level) { return (int)p_level >= (int)level; }
+	static void set_level(LogLevel p_level);
+	static void reset_level();
+	static LogLevel get_level();
+	static bool is_level(LogLevel p_level);
 	
-	static void log(const char* p_msg, LogLevel p_level = VERBOSE, Color p_fg = Color::L_WHITE, Color p_bg = Color::BLACK) {
-		if (!is_level(p_level)) return; singleton->log_impl(p_msg, p_fg, p_bg);
-	}
-	static void set_cursor(int p_line, int p_column) { singleton->set_cursor_impl(p_line, p_column); }
+	static void log(const char* p_msg, Color p_fg = Color::L_WHITE, Color p_bg = Color::BLACK);
+	static void log(const char* p_msg, LogLevel p_level, Color p_fg = Color::L_WHITE, Color p_bg = Color::BLACK);
+	static void set_cursor(int p_line, int p_column);
 
-	static void log_verbose(const char* p_msg) { if (!is_level(LogLevel::VERBOSE)) return; singleton->log_verbose_impl(p_msg); } // for verbose
-	static void log_info(const char* p_msg) { if (!is_level(LogLevel::INFO)) return; singleton->log_info_impl(p_msg); }
-	static void log_success(const char* p_msg) { if (!is_level(LogLevel::SUCCESS)) return; singleton->log_success_impl(p_msg); }
-	static void log_warning(const char* p_msg) { if (!is_level(LogLevel::WARNING)) return; singleton->log_warning_impl(p_msg); }
-	static void log_error(const char* p_msg) { if (!is_level(LogLevel::ERROR)) return; singleton->log_error_impl(p_msg); }
+	static void log_verbose(const char* p_msg);
+	static void log_info(const char* p_msg);
+	static void log_success(const char* p_msg);
+	static void log_warning(const char* p_msg);
+	static void log_error(const char* p_msg);
 
-
-#define LOG_METHODS(m_func, m_level)                    \
-static void m_func(const char* p_fmt, ...) {            \
-	if (!is_level(LogLevel::m_level)) return;           \
-	va_list args;                                       \
-	va_start(args, p_fmt);                              \
-	singleton->m_func##_impl (p_fmt, args);             \
-	va_end(args);                                       \
-}
-	LOG_METHODS(logf_verbose, VERBOSE)
-	LOG_METHODS(logf_info, INFO)
-	LOG_METHODS(logf_success, SUCCESS)
-	LOG_METHODS(logf_warning, WARNING)
-	LOG_METHODS(logf_error, ERROR)
+	static void logf_verbose(const char* p_fmt, ...);
+	static void logf_info(const char* p_fmt, ...);
+	static void logf_success(const char* p_fmt, ...);
+	static void logf_warning(const char* p_fmt, ...);
+	static void logf_error(const char* p_fmt, ...);
 
 protected:
 	virtual void log_impl(const char* p_msg, Color p_fg, Color p_bg) const = 0;
@@ -114,6 +107,7 @@ protected:
 private:
 	static ptr<Logger> singleton;
 	static LogLevel level;
+	static LogLevel last_level;
 };
 
 }

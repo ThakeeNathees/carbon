@@ -37,7 +37,7 @@ namespace carbon {
 class Analyzer {
 public:
 	void analyze(ptr<Parser> p_parser);
-
+	const stdvec<Warning>& get_warnings() const;
 private:
 	friend class CodeGen;
 	ptr<Parser> parser;
@@ -51,10 +51,10 @@ private:
 	}
 
 	CompileTimeError _analyzer_error(Error::Type p_type, const String& p_msg, Vect2i p_pos, const DBGSourceInfo& p_dbg_info) const;
-	Warning _analyzer_warning(Warning::Type p_type, const String& p_msg, Vect2i p_pos, const DBGSourceInfo& p_dbg_info);
+	 void _analyzer_warning(Warning::Type p_type, const String& p_msg, Vect2i p_pos, const DBGSourceInfo& p_dbg_info);
 
 	var _call_compiletime_func(Parser::BuiltinFunctionNode* p_func, stdvec<var*>& args);
-	void _resolve_compiletime_funcs(const stdvec<ptr<Parser::CallNode>>& p_funcs);
+	void _resolve_compiletime_funcs(const ptr<Parser::CallNode>& p_func);
 
 	void _check_identifier(ptr<Parser::Node>& p_expr);
 	void _check_member_var_shadow(void* p_base, Parser::ClassNode::BaseType p_base_type, stdvec<ptr<Parser::VarNode>>& p_vars);

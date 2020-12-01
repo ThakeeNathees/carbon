@@ -1,28 +1,35 @@
--- loca var a = b; var b = a; cause a crash;
--- default constructor argument not working
 
--- switch statement (jump table impl)
--- undef THROW_ANLAYZER_ERROR, TOKENIZER_ERROR, ... (not THROW_BUG)
+---- BUGS ----
+-- float("") <-- crash
+-- "".substr() check index limit
+-- null var x = 12; // no error for the null before
+
+---- TODO ----
+-- "string %s literal" % ["replace"]
+-- implement to_string on type info, runtim instance, class ref, ...
 -- error print and dbg info (stack trace)
+-- switch statement (jump table impl) before: switch body is a single block node
+-- undef THROW_ANLAYZER_ERROR, TOKENIZER_ERROR, ... (not THROW_BUG)
 -- opcode string print
--- "string %s literal"_s % {"replace"}
 -- ext_lib.lib.lib;
 -- change owner pointer from shared to weak
 
+---- LOW PRIO ---
+-- in, is 
 -- class A{} var a = A; println(a.get_type_name()); // RuntimeInstance
 -- a rich typecheck api
--- "".substr() check index limit
--- float("") <-- crash
 -- unexpected token, expected [empty]
--- try super.EnumClass(); <-- check error msg
+-- try super.EnumClass(); <-- better error msg
+-- math class (math.sin, math.tanh ...)
+-- compiler as var -> runtime code compile
+-- multi thread for multiple VM
 
------ TODO ADDNL -----
+---- TODO ADDNL ----
 -- i++, i--
 -- reverse list, string, slice array
 -- " ".join(arr), strip, trim... try dir("") in python and implement all.
 -- python like range().
 -- dir() function
--- in, is 
 
 -- func f(x) = 2*x + 1; lambda
 -- [expr(i) for i in expr]

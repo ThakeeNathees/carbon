@@ -137,6 +137,7 @@ struct TokenData {
 
 	String to_string() const;
 	Vect2i get_pos() const {  return Vect2i(line, col);  }
+	uint32_t get_width() const { return (uint32_t)to_string().size(); }
 };
 
 class Tokenizer {
@@ -160,7 +161,8 @@ public:
 	const TokenData& next(int p_offset = 0);
 	const TokenData& peek(int p_offset = 0, bool p_safe = false) const;
 	Vect2i get_pos() const;
-	const TokenData& get_token_at(const Vect2i& p_pos) const;
+	uint32_t get_width() const;
+	const TokenData& get_token_at(const Vect2i& p_pos, bool p_safe = false) const;
 
 	static const char* get_token_name(Token p_tk);
 

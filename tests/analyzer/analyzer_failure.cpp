@@ -57,4 +57,7 @@ TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	CHECK_THROWS__ANALYZE(Error::ATTRIBUTE_ERROR, "class Class { func f(){}  func g() { Class.f(); }  }");
 	CHECK_THROWS__ANALYZE(Error::ATTRIBUTE_ERROR, "class A{ func f(){} } class B:A{ static func g(){ f(); } }");
 	CHECK_THROWS__ANALYZE(Error::ATTRIBUTE_ERROR, "class A{ func f(){} } class B:A{ static func g(){ super.f(); } }");
+	CHECK_THROWS__ANALYZE(Error::ATTRIBUTE_ERROR, "class A{ /*non static*/ func f(){} } var x = A.f;");
+
+	// TODO: more invalid attribute access tests
 }

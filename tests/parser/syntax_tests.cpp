@@ -63,15 +63,25 @@ TEST_CASE("[parser_tests]:syntax_test") {
 	)", NO_PATH));
 
 	// for loop.
+	CHECK_NOTHROW(parser.parse(R"(
+	func fn() {
+		for(;;);
+		for(var i = 1 + 2; i < 10; i+=1) print(i);
+		for(var i = 0; i <= 10; i+=1) { var in = input(); print(in); }
+	}
+	)", NO_PATH));
 
-	// Not sure why but it crash randomly most possibly the last for loop _parse_var
-	//CHECK_NOTHROW(parser.parse(R"(
-	//func fn() {
-	//	for(;;);
-	//	for(var i = 1 + 2; i < 10; i+=1) print(i);
-	//	for(var i = 0; i <= 10; i+=1) { var in = input(); print(in); }
-	//}	
-	//)", NO_PATH));
+	// foreach loop
+	CHECK_NOTHROW(parser.parse(R"(
+	func fn() {
+		for (var i : 10);
+		for (var c : "string") println(c);
+		for (var e : [1, 2, 3]);
+
+		var maybe_iterable;
+		for (var i : maybe_iterable) {}
+	}
+	)", NO_PATH));
 
 	// while loop.
 	CHECK_NOTHROW(parser.parse(R"(

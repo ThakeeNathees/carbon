@@ -234,6 +234,11 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 						// Aclass.a_function;
 						case Parser::IdentifierNode::REF_FUNCTION: {
 							_id.pos = member->pos;
+
+							if (_base_class_ref != _THIS && !_id._func->is_static) {
+								throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("non-static attribute \"%s\" cannot be access with a class reference \"%s\".", member->name.c_str(), base->name.c_str()), member->pos);
+							}
+
 							if (_base_class_ref == _THIS) {
 								p_expr = newptr<Parser::IdentifierNode>(_id);
 							} else {

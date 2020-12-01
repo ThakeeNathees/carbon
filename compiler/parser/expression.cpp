@@ -103,6 +103,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			if (tk->type == Token::IDENTIFIER) {
 				BuiltinFunctions::Type builtin_func = BuiltinFunctions::get_func_type(tk->identifier);
 				if (builtin_func != BuiltinFunctions::UNKNOWN) {
+					call->is_compilttime = BuiltinFunctions::is_compiletime(builtin_func);
 					call->base = new_node<BuiltinFunctionNode>(builtin_func);
 					call->method = nullptr;
 				} else {

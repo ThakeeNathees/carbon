@@ -276,7 +276,7 @@ var var::operator[](const var& p_key) const {
 		case MAP:    return _data._map[p_key];
 		case OBJECT: return _data._obj->__get_mapped(p_key);
 	}
-	THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, String::format("operator[] not supported on base %s", get_type_name()));
+	THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, String::format("operator[] not supported on base %s", get_type_name().c_str()));
 }
 
 var var::__get_mapped(const var& p_key) const {
@@ -297,7 +297,7 @@ var var::__get_mapped(const var& p_key) const {
 		case OBJECT:
 			return _data._obj->__get_mapped(p_key);
 	}
-	THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, String::format("operator[] not supported on base %s", get_type_name()));
+	THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, String::format("operator[] not supported on base %s", get_type_name().c_str()));
 }
 
 void var::__set_mapped(const var& p_key, const var& p_value) {
@@ -321,7 +321,7 @@ void var::__set_mapped(const var& p_key, const var& p_value) {
 			_data._obj->__set_mapped(p_key, p_value);
 			return;
 	}
-	THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, String::format("operator[] not supported on base %s", get_type_name()));
+	THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, String::format("operator[] not supported on base %s", get_type_name().c_str()));
 }
 
 var var::__iter_begin() {
