@@ -75,7 +75,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 			}
 		} break;
 
-		// "string".member; // TODO: check 1.2 .prop ?
+		// "string".member;
 		case Parser::Node::Type::CONST_VALUE: {
 			Parser::ConstValueNode* base = ptrcast<Parser::ConstValueNode>(index->base).get();
 			try {

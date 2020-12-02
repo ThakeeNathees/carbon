@@ -37,10 +37,10 @@ void Bytecode::initialize() {
 
 	if (is_class()) {
 		_file->initialize();
-		if (_static_initializer) VM::singleton()->call_carbon_function(_static_initializer.get(), this, nullptr, stdvec<var*>());
+		if (_static_initializer) VM::singleton()->call_function(_static_initializer.get(), this, nullptr, stdvec<var*>());
 	} else {
 		for (auto p : _externs) p.second->initialize();
-		if (_static_initializer) VM::singleton()->call_carbon_function(_static_initializer.get(), this, nullptr, stdvec<var*>());
+		if (_static_initializer) VM::singleton()->call_function(_static_initializer.get(), this, nullptr, stdvec<var*>());
 		for (auto p : _classes) p.second->initialize();
 	}
 }
@@ -94,7 +94,7 @@ var Bytecode::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 	auto it_f = _functions.find(p_method_name);
 	if (it_f != _functions.end()) {
 		if (!it_f->second->is_static()) throw "TODO: throw error here";
-		return VM::singleton()->call_carbon_function(it_f->second.get(), this, nullptr, p_args);
+		return VM::singleton()->call_function(it_f->second.get(), this, nullptr, p_args);
 	}
 
 	auto it_sm = _static_vars.find(p_method_name);

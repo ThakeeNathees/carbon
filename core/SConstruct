@@ -7,13 +7,4 @@ SOURCES = [
     Glob('platform/%s/*.cpp' % cbenv['platform'] ),
 ]
 
-if cbenv['platform'] == 'windows':
-    cbenv.Append(LIBS=['psapi', 'dbghelp'])
-
-elif cbenv['platform'] == 'x11':
-    cbnev.Append(LIBS=['dl'])
-
-elif cbenv['platform'] == 'osx':
-    raise Exception("platform not Implemented yet.")
-
 cbenv.SOURCES_CORE += SOURCES

@@ -28,7 +28,7 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "core/platform/windows/crash_handler.h"
+#include "crash_handler.h"
 
 #ifdef CRASH_HANDLER_EXCEPTION
 

@@ -46,6 +46,21 @@ void Compiler::add_include_dir(const String& p_dir) {
 	}
 }
 
+ptr<Bytecode> Compiler::compile_source(const String& p_source, const String& p_path) {
+	ptr<Parser> parser = newptr<Parser>();
+	ptr<Analyzer> analyzer = newptr<Analyzer>();
+	ptr<CodeGen> codegen = newptr<CodeGen>();
+
+	parser->parse(p_source, p_path);
+	analyzer->analyze(parser);
+
+	for (const Warning& warning : analyzer->get_warnings()) {
+		warning.console_log(); // TODO: it shouldn't print, add to warnings list instead.
+	}
+
+	return codegen->generate(analyzer);
+}
+
 ptr<Bytecode> Compiler::compile(const String& p_path) {
 
 	if (!Path::exists(p_path)) THROW_ERROR(Error::IO_ERROR, String::format("path \"%s\" does not exists.", p_path.c_str()));
@@ -79,21 +94,10 @@ ptr<Bytecode> Compiler::compile(const String& p_path) {
 	_cwd.push(Path::get_cwd());
 	Path::set_cwd(Path::parent(path)); // TODO: error handle
 
-	ptr<Parser> parser = newptr<Parser>();
-	ptr<Analyzer> analyzer = newptr<Analyzer>();
-	ptr<CodeGen> codegen = newptr<CodeGen>();
-
 	File file(path, File::READ);
 	Logger::log(String::format("compiling: %s\n", path.c_str()).c_str());
 
-	parser->parse(file.read_text(), path);
-	analyzer->analyze(parser);
-
-	for (const Warning& warning : analyzer->get_warnings()) {
-		warning.console_log(); // TODO: conditional.
-	}
-
-	ptr<Bytecode> bytecode = codegen->generate(analyzer);
+	ptr<Bytecode> bytecode = compile_source(file.read_text(), path);
 
 	_cache[path].bytecode = bytecode;
 	return bytecode;

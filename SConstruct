@@ -6,19 +6,23 @@ def USER_DATA(env):
 	env.PROJECT_NAME = 'carbon'
 	
 	env.Append(CPPPATH=[Dir(path) for path in [
-			"./", "./include/",
-			"./include/core/", "./include/var/", "./include/native/", "./include/compiler/",
 			"./thirdparty",
+			"./",
+			"./include/",
+			"./include/core/",
+			"./include/var/",
+			"./include/native/",
+			"./include/compiler/",
 	]])
 
 	env.SOURCES_CORE     = []
 	env.SOURCES_COMPILER = []
 	env.SOURCES_MAIN = [
-		'core/platform/%s/main.cpp' % env['platform'],
-		'main/main.cpp'
+		Glob('main/platform/%s/*.cpp' % cbenv['platform'] ),
+		Glob('main/*.cpp'),
 	]
 	env.SOURCES_TEST     = [
-		'core/platform/%s/main.cpp' % env['platform'],
+		Glob('main/platform/%s/*.cpp' % cbenv['platform'] ),
 		Glob('tests/*.cpp'),
 		Glob('tests/var/*.cpp'),
 		Glob('tests/native_classes/*.cpp'),
@@ -43,6 +47,13 @@ def USER_DATA(env):
 		env.Append(CPPDEFINES=['DEBUG_BUILD'])
 	else:
 		env.Append(CPPDEFINES=['RELEASE_BUILD'])
+
+	## set stack size 
+	MAX_STACK_SIZE = 40 * 1024 * 1024
+	if env['platform'] == 'windows':
+		env.Append(LINKFLAGS=['/STACK:%s'%MAX_STACK_SIZE])
+	## TODO: not sure about other platforms
+		
 
 
 #################################################################################################
@@ -130,6 +141,7 @@ elif cbenv['platform'] == "windows":
 	else:
 		cbenv.Append(CPPDEFINES=['NDEBUG'])
 		cbenv.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
+	cbenv.Append(LIBS=['psapi', 'dbghelp']) ## for crash handler
 
 ## --------------------------------------------------------------------------------
 
@@ -208,22 +220,25 @@ if cbenv['libs']:
 else:
 	LIB_SOURCES = []
 	for sources in cbenv.LIBS.values(): LIB_SOURCES += sources
-	lib = cbenv.Library(
+	if len(LIB_SOURCES) > 0:
+		lib = cbenv.Library(
+			target = os.path.join(cbenv['target_path'], cbenv.PROJECT_NAME),
+			source = LIB_SOURCES)
+		cbenv.Prepend(LIBS=[lib])
+
+if not cbenv['libs']:
+	## the main application
+	main_program = cbenv.Program(
 		target = os.path.join(cbenv['target_path'], cbenv.PROJECT_NAME),
-		source = LIB_SOURCES)
-	cbenv.Prepend(LIBS=[lib])
+		source = cbenv.SOURCES_MAIN
+	)
 
-## the main application
-main_program = cbenv.Program(
-	target = os.path.join(cbenv['target_path'], cbenv.PROJECT_NAME),
-	source = cbenv.SOURCES_MAIN
-)
-
-## tests
-tests_program = cbenv.Program(
-	target = os.path.join(cbenv['target_path'], "tests"),
-	source = cbenv.SOURCES_TEST
-)
+	## tests
+	if len(cbenv.SOURCES_TEST) > 0:
+		tests_program = cbenv.Program(
+			target = os.path.join(cbenv['target_path'], "tests"),
+			source = cbenv.SOURCES_TEST
+		)
 
 ## --------------------------------------------------------------------------------
 
@@ -233,7 +248,7 @@ def get_vsproj_context():
 	variants = [] ## ["debug|Win32", "debug|x64", "release|Win32", "release|x64"]
 	for target in 'debug', 'release':
 		for bits in '32', '64':
-			run_target = cbenv.PROJECT_NAME if cbenv.DEBUG_TESTS else "tests"
+			run_target = "tests" if cbenv.DEBUG_TESTS and len(cbenv.SOURCES_TEST) > 0 else cbenv.PROJECT_NAME
 			vsproj_targets.append(os.path.join( cbenv['target_path'], run_target + '.exe'))
 			variants.append(target+'|'+('Win32' if bits=='32' else 'x64'))
 	return vsproj_targets, variants

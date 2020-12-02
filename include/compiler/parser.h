@@ -521,7 +521,7 @@ public:
 	*/
 
 	// Methods.
-	void parse(String p_source, String p_file_path);
+	void parse(const String& p_source, const String& p_file_path);
 #if DEBUG_BUILD
 	void print_tree() const;
 #endif

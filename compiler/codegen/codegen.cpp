@@ -76,7 +76,7 @@ Address CGContext::get_parameter(const String& p_name) {
 			return Address(Address::PARAMETER, i);
 		}
 	}
-	THROW_BUG("parameter not found."); // TODO: refactor all throw bugs.
+	THROW_BUG("parameter not found.");
 }
 
 Address CGContext::add_stack_temp() {
@@ -207,7 +207,7 @@ void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* 
 		cfn->_stack_size = _context.stack_max_size;
 		p_bytecode->_functions[cfn->_name] = cfn;
 
-		if (fn->name == "main") p_bytecode->_main = cfn.get(); // TODO: move literal string "main" to constants.
+		if (fn->name == GlobalStrings::main) p_bytecode->_main = cfn.get();
 		if (class_node && class_node->constructor == fn.get()) p_bytecode->_constructor = cfn.get();
 	}
 }

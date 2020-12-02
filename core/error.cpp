@@ -101,19 +101,14 @@ Warning::Warning(Type p_type, const String& p_what, const DBGSourceInfo& p_cb_db
 
 TraceBack::TraceBack(Type p_type, const String& p_what,
 	const DBGSourceInfo& p_cb_info, const DBGSourceInfo& p_dbg_info)
-	: _cb_dbg_info(p_cb_info), Throwable(p_type, p_what, p_dbg_info) {
-	_nested->_set_owner(this);
-}
+	: _cb_dbg_info(p_cb_info), Throwable(p_type, p_what, p_dbg_info) {}
 
 TraceBack::TraceBack(const ptr<Throwable> p_nested,
 	const DBGSourceInfo& p_cb_info, const DBGSourceInfo& p_dbg_info)
 	: _cb_dbg_info(p_cb_info), Throwable(RETHROW, "", p_dbg_info) {
-	p_nested->_set_owner(this);
 	_add_nested(p_nested);
 }
-const ptr<Throwable> TraceBack::get_nested() const { return _nested; }
 
-// TODO: log levels may prevent from logging. just log independently of the log level.
 void Error::console_log() const {
 	Logger::set_level(Logger::JUST_LOG);
 	Logger::logf_error("Error(%s) : %s\n", Error::get_err_name(get_type()).c_str(), what());
@@ -153,19 +148,8 @@ void Warning::console_log() const {
 
 void TraceBack::console_log() const {
 	
-	// can't use recursion if already stack overflowed
-	// if (_nested != nullptr) _nested->console_log();
-
-	const Throwable* base_err = _get_nested();
-	while (base_err != nullptr) {
-		if (base_err->_get_nested() == nullptr) break;
-		base_err = base_err->_get_nested();
-	}
-
-	while (base_err != nullptr) {
-		base_err->console_log();
-		base_err = base_err->_get_owner();
-	}
+	// TODO: for carbon stack overflow print less.
+	if (_nested != nullptr) _nested->console_log();
 
 	Logger::set_level(Logger::JUST_LOG);
 	Logger::logf_info(" > %s (%s:%i)\n", _cb_dbg_info.func.c_str(), _cb_dbg_info.file.c_str(), _cb_dbg_info.line);

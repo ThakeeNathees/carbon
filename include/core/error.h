@@ -123,17 +123,17 @@ public:
 	Type get_type() const { return _type; }
 
 	void _add_nested(ptr<Throwable> p_err) { _nested = p_err; }
-	void _set_owner(Throwable* p_owner) { _owner = p_owner; }
-	const Throwable* _get_owner() const { return _owner; }
-	const Throwable* _get_nested() const { return _nested.get(); }
+	Throwable* _get_nested() const { return _nested.get(); }
+	//void _set_owner(Throwable* p_owner) { _owner = p_owner; }
+	//Throwable* _get_owner()  const { return _owner; }
 
 protected:
 	Type _type;
 	String _what;
 	DBGSourceInfo source_info;
 
-	ptr<Throwable> _nested;
-	Throwable* _owner = nullptr; // for throwable TODO: move nested here
+	mutable ptr<Throwable> _nested;
+	//mutable Throwable* _owner = nullptr;
 };
 
 // ---------------------------------------------------
@@ -176,8 +176,6 @@ public:
 
 	virtual Kind get_kind() const { return TRACEBACK; }
 	void console_log() const override;
-
-	const ptr<Throwable> get_nested() const;
 
 private:
 	DBGSourceInfo _cb_dbg_info;

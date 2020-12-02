@@ -240,7 +240,7 @@ var var::operator m_op () {                                                     
 	switch (type) {                                                                                     \
 		case INT:  return m_op _data._int;                                                              \
 		case FLOAT: return m_op _data._float;                                                           \
-		default: THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED,                                        \
+		default: THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED,                                             \
 			String::format("operator " #m_op " not supported on base %s.", get_type_name().c_str()));   \
 	}                                                                                                   \
 	return var();                                                                                       \
@@ -251,7 +251,7 @@ var var::operator m_op(int) {                                                   
 	switch (type) {                                                                                     \
 		case INT: return _data._int m_op;                                                               \
 		case FLOAT: return _data._float m_op;                                                           \
-		default: THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED,                                       \
+		default: THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED,                                             \
 			String::format("operator " #m_op " not supported on base %s.", get_type_name().c_str()));   \
 	}                                                                                                   \
 	return var();                                                                                       \

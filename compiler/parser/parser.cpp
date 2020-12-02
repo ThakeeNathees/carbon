@@ -59,7 +59,7 @@ CompileTimeError Parser::_predefined_error(const String& p_what, const String& p
 		Vect2i(), p_dbg_info);
 }
 
-void Parser::parse(String p_source, String p_file_path) {
+void Parser::parse(const String& p_source, const String& p_file_path) {
 	
 	tokenizer = newptr<Tokenizer>();
 	file_node = new_node<FileNode>();
@@ -142,7 +142,7 @@ void Parser::parse(String p_source, String p_file_path) {
 }
 
 void Parser::_check_identifier_predefinition(const String& p_name, Node* p_scope) const {
-	const TokenData* tk = &tokenizer->peek(-1, true); // TODO: add pos with tk.
+	const TokenData* tk = &tokenizer->peek(-1, true);
 
 	if (NativeClasses::singleton()->is_class_registered(p_name)) {
 		throw PARSER_ERROR(Error::NAME_ERROR, String::format("a native type named %s already exists", p_name.c_str()), Vect2i());

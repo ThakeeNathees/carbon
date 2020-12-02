@@ -1,4 +1,11 @@
-//import lib = "test_lib.cb";
+import lib = "test_lib.cb";
+
+
+// sample function that catches an exception and wraps it in a nested exception
+func run() {
+	lib.open_file("nonexistent.file");
+}
 
 func main() {
+	run();
 }

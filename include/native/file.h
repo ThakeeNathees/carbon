@@ -57,7 +57,7 @@ public:
 		BINARY = 1 << 3, // "b"
 		EXTRA  = 1 << 4, // "+"
 
-		DEFAULT = APPEND | EXTRA,
+		DEFAULT = READ,
 	};
 
 	File(const String& p_path = "", int p_mode = DEFAULT);

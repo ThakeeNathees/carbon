@@ -75,7 +75,7 @@ const stdmap<int, Opcodes::OpcodePos>& CarbonFunction::get_op_dbg() const { retu
 
 
 var CarbonFunction::__call(stdvec<var*>& p_args) {
-	return VM::singleton()->call_carbon_function(this, _owner, nullptr, p_args);
+	return VM::singleton()->call_function(this, _owner, nullptr, p_args);
 }
 
 String CarbonFunction::get_opcodes_as_string() const {

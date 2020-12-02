@@ -2,10 +2,10 @@
 // MIT License
 //------------------------------------------------------------------------------
 // 
-// Copyright (c) 2020 Thakee Nathees
+// Copyright (c), 2020 Thakee Nathees
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
+// of this software and associated documentation files (the "Software"),, to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
@@ -23,18 +23,24 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "core/platform/x11/crash_handler.h"
+#ifndef GLOBALS_H
+#define GLOBALS_H
 
-int _main(int argc, char** argv);
+namespace carbon {
 
-int main(int argc, char** argv)
-{
+class GlobalStrings {
+#define _GLOBAL_STR(m_name) constexpr static const char* m_name = #m_name
+public:
+	// function names
+	_GLOBAL_STR(main);
+	_GLOBAL_STR(to_string);
 
-	CrashHandler crash_handler;
-	crash_handler.initialize();
-
-	_main(argc, argv);
-
-	return 0;
+	// operator function names
+	_GLOBAL_STR(__call);
+};
+#undef _GLOBAL_STR
 }
+
+#endif // GLOBALS_H
+
 

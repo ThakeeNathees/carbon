@@ -38,18 +38,25 @@ void VM::cleanup() {
 	if (_singleton != nullptr) delete _singleton;
 }
 
-VMStack::VMStack(uint32_t p_max_size) { _stack.resize(p_max_size); }
+VMStack::VMStack(uint32_t p_max_size) {
+	_stack = newptr<stdvec<var>>(p_max_size);
+}
 var* VMStack::get_at(uint32_t p_pos) {
-	THROW_INVALID_INDEX(_stack.size(), p_pos);
-	return &_stack[p_pos];
+	THROW_INVALID_INDEX(_stack->size(), p_pos);
+	return &(*_stack)[p_pos];
 }
 
-var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*> p_args, int __stack) {
+var VM::call_function(const String& p_func_name, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*>& p_args) {
+	THROW_IF_NULLPTR(p_bytecode);
+	CarbonFunction* p_func = p_bytecode->get_function(p_func_name).get();
+	return call_function(p_func, p_bytecode, p_self, p_args);
+}
 
-	if (__stack >= STACK_MAX) {
-		// TODO: throw RuntimeError here.
-		throw Error(Error::STACK_OVERFLOW, "stack was overflowed.", _DBG_SOURCE);
-	}
+var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*>& p_args, int __stack) {
+
+	THROW_IF_NULLPTR(p_func);
+	THROW_IF_NULLPTR(p_bytecode);
+	if (__stack >= STACK_MAX) THROW_ERROR(Error::STACK_OVERFLOW, "stack was overflowed.");
 
 	p_bytecode->initialize();
 
@@ -73,11 +80,13 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 	// check argc and add default args
 	stdvec<var> default_args_copy;
 	if (p_args.size() > p_func->get_arg_count()) {
-		THROW_BUG("TODO: too many arguments error msg here");
+		THROW_ERROR(Error::INVALID_ARG_COUNT,
+			String::format("too many arguments were provided, expected at most %i argument(s).", p_func->get_arg_count()));
 	} else if (p_args.size() < p_func->get_arg_count()) {
 		const stdvec<var>& defaults = p_func->get_default_args();
 		if (p_args.size() + defaults.size() < p_func->get_arg_count()) {
-			THROW_BUG("TODO: too few arguments error msg here");
+			THROW_ERROR(Error::INVALID_ARG_COUNT,
+				String::format("too few arguments were provided, expected at least %i argument(s).", p_func->get_arg_count() - (int)defaults.size()));
 		}
 
 		int args_needed = p_func->get_arg_count() - (int)p_args.size();
@@ -161,14 +170,15 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 					case var::OP_MULTIPLICATION: { *dst = *left * *right; } break;
 					case var::OP_DIVISION: { *dst = *left / *right; } break;
 					case var::OP_MODULO: { *dst = *left % *right; } break;
-					case var::OP_POSITIVE: { *dst = *left; /* TODO: anything? */ } break;
+					case var::OP_POSITIVE: { *dst = *left; /* is it okey? */ } break;
 					case var::OP_NEGATIVE: {
 						if (left->get_type() == var::INT) {
 							*dst = -left->operator int64_t();
 						} else if (left->get_type() == var::FLOAT) {
 							*dst = -left->operator double();
 						} else {
-							THROW_BUG("TODO: throw runtime error.");
+							THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED,
+								String::format("operator (-) not supported on base %s.", left->get_type_name().c_str()));
 						}
 					} break;
 					case var::OP_EQ_CHECK: { *dst = *left == *right; } break;
@@ -249,10 +259,10 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				ptr<Instance> instance = newptr<Instance>(blueprint);
 
 				const CarbonFunction* member_initializer = blueprint->get_member_initializer();
-				if (member_initializer) call_carbon_function(member_initializer, blueprint.get(), instance, stdvec<var*>(), __stack + 1);
+				if (member_initializer) call_function(member_initializer, blueprint.get(), instance, stdvec<var*>(), __stack + 1);
 
 				const CarbonFunction* constructor = blueprint->get_constructor();
-				if (constructor) call_carbon_function(constructor, blueprint.get(), instance, args, __stack + 1);
+				if (constructor) call_function(constructor, blueprint.get(), instance, args, __stack + 1);
 
 				*dst = instance;
 			} break;
@@ -348,7 +358,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 
 				if (func_ptr == nullptr) THROW_BUG("can't find the function");
 
-				*ret_value = call_carbon_function(func_ptr.get(), call_base, (func_ptr->is_static()) ? nullptr : p_self, args, __stack + 1);
+				*ret_value = call_function(func_ptr.get(), call_base, (func_ptr->is_static()) ? nullptr : p_self, args, __stack + 1);
 
 			} break;
 			case Opcode::CALL_METHOD: {
@@ -401,10 +411,10 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				} else {
 
 					const CarbonFunction* member_initializer = p_bytecode->get_base_binary()->get_member_initializer();
-					if (member_initializer) call_carbon_function(member_initializer, p_bytecode->get_base_binary().get(), p_self, stdvec<var*>(), __stack + 1);
+					if (member_initializer) call_function(member_initializer, p_bytecode->get_base_binary().get(), p_self, stdvec<var*>(), __stack + 1);
 
 					const CarbonFunction* ctor = p_bytecode->get_base_binary()->get_constructor();
-					if (ctor) call_carbon_function(ctor, p_bytecode->get_base_binary().get(), p_self, args, __stack + 1);
+					if (ctor) call_function(ctor, p_bytecode->get_base_binary().get(), p_self, args, __stack + 1);
 				}
 
 			} break;
@@ -432,10 +442,10 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 
 					if (fn != nullptr) {
 						if (fn->is_static()) {
-							*ret_value = call_carbon_function(fn.get(), p_self->blueprint.get(), p_self, args, __stack + 1);
+							*ret_value = call_function(fn.get(), p_self->blueprint.get(), p_self, args, __stack + 1);
 						} else {
 							if (p_self == nullptr) THROW_BUG("can't call non-static method statically");
-							*ret_value = call_carbon_function(fn.get(), p_self->blueprint.get(), nullptr, args, __stack + 1);
+							*ret_value = call_function(fn.get(), p_self->blueprint.get(), nullptr, args, __stack + 1);
 						}
 					} else if (sv != nullptr) {
 						*ret_value = sv->__call(args);
@@ -525,7 +535,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 				func = p_func->get_name();
 			}
 
-			throw TraceBack (nested, DBGSourceInfo(context.bytecode_file->get_name(), line, func), _DBG_SOURCE);
+			throw TraceBack(nested, DBGSourceInfo(context.bytecode_file->get_name(), line, func), _DBG_SOURCE);
 		}
 
 	}
@@ -533,7 +543,7 @@ var VM::call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode,
 }
 
 int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
-	
+
 	const CarbonFunction* main = bytecode->get_main();
 	if (main == nullptr) {
 		THROW_ERROR(Error::NULL_POINTER, "entry point was null");
@@ -548,7 +558,7 @@ int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 		for (const String& str : args) argv.operator Array().push_back(str);
 		call_args.push_back(&argv);
 	}
-	var main_ret = call_carbon_function(main, bytecode.get(), nullptr, call_args);
+	var main_ret = call_function(main, bytecode.get(), nullptr, call_args);
 
 	if (main_ret.get_type() == var::_NULL) return 0;
 	if (main_ret.get_type() != var::INT) THROW_ERROR(Error::TYPE_ERROR, "main function returned a non integer value");
@@ -592,7 +602,6 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 			return vm->_get_builtin_type_ref(index);
 		} break;
 		case Address::MEMBER_VAR: {
-			// TODO: ASSERT self is runtime instance
 			stdvec<var>& members = self.cast_to<Instance>()->members;
 			THROW_INVALID_INDEX(members.size(), index);
 			return &members[index];

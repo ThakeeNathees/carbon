@@ -26,7 +26,7 @@
 #ifndef _TYPE_INFO_H
 #define _TYPE_INFO_H
 
-#include "var.h"
+#include "var/var.h"
 
 namespace carbon {
 

@@ -172,7 +172,7 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 		parser->parser_context.current_func = file_node->functions[i].get();
 		Parser::FunctionNode* fn = file_node->functions[i].get();
 
-		if (fn->name == "main") { // TODO: string literal.
+		if (fn->name == GlobalStrings::main) {
 			if (fn->args.size() >= 2) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, "main function takes at most 1 argument.", fn->pos);
 		}
 

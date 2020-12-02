@@ -56,9 +56,11 @@ var Instance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 			fn = it->second.get();
 			break;
 		} else {
-			if (!_class->has_base()) THROW_ERROR(Error::ATTRIBUTE_ERROR, "TODO: method not found msg"); // TODO: throw error with debug info.
+			if (!_class->has_base()) {
+				THROW_ERROR(Error::ATTRIBUTE_ERROR,
+					String::format("attribute \"%s\" doesn't exists on base %s.", p_method_name.c_str(), blueprint->get_name().c_str()));
+			}
 			if (_class->is_base_native()) {
-				// TODO: 
 				BindData* bd = NativeClasses::singleton()->find_bind_data(_class->get_base_native(), p_method_name).get();
 				switch (bd->get_type()) {
 					case BindData::METHOD:
@@ -74,7 +76,7 @@ var Instance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 					case BindData::ENUM:
 						return static_cast<EnumBind*>(bd)->get()->__call(p_args);
 					case BindData::ENUM_VALUE:
-						THROW_BUG("TODO: enum value not callable error msg here.");
+						THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, "enums are not callable.");
 				}
 				THROW_BUG("can't reach here");
 				return var();
@@ -86,9 +88,9 @@ var Instance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 
 	ASSERT(fn != nullptr);
 	if (fn->is_static()) { // calling static method using instance (acceptable)
-		return VM::singleton()->call_carbon_function(fn, _class, nullptr, p_args);
+		return VM::singleton()->call_function(fn, _class, nullptr, p_args);
 	} else {
-		return VM::singleton()->call_carbon_function(fn, _class, shared_from_this(), p_args);
+		return VM::singleton()->call_function(fn, _class, shared_from_this(), p_args);
 	}
 }
 
@@ -98,9 +100,9 @@ var Instance::__call(stdvec<var*>& p_args) {
 }
 
 String Instance::to_string() {
-	ptr<CarbonFunction> fn = blueprint->get_function("to_string");
-	if (fn != nullptr) return VM::singleton()->call_carbon_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
-	return Super::to_string();
+	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::to_string);
+	if (fn == nullptr) return Super::to_string();
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
 }
 
 }

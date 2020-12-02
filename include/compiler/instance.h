@@ -27,6 +27,7 @@
 #define INSTANCE_H
 
 #include "core/core.h"
+#include "globals.h"
 #include "bytecode.h"
 
 namespace carbon {

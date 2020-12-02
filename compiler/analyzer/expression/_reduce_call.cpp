@@ -255,7 +255,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				if (call->base->type == Parser::Node::Type::THIS) { // this(); = __call() = operator ()()
 					const Parser::FunctionNode* func = nullptr;
 					for (const ptr<Parser::FunctionNode>& fn : curr_class->functions) {
-						if (fn->name == "__call") { // TODO: move string literal "__call" to constants
+						if (fn->name == GlobalStrings::__call) {
 							func = fn.get(); break;
 						}
 					}
@@ -355,7 +355,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 									throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("constant value is not callable.", method_name.c_str()), call->pos);
 
 								// super.f(); // function call on super.
-								case Parser::IdentifierNode::REF_FUNCTION: { // TODO: static function and super -> super.f(); vs SuperClass.f();
+								case Parser::IdentifierNode::REF_FUNCTION: {
 									if (parser->parser_context.current_func->is_static && !_id._func->is_static) {
 										throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", _id.name.c_str()), call->pos);
 									}

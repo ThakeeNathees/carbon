@@ -23,28 +23,18 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "carbon.h"
-using namespace carbon;
+#include "crash_handler.h"
 
-int _main(int argc, char** argv) {
+int _main(int argc, char** argv);
 
-	carbon_initialize();
-	log_copyright_and_license();
+int main(int argc, char** argv)
+{
 
-	if (argc < 2) log_help();
-	else {
-		// TODO: parse command line args.
-		try {
-			stdvec<String> args;
-			for (int i = 0; i < argc; i++) args.push_back(argv[i]);
+	CrashHandler crash_handler;
+	crash_handler.initialize();
 
-			ptr<Bytecode> bytecode = Compiler::singleton()->compile(argv[1]);
-			VM::singleton()->run(bytecode, args);
+	_main(argc, argv);
 
-		} catch (Throwable& err) {
-			err.console_log();
-		}
-	}
-	carbon_cleanup();
 	return 0;
 }
+

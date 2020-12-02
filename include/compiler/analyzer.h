@@ -28,6 +28,7 @@
 
 #include "core/core.h"
 #include "parser.h"
+#include "globals.h"
 
 #define ANALYZER_ERROR(m_type, m_msg, m_pos) _analyzer_error(m_type, m_msg, m_pos, _DBG_SOURCE)
 #define ANALYZER_WARNING(m_type, m_msg, m_pos) _analyzer_warning(m_type, m_msg, m_pos, _DBG_SOURCE)

@@ -35,7 +35,7 @@ namespace carbon {
 
 class VMStack {
 private: // members
-	stdvec<var> _stack;
+	ptr<stdvec<var>> _stack;
 
 public:
 	VMStack(uint32_t p_max_size = 0);
@@ -64,7 +64,8 @@ private: // members
 
 public:
 	int run(ptr<Bytecode> bytecode, stdvec<String> args);
-	var call_carbon_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*> p_args, int __stack = 0);
+	var call_function(const String& p_func_name, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*>& p_args);
+	var call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*>& p_args, int __stack = 0);
 
 	static VM* singleton();
 	static void cleanup();
