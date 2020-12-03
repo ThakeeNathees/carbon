@@ -1,8 +1,13 @@
 
 ---- BUGS ----
+-- calling constructor inside the class itself calls the function 
+   and since ctor doesn't return anything the func call returns is null
+   but it should be call initializer and ctor instead.
 -- float("") <-- crash
 -- "".substr() check index limit
 -- null var x = 12; // no error for the null before
+-- multiline string
+-- exit(SUCCESS);
 
 ---- TODO ----
 -- "string %s literal" % ["replace"]

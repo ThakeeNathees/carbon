@@ -52,7 +52,7 @@ public:
 	const byte_t& operator[](size_t p_index) const;
 
 	// operators
-	virtual var __get_mapped(const var& p_key) const override;
+	virtual var __get_mapped(const var& p_key) /*const*/ override;
 	virtual void __set_mapped(const var& p_key, const var& p_value) override;
 
 private:

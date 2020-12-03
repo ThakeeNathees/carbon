@@ -60,17 +60,17 @@ public:
 	operator String(); // const
 	var operator()(stdvec<var*>& p_args);
 
-	bool operator==(const var& p_other) const;
-	bool operator!=(const var& p_other) const;
-	bool operator<=(const var& p_other) const;
-	bool operator>=(const var& p_other) const;
-	bool operator< (const var& p_other) const;
-	bool operator> (const var& p_other) const;
+	bool operator==(const var& p_other) /*const*/;
+	bool operator!=(const var& p_other) /*const*/;
+	bool operator<=(const var& p_other) /*const*/;
+	bool operator>=(const var& p_other) /*const*/;
+	bool operator< (const var& p_other) /*const*/;
+	bool operator> (const var& p_other) /*const*/;
 
-	var operator+(const var& p_other) const;
-	var operator-(const var& p_other) const;
-	var operator*(const var& p_other) const;
-	var operator/(const var& p_other) const;
+	var operator+(const var& p_other) /*const*/;
+	var operator-(const var& p_other) /*const*/;
+	var operator*(const var& p_other) /*const*/;
+	var operator/(const var& p_other) /*const*/;
 
 	var& operator+=(const var& p_other);
 	var& operator-=(const var& p_other);
@@ -85,11 +85,11 @@ public:
 	static var get_member_s(ptr<Object> p_self, const String& p_name);
 	static void set_member_s(ptr<Object> p_self, const String& p_name, var& p_value);
 
-	virtual ptr<Object> copy(bool p_deep) const;
-
 	virtual var call_method(const String& p_method_name, stdvec<var*>& p_args);
 	virtual var get_member(const String& p_member_name);
 	virtual void set_member(const String& p_member_name, var& p_value);
+
+	virtual ptr<Object> copy(bool p_deep) /*const*/;
 
 	// operators.
 	virtual var __call(stdvec<var*>& p_vars);
@@ -98,25 +98,25 @@ public:
 	virtual bool __iter_has_next();
 	virtual var __iter_next();
 
-	virtual var __get_mapped(const var& p_key) const;
+	virtual var __get_mapped(const var& p_key) /*const*/;
 	virtual void __set_mapped(const var& p_key, const var& p_val);
-	virtual int64_t __hash() const;
+	virtual int64_t __hash() /*const*/;
 
-	virtual var __add(const var& p_other) const;
-	virtual var __sub(const var& p_other) const;
-	virtual var __mul(const var& p_other) const;
-	virtual var __div(const var& p_other) const;
+	virtual var __add(const var& p_other) /*const*/;
+	virtual var __sub(const var& p_other) /*const*/;
+	virtual var __mul(const var& p_other) /*const*/;
+	virtual var __div(const var& p_other) /*const*/;
 
 	virtual var& __add_eq(const var& p_other);
 	virtual var& __sub_eq(const var& p_other);
 	virtual var& __mul_eq(const var& p_other);
 	virtual var& __div_eq(const var& p_other);
 
-	virtual bool __gt(const var& p_other) const;
-	virtual bool __lt(const var& p_other) const;
-	virtual bool __eq(const var& p_other) const;
+	virtual bool __gt(const var& p_other) /*const*/;
+	virtual bool __lt(const var& p_other) /*const*/;
+	virtual bool __eq(const var& p_other) /*const*/;
 
-	virtual String to_string() /*const*/ ;
+	virtual String to_string() /*const*/;
 
 	// this could be a bad design but a better workaround for now instead of using is_instance_of<Type>();
 	virtual bool _is_native_ref() const;

@@ -94,9 +94,12 @@ var Instance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 	}
 }
 
-var Instance::__call(stdvec<var*>& p_args) {
-	//	TODO:
-	return var();
+ptr<Object> Instance::copy(bool p_deep) {
+	ptr<Instance> ins_copy = newptr<Instance>(blueprint);
+	for (int i = 0; i < (int)members.size(); i++) {
+		ins_copy->members[i] = members[i].copy(p_deep);
+	}
+	return ins_copy;
 }
 
 String Instance::to_string() {
@@ -104,5 +107,63 @@ String Instance::to_string() {
 	if (fn == nullptr) return Super::to_string();
 	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
 }
+
+
+var Instance::__call(stdvec<var*>& p_args) {
+	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__call);
+	if (fn == nullptr) return Super::__call(p_args);
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), p_args);
+}
+
+var Instance::__iter_begin() {
+	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__iter_begin);
+	if (fn == nullptr) return Super::__iter_begin();
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
+}
+bool Instance::__iter_has_next() {
+	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__iter_has_next);
+	if (fn == nullptr) return Super::__iter_has_next();
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
+}
+var Instance::__iter_next() {
+	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__iter_next);
+	if (fn == nullptr) return Super::__iter_next();
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
+}
+
+var Instance::__get_mapped(const var& p_key){
+	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__get_mapped);
+	if (fn == nullptr) return Super::__get_mapped(p_key);
+	stdvec<var*> args; args.push_back(const_cast<var*>(&p_key));
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), args);
+}
+void Instance::__set_mapped(const var& p_key, const var& p_val) {
+	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__set_mapped);
+	if (fn == nullptr) Super::__set_mapped(p_key, p_val);
+	stdvec<var*> args = { const_cast<var*>(&p_key), const_cast<var*>(&p_val) };
+	VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), args);
+}
+int64_t Instance::__hash() {
+	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__hash);
+	if (fn == nullptr) return Super::__hash();
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
+}
+
+#define CALL_OPERATOR(m_ret, m_operator)                                                            \
+	m_ret Instance::m_operator(const var& p_other) {												\
+		ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::m_operator);				\
+		if (fn == nullptr) return Super::m_operator(p_other);										\
+		stdvec<var*> args = { const_cast<var*>(&p_other) };										    \
+		return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), args);	\
+	}
+CALL_OPERATOR(bool, __gt);
+CALL_OPERATOR(bool, __lt);
+CALL_OPERATOR(bool, __eq);
+
+CALL_OPERATOR(var, __add);
+CALL_OPERATOR(var, __sub);
+CALL_OPERATOR(var, __mul);
+CALL_OPERATOR(var, __div);
+
 
 }

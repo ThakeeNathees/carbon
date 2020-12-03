@@ -55,7 +55,6 @@ def USER_DATA(env):
 	## TODO: not sure about other platforms
 		
 
-
 #################################################################################################
 
 ## Gets the standard flags CC, CCX, etc.
@@ -70,9 +69,9 @@ opts.Add(BoolVariable('use_llvm', "Use the LLVM / Clang compiler", False))
 
 opts.Add(BoolVariable('vsproj', "make a visual studio project", False))
 opts.Add(PathVariable('target_path', 'The path to the output library.', 'bin/', PathVariable.PathAccept))
-opts.Add(BoolVariable('build_verbose', "use verbose build command", False))
+opts.Add(BoolVariable('verbose', "Use verbose build command", False))
 
-opts.Add(BoolVariable('libs', "include unit tests in main", False))
+opts.Add(BoolVariable('libs', "Only build the libs defined in the user data", False))
 
 ## Updates the environment with the option variables.
 opts.Update(cbenv)
@@ -145,27 +144,19 @@ elif cbenv['platform'] == "windows":
 
 ## --------------------------------------------------------------------------------
 
-## no_verbose function is from : https://github.com/godotengine/godot/blob/master/methods.py
-def no_verbose(sys, cbenv):
+## reference : https://github.com/godotengine/godot/blob/master/methods.py
+if not cbenv['verbose']:
 	colors = {}
 	# Colors are disabled in non-TTY environments such as pipes. This means
 	# that if output is redirected to a file, it will not contain color codes
-	if sys.stdout.isatty():
-		colors["cyan"] = "\033[96m"
-		colors["purple"] = "\033[95m"
-		colors["blue"] = "\033[94m"
-		colors["green"] = "\033[92m"
-		colors["yellow"] = "\033[93m"
-		colors["red"] = "\033[91m"
-		colors["end"] = "\033[0m"
-	else:
-		colors["cyan"] = ""
-		colors["purple"] = ""
-		colors["blue"] = ""
-		colors["green"] = ""
-		colors["yellow"] = ""
-		colors["red"] = ""
-		colors["end"] = ""
+	isatty = sys.stdout.isatty()
+	colors["cyan"]   = "\033[96m" if isatty else ""
+	colors["purple"] = "\033[95m" if isatty else ""
+	colors["blue"]   = "\033[94m" if isatty else ""
+	colors["green"]  = "\033[92m" if isatty else ""
+	colors["yellow"] = "\033[93m" if isatty else ""
+	colors["red"]    = "\033[91m" if isatty else ""
+	colors["end"]    = "\033[0m"  if isatty else ""
 	compile_source_message = "{}Compiling {}==> {}$SOURCE{}".format(
 		colors["blue"], colors["purple"], colors["yellow"], colors["end"]
 	)
@@ -200,8 +191,6 @@ def no_verbose(sys, cbenv):
 	cbenv.Append(LINKCOMSTR=[link_program_message])
 	cbenv.Append(JARCOMSTR=[java_library_message])
 	cbenv.Append(JAVACCOMSTR=[java_compile_source_message])
-if not cbenv['build_verbose']:
-	no_verbose(sys, cbenv)
 
 ## update user data
 USER_DATA(cbenv)
@@ -210,7 +199,7 @@ Export('cbenv')
 for script in cbenv.SCONSCRIPTS:
 	SConscript(script)
 
-## compiler the libs.
+## compile the libs.
 if cbenv['libs']:
 	for lib_name in cbenv.LIBS:
 		lib = cbenv.Library(
@@ -267,6 +256,7 @@ def msvs_collect_header():
 		return ret
 
 	ret = []
+	cbenv.Append(CPPPATH=[]) ## A fail safe if CPPPATH doesn't exists on env.
 	for dir in cbenv['CPPPATH']:
 		ret += recursive_collect(str(dir))
 	return ret

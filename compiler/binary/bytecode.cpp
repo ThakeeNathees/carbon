@@ -45,7 +45,7 @@ void Bytecode::initialize() {
 	}
 }
 bool Bytecode::is_class() const { return _is_class; }
-String Bytecode::get_name() const { return _name; }
+const String& Bytecode::get_name() const { return _name; }
 
 bool Bytecode::has_base() const { ASSERT(_is_class); return _has_base; }
 bool Bytecode::is_base_native() const { ASSERT(_is_class); return _is_base_native; }

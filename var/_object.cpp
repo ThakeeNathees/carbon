@@ -29,34 +29,33 @@
 namespace carbon {
 
 
-ptr<Object> Object::copy(bool p_deep) const { throw Error(Error::NOT_IMPLEMENTED, "Virtual method \"copy()\" not implemented on type \"Object\"."); }
+ptr<Object> Object::copy(bool p_deep) /*const*/ { throw Error(Error::NOT_IMPLEMENTED, "Virtual method \"copy()\" not implemented on type \"Object\"."); }
 
 Object::operator String() { return to_string(); }
 var Object::operator()(stdvec<var*>& p_args) { return __call(p_args); }
 
-bool Object::operator==(const var& p_other) const { return __eq(p_other); }
-bool Object::operator!=(const var& p_other) const { return !operator == (p_other); }
-bool Object::operator<=(const var& p_other) const { return __lt(p_other) || __eq(p_other); }
-bool Object::operator>=(const var& p_other) const { return __gt(p_other) || __eq(p_other); }
-bool Object::operator< (const var& p_other) const { return __lt(p_other); }
-bool Object::operator> (const var& p_other) const { return __gt(p_other); }
+bool Object::operator==(const var& p_other) /*const*/ { return __eq(p_other); }
+bool Object::operator!=(const var& p_other) /*const*/ { return !operator == (p_other); }
+bool Object::operator<=(const var& p_other) /*const*/ { return __lt(p_other) || __eq(p_other); }
+bool Object::operator>=(const var& p_other) /*const*/ { return __gt(p_other) || __eq(p_other); }
+bool Object::operator< (const var& p_other) /*const*/ { return __lt(p_other); }
+bool Object::operator> (const var& p_other) /*const*/ { return __gt(p_other); }
 
-var Object::operator+(const var& p_other) const { return __add(p_other); }
-var Object::operator-(const var& p_other) const { return __sub(p_other); }
-var Object::operator*(const var& p_other) const { return __mul(p_other); }
-var Object::operator/(const var& p_other) const { return __div(p_other); }
+var Object::operator+(const var& p_other) /*const*/ { return __add(p_other); }
+var Object::operator-(const var& p_other) /*const*/ { return __sub(p_other); }
+var Object::operator*(const var& p_other) /*const*/ { return __mul(p_other); }
+var Object::operator/(const var& p_other) /*const*/ { return __div(p_other); }
 
 var& Object::operator+=(const var& p_other) { return __add_eq(p_other); }
 var& Object::operator-=(const var& p_other) { return __sub_eq(p_other); }
 var& Object::operator*=(const var& p_other) { return __mul_eq(p_other); }
 var& Object::operator/=(const var& p_other) { return __div_eq(p_other); }
 
-var Object::operator[](const var& p_key) const { return __get_mapped(p_key); }
-var& Object::operator[](const var& p_key) { THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, "use __set_mapped() instead."); }
-
-
 #define _OBJ_THROW_NOT_IMPL(m_name)\
 	THROW_ERROR(Error::NOT_IMPLEMENTED, String("operator " #m_name " not implemented on base ") + get_type_name() + ".")
+
+var Object::operator[](const var& p_key) const { _OBJ_THROW_NOT_IMPL(operator[]); }
+var& Object::operator[](const var& p_key) { _OBJ_THROW_NOT_IMPL(operator[]); }
 
 var Object::__call(stdvec<var*>& p_vars) { _OBJ_THROW_NOT_IMPL(__call()); }
 var Object::call_method(const String& p_method_name, stdvec<var*>& p_args) {
@@ -71,27 +70,27 @@ void Object::set_member(const String& p_member_name, var& p_value) {
 	THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("type %s has no writable member named \"%s\".", get_type_name(), p_member_name.c_str()));
 }
 
-var Object::__get_mapped(const var& p_key) const { _OBJ_THROW_NOT_IMPL(__get_mapped()); }
+var Object::__get_mapped(const var& p_key) /*const*/ { _OBJ_THROW_NOT_IMPL(__get_mapped()); }
 void Object::__set_mapped(const var& p_key, const var& p_val) { _OBJ_THROW_NOT_IMPL(__set_mapped()); }
-int64_t Object::__hash() const { _OBJ_THROW_NOT_IMPL(__hash()); }
+int64_t Object::__hash() /*const*/ { _OBJ_THROW_NOT_IMPL(__hash()); }
 
 var  Object::__iter_begin() { _OBJ_THROW_NOT_IMPL(__iter_begin()); }
 bool Object::__iter_has_next() { _OBJ_THROW_NOT_IMPL(__iter_has_next()); }
 var  Object::__iter_next() { _OBJ_THROW_NOT_IMPL(__iter_next()); }
 
-var Object::__add(const var& p_other) const { _OBJ_THROW_NOT_IMPL(__add()); }
-var Object::__sub(const var& p_other) const { _OBJ_THROW_NOT_IMPL(__sub()); }
-var Object::__mul(const var& p_other) const { _OBJ_THROW_NOT_IMPL(__mul()); }
-var Object::__div(const var& p_other) const { _OBJ_THROW_NOT_IMPL(__div()); }
+var Object::__add(const var& p_other) /*const*/ { _OBJ_THROW_NOT_IMPL(__add()); }
+var Object::__sub(const var& p_other) /*const*/ { _OBJ_THROW_NOT_IMPL(__sub()); }
+var Object::__mul(const var& p_other) /*const*/ { _OBJ_THROW_NOT_IMPL(__mul()); }
+var Object::__div(const var& p_other) /*const*/ { _OBJ_THROW_NOT_IMPL(__div()); }
 
 var& Object::__add_eq(const var& p_other) { _OBJ_THROW_NOT_IMPL(__add_eq()); }
 var& Object::__sub_eq(const var& p_other) { _OBJ_THROW_NOT_IMPL(__sub_eq()); }
 var& Object::__mul_eq(const var& p_other) { _OBJ_THROW_NOT_IMPL(__mul_eq()); }
 var& Object::__div_eq(const var& p_other) { _OBJ_THROW_NOT_IMPL(__div_eq()); }
 
-bool Object::__gt(const var& p_other) const { _OBJ_THROW_NOT_IMPL(__gt()); }
-bool Object::__lt(const var& p_other) const { _OBJ_THROW_NOT_IMPL(__lt()); }
-bool Object::__eq(const var& p_other) const {
+bool Object::__gt(const var& p_other) /*const*/ { _OBJ_THROW_NOT_IMPL(__gt()); }
+bool Object::__lt(const var& p_other) /*const*/ { _OBJ_THROW_NOT_IMPL(__lt()); }
+bool Object::__eq(const var& p_other) /*const*/ {
 	if (p_other.get_type() != var::OBJECT) return false;
 	return this == p_other.operator carbon::ptr<carbon::Object>().get();
 }

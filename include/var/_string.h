@@ -59,6 +59,8 @@ public:
 	size_t hash() const;
 	size_t const_hash() const;
 
+	String upper() const;
+	String lower() const;
 	String substr(size_t p_start, size_t p_end) const;
 	bool endswith(const String& p_str) const;
 	bool startswith(const String& p_str) const;

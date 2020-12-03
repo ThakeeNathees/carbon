@@ -40,6 +40,8 @@ const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_string() {
 		_NEW_METHOD_INFO("to_int",                                                           var::INT     ),
 		_NEW_METHOD_INFO("to_float",                                                         var::FLOAT   ),
 		_NEW_METHOD_INFO("hash",                                                             var::INT     ),
+		_NEW_METHOD_INFO("upper",                                                            var::STRING  ),
+		_NEW_METHOD_INFO("lower",                                                            var::STRING  ),
 		_NEW_METHOD_INFO("substr",     _PARAMS("start", "end"), _TYPES(var::INT, var::INT),  var::STRING  ),
 		_NEW_METHOD_INFO("endswith",   _PARAMS("what" ),        _TYPES(var::STRING),         var::BOOL    ),
 		_NEW_METHOD_INFO("startswith", _PARAMS("what" ),        _TYPES(var::STRING),         var::BOOL    ),
@@ -56,6 +58,8 @@ var String::call_method(const String& p_method, const stdvec<var*>& p_args) {
 		case "to_int"_hash:     return to_int();
 		case "to_float"_hash:   return to_float();
 		case "hash"_hash:       return (int64_t)hash();
+		case "upper"_hash:      return upper();
+		case "lower"_hash:      return lower();
 		case "substr"_hash:     return substr((size_t)p_args[0]->operator int64_t(), (size_t)p_args[1]->operator int64_t());
 		case "endswith"_hash:   return endswith(p_args[0]->operator String());
 		case "startswith"_hash: return startswith(p_args[0]->operator String());
@@ -68,6 +72,20 @@ var String::call_method(const String& p_method, const stdvec<var*>& p_args) {
 	THROW_ERROR(Error::BUG, "can't reach here.");
 }
 
+String String::format(const char* p_format, ...) {
+	va_list argp;
+
+	va_start(argp, p_format);
+
+	static const unsigned int BUFFER_SIZE = VSNPRINTF_BUFF_SIZE;
+	char buffer[BUFFER_SIZE + 1]; // +1 for the terminating character
+	int len = vsnprintf(buffer, BUFFER_SIZE, p_format, argp);
+
+	va_end(argp);
+
+	if (len == 0) return String();
+	return String(buffer);
+}
 
 String::String() : _data(new std::string("")) {}
 String::String(const std::string& p_copy) { _data = new std::string(p_copy); }
@@ -110,9 +128,54 @@ String& String::operator=(const char* p_cstr)    { *_data = p_cstr;             
 String& String::operator=(const String& p_other) { *_data = *p_other._data;      return *this; }
 
 
+bool operator==(const char* p_cstr, const String& p_str) {
+	return p_str == String(p_cstr);
+}
+bool operator!=(const char* p_cstr, const String& p_str) {
+	return p_str != String(p_cstr);
+}
+
+char String::operator[](int64_t p_index) const {
+	if (0 <= p_index && p_index < (int64_t)size())
+		return (*_data)[p_index];
+	if ((int64_t)size() * -1 <= p_index && p_index < 0)
+		return (*_data)[size() + p_index];
+	THROW_ERROR(Error::INVALID_INDEX, String::format("String index %i is invalid.", p_index));
+}
+char& String::operator[](int64_t p_index) {
+	if (0 <= p_index && p_index < (int64_t)size())
+		return (*_data)[p_index];
+	if ((int64_t)size() * -1 <= p_index && p_index < 0)
+		return (*_data)[size() + p_index];
+	THROW_ERROR(Error::INVALID_INDEX, String::format("String index %i is invalid.", p_index));
+}
+
+
 size_t String::size() const { return _data->size(); }
 const char* String::c_str() const { return _data->c_str(); }
 String& String::append(const String& p_other) { _data->append(p_other); return *this; }
+
+String String::upper() const {
+	String ret = *this;
+	for (size_t i = 0; i < ret.size(); i++) {
+		char& c = (*ret._data)[i];
+		if ('a' <= c && c <= 'z') {
+			c += ('A' - 'a');
+		}
+	}
+	return ret;
+}
+
+String String::lower() const {
+	String ret = *this;
+	for (size_t i = 0; i < ret.size(); i++) {
+		char& c = (*ret._data)[i];
+		if ('A' <= c && c <= 'Z') {
+			c += ('a' - 'A');
+		}
+	}
+	return ret;
+}
 
 int64_t String::to_int() const {
 	// TODO: this should throw std::exceptions
@@ -123,22 +186,6 @@ int64_t String::to_int() const {
 	} else {
 		return std::stoll(*_data);
 	}
-}
-
-
-String String::format(const char* p_format, ...) {
-	va_list argp;
-
-	va_start(argp, p_format);
-
-	static const unsigned int BUFFER_SIZE = VSNPRINTF_BUFF_SIZE;
-	char buffer[BUFFER_SIZE + 1]; // +1 for the terminating character
-	int len = vsnprintf(buffer, BUFFER_SIZE, p_format, argp);
-
-	va_end(argp);
-
-	if (len == 0) return String();
-	return String(buffer);
 }
 
 String String::substr(size_t p_start, size_t p_end) const {
@@ -181,29 +228,6 @@ Array String::split(const String& p_delimiter) const {
 		}
 		return ret;
 	}
-}
-
-bool operator==(const char* p_cstr, const String& p_str) {
-	return p_str == String(p_cstr);
-}
-bool operator!=(const char* p_cstr, const String& p_str) {
-	return p_str != String(p_cstr);
-}
-
-char String::operator[](int64_t p_index) const {
-	if (0 <= p_index && p_index < (int64_t)size())
-		return (*_data)[p_index];
-	if ((int64_t)size() * -1 <= p_index && p_index < 0)
-		return (*_data)[size() + p_index];
-	//	TODO: use THROW_ERROR macro
-	throw Error(Error::INVALID_INDEX, String::format("String index %i is invalid.", p_index));
-}
-char& String::operator[](int64_t p_index) {
-	if (0 <= p_index && p_index < (int64_t)size())
-		return (*_data)[p_index];
-	if ((int64_t)size() * -1 <= p_index && p_index < 0)
-		return (*_data)[size() + p_index];
-	throw Error(Error::INVALID_INDEX, String::format("String index %i is invalid.", p_index));
 }
 
 } // namespace carbon

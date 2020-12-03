@@ -94,7 +94,7 @@ public:
 	void set_member(const String& p_member_name, var& p_value) override;          // static members.
 
 	bool is_class() const;
-	String get_name() const;
+	const String& get_name() const;
 	var* _get_member_var_ptr(const String& p_member_name);
 
 	bool has_base() const;

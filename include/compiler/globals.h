@@ -33,10 +33,31 @@ class GlobalStrings {
 public:
 	// function names
 	_GLOBAL_STR(main);
+	_GLOBAL_STR(copy);
 	_GLOBAL_STR(to_string);
 
 	// operator function names
 	_GLOBAL_STR(__call);
+	_GLOBAL_STR(__iter_begin);
+	_GLOBAL_STR(__iter_has_next);
+	_GLOBAL_STR(__iter_next);
+	_GLOBAL_STR(__get_mapped);
+	_GLOBAL_STR(__set_mapped);
+	_GLOBAL_STR(__hash);
+
+	_GLOBAL_STR(__add);
+	_GLOBAL_STR(__sub);
+	_GLOBAL_STR(__mul);
+	_GLOBAL_STR(__div);
+
+	_GLOBAL_STR(__add_eq);
+	_GLOBAL_STR(__sub_eq);
+	_GLOBAL_STR(__mul_eq);
+	_GLOBAL_STR(__div_eq);
+
+	_GLOBAL_STR(__gt);
+	_GLOBAL_STR(__lt);
+	_GLOBAL_STR(__eq);
 };
 #undef _GLOBAL_STR
 }

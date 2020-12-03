@@ -50,7 +50,7 @@ const byte_t& Buffer::operator[](size_t p_index) const {
 
 
 
-var Buffer::__get_mapped(const var& p_key) const {
+var Buffer::__get_mapped(const var& p_key) /*const*/ {
 	if (p_key.get_type() != var::INT) THROW_ERROR(Error::TYPE_ERROR, "expected an integer as key.");
 	int64_t key = p_key.operator int64_t();
 	THROW_INVALID_INDEX(_size, key);
