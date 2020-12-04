@@ -187,7 +187,7 @@ void Analyzer::_reduce_identifier(ptr<Parser::Node>& p_expr) {
 
 	// search in locals (var, const)
 	Parser::BlockNode* outer_block = parser->parser_context.current_block;
-	while (outer_block && id->ref == Parser::IdentifierNode::REF_UNKNOWN) {
+	while (outer_block != nullptr && id->ref == Parser::IdentifierNode::REF_UNKNOWN) {
 		for (int i = 0; i < (int)outer_block->local_vars.size(); i++) {
 			Parser::VarNode* local_var = outer_block->local_vars[i].get();
 			if (local_var->name == id->name) {

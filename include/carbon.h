@@ -40,6 +40,7 @@
 
 // native imports
 #include "native/file.h"
+#include "native/nativelib.h"
 #include "native/path.h"
 #include "native/os.h"
 
@@ -54,6 +55,7 @@ inline void carbon_initialize() {
 
 	NativeClasses::singleton()->register_class<OS>();
 	NativeClasses::singleton()->register_class<File>();
+	NativeClasses::singleton()->register_class<NativeLib>();
 	NativeClasses::singleton()->register_class<Path>();
 	NativeClasses::singleton()->register_class<Buffer>();
 }
@@ -79,11 +81,12 @@ inline void log_help() {
 	Logger::log(1 + R"(
 usage: carbon [options] file ...
 Options:
-    -h, --help     : Display this help message.
-    -v, --version  : Display the version.
-    -o             : Output path.
-    -w             : Warnings are treated as errors.
-    -I(path)       : Import search path.
+	--native-api [path] : generate a native api file.
+    -h, --help          : Display this help message.
+    -v, --version       : Display the version.
+    -o                  : Output path.
+    -w                  : Warnings are treated as errors.
+    -I(path)            : Import search path.
 )");
 }
 

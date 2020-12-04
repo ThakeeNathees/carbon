@@ -27,4 +27,13 @@
 
 namespace carbon {
 
+uint64_t OS::unix_time() {
+	using namespace std::chrono;
+	return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
+
+int OS::syscall(const String& p_cmd) {
+	return system(p_cmd.c_str());
+}
+
 }

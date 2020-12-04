@@ -55,6 +55,7 @@ public:
 	void insert(const var& p_key, const var& p_value);
 	void clear();
 	bool has(const var& p_key) const;
+	var at(const var& p_key) const;
 
 	String to_string() const;
 	operator bool() const;

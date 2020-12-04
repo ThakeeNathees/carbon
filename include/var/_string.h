@@ -66,6 +66,7 @@ public:
 	bool startswith(const String& p_str) const;
 	Array split(const String& p_delimiter = "") const;
 	// String strip(p_delemeter = " "); lstrip(); rstrip();
+	String join(const Array& p_elements) const;
 
 	// operators.
 	char operator[](int64_t p_index) const;
@@ -105,6 +106,7 @@ public:
 	// Wrappers.
 	size_t size() const;
 	const char* c_str() const;
+	void* get_data();
 	String& append(const String& p_other);
 
 private:

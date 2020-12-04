@@ -36,7 +36,6 @@ const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_string() {
 	static stdmap<size_t, ptr<MemberInfo>> member_info_s = {
 		_NEW_METHOD_INFO("size",                                                             var::INT     ),
 		_NEW_METHOD_INFO("length",                                                           var::INT     ),
-		_NEW_METHOD_INFO("length",                                                           var::INT     ),
 		_NEW_METHOD_INFO("to_int",                                                           var::INT     ),
 		_NEW_METHOD_INFO("to_float",                                                         var::FLOAT   ),
 		_NEW_METHOD_INFO("hash",                                                             var::INT     ),
@@ -45,7 +44,8 @@ const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_string() {
 		_NEW_METHOD_INFO("substr",     _PARAMS("start", "end"), _TYPES(var::INT, var::INT),  var::STRING  ),
 		_NEW_METHOD_INFO("endswith",   _PARAMS("what" ),        _TYPES(var::STRING),         var::BOOL    ),
 		_NEW_METHOD_INFO("startswith", _PARAMS("what" ),        _TYPES(var::STRING),         var::BOOL    ),
-		_NEW_METHOD_INFO("split",      _PARAMS("delimiter" ),   _TYPES(var::STRING),         var::BOOL,   false, _DEFVALS("")),
+		_NEW_METHOD_INFO("split",      _PARAMS("delimiter" ),   _TYPES(var::STRING),         var::BOOL,     false, _DEFVALS("")),
+		_NEW_METHOD_INFO("join",       _PARAMS("strings" ),     _TYPES(var::ARRAY),          var::STRING  ),
 	};
 	return member_info_s;
 }
@@ -67,6 +67,7 @@ var String::call_method(const String& p_method, const stdvec<var*>& p_args) {
 			if (p_args.size() == 0) return split();
 			else return split(p_args[0]->operator String());
 		}
+		case "join"_hash:       return join(p_args[0]->operator Array());
 	}
 	// TODO: more.
 	THROW_ERROR(Error::BUG, "can't reach here.");
@@ -153,6 +154,7 @@ char& String::operator[](int64_t p_index) {
 
 size_t String::size() const { return _data->size(); }
 const char* String::c_str() const { return _data->c_str(); }
+void* String::get_data() { return (void*)_data->data(); }
 String& String::append(const String& p_other) { _data->append(p_other); return *this; }
 
 String String::upper() const {
@@ -228,6 +230,15 @@ Array String::split(const String& p_delimiter) const {
 		}
 		return ret;
 	}
+}
+
+String String::join(const Array& p_elements) const {
+	String ret;
+	for (int i = 0; i < p_elements.size(); i++) {
+		if (i > 0) ret += *this;
+		ret += p_elements[i].operator String();
+	}
+	return ret;
 }
 
 } // namespace carbon

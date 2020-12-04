@@ -1,8 +1,8 @@
-import lib = "test_lib.cb";
-
-
-
-
 func main() {
-
+	
+	var cmd = "sadf";
+	if (cmd == "build") ;//compile();
+	else if (cmd == "gen") NativeLib.generate_api("./nativeapi.h");
+	else println("unknown command ", cmd);
+	
 }

@@ -23,24 +23,43 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef OS_H
-#define OS_H
+#ifndef CARBON_API_H
+#define CARBON_API_H
 
-#include "core/core.h"
+#include "varptr.h"
+#include "nativeapi.h"
+#include "wrappers.h"
 
-namespace carbon {
+#if defined(_MSC_VER) //  Microsoft 
+#define EXPORT __declspec(dllexport)
+#elif defined(__GNUC__) //  GCC
+#define EXPORT __attribute__((visibility("default")))
+#else // unknown
+#define EXPORT
+#endif
 
-class OS : public Object {
-	REGISTER_CLASS(OS, Object) {
-		BIND_STATIC_FUNC("unix_time", &OS::unix_time);
-		BIND_STATIC_FUNC("system", &OS::syscall, PARAMS("command"));
-	}
+/* ------------------------ USAGE ---------------------------
 
-public:
-	static uint64_t unix_time();
-	static int syscall(const String& p_cmd);
+#define SINGLE_IMPLEMENTATION
+#include "carbon/api.h"
+using namespace carbon;
 
-};
+#ifdef __cplusplus
+extern "C" {
+#endif
 
+EXPORT void varapi_init(nativeapi* _api) {
+	api = _api;
 }
-#endif // OS_H
+
+EXPORT varptr your_function(int argc, varptr* argv) {
+	return varptr();
+}
+
+#ifdef __cplusplus
+}
+#endif
+
+---------------------------------------------------------*/
+
+#endif // CARBON_API_H

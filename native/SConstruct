@@ -6,6 +6,7 @@ Import('cbenv')
 SOURCES = [
     Glob('*.cpp'),
     Glob('io/*.cpp'),
+    Glob('api/*.cpp'),
     Glob('os/*.cpp'),
 ]
 

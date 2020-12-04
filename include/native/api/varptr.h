@@ -23,24 +23,43 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef OS_H
-#define OS_H
-
-#include "core/core.h"
+#ifndef VAR_PTR_H
+#define VAR_PTR_H
 
 namespace carbon {
 
-class OS : public Object {
-	REGISTER_CLASS(OS, Object) {
-		BIND_STATIC_FUNC("unix_time", &OS::unix_time);
-		BIND_STATIC_FUNC("system", &OS::syscall, PARAMS("command"));
+struct varptr {
+public:
+	enum Type {
+		_NULL,
+		BOOL,
+		INT,
+		FLOAT,
+		STRING,
+		ARRAY,
+		MAP,
+		OBJECT,
+	};
+
+	Type type = _NULL;
+	void* _ptr = nullptr;   // var* 
+	void* _data = nullptr;  // data* to modify integer, bool, ...
+	union {
+		unsigned char _bool = 0;
+		long long _int;
+		double _float;
+		const char* _str;
+	};
+
+	bool operator !=(std::nullptr_t) { return !(operator ==(nullptr)); }
+	bool operator ==(std::nullptr_t) {
+		if (type == STRING && _str != nullptr) return false;
+		return _ptr == nullptr;
 	}
 
-public:
-	static uint64_t unix_time();
-	static int syscall(const String& p_cmd);
-
+	unsigned int __id_dont_touch = -1;
 };
 
 }
-#endif // OS_H
+
+#endif // VAR_PTR_H

@@ -50,6 +50,7 @@ public:
 
 	Array copy(bool p_deep = true) const;
 	var call_method(const String& p_method, const stdvec<var*>& p_args);
+	const stdvec<var>* get_stdvec() const;
 	void* get_data() const;
 
 	// wrappers. TODO: throw errors

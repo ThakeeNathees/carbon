@@ -101,6 +101,7 @@ bool Object::_is_native_ref() const { return false; }
 String Object::_get_native_ref() const { return ""; }
 bool Object::_is_registered() const { return true; }
 
+void* Object::get_data() { return (void*)this; }
 
 void Object::_bind_data(NativeClasses* p_native_classes) {
 	BIND_METHOD("get_type_name", &Object::get_type_name);

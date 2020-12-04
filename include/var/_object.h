@@ -90,6 +90,7 @@ public:
 	virtual void set_member(const String& p_member_name, var& p_value);
 
 	virtual ptr<Object> copy(bool p_deep) /*const*/;
+	virtual void* get_data();
 
 	// operators.
 	virtual var __call(stdvec<var*>& p_vars);

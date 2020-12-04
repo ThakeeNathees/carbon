@@ -83,6 +83,21 @@ String var::get_op_name_s(Operator op) {
 
 var::Type var::get_type() const { return type; }
 
+void* var::get_data() {
+	switch (type) {
+		case _NULL:  return nullptr;
+		case BOOL:   return (void*)&_data._bool;
+		case INT:    return (void*)&_data._int;
+		case FLOAT:  return (void*)&_data._float;
+		case STRING: return _data._string.get_data();
+		case ARRAY:  return _data._arr.get_data();
+		case MAP:    return _data._map.get_data();
+		case OBJECT: return _data._obj->get_data();
+	}
+	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);
+	THROW_ERROR(Error::BUG, "can't reach here.");
+}
+
 size_t var::hash() const {
 	switch (type) {
 		case _NULL:

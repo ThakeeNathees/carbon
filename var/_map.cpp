@@ -33,11 +33,12 @@ namespace carbon {
 	
 const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_map() {
 	static stdmap<size_t, ptr<MemberInfo>> member_info = {
-		_NEW_METHOD_INFO("size",                                          var::INT   ),
-		_NEW_METHOD_INFO("empty",                                         var::BOOL  ),
-		_NEW_METHOD_INFO("insert",  _PARAMS("what"),  _TYPES(var::VAR),   var::_NULL ),
-		_NEW_METHOD_INFO("clear",                                         var::_NULL ),
-		_NEW_METHOD_INFO("has",     _PARAMS("what"),  _TYPES(var::VAR),   var::BOOL  ),
+		_NEW_METHOD_INFO("size",                                                            var::INT   ),
+		_NEW_METHOD_INFO("empty",                                                           var::BOOL  ),
+		_NEW_METHOD_INFO("insert",  _PARAMS("key", "value"),  _TYPES(var::VAR, var::VAR),   var::_NULL ),
+		_NEW_METHOD_INFO("clear",                                                           var::_NULL ),
+		_NEW_METHOD_INFO("has",     _PARAMS("what"),         _TYPES(var::VAR),              var::BOOL  ),
+		_NEW_METHOD_INFO("at",      _PARAMS("key"),          _TYPES(var::VAR),              var::VAR   ),
 	};
 	return member_info;
 }
@@ -50,6 +51,7 @@ var Map::call_method(const String& p_method, const stdvec<var*>& p_args) {
 		case "insert"_hash: insert(*p_args[0], *p_args[1]); return var();
 		case "clear"_hash:  clear(); return var();
 		case "has"_hash:    return has(*p_args[0]);
+		case "at"_hash:     return at(*p_args[0]);
 	}
 	// TODO: more.
 	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
@@ -109,6 +111,7 @@ void Map::insert(const var& p_key, const var& p_value) {
 }
 
 bool Map::has(const var& p_key) const { return find(p_key) != end(); }
+var Map::at(const var& p_key) const { return _data->at(p_key).value; }
 void Map::clear() { _data->clear(); }
 
 size_t Map::size() const { return _data->size(); }

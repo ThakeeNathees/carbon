@@ -71,8 +71,12 @@ Array::Array() { _data = newptr<stdvec<var>>(); }
 Array::Array(const ptr<stdvec<var>>& p_data) { _data = p_data; }
 Array::Array(const Array& p_copy) { _data = p_copy._data; }
 
-void* Array::get_data() const {
+const stdvec<var>* Array::get_stdvec() const {
 	return _data.operator->();
+}
+
+void* Array::get_data() const {
+	return (void*)_data->data();
 }
 
 size_t Array::size() const { return _data->size(); }
