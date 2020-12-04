@@ -7,17 +7,8 @@ def USER_DATA(env):
 	
 	## generate files TODO: find a proper way
 	os.system('python include/core/native_gen.py include/core/native_bind.gen.h')
-	os.system('python %s %s %s' % (
-		"native/api/native_api_gen.py",
-		"native/api/native_api.gen.inc",
-		str({
-			"VARPTR_SOURCE"    : "include/native/api/varptr.h",
-			"NATIVEAPI_SOURCE" : "include/native/api/nativeapi.h",
-			"WRAPPERS_SOURCE"  : "include/native/api/wrappers.h",
-			"API_SOURCE"       : "include/native/api/api.h",
-		}).replace(" ", "")
-	))
-
+	os.system('python %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "native/io/api.gen.inc") )
+	
 	env.Append(CPPPATH=[Dir(path) for path in [
 			"./thirdparty",
 			"./",

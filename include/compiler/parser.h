@@ -522,7 +522,7 @@ public:
 
 	// Methods.
 	void parse(const String& p_source, const String& p_file_path);
-#if DEBUG_BUILD
+#ifdef DEBUG_BUILD
 	void print_tree() const;
 #endif
 

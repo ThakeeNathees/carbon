@@ -27,11 +27,8 @@
 #define NATIVELIB_H
 
 #include "core/core.h"
-#include <dlfcn.h>
 
-#include "api/varptr.h"
-#include "api/nativeapi.h"
-
+#include "api/native_api.h"
 #include "file.h"
 #include "path.h"
 #include "os.h"
@@ -61,20 +58,9 @@ class NativeLib : public Object {
 	static void _varapi_init();
 	static void generate_api(const String& p_path = "");
 	static nativeapi* get_varapi();
-	static varptr var_to_varptr(var* p_val);
-	static var varptr_to_var(varptr* api);
-	static void varptr_assign(varptr* p_vptr, var p_var);
-	static varptr new_var_from(const var& p_from);
-	static varptr new_var();
-	static varptr new_string();
-	static varptr new_array();
-	static varptr new_map();
-	static void free_var(varptr* p_vptr);
 
 private:
 	static nativeapi api;
-	static unsigned int _alloc_id;
-	static stdmap<int, var> allocate; // for lib
 
 	void*  _handle = nullptr;
 	String _path;
