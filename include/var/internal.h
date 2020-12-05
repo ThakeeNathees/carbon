@@ -53,7 +53,6 @@
 #include <sstream>
 #include <fstream>
 #include <memory>
-#define _HAS_CXX17 1 // for autocompletion (delete this later).
 #include <filesystem>
 #include <new>
 
@@ -80,6 +79,7 @@
 #define STR(m_) #m_
 #define STRINGIFY(m_) STR(m_)
 #define PLACE_HOLDER_MACRO
+#define NO_ERRECT_MACRO(m) m
 #define VSNPRINTF_BUFF_SIZE 8192
 
 #if defined(DOUBLE_AS_REAL)

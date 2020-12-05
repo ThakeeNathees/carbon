@@ -142,4 +142,24 @@ const stdmap<size_t, ptr<MemberInfo>>& NativeClasses::get_member_info_list(const
 	return classes[p_class_name.hash()].member_info;
 }
 
+var NativeClasses::call_static(const String& p_base, const String& p_attrib, stdvec<var*>& p_args) {
+	ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(p_base, p_attrib);
+	if (bd != nullptr) {
+		switch (bd->get_type()) {
+			case BindData::METHOD:
+			case BindData::MEMBER_VAR:
+				THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("cannot access non static member \"%s\" statically on base %s", p_attrib.c_str(), p_base.c_str()));
+			case BindData::STATIC_FUNC:
+				return static_cast<StaticFuncBind*>(bd.get())->call(p_args);
+			case BindData::STATIC_VAR:
+				return static_cast<StaticPropertyBind*>(bd.get())->get().__call(p_args);
+			case BindData::STATIC_CONST:
+			case BindData::ENUM:
+			case BindData::ENUM_VALUE:
+				THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("member \"%s\" on base %s isn't callable", p_attrib.c_str(), p_base.c_str()));
+		}
+	}
+	THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("no attribute named \"%s\" base %s", p_attrib.c_str(), p_base.c_str()));
+}
+
 }

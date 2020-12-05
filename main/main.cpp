@@ -31,20 +31,30 @@ int _main(int argc, char** argv) {
 	carbon_initialize();
 	log_copyright_and_license();
 
-	if (argc < 2) log_help();
-	else {
-		// TODO: parse command line args.
-		try {
-			stdvec<String> args;
-			for (int i = 0; i < argc; i++) args.push_back(argv[i]);
+	try {
+		if (argc < 2) {
+			log_help();
+		} else {
 
-			ptr<Bytecode> bytecode = Compiler::singleton()->compile(argv[1]);
-			VM::singleton()->run(bytecode, args);
+			// TODO: properly parse command line args
+			if (strcmp(argv[1], "--native-api") == 0) {
+				String path = Path::get_cwd();
+				if (argc >= 3) path = Path::absolute(argv[2]);
+				NativeLib::generate_api(path);
+				printf("%s was generated.\n", path.c_str());
+			} else {
 
-		} catch (Throwable& err) {
-			err.console_log();
+				stdvec<String> args;
+				for (int i = 1; i < argc; i++) args.push_back(argv[i]);
+
+				ptr<Bytecode> bytecode = Compiler::singleton()->compile(argv[1]);
+				VM::singleton()->run(bytecode, args);
+			}
 		}
+	} catch (Throwable& err) {
+		err.console_log();
 	}
+
 	carbon_cleanup();
 	return 0;
 }

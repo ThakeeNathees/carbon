@@ -66,12 +66,12 @@ public:
 class _Iterator_Array : public Object {
 	REGISTER_CLASS(_Iterator_Array, Object) {}
 
-	stdvec<var>::iterator _it;
-	stdvec<var>* _array_data = nullptr;
+	stdvec<var>::const_iterator _it;
+	const stdvec<var>* _array_data = nullptr;
 public:
 	_Iterator_Array() {}
 	_Iterator_Array(const Array* p_array) {
-		_array_data = (stdvec<var>*)p_array->get_data();
+		_array_data = p_array->get_stdvec();
 		_it = _array_data->begin();
 	}
 

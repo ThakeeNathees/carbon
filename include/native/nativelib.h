@@ -23,24 +23,49 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef OS_H
-#define OS_H
+#ifndef NATIVELIB_H
+#define NATIVELIB_H
 
 #include "core/core.h"
 
+#include "api/native_api.h"
+#include "file.h"
+#include "path.h"
+#include "os.h"
+
 namespace carbon {
 
-class OS : public Object {
-	REGISTER_CLASS(OS, Object) {
-		BIND_STATIC_FUNC("unix_time", &OS::unix_time);
-		BIND_STATIC_FUNC("system", &OS::syscall, PARAMS("command"));
+class NativeLib : public Object {
+	REGISTER_CLASS(NativeLib, Object) {
+		BIND_STATIC_FUNC("NativeLib", &NativeLib::_NativeLib, PARAMS("self", "path"), DEFVALUES(""));
+
+		BIND_STATIC_FUNC("generate_api", &NativeLib::generate_api, PARAMS("path"), DEFVALUES(""));
+		BIND_METHOD("open", &NativeLib::open, PARAMS("path"));
+		BIND_METHOD("close", &NativeLib::close);
+
+		_varapi_init();
 	}
 
-public:
-	static uint64_t unix_time();
-	static int syscall(const String& p_cmd);
+	NativeLib(const String& p_lib_name = "");
+	~NativeLib();
+	static void _NativeLib(ptr<Object> p_self, const String& p_lib_name = "");
+
+	var call_method(const String& p_name, stdvec<var*>& p_args) override;
+
+	void open(const String& p_path);
+	void close();
+
+	static void _varapi_init();
+	static void generate_api(const String& p_path = "");
+	static nativeapi* get_varapi();
+
+private:
+	static nativeapi api;
+
+	void*  _handle = nullptr;
+	String _path;
 
 };
 
 }
-#endif // OS_H
+#endif // NATIVELIB_H

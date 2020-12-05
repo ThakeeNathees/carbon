@@ -109,7 +109,7 @@ var Bytecode::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 				switch (bd->get_type()) {
 					case BindData::METHOD:
 					case BindData::MEMBER_VAR:
-						throw "TODO: error msg: can't call non static attrib statically";
+						THROW_ERROR(Error::ATTRIBUTE_ERROR, "cannot call a non static attribute statically");
 
 					case BindData::STATIC_FUNC: {
 						const StaticFuncBind* sf = static_cast<const StaticFuncBind*>(bd.get());
@@ -124,14 +124,27 @@ var Bytecode::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 					case BindData::STATIC_CONST:
 					case BindData::ENUM:
 					case BindData::ENUM_VALUE:
-						throw "TODO: error msg: is not callable";
+						THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("%s isn't callable on base %s", p_method_name.c_str(), get_name().c_str()));
 				}
 			}
 		} else {
 			_base->call_method(p_method_name, p_args);
 		}
 	}
-	throw "TODO: throw error here -> no method named ...";
+
+	if (!is_class()) {
+		ptr<Bytecode> _class = get_class(p_method_name);
+		if (_class != nullptr) {
+			// TODO: abstract construction and everything.
+			ptr<Instance> instance = newptr<Instance>(_class);
+			const CarbonFunction* member_initializer = _class->get_member_initializer();
+			if (member_initializer) VM::singleton()->call_function(member_initializer, _class.get(), instance, stdvec<var*>());
+			const CarbonFunction* constructor = _class->get_constructor();
+			if (constructor) VM::singleton()->call_function(constructor, _class.get(), instance, p_args);
+			return instance;
+		}
+	}
+	THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists on base %s", p_method_name.c_str(), get_name().c_str()));
 }
 
 var Bytecode::get_member(const String& p_member_name) {
@@ -152,7 +165,7 @@ void Bytecode::set_member(const String& p_member_name, var& p_value) {
 		return;
 	}
 
-	// TODO: check other members only when debugging is enabled.
+	// check other members for better error message.
 	auto it_const = _constants.find(p_member_name);
 	if (it_const != _constants.end()) THROW_ERROR(Error::ATTRIBUTE_ERROR,
 		String::format("cannot assign to a constant value named \"%s\".", p_member_name.c_str()));
@@ -260,7 +273,7 @@ uint32_t Bytecode::get_member_index(const String& p_name) {
 	if (it == _members.end()) {
 		if (_base == nullptr) {
 			if (_pending_base != nullptr) return ((Parser::ClassNode*)_pending_base)->get_member_index(p_name);
-			THROW_BUG("TODO:"); // TODO: _base==nullptr -> throw runtime error here <-- no member named p_name
+			THROW_ERROR(Error::NAME_ERROR, String::format("no member named \"%s\"", p_name.c_str()));
 		} else {
 			return _base->get_member_index(p_name);
 		}

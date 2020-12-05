@@ -323,7 +323,7 @@ ptr<Parser::ControlFlowNode> Parser::_parse_if_block(const ptr<BlockNode>& p_par
 			case Token::KWORD_IF: {
 				tokenizer->next(); // eat "if"
 				if_block->body_else = new_node<BlockNode>();
-				if_block->body->parernt_node = p_parent;
+				if_block->body_else->parernt_node = p_parent;
 				if_block->body_else->statements.push_back(_parse_if_block(p_parent));
 			} break;
 			case Token::BRACKET_LCUR: {

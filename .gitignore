@@ -1,5 +1,7 @@
 
 # own files
+*.gen.h
+*.gen.inc
 *.dblite
 bin/
 */bin/

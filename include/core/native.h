@@ -82,6 +82,7 @@ public:
 	ptr<Object> _new(const String& p_class_name);
 	const StaticFuncBind* get_constructor(const String& p_class_name);
 	ptr<Object> construct(const String& p_class_name, stdvec<var*>& p_args);
+	var call_static(const String& p_base_name, const String& p_attrib, stdvec<var*>& p_args);
 
 	template<typename T>
 	void register_class() {

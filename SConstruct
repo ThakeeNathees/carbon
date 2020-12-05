@@ -5,6 +5,10 @@ import os, subprocess, sys
 def USER_DATA(env):
 	env.PROJECT_NAME = 'carbon'
 	
+	## generate files TODO: find a proper way
+	os.system('python include/core/native_gen.py include/core/native_bind.gen.h')
+	os.system('python %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "native/io/api.gen.inc") )
+	
 	env.Append(CPPPATH=[Dir(path) for path in [
 			"./thirdparty",
 			"./",
@@ -49,9 +53,9 @@ def USER_DATA(env):
 		env.Append(CPPDEFINES=['RELEASE_BUILD'])
 
 	## set stack size 
-	MAX_STACK_SIZE = 40 * 1024 * 1024
 	if env['platform'] == 'windows':
-		env.Append(LINKFLAGS=['/STACK:%s'%MAX_STACK_SIZE])
+		env.Append(CPPPATH=[Dir('./thirdparty/dlfcn-win32/')])
+		env.Append(LINKFLAGS=['/STACK:%s'% (40 * 1024 * 1024) ])
 	## TODO: not sure about other platforms
 		
 
@@ -129,6 +133,7 @@ elif cbenv['platform'] == "windows":
 
 	cbenv.Append(CXXFLAGS=['/std:c++17', '/bigobj'])
 	cbenv.Append(CPPDEFINES=['WIN32', '_WIN32', '_WINDOWS', '_CRT_SECURE_NO_WARNINGS'])
+	#cbenv.Append(CPPDEFINES=['_HAS_CXX17']) ## for autocompletion in vs.
 	cbenv.Append(CCFLAGS=['-W3', '-GR'])
 	cbenv.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
 	cbenv.Append(LIBS=[])

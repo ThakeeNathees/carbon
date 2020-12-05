@@ -476,6 +476,11 @@ ptr<StaticFuncBind> _bind_va_static_func(const char* func_name, const char* p_cl
 	f.write(f'#endif // {HEADER_GUARD}\n')
 	f.close()
 
+import sys
 if __name__ == '__main__':
-	generage_method_calls('native_bind.gen.h', 8)
-	print("[source gen] native bind source generated!");
+	if len(sys.argv) < 2:
+		print("[native_gen] no path were provided!")
+	path = sys.argv[1]
+	assert(path.endswith('native_bind.gen.h'))
+	generage_method_calls(path, 8)
+	print("[native_gen] native bind source generated!");

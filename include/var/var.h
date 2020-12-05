@@ -127,6 +127,7 @@ public:
 	// methods.
 	inline Type get_type() const;
 	String get_type_name() const;
+	void* get_data();
 	size_t hash() const;
 	void clear();
 	var copy(bool p_deep = false) const;
