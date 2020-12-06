@@ -26,7 +26,8 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-#include "var/var.h"
+// for va_list
+#include <stdarg.h>
 
 namespace carbon {
 
@@ -88,6 +89,9 @@ public:
 	static void logf_warning(const char* p_fmt, ...);
 	static void logf_error(const char* p_fmt, ...);
 
+	static void initialize();
+	static void cleanup();
+
 protected:
 	virtual void log_impl(const char* p_msg, Color p_fg, Color p_bg) const = 0;
 	virtual void set_cursor_impl(int p_line, int p_column) const = 0;
@@ -105,7 +109,7 @@ protected:
 	virtual void logf_error_impl(const char* p_fmt, va_list p_list) const = 0;
 
 private:
-	static ptr<Logger> singleton;
+	static Logger* singleton;
 	static LogLevel level;
 	static LogLevel last_level;
 };

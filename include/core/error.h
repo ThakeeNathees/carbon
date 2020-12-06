@@ -43,11 +43,15 @@ if (m_ptr == nullptr){                                                          
 
 
 #define THROW_ERROR(m_type, m_msg) throw Error(m_type, m_msg, _DBG_SOURCE)
-#define THROW_BUG(m_msg) do{ DEBUG_BREAK(); THROW_ERROR(Error::BUG, m_msg); } while (false)
+#define THROW_BUG(m_msg)                                                                \
+	do{																	                \
+		Logger::log_error((String("BUG : ") + m_msg + " (please report)\n").c_str());	\
+		DEBUG_BREAK();													                \
+		THROW_ERROR(Error::BUG, m_msg);									                \
+	} while (false)
 
+#include "logger.h"
 #include "var/var.h"
-
-// TODO: create a common parent for warning and error first
 
 namespace carbon {
 

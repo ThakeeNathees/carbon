@@ -35,10 +35,27 @@ Instance::Instance(ptr<Bytecode>& p_blueprint) {
 }
 
 bool Instance::_is_registered() const { return false; }
+
 var Instance::get_member(const String& p_name) {
-	uint32_t pos = blueprint->get_member_index(p_name);
-	return members[pos];
+	// try members
+	try {
+		uint32_t pos = blueprint->get_member_index(p_name);
+		return members[pos];
+	} catch (Error& err) {
+		if (err.get_type() != Error::ATTRIBUTE_ERROR) throw err;
+	}
+
+	// not found in members try static
+	try {
+		return blueprint->get_member(p_name);
+	} catch (Error& err) {
+		if (err.get_type() != Error::ATTRIBUTE_ERROR) throw err;
+	}
+	// throw here for better error message
+	THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("no member named \"%s\" on base %s.",
+		p_name.c_str(), blueprint->get_name().c_str()));
 }
+
 void Instance::set_member(const String& p_name, var& p_value) {
 	uint32_t pos = blueprint->get_member_index(p_name);
 	members[pos] = p_value;

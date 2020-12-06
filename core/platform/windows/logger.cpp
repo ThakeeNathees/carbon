@@ -95,6 +95,14 @@ public:
 };
 
 HANDLE LoggerWindows::h_console = GetStdHandle(STD_OUTPUT_HANDLE);
-ptr<Logger> Logger::singleton = newptr<LoggerWindows>();
+Logger* Logger::singleton = nullptr;
+
+void Logger::initialize() {
+	singleton = new LoggerWindows();
+}
+
+void Logger::cleanup() {
+	delete singleton;
+}
 
 }

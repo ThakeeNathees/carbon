@@ -22,47 +22,33 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //------------------------------------------------------------------------------
+#ifndef NATIVE_STRUCT_H
+#define NATIVE_STRUCT_H
 
-#ifndef BUFFER_H
-#define BUFFER_H
-
-#include "core/core.h"
+#include "native/buffer.h"
+#include "native/nativelib.h"
 
 namespace carbon {
 
-class Buffer : public Object {
-	REGISTER_CLASS(Buffer, Object) {
-		// TODO: the below default value mis match
-		BIND_STATIC_FUNC("Buffer", &Buffer::_Buffer, PARAMS("self", "size"), DEFVALUES(0));
-		BIND_METHOD("alloc", &Buffer::alloc, PARAMS("size"));
-		BIND_METHOD("size", &Buffer::size);
+class _NativeStruct : public Buffer {
+	REGISTER_CLASS(_NativeStruct, Buffer) {
+		BIND_METHOD("load", &_NativeStruct::load, PARAMS("path"));
+		BIND_METHOD("get_lib", &_NativeStruct::get_lib);
 	}
 
 public:
+	void load(const String& p_path);
+	ptr<NativeLib> get_lib();
+	// TODO: defind DataType abstraction to define the layout.
 
-	Buffer(size_t p_size = 0);
-	static void _Buffer(ptr<Object> self, int64_t p_size = 0);
-
-	// Methods.
-	void alloc(size_t p_size);
-
-	byte_t* front();
-	void* get_data() override;
-	size_t size() const;
-
-	byte_t& operator[](size_t p_index);
-	const byte_t& operator[](size_t p_index) const;
-
-	// operators
-	virtual var __get_mapped(const var& p_key) /*const*/ override;
-	virtual void __set_mapped(const var& p_key, const var& p_value) override;
 
 private:
-	// Members.
-	std::shared_ptr<byte_t[]> _buffer;
-	size_t _size = 0;
+	// TODO: move this to a generatl native location if any in the future.
+	static stdmap<String, ptr<NativeLib>> lib_cache;
+	ptr<NativeLib> _lib;
 };
+
 
 }
 
-#endif // BUFFER_H
+#endif // NATIVE_STRUCT_H

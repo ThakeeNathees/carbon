@@ -1,0 +1,75 @@
+
+=============== BUGS =============================================================
+* println = x; // not an error
+* var now = OS.unix_time; // shouldn't be an error
+* native constructor default values not working in carbon (inherit File, Buffer)
+* calling constructor inside the class itself calls the function 
+    and since ctor doesn't return anything the func call returns is null
+    but it should be call initializer and ctor instead.
+* float("") <-- crash
+* "".substr() check index limit
+* null var x = 12; // no error for the null before
+* multiline string -> support 'string' and "multi line str"
+
+=============== TODO =============================================================
+ * destructor (needed for native struct to unload dlls)
+ * "string %s literal" % ["replace"]
+ * Path.listdir() <-- default argument "."
+ * implement to_string on type info, runtim instance, class ref, ...
+ * error print and dbg info (stack trace)
+ * switch statement (jump table impl) before: switch body is a single block node
+ * undef THROW_ANLAYZER_ERROR, TOKENIZER_ERROR, ... (not THROW_BUG)
+ * opcode string print
+ * ext_lib.lib.lib;
+ * change owner pointer from shared to weak/ inline functions
+ * str(), hex(), ...
+
+=============== LOW PRIORITY =====================================================
+ * in, is 
+ * class A{} var a = A; println(a.get_type_name()); // RuntimeInstance
+ * a rich typecheck api
+ * unexpected token, expected [empty]
+ * try super.EnumClass(); <-- better error msg
+ * math class (math.sin, math.tanh ...)
+ * compiler as var -> runtime code compile
+ * multi thread for multiple VM
+ * dir() function
+ * exit(SUCCESS);
+
+=============== ADDNL OR MAYBE NOT ================================================
+ * i++, i--
+ * trinary if else
+ * reverse list, string, slice array
+ * strip, trim... try dir("") in python and implement all.
+ * python like range().
+ * func f(x) = 2*x + 1; lambda
+ * c++ transcompile
+ * [expr(i) for i in expr]
+ * a, b = b, a
+ * map(f, arr) -> arr // can implement in carbon too.
+ * implement __repr__() // print array of string / or add "" manually in arr/dict
+
+=============== CURRENT FEATURES / DONE ============================================
+ * basic language features:
+	   * enums and switch statements
+	   * for, foreach, while loops, if, else
+	   * static and non static variables/ functions.
+ * dynamic type (strongly typed) high level
+ * object oriented (and functional c++ like)
+ * operator overloading support
+       * arighmetic operators
+       * callables
+	   * iterables
+ * default argument support
+ * a better analyzer (to reduce runtime errors)
+ * no memeory management required
+ * first class function/classes/enums and everything
+ * easy integration (c++ bindings)
+ * native api (calling c/c++ at runtime from dll/so)
+
+ * get_func()(); vars_callable();
+ * func f(x) = x + 2; // single expr function defn
+ * support both `&&`/`and` , `||`/`or`, `!`/`not`
+ * python like arithmetic operators in builtin
+        * "str" * 3, [3.14] * 10
+		* "%s - %s" % "first", "second"; // <-- TODO:

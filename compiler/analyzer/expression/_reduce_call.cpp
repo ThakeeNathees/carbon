@@ -153,14 +153,25 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				case Parser::IdentifierNode::REF_FUNCTION: {
 
 					bool is_illegal_call = false;
+					int argc = 0;
+					int argc_default = 0;
+					int argc_given = (int)call->args.size();
+
 					switch (id->ref_base) {
 						case Parser::IdentifierNode::BASE_UNKNOWN:
-						case Parser::IdentifierNode::BASE_EXTERN:
-						case Parser::IdentifierNode::BASE_NATIVE:
 							THROW_BUG("can't be"); // call base is empty.
-
+						case Parser::IdentifierNode::BASE_EXTERN:
+							THROW_BUG("TODO:");
+						case Parser::IdentifierNode::BASE_NATIVE: {
+							// is_illegal_call = //TODO: impl
+							argc = id->_method_info->get_arg_count();
+							argc_default = id->_method_info->get_default_arg_count();
+						} break;
 						case Parser::IdentifierNode::BASE_LOCAL: {
+							// TODO: this logic may be false.
 							is_illegal_call = parser->parser_context.current_class && !id->_func->is_static;
+							argc = (int)id->_func->args.size();
+							argc_default = (int)id->_func->default_args.size();
 						} break;
 					}
 
@@ -170,17 +181,8 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", id->name.c_str()), id->pos);
 						}
 					}
+					_check_arg_count(argc, argc_default, argc_given, call->pos);
 
-					int argc = (int)id->_func->args.size();
-					int argc_default = (int)id->_func->default_args.size();
-					int argc_given = (int)call->args.size();
-					if (argc_given + argc_default < argc) {
-						if (argc_default == 0) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
-						else throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", argc - argc_default), id->pos);
-					} else if (argc_given > argc) {
-						if (argc_default == 0) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected exactly %i argument(s).", argc), id->pos);
-						else throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("expected minimum of %i argument(s) and maximum of %i argument(s).", argc - argc_default, argc), id->pos);
-					}
 				} break;
 
 				// Aclass(...); calling carbon class constructor.

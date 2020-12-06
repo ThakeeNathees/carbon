@@ -5,7 +5,7 @@ import os, subprocess, sys
 def USER_DATA(env):
 	env.PROJECT_NAME = 'carbon'
 	
-	## generate files TODO: find a proper way
+	## generate files TODO: use builders
 	os.system('python include/core/native_gen.py include/core/native_bind.gen.h')
 	os.system('python %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "native/io/api.gen.inc") )
 	

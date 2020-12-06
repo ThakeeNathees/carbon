@@ -41,26 +41,30 @@
 // native imports
 #include "native/file.h"
 #include "native/nativelib.h"
+#include "native/api/native_struct.h"
 #include "native/path.h"
 #include "native/os.h"
 
 namespace carbon {
 
 inline void carbon_initialize() {
+	Logger::initialize();
 
 	// Register native classes.
 	NativeClasses::singleton()->register_class<Object>();
-	NativeClasses::singleton()->register_class<Bytecode>();
-	NativeClasses::singleton()->register_class<CarbonFunction>();
-
 	NativeClasses::singleton()->register_class<OS>();
 	NativeClasses::singleton()->register_class<File>();
 	NativeClasses::singleton()->register_class<NativeLib>();
+	NativeClasses::singleton()->register_class<_NativeStruct>();
 	NativeClasses::singleton()->register_class<Path>();
 	NativeClasses::singleton()->register_class<Buffer>();
+
+	NativeClasses::singleton()->register_class<Bytecode>();
+	NativeClasses::singleton()->register_class<CarbonFunction>();
 }
 
 inline void carbon_cleanup() {
+	Logger::cleanup();
 	NativeClasses::cleanup();
 	VM::cleanup();
 	Compiler::cleanup();

@@ -37,6 +37,7 @@ void Buffer::alloc(size_t p_size) {
 }
 
 byte_t* Buffer::front() { return _buffer.get(); }
+void* Buffer::get_data() { return (void*)_buffer.get(); }
 size_t  Buffer::size() const { return _size; }
 
 byte_t& Buffer::operator[](size_t p_index) {

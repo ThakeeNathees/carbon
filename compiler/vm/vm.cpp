@@ -111,6 +111,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				*dst = on->get_member(name);
 			} break;
+
 			case Opcode::SET: {
 				CHECK_OPCODE_SIZE(4);
 				var* on = context.get_var_at(opcodes[++ip]);
@@ -120,6 +121,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				on->set_member(name, *value);
 			} break;
+
 			case Opcode::GET_MAPPED: {
 				CHECK_OPCODE_SIZE(4);
 				var* on = context.get_var_at(opcodes[++ip]);
@@ -129,6 +131,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				*dst = on->__get_mapped(*key);
 			} break;
+
 			case Opcode::SET_MAPPED: {
 				CHECK_OPCODE_SIZE(4);
 				var* on = context.get_var_at(opcodes[++ip]);
@@ -138,6 +141,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				on->__set_mapped(*key, *value);
 			} break;
+
 			case Opcode::SET_TRUE: {
 				CHECK_OPCODE_SIZE(2);
 				var* dst = context.get_var_at(opcodes[++ip]);
@@ -145,6 +149,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				*dst = true;
 			} break;
+
 			case Opcode::SET_FALSE: {
 				CHECK_OPCODE_SIZE(2);
 				var* dst = context.get_var_at(opcodes[++ip]);
@@ -152,6 +157,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				*dst = false;
 			} break;
+
 			case Opcode::OPERATOR: {
 				CHECK_OPCODE_SIZE(5);
 				ASSERT(opcodes[ip + 1] < var::_OP_MAX_);
@@ -238,6 +244,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				*dst = NativeClasses::singleton()->construct(class_name, args);
 			} break;
+
 			case Opcode::CONSTRUCT_CARBON: {
 				CHECK_OPCODE_SIZE(4);
 				const String& name = context.get_name_at(opcodes[++ip]);
@@ -266,6 +273,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				*dst = instance;
 			} break;
+
 			case Opcode::CONSTRUCT_LITERAL_ARRAY: {
 				CHECK_OPCODE_SIZE(3);
 				uint32_t size = opcodes[++ip];
@@ -280,6 +288,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				*dst = arr;
 			} break;
+
 			case Opcode::CONSTRUCT_LITERAL_MAP: {
 				CHECK_OPCODE_SIZE(3);
 				uint32_t size = opcodes[++ip];
@@ -295,6 +304,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				*dst = map;
 			} break;
+
 			case Opcode::CALL: {
 				CHECK_OPCODE_SIZE(4);
 				var* on = context.get_var_at(opcodes[++ip]);
@@ -309,6 +319,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				*ret_value = on->__call(args);
 			} break;
+
 			case Opcode::CALL_FUNC: {
 				CHECK_OPCODE_SIZE(4);
 
@@ -322,6 +333,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 				var* ret_value = context.get_var_at(opcodes[++ip]);
 				ip++;
 
+				// TODO: base could also be native.
 				Bytecode* call_base;
 				ptr<CarbonFunction> func_ptr;
 
@@ -356,11 +368,12 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 					if (it != functions.end()) func_ptr = it->second;
 				}
 
-				if (func_ptr == nullptr) THROW_BUG("can't find the function");
+				if (func_ptr == nullptr) THROW_BUG(String::format("can't find the function \"%s\"", func.c_str()));
 
 				*ret_value = call_function(func_ptr.get(), call_base, (func_ptr->is_static()) ? nullptr : p_self, args, __stack + 1);
 
 			} break;
+
 			case Opcode::CALL_METHOD: {
 				CHECK_OPCODE_SIZE(5);
 
@@ -378,6 +391,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 				*ret_value = on->call_method(method, args);
 
 			} break;
+
 			case Opcode::CALL_BUILTIN: {
 				CHECK_OPCODE_SIZE(4);
 
@@ -394,6 +408,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 				BuiltinFunctions::call((BuiltinFunctions::Type)func, args, *ret);
 				ip++;
 			} break;
+
 			case Opcode::CALL_SUPER_CTOR: {
 				CHECK_OPCODE_SIZE(2);
 				uint32_t argc = opcodes[++ip];
@@ -418,6 +433,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 				}
 
 			} break;
+
 			case Opcode::CALL_SUPER_METHOD: {
 				CHECK_OPCODE_SIZE(4);
 
@@ -435,7 +451,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 
 				if (p_self->blueprint->is_base_native()) {
 					ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(p_self->blueprint->get_base_native(), method);
-					THROW_BUG("TODO:");
+					THROW_BUG("TODO: implement native calls abstraction first");
 				} else {
 					ptr<CarbonFunction> fn = p_self->blueprint->get_base_binary()->get_function(method);
 					var* sv = nullptr; if (fn == nullptr) sv = p_self->blueprint->get_base_binary()->get_static_var(method);
@@ -461,6 +477,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 				uint32_t addr = opcodes[++ip];
 				ip = addr;
 			} break;
+
 			case Opcode::JUMP_IF: {
 				CHECK_OPCODE_SIZE(3);
 				var* cond = context.get_var_at(opcodes[++ip]);
@@ -468,6 +485,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 				if (cond->operator bool()) ip = addr;
 				else ip++;
 			} break;
+
 			case Opcode::JUMP_IF_NOT: {
 				CHECK_OPCODE_SIZE(3);
 				var* cond = context.get_var_at(opcodes[++ip]);

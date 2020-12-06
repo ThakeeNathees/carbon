@@ -134,6 +134,13 @@ public:
 	}
 };
 
-ptr<Logger> Logger::singleton = newptr<LoggerX11>();
+void Logger::initialize() {
+	singleton = new LoggerX11();
+}
+
+void Logger::cleanup() {
+	delete singleton;
+}
+
 
 }

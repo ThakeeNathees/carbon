@@ -87,6 +87,7 @@ struct nativeapi {
 	void (*var_call_method)(uint8_t* self, const char* name, uint8_t* args, uint8_t* target);
 	void (*var_get_member)(uint8_t* self, const char* name, uint8_t* target);
 	void (*var_set_member)(uint8_t* self, const char* name, uint8_t* value);
+	void* (*var_get_data)(uint8_t* self);
 
 
 	void (*arr_to_string)(uint8_t* self, uint8_t* target);

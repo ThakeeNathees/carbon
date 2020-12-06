@@ -152,9 +152,12 @@ var Bytecode::get_member(const String& p_member_name) {
 	var* _member = _get_member_var_ptr(p_member_name);
 	if (_member != nullptr) return *_member;
 	
-	//return _base->get_member(p_member_name);
-	THROW_ERROR(Error::ATTRIBUTE_ERROR,
-		String::format("%s %s has no member named \"%s\".", ((_is_class) ? "type" : "file at"), _name.c_str(), p_member_name.c_str()));
+	if (_base != nullptr) {
+		return _base->get_member(p_member_name);
+	} else {
+		THROW_ERROR(Error::ATTRIBUTE_ERROR,
+			String::format("%s %s has no member named \"%s\".", ((_is_class) ? "type" : "file at"), _name.c_str(), p_member_name.c_str()));
+	}
 }
 
 void Bytecode::set_member(const String& p_member_name, var& p_value) {
@@ -192,8 +195,11 @@ void Bytecode::set_member(const String& p_member_name, var& p_value) {
 
 var* Bytecode::_get_member_var_ptr(const String& p_member_name) {
 
+	// if already constructed var* return it
 	auto it = _member_vars.find(p_member_name);
 	if (it != _member_vars.end()) { return &it->second; }
+
+	// search and construct var*
 
 	auto it_static = _static_vars.find(p_member_name);
 	if (it_static != _static_vars.end()) return &it_static->second;
@@ -273,7 +279,8 @@ uint32_t Bytecode::get_member_index(const String& p_name) {
 	if (it == _members.end()) {
 		if (_base == nullptr) {
 			if (_pending_base != nullptr) return ((Parser::ClassNode*)_pending_base)->get_member_index(p_name);
-			THROW_ERROR(Error::NAME_ERROR, String::format("no member named \"%s\"", p_name.c_str()));
+			THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("no member named \"%s\" on base %s.",
+				p_name.c_str(), _name.c_str()));
 		} else {
 			return _base->get_member_index(p_name);
 		}

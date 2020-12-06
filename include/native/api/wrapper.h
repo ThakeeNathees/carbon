@@ -58,7 +58,6 @@ class var;
 class String {
 public:
 	uint8_t __bytes[CLASS_SIZE_STRING];
-	uint8_t* ptr() { return __bytes; }
 
 	String(const char* str = "") { api->new_string(__bytes, str); }
 
@@ -79,7 +78,6 @@ public:
 class Array {
 public:
 	uint8_t __bytes[CLASS_SIZE_ARRAY];
-	uint8_t* ptr() { return __bytes; }
 
 	Array() { api->new_array(__bytes); }
 
@@ -95,7 +93,6 @@ public:
 class Map {
 public:
 	uint8_t __bytes[CLASS_SIZE_MAP];
-	uint8_t* ptr() { return __bytes; }
 	
 	Map() { api->new_map(__bytes); }
 
@@ -110,7 +107,6 @@ public:
 class var {
 public:
 	uint8_t __bytes[CLASS_SIZE_VAR];
-	uint8_t* ptr() { return __bytes; }
 
 	var() { api->new_var(__bytes); }
 	var(bool val) { api->new_var_from_bool(__bytes, val); }
@@ -135,6 +131,7 @@ public:
 	var call_method(const char* name, Array& args);
 	var get_member(const char* name);
 	void set_member(const char* name, var& value);
+	void* get_data();
 
 	String to_string();
 };
@@ -199,6 +196,7 @@ var  var::call_method(const char* name, Array& args) { var target; api->var_call
 var  var::get_member(const char* name) { var target; api->var_get_member(__bytes, name, target.__bytes); return target; }
 void var::set_member(const char* name, var& value) { api->var_set_member(__bytes, name, value.__bytes); }
 String var::to_string() { String target; api->var_to_string(__bytes, target.__bytes); return target; }
+void* var::get_data() { return api->var_get_data(__bytes); }
 
 } // carbon
 #endif // CARBON_API_IMPLEMENTATION

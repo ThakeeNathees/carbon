@@ -54,7 +54,7 @@ EXPORT var* your_function(int argc, var** argv) {
 TARGET_FILE   = 'api.gen.h'
 ROOT_HEADER   = 'wrapper.h'
 LIB_NAME      = 'CARBON_API'
-EXCLUDE_FILES = []
+EXCLUDE_FILES = ['native_struct.h']
 
 import sys, os, re
 def main():
@@ -75,8 +75,9 @@ def generate_header(dir_root):
             
     for dir in os.listdir(dir_root):
         if os.path.isfile(os.path.join(dir_root, dir)):
+            if dir in EXCLUDE_FILES: continue
             if dir.endswith('.cpp'):
-                with open(dir, 'r') as f:
+                with open(os.path.join(dir_root, dir), 'r') as f:
                     src[dir] = f.read()
             elif dir.endswith('.h') or dir.endswith('.inc'):
                 with open(os.path.join(dir_root, dir), 'r') as f:

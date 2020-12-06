@@ -156,6 +156,10 @@ static void var_set_member(uint8_t* self, const char* name, uint8_t* value) {
 	((var*)self)->set_member(name, *(var*)value);
 }
 
+static void* var_get_data(uint8_t* self) {
+	return ((var*)self)->get_data();
+}
+
 /////////////////////////////////////////////////////////////
 static void new_string(uint8_t* self, const char* str) {
 	new (self) String(str);
@@ -291,6 +295,7 @@ void NativeLib::_varapi_init() {
 	api.var_call_method = &var_call_method;
 	api.var_get_member = &var_get_member;
 	api.var_set_member = &var_set_member;
+	api.var_get_data = &var_get_data;
 
 	api.new_string = &new_string;
 	api.new_array = &new_array;
