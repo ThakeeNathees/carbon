@@ -120,8 +120,7 @@ public:
 struct Opcodes {
 	stdvec<uint32_t> opcodes;
 
-	typedef struct { Vect2i pos; uint32_t width; } OpcodePos;
-	stdmap<int, OpcodePos> op_dbg; // opcode index to pos.
+	stdmap<uint32_t, uint32_t>* op_dbg; // opcode index to line
 
 	std::stack<uint32_t> jump_out_if;
 	std::stack<uint32_t> jump_out_switch;
@@ -133,15 +132,15 @@ struct Opcodes {
 	std::stack<uint32_t> jump_out_or;
 	std::stack<stdvec<uint32_t>> jump_out_break; // multiple break statement jump out to one addr.
 
-	uint32_t last(); // last instruction
-	uint32_t next(); // next instruction
+	inline uint32_t last(); // last instruction
+	inline uint32_t next(); // next instruction
 
 	static String get_opcode_name(Opcode p_opcode);
-	void insert_dbg(Vect2i pos, uint32_t width);
+	void insert_dbg(uint32_t p_line);
 
-	void insert(uint32_t p_opcode);
-	void insert(const Address& p_addr);
-	void insert(Opcode p_opcode);
+	inline void insert(uint32_t p_opcode);
+	inline void insert(const Address& p_addr);
+	inline void insert(Opcode p_opcode);
 
 	void write_assign(const Address& dst, const Address& src);
 	void write_if(const Address& p_cond);

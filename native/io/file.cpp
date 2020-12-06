@@ -98,6 +98,16 @@ String File::read_text() {
 	return text;
 }
 
+String File::read_line() {
+	String line;
+	while (true) {
+		char c = getc(_file);
+		if (c == EOF) return line;
+		else if (c == '\n') return line + c;
+		line += c;
+	}
+}
+
 void File::write_text(const String& p_text) {
 	if (!is_open()) THROW_ERROR(Error::IO_ERROR, "can't write on a closed file.");
 	if (!(mode & WRITE) && !(mode & APPEND) && !(mode & EXTRA)) THROW_ERROR(Error::IO_ERROR, "opened file mode isn't supported for writing.");

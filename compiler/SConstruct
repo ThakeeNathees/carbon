@@ -16,6 +16,7 @@ SOURCES = [
     Glob('analyzer/expression/*.cpp'),
     Glob('codegen/*.cpp'),
     Glob('compiler/*.cpp'),
+    Glob('debugger/*.cpp'),
     Glob('vm/*.cpp'),
 ]
 

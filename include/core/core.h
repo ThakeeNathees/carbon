@@ -28,6 +28,7 @@
 
 #include "var/var.h"
 #include "logger.h"
+#include "console.h"
 #include "error.h"
 #include "type_info.h"
 #include "native.h"

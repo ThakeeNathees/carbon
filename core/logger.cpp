@@ -48,15 +48,13 @@ bool Logger::is_level(LogLevel p_level) {
 	return (int)p_level >= (int)level;
 }
 
-void Logger::log(const char* p_msg, LogLevel p_level, Color p_fg, Color p_bg) {
+void Logger::log(const char* p_msg, LogLevel p_level, Console::Color p_fg, Console::Color p_bg) {
 	if (!is_level(p_level)) return; singleton->log_impl(p_msg, p_fg, p_bg);
 }
 
-void Logger::log(const char* p_msg, Color p_fg, Color p_bg) {
+void Logger::log(const char* p_msg, Console::Color p_fg, Console::Color p_bg) {
 	singleton->log_impl(p_msg, p_fg, p_bg); // JUST_LOG
 }
-
-void Logger::set_cursor(int p_line, int p_column) { singleton->set_cursor_impl(p_line, p_column); }
 
 void Logger::log_verbose(const char* p_msg) { if (!is_level(LogLevel::VERBOSE)) return; singleton->log_verbose_impl(p_msg); }
 void Logger::log_info(const char* p_msg)    { if (!is_level(LogLevel::INFO))    return; singleton->log_info_impl(p_msg); }

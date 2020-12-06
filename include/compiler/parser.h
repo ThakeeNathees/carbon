@@ -202,6 +202,7 @@ public:
 		FunctionNode() {
 			type = Type::FUNCTION;
 		}
+		uint32_t end_line = -1; // needed for debugger, it's where destructor called
 	};
 
 	struct BlockNode : public Node {

@@ -62,10 +62,10 @@ String Throwable::get_err_name(Throwable::Type p_type) {
 
 DBGSourceInfo::DBGSourceInfo() {}
 DBGSourceInfo::DBGSourceInfo(const String& p_file, uint32_t p_line, const String& p_func) : func(p_func), file(p_file), line(p_line) {}
-DBGSourceInfo::DBGSourceInfo(const String& p_file, const String& p_line_str, Vect2i& p_pos, uint32_t p_width, const String& p_func)
+DBGSourceInfo::DBGSourceInfo(const String& p_file, const String& p_source, Vect2i& p_pos, uint32_t p_width, const String& p_func)
 	: func(p_func), file(p_file), pos(p_pos), line((uint32_t)p_pos.x), width(p_width) {
 
-	const char* source = p_line_str.c_str();
+	const char* source = p_source.c_str();
 	uint64_t cur_line = 1;
 	std::stringstream ss_line;
 	
@@ -113,7 +113,7 @@ void Error::console_log() const {
 	Logger::set_level(Logger::JUST_LOG);
 	Logger::logf_error("Error(%s) : %s\n", Error::get_err_name(get_type()).c_str(), what());
 	Logger::log(String::format(  "    source : %s (%s:%i)\n", source_info.func.c_str(), source_info.file.c_str(), source_info.line).c_str(),
-		Logger::Color::L_SKYBLUE
+		Console::Color::L_SKYBLUE
 	);
 	Logger::reset_level();
 }
@@ -122,8 +122,8 @@ void CompileTimeError::console_log() const {
 	Logger::set_level(Logger::JUST_LOG);
 	Logger::logf_error("Error(%s) : %s\n",      Error::get_err_name(get_type()).c_str(), what());
 	Logger::log( String::format("    source : %s (%s:%i)\n", source_info.func.c_str(), source_info.file.c_str(), source_info.line).c_str(),
-		Logger::Color::L_SKYBLUE);
-	Logger::log(String::format("        at : (%s:%i)\n", _cb_dbg_info.file.c_str(), _cb_dbg_info.line).c_str(), Logger::Color::L_WHITE);
+		Console::Color::L_SKYBLUE);
+	Logger::log(String::format("        at : (%s:%i)\n", _cb_dbg_info.file.c_str(), _cb_dbg_info.line).c_str(), Console::Color::L_WHITE);
 
 	if (_cb_dbg_info.line - 1 >= 1) // first line may not be available to log
 	Logger::logf_info("%3i | %s\n",           _cb_dbg_info.line - 1,  _cb_dbg_info.line_before.c_str());
@@ -136,13 +136,14 @@ void Warning::console_log() const {
 	Logger::set_level(Logger::JUST_LOG);
 	Logger::logf_warning("Warning(%s) : %s\n", Error::get_err_name(get_type()).c_str(), what());
 	Logger::log(String::format("    source : %s (%s:%i)\n", source_info.func.c_str(), source_info.file.c_str(), source_info.line).c_str(),
-		Logger::Color::L_SKYBLUE);
-	Logger::log(String::format("        at : (%s:%i)\n", _cb_dbg_info.file.c_str(), _cb_dbg_info.line).c_str(), Logger::Color::L_WHITE);
+		Console::Color::L_SKYBLUE);
+	Logger::log(String::format("        at : (%s:%i)\n", _cb_dbg_info.file.c_str(), _cb_dbg_info.line).c_str(), Console::Color::L_WHITE);
 
 	if (_cb_dbg_info.line - 1 >= 1) // first line may not be available to log
 		Logger::logf_info("%3i | %s\n", _cb_dbg_info.line - 1, _cb_dbg_info.line_before.c_str());
 	Logger::logf_info("%3i | %s\n    | %s\n", _cb_dbg_info.line, _cb_dbg_info.line_str.c_str(), _cb_dbg_info.get_pos_str().c_str());
 	Logger::logf_info("%3i | %s\n", _cb_dbg_info.line + 1, _cb_dbg_info.line_after.c_str());
+	printf("\n"); // <-- TODO: inconsistance with the log ending.
 	Logger::reset_level();
 }
 

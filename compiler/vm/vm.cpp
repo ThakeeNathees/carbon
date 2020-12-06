@@ -101,6 +101,22 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 		ASSERT(opcodes[ip] <= Opcode::END);
 		uint32_t last_ip = ip;
 		try {
+			/* TODO: debugging  -------------------*/
+			//if (debugger.is_active()) {
+			//	auto it = p_func->get_op_dbg().lower_bound(last_ip);
+			//	if (it != p_func->get_op_dbg().end()) {
+			//		String file = context.bytecode_file->get_name();
+			//		//if (p_func->get_owner() != nullptr && p_func->get_owner()->is_class()) {
+			//		//	func = p_func->get_owner()->get_name() + "." + p_func->get_name();
+			//		//} else {
+			//		//	func = p_func->get_name();
+			//		//}
+			//		uint32_t line = (uint32_t)it->second;
+			//		debugger.debug(file, line);
+			//	}
+			//}
+			/* ---------------------------------- */
+
 		switch (opcodes[ip]) {
 			case Opcode::GET: {
 				CHECK_OPCODE_SIZE(4);
@@ -545,7 +561,7 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 			}
 
 			auto it = p_func->get_op_dbg().lower_bound(last_ip);
-			uint32_t line = (it != p_func->get_op_dbg().end()) ? line = (uint32_t)it->second.pos.x : 0;
+			uint32_t line = (it != p_func->get_op_dbg().end()) ? line = (uint32_t)it->second : 0;
 			String func;
 			if (p_func->get_owner() != nullptr && p_func->get_owner()->is_class()) {
 				func = p_func->get_owner()->get_name() + "." + p_func->get_name();
@@ -567,6 +583,7 @@ int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 		THROW_ERROR(Error::NULL_POINTER, "entry point was null");
 	}
 
+	// TODO: temp debugging code
 	//printf("%s\n", main->get_opcodes_as_string().c_str());
 
 	ASSERT(main->get_arg_count() <= 1); // main() or main(args)

@@ -28,8 +28,8 @@
 namespace carbon {
 
 void CGContext::insert_dbg(const Parser::Node* p_node) {
-	if (p_node == nullptr) return;
-	opcodes->insert_dbg(p_node->pos, p_node->width);
+	//if (p_node == nullptr) return;
+	opcodes->insert_dbg((uint32_t)p_node->pos.x);
 }
 
 void CGContext::clear() {
@@ -224,7 +224,7 @@ ptr<CarbonFunction> CodeGen::_generate_initializer(bool p_static, Bytecode* p_by
 	_context.function = cfn.get();
 	_context.bytecode = p_bytecode;
 	_context.curr_class = class_node;
-
+	_context.opcodes->op_dbg = &cfn->op_dbg;
 
 	cfn->_name = (p_static) ? "@static_initializer" : "@member_initializer";
 	cfn->_is_static = p_static;
@@ -250,7 +250,7 @@ ptr<CarbonFunction> CodeGen::_generate_initializer(bool p_static, Bytecode* p_by
 
 	_context.opcodes->insert(Opcode::END);
 	cfn->_opcodes = _context.opcodes->opcodes;
-	cfn->op_dbg = _context.opcodes->op_dbg;
+
 	return cfn;
 }
 
@@ -261,6 +261,7 @@ ptr<CarbonFunction> CodeGen::_generate_function(const Parser::FunctionNode* p_fu
 	_context.function = cfn.get();
 	_context.bytecode = p_bytecode;
 	_context.curr_class = p_class;
+	_context.opcodes->op_dbg = &cfn->op_dbg;
 	for (int i = 0; i < (int)p_func->args.size(); i++) _context.parameters.push_back(p_func->args[i].name);
 
 	cfn->_name = p_func->name;
@@ -271,10 +272,12 @@ ptr<CarbonFunction> CodeGen::_generate_function(const Parser::FunctionNode* p_fu
 	cfn->_default_args = p_func->default_args;
 
 	_generate_block(p_func->body.get());
-	_context.opcodes->insert(Opcode::END);
 
+	// Opcode::END dbg position
+	_context.opcodes->insert_dbg(p_func->end_line);
+	_context.opcodes->insert(Opcode::END);
 	cfn->_opcodes = _context.opcodes->opcodes;
-	cfn->op_dbg = _context.opcodes->op_dbg;
+
 	return cfn;
 }
 

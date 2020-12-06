@@ -43,10 +43,11 @@ class File : public Object {
 		BIND_ENUM_VALUE("EXTRA",  EXTRA);
 		//BIND_ENUM_VALUE("DEFAULT", DEFAULT);
 
-		BIND_METHOD("open",  &File::open,  PARAMS("path", "mode"), DEFVALUES(DEFAULT));
-		BIND_METHOD("read",  &File::read);
-		BIND_METHOD("write", &File::write, PARAMS("what"));
-		BIND_METHOD("close", &File::close);
+		BIND_METHOD("open",      &File::open,  PARAMS("path", "mode"), DEFVALUES(DEFAULT));
+		BIND_METHOD("read",      &File::read);
+		BIND_METHOD("read_line", &File::read_line);
+		BIND_METHOD("write",     &File::write, PARAMS("what"));
+		BIND_METHOD("close",     &File::close);
 	}
 
 public:
@@ -74,6 +75,7 @@ public:
 
 
 	String read_text();
+	String read_line();
 	void write_text(const String& p_text);
 
 	ptr<Buffer> read_bytes();

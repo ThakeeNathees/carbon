@@ -30,6 +30,7 @@
 #include "bytecode.h"
 #include "carbon_function.h"
 #include "instance.h"
+#include "debugger.h"
 
 namespace carbon {
 
@@ -75,8 +76,10 @@ private:
 	var* _get_native_ref(const String& p_name);
 	var* _get_builtin_func_ref(uint32_t p_type);
 	var* _get_builtin_type_ref(uint32_t p_type);
+
 	static VM* _singleton;
 	const int STACK_MAX = 1024; // TODO: increase
+	Debugger debugger;
 
 };
 

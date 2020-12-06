@@ -672,6 +672,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 		throw UNEXP_TOKEN_ERROR("symbol \"{\"");
 	}
 
+	// TODO: this could be used to inline.
 	if (_single_expr) {
 
 		if (parser_context.current_class && parser_context.current_class->constructor) {
@@ -700,6 +701,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 		if (tokenizer->next().type != Token::BRACKET_RCUR) {
 			throw UNEXP_TOKEN_ERROR("symbol \"}\"");
 		}
+		func_node->end_line = (uint32_t)tokenizer->get_pos().x;
 	}
 
 	return func_node;
@@ -709,8 +711,8 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 
 #if DEBUG_BUILD
 // properly implement this.
-#define KEYWORD_COLOR Logger::Color::L_YELLOW
-#define TYPE_COLOR Logger::Color::L_GREEN
+#define KEYWORD_COLOR Console::Color::L_YELLOW
+#define TYPE_COLOR Console::Color::L_GREEN
 
 static int _print_id = 0; // dirty way for debugging.
 #define PRINT_INDENT(m_indent)                           \
@@ -731,9 +733,9 @@ static void print_var_node(const Parser::VarNode* p_var, int p_indent) {
 		if (p_var->assignment->type == Parser::Node::Type::CONST_VALUE)
 			printf("%s\n", ptrcast<Parser::ConstValueNode>(p_var->assignment)->value.to_string().c_str());
 		else
-			PRINT_COLOR(String::format("[expr:%i]\n", _print_id).c_str(), Logger::Color::L_GRAY);
+			PRINT_COLOR(String::format("[expr:%i]\n", _print_id).c_str(), Console::Color::L_GRAY);
 	}
-	else PRINT_COLOR("nullptr\n", Logger::Color::L_GRAY);
+	else PRINT_COLOR("nullptr\n", Console::Color::L_GRAY);
 }
 
 
@@ -757,11 +759,11 @@ static void print_block_node(const Parser::BlockNode* p_block, int p_indent) {
 
 			case Parser::Node::Type::ARRAY: {
 				PRINT_INDENT(p_indent);
-				PRINT_COLOR(String::format("[Array:%i]\n", _print_id).c_str(), Logger::Color::L_GRAY);
+				PRINT_COLOR(String::format("[Array:%i]\n", _print_id).c_str(), Console::Color::L_GRAY);
 			} break;
 			//case Parser::Node::Type::MAP: {
 			//	PRINT_INDENT(p_indent);
-			//	PRINT_COLOR("[MAP]\n", Logger::Color::L_GRAY);
+			//	PRINT_COLOR("[MAP]\n", Console::Color::L_GRAY);
 			//} break;
 			case Parser::Node::Type::THIS: {
 				PRINT_INDENT(p_indent);
@@ -787,14 +789,14 @@ static void print_block_node(const Parser::BlockNode* p_block, int p_indent) {
 			case Parser::Node::Type::OPERATOR: {
 				PRINT_INDENT(p_indent);
 				const char* op_name = Parser::OperatorNode::get_op_name(ptrcast<Parser::OperatorNode>(node)->op_type);
-				PRINT_COLOR(String::format("[%s:%i]\n", op_name, _print_id).c_str(), Logger::Color::L_GRAY);
+				PRINT_COLOR(String::format("[%s:%i]\n", op_name, _print_id).c_str(), Console::Color::L_GRAY);
 			} break;
 
 			case Parser::Node::Type::CONTROL_FLOW: {
 				PRINT_INDENT(p_indent);
 				Parser::ControlFlowNode* dbg = ptrcast<Parser::ControlFlowNode>(node).get();
 				const char* cf_name = Parser::ControlFlowNode::get_cftype_name(ptrcast<Parser::ControlFlowNode>(node)->cf_type);
-				PRINT_COLOR(String::format("[%s:%i]\n", cf_name, _print_id).c_str(), Logger::Color::L_GRAY);
+				PRINT_COLOR(String::format("[%s:%i]\n", cf_name, _print_id).c_str(), Console::Color::L_GRAY);
 			} break;
 		}
 	}
@@ -804,7 +806,7 @@ static void print_enum_node(const Parser::EnumNode* p_enum, int p_indent) {
 	PRINT_INDENT(p_indent);
 	PRINT_COLOR("enum", KEYWORD_COLOR);
 	if (p_enum->named_enum) PRINT_COLOR(String(String(" ") + p_enum->name + "\n").c_str(), TYPE_COLOR);
-	else PRINT_COLOR(" [not named]\n", Logger::Color::L_GRAY);
+	else PRINT_COLOR(" [not named]\n", Console::Color::L_GRAY);
 
 	for (const std::pair<String, Parser::EnumValueNode>& value : p_enum->values) {
 		PRINT_INDENT(p_indent + 1);
@@ -815,10 +817,10 @@ static void print_enum_node(const Parser::EnumNode* p_enum, int p_indent) {
 		//		ASSERT(enum_val->value.get_type() == var::INT);
 		//		printf("%lli\n", enum_val->value.operator int64_t());
 		//	} else {
-		//		PRINT_COLOR("[TODO: reduce expression]\n", Logger::Color::L_GRAY);
+		//		PRINT_COLOR("[TODO: reduce expression]\n", Console::Color::L_GRAY);
 		//	}
 		//} else {
-		//	PRINT_COLOR("[TODO: auto increase]\n", Logger::Color::L_GRAY);
+		//	PRINT_COLOR("[TODO: auto increase]\n", Console::Color::L_GRAY);
 		//}
 		printf("%lli\n", value.second.value);
 	}
