@@ -119,8 +119,8 @@ String Address::as_string(const stdvec<String>* _global_names_array, const stdve
 	THROW_BUG("can't reach here");
 }
 
-void Opcodes::insert_dbg(Vect2i pos, uint32_t width) {
-	op_dbg[next()] = { pos, width };
+void Opcodes::insert_dbg(uint32_t p_line) {
+	(*op_dbg)[next()] = p_line;
 }
 
 uint32_t Opcodes::last() { return (uint32_t)opcodes.size() - 1; }

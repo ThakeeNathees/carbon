@@ -2,10 +2,10 @@
 // MIT License
 //------------------------------------------------------------------------------
 // 
-// Copyright (c) 2020 Thakee Nathees
+// Copyright (c), 2020 Thakee Nathees
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
-// of this software and associated documentation files (the "Software"), to deal
+// of this software and associated documentation files (the "Software"),, to deal
 // in the Software without restriction, including without limitation the rights
 // to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
 // copies of the Software, and to permit persons to whom the Software is
@@ -23,46 +23,34 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_FUNCTION_H
-#define CARBON_FUNCTION_H
+#ifndef DEBUGGER_H
+#define DEBUGGER_H
 
 #include "core/core.h"
-#include "binary.h"
+
 
 namespace carbon {
 
-class Bytecode;
-
-class CarbonFunction : public Object {
-	REGISTER_CLASS(CarbonFunction, Object) {}
-	friend class CodeGen;
-
-private: // members
-	Bytecode* _owner;
-	String _name;
-	bool _is_static;
-	int _arg_count;
-	stdvec<var> _default_args;
-	stdvec<uint32_t> _opcodes;
-	stdmap<uint32_t, uint32_t> op_dbg; // opcode line to pos
-	uint32_t _stack_size;
-	
+class Debugger {
 public:
-	const String& get_name() const;
-	bool is_static() const;
-	int get_arg_count() const;
-	const stdvec<var>& get_default_args() const;
-	// TODO: parameter names : only for debugging
-	uint32_t get_stack_size() const;
-	const Bytecode* get_owner() const;
-	
-	const stdvec<uint32_t>& get_opcodes() const;
-	const stdmap<uint32_t, uint32_t>& get_op_dbg() const;
-	String get_opcodes_as_string() const;
+	enum State {
+		CONTINUE,      // run till it meets the next break point
+		CONTINUE_TO,   // run to the cursor
+		DEBUGGING,     // step, and next
+	};
 
-	var __call(stdvec<var*>& p_args) override;
+	bool is_active() const;
+	void debug(const String& p_file, uint32_t p_line);
+
+private:
+	static stdmap<String, stdvec<String>> _lines_cache; // path, lines
+
+	stdmap<String, uint32_t> _breakpoints;
+	State _state = DEBUGGING;
+	bool _is_active = false;
 };
 
 }
 
-#endif // CARBON_FUNCTION_H
+
+#endif // DEBUGGER_H

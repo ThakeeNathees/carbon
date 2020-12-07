@@ -23,46 +23,66 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_FUNCTION_H
-#define CARBON_FUNCTION_H
-
-#include "core/core.h"
-#include "binary.h"
+#ifndef CONSOLE_H
+#define CONSOLE_H
 
 namespace carbon {
 
-class Bytecode;
-
-class CarbonFunction : public Object {
-	REGISTER_CLASS(CarbonFunction, Object) {}
-	friend class CodeGen;
-
-private: // members
-	Bytecode* _owner;
-	String _name;
-	bool _is_static;
-	int _arg_count;
-	stdvec<var> _default_args;
-	stdvec<uint32_t> _opcodes;
-	stdmap<uint32_t, uint32_t> op_dbg; // opcode line to pos
-	uint32_t _stack_size;
-	
+class Console {
 public:
-	const String& get_name() const;
-	bool is_static() const;
-	int get_arg_count() const;
-	const stdvec<var>& get_default_args() const;
-	// TODO: parameter names : only for debugging
-	uint32_t get_stack_size() const;
-	const Bytecode* get_owner() const;
-	
-	const stdvec<uint32_t>& get_opcodes() const;
-	const stdmap<uint32_t, uint32_t>& get_op_dbg() const;
-	String get_opcodes_as_string() const;
+	enum class Color {
+		DEFAULT = -1,
+		BLACK = 0,
 
-	var __call(stdvec<var*>& p_args) override;
+		L_BLUE = 1,
+		L_GREEN = 2,
+		L_SKYBLUE = 3,
+		L_RED = 4,
+		L_PINK = 5,
+		L_YELLOW = 6,
+		L_WHITE = 7,
+		L_GRAY = 8,
+
+		D_BLUE = 9,
+		D_GREEN = 10,
+		D_SKYBLUE = 11,
+		D_RED = 12,
+		D_PINK = 13,
+		D_YELLOW = 14,
+		D_WHITE = 15,
+
+		__COLOR_MAX__,
+	};
+
+	// TODO: refactor currently only key event
+	struct KeyEvent {
+		bool is_down;
+		unsigned short keycode;       // TODO: make it enum
+		unsigned short repeat_count;
+		char ascii;
+		unsigned long ctrl_key_state; // dwControlKeyState in windows.h
+	};
+
+	static Console* singleton();
+	static void initialize();
+	static void cleanup();
+
+	virtual void get_cursor(int* p_line, int* p_column) const = 0;
+	virtual void* get_handle() const = 0;
+	virtual void get_console_size(int* p_columns, int* p_rows) const = 0;
+
+	virtual void set_cursor(int p_line, int p_column) const = 0;
+	virtual void set_console_color(Color p_forground, Color p_background = Color::DEFAULT) const = 0;
+
+	virtual void enable_input_mode() = 0;
+	virtual void listen_input_event() = 0;
+	virtual bool get_input_event(KeyEvent& p_event) = 0;
+
+private:
+
 };
+
 
 }
 
-#endif // CARBON_FUNCTION_H
+#endif // CONSOLE_H

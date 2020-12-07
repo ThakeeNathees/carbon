@@ -23,46 +23,40 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_FUNCTION_H
-#define CARBON_FUNCTION_H
-
-#include "core/core.h"
-#include "binary.h"
+#include "compiler/debugger.h"
+#include "native/file.h"
 
 namespace carbon {
 
-class Bytecode;
+stdmap<String, stdvec<String>> Debugger::_lines_cache;
 
-class CarbonFunction : public Object {
-	REGISTER_CLASS(CarbonFunction, Object) {}
-	friend class CodeGen;
-
-private: // members
-	Bytecode* _owner;
-	String _name;
-	bool _is_static;
-	int _arg_count;
-	stdvec<var> _default_args;
-	stdvec<uint32_t> _opcodes;
-	stdmap<uint32_t, uint32_t> op_dbg; // opcode line to pos
-	uint32_t _stack_size;
-	
-public:
-	const String& get_name() const;
-	bool is_static() const;
-	int get_arg_count() const;
-	const stdvec<var>& get_default_args() const;
-	// TODO: parameter names : only for debugging
-	uint32_t get_stack_size() const;
-	const Bytecode* get_owner() const;
-	
-	const stdvec<uint32_t>& get_opcodes() const;
-	const stdmap<uint32_t, uint32_t>& get_op_dbg() const;
-	String get_opcodes_as_string() const;
-
-	var __call(stdvec<var*>& p_args) override;
-};
-
+bool Debugger::is_active() const {
+	return _is_active;
 }
 
-#endif // CARBON_FUNCTION_H
+void Debugger::debug(const String& p_file, uint32_t p_line) {
+	switch (_state) {
+		case CONTINUE: return;
+		case CONTINUE_TO: {
+			// TODO: only break if at cursor
+			return;
+		} break;
+		case DEBUGGING: {
+
+			auto it = _lines_cache.find(p_file);
+			if (it == _lines_cache.end()) {
+				File file = File(p_file, File::READ);
+				while (true) {
+					String line = file.read_line();
+					if (line == "") break;
+					_lines_cache[p_file].push_back(line);
+				}
+			}
+
+			// TODO: start the session
+
+		} break;
+	}
+}
+
+}

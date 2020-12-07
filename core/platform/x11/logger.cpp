@@ -36,9 +36,6 @@ protected:
 	virtual void log_impl(const char* p_msg, Color p_fg, Color p_bg) const override {
 		log(p_msg, false, p_fg, p_bg);
 	}
-	virtual void set_cursor_impl(int p_line, int p_column) const override {
-		printf("\033[%d;%dH", p_column + 1, p_line + 1);
-	}
 
 	virtual void log_verbose_impl(const char* p_msg) const override { log(p_msg, false); }
 	virtual void log_info_impl(const char* p_msg)    const override { log(p_msg, false, Color::L_WHITE); }

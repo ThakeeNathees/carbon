@@ -71,7 +71,7 @@ uint32_t CarbonFunction::get_stack_size() const { return _stack_size; }
 const Bytecode* CarbonFunction::get_owner() const { return _owner; }
 
 const stdvec<uint32_t>& CarbonFunction::get_opcodes() const { return _opcodes; }
-const stdmap<int, Opcodes::OpcodePos>& CarbonFunction::get_op_dbg() const { return op_dbg; }
+const stdmap<uint32_t, uint32_t>& CarbonFunction::get_op_dbg() const { return op_dbg; }
 
 
 var CarbonFunction::__call(stdvec<var*>& p_args) {

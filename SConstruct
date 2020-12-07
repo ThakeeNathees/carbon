@@ -136,7 +136,11 @@ elif cbenv['platform'] == "windows":
 	#cbenv.Append(CPPDEFINES=['_HAS_CXX17']) ## for autocompletion in vs.
 	cbenv.Append(CCFLAGS=['-W3', '-GR'])
 	cbenv.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
-	cbenv.Append(LIBS=[])
+
+	cbenv.Append(LIBS=[
+		'psapi', 'dbghelp', ## for crash handler
+		'User32',           ## console debugger
+	])
 
 	if cbenv['target'] == 'debug':
 		cbenv.Append(CPPDEFINES=['_DEBUG'])
@@ -145,7 +149,6 @@ elif cbenv['platform'] == "windows":
 	else:
 		cbenv.Append(CPPDEFINES=['NDEBUG'])
 		cbenv.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
-	cbenv.Append(LIBS=['psapi', 'dbghelp']) ## for crash handler
 
 ## --------------------------------------------------------------------------------
 

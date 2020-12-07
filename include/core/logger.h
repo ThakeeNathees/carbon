@@ -26,8 +26,8 @@
 #ifndef LOGGER_H
 #define LOGGER_H
 
-// for va_list
-#include <stdarg.h>
+#include <stdarg.h> // for va_list
+#include "console.h"
 
 namespace carbon {
 
@@ -44,38 +44,13 @@ public:
 		ERROR   = 5,
 	};
 
-	enum class Color {
-		DEFAULT   = -1,
-		BLACK     = 0,
-
-		L_BLUE    = 1,
-		L_GREEN   = 2,
-		L_SKYBLUE = 3,
-		L_RED     = 4,
-		L_PINK    = 5,
-		L_YELLOW  = 6,
-		L_WHITE   = 7,
-		L_GRAY    = 8,
-
-		D_BLUE    = 9,
-		D_GREEN   = 10,
-		D_SKYBLUE = 11,
-		D_RED     = 12,
-		D_PINK    = 13,
-		D_YELLOW  = 14,
-		D_WHITE   = 15,
-
-		__COLOR_MAX__,
-	};
-
 	static void set_level(LogLevel p_level);
 	static void reset_level();
 	static LogLevel get_level();
 	static bool is_level(LogLevel p_level);
 	
-	static void log(const char* p_msg, Color p_fg = Color::L_WHITE, Color p_bg = Color::BLACK);
-	static void log(const char* p_msg, LogLevel p_level, Color p_fg = Color::L_WHITE, Color p_bg = Color::BLACK);
-	static void set_cursor(int p_line, int p_column);
+	static void log(const char* p_msg, Console::Color p_fg = Console::Color::L_WHITE, Console::Color p_bg = Console::Color::BLACK);
+	static void log(const char* p_msg, LogLevel p_level, Console::Color p_fg = Console::Color::L_WHITE, Console::Color p_bg = Console::Color::BLACK);
 
 	static void log_verbose(const char* p_msg);
 	static void log_info(const char* p_msg);
@@ -93,8 +68,7 @@ public:
 	static void cleanup();
 
 protected:
-	virtual void log_impl(const char* p_msg, Color p_fg, Color p_bg) const = 0;
-	virtual void set_cursor_impl(int p_line, int p_column) const = 0;
+	virtual void log_impl(const char* p_msg, Console::Color p_fg, Console::Color p_bg) const = 0;
 
 	virtual void log_verbose_impl(const char* p_msg) const = 0;
 	virtual void log_info_impl(const char* p_msg) const = 0;

@@ -190,7 +190,8 @@ int64_t String::to_int() const {
 	}
 }
 
-String String::substr(size_t p_start, size_t p_end) const {
+String String::substr(int64_t p_start, int64_t p_end) const {
+	// TODO: inconsistance withs arr[-1]
 	return _data->substr(p_start, p_end - p_start);
 }
 bool String::endswith(const String& p_str) const {

@@ -56,13 +56,13 @@ int _main(int argc, char** argv) {
 
 	carbon_initialize();
 	int res = _test_main(argc, argv);
-	carbon_cleanup();
 	
-	Logger::log("\n===============================================================================\n", Logger::VERBOSE, Logger::Color::L_YELLOW);
-	if (res) Logger::log("Tests failed, press enter to exit...\n", Logger::VERBOSE, Logger::Color::L_RED);
-	else Logger::log("Tests passed, press enter to exit...\n", Logger::VERBOSE, Logger::Color::L_GREEN);
-	Logger::log("===============================================================================\n", Logger::VERBOSE, Logger::Color::L_YELLOW);
+	Logger::log("\n===============================================================================\n", Logger::VERBOSE, Console::Color::L_YELLOW);
+	if (res) Logger::log("Tests failed, press enter to exit...\n", Logger::VERBOSE, Console::Color::L_RED);
+	else Logger::log("Tests passed, press enter to exit...\n", Logger::VERBOSE, Console::Color::L_GREEN);
+	Logger::log("===============================================================================\n", Logger::VERBOSE, Console::Color::L_YELLOW);
 
+	carbon_cleanup();
 	getchar(); // pause
 	return res;
 }

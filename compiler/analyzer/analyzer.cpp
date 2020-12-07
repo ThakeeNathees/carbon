@@ -463,6 +463,10 @@ void Analyzer::_check_arg_count(int p_argc, int p_default_argc, int p_args_given
 			else if (p_args_given > p_argc) throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
 				String::format("expected at most %i argument(s) for super constructor call", p_argc), p_err_pos);
 		}
+		// no argument is required -> check if argc exceeding
+	} else if (p_args_given > p_argc) {
+		throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT,
+			String::format("expected at most %i argument(s) for super constructor call", p_argc), p_err_pos);
 	}
 }
 
