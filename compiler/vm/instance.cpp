@@ -78,25 +78,9 @@ var Instance::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 					String::format("attribute \"%s\" doesn't exists on base %s.", p_method_name.c_str(), blueprint->get_name().c_str()));
 			}
 			if (_class->is_base_native()) {
-				BindData* bd = NativeClasses::singleton()->find_bind_data(_class->get_base_native(), p_method_name).get();
-				switch (bd->get_type()) {
-					case BindData::METHOD:
-						return static_cast<MethodBind*>(bd)->call(native_instance, p_args);
-					case BindData::STATIC_FUNC:
-						return static_cast<StaticFuncBind*>(bd)->call(p_args);
-					case BindData::MEMBER_VAR:
-						return static_cast<PropertyBind*>(bd)->get(native_instance).__call(p_args);
-					case BindData::STATIC_VAR:
-						return static_cast<StaticPropertyBind*>(bd)->get().__call(p_args);
-					case BindData::STATIC_CONST:
-						return static_cast<ConstantBind*>(bd)->get().__call(p_args);
-					case BindData::ENUM:
-						return static_cast<EnumBind*>(bd)->get()->__call(p_args);
-					case BindData::ENUM_VALUE:
-						THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, "enums are not callable.");
-				}
-				THROW_BUG("can't reach here");
-				return var();
+				return Object::call_method_s(native_instance, p_method_name, p_args);
+				// TODO: move the above method to native like below
+				//return NativeClasses::singleton()->call_method_on(native_instance, p_method_name, p_args);
 			} else {
 				_class = _class->get_base_binary().get();
 			}
@@ -117,6 +101,11 @@ ptr<Object> Instance::copy(bool p_deep) {
 		ins_copy->members[i] = members[i].copy(p_deep);
 	}
 	return ins_copy;
+}
+
+void* Instance::get_data() {
+	if (native_instance != nullptr) return native_instance->get_data();
+	return Super::get_data();
 }
 
 String Instance::to_string() {
@@ -148,7 +137,7 @@ var Instance::__iter_next() {
 	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
 }
 
-var Instance::__get_mapped(const var& p_key){
+var Instance::__get_mapped(const var& p_key) {
 	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__get_mapped);
 	if (fn == nullptr) return Super::__get_mapped(p_key);
 	stdvec<var*> args; args.push_back(const_cast<var*>(&p_key));

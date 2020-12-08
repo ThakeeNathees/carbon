@@ -162,4 +162,29 @@ var NativeClasses::call_static(const String& p_base, const String& p_attrib, std
 	THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("no attribute named \"%s\" base %s", p_attrib.c_str(), p_base.c_str()));
 }
 
+var NativeClasses::call_method_on(ptr<Object>& p_on, const String& p_attrib, stdvec<var*>& p_args) {
+	// TODO: this is no more needed see Object::call_method_s <-- move that to here
+	BindData* bd = find_bind_data(p_on->get_type_name(), p_attrib).get();
+	if (bd != nullptr) {
+		switch (bd->get_type()) {
+			case BindData::METHOD:
+				return static_cast<MethodBind*>(bd)->call(p_on, p_args);
+			case BindData::STATIC_FUNC:
+				return static_cast<StaticFuncBind*>(bd)->call(p_args);
+			case BindData::MEMBER_VAR:
+				return static_cast<PropertyBind*>(bd)->get(p_on).__call(p_args);
+			case BindData::STATIC_VAR:
+				return static_cast<StaticPropertyBind*>(bd)->get().__call(p_args);
+			case BindData::STATIC_CONST:
+				return static_cast<ConstantBind*>(bd)->get().__call(p_args);
+			case BindData::ENUM:
+				return static_cast<EnumBind*>(bd)->get()->__call(p_args);
+			case BindData::ENUM_VALUE:
+				THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, "enums are not callable.");
+		}
+	}
+	THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("no attribute named \"%s\" base %s", p_attrib.c_str(), p_on->get_type_name()));
+	return var();
+}
+
 }

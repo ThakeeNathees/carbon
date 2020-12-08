@@ -349,7 +349,6 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 				var* ret_value = context.get_var_at(opcodes[++ip]);
 				ip++;
 
-				// TODO: base could also be native.
 				Bytecode* call_base;
 				ptr<CarbonFunction> func_ptr;
 
@@ -384,9 +383,14 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 					if (it != functions.end()) func_ptr = it->second;
 				}
 
-				if (func_ptr == nullptr) THROW_BUG(String::format("can't find the function \"%s\"", func.c_str()));
+				//if (func_ptr == nullptr) THROW_BUG(String::format("can't find the function \"%s\"", func.c_str()));
+				if (func_ptr == nullptr) {
+					//*ret_value = NativeClasses::singleton()->call_method_on(p_self->native_instance, func, args);
+					*ret_value = Object::call_method_s(p_self->native_instance, func, args);
+				} else {
+					*ret_value = call_function(func_ptr.get(), call_base, (func_ptr->is_static()) ? nullptr : p_self, args, __stack + 1);
+				}
 
-				*ret_value = call_function(func_ptr.get(), call_base, (func_ptr->is_static()) ? nullptr : p_self, args, __stack + 1);
 
 			} break;
 
@@ -466,8 +470,8 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 				ASSERT(p_self->blueprint->has_base());
 
 				if (p_self->blueprint->is_base_native()) {
-					ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(p_self->blueprint->get_base_native(), method);
-					THROW_BUG("TODO: implement native calls abstraction first");
+					//ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(p_self->blueprint->get_base_native(), method);
+					*ret_value = NativeClasses::singleton()->call_method_on(p_self->native_instance, method, args);
 				} else {
 					ptr<CarbonFunction> fn = p_self->blueprint->get_base_binary()->get_function(method);
 					var* sv = nullptr; if (fn == nullptr) sv = p_self->blueprint->get_base_binary()->get_static_var(method);

@@ -1,33 +1,36 @@
+============ IN PROGRASS =========================================================
 
 =============== BUGS =============================================================
-* println = x; // not an error
-* var now = OS.unix_time; // shouldn't be an error
-* native constructor default values not working in carbon (inherit File, Buffer)
-* calling constructor inside the class itself calls the function 
-    and since ctor doesn't return anything the func call returns is null
-    but it should be call initializer and ctor instead.
-* float("") <-- crash
-* "".substr() check index limit
-* null var x = 12; // no error for the null before
-* multiline string -> support 'string' and "multi line str"
+ * override for operator methods (like __get_mapped) not working
+ * float("") <-- crash
+ * println = x; // not an error
+ * var now = OS.unix_time; // shouldn't be an error
+ * "".substr() check index limit
+ * null var x = 12; // no error for the null before
+ * multiline string -> support 'string' and "multi line str"
 
 =============== TODO =============================================================
+ * implement try and catch
+ * parse command line args
+ * ipc debugger
+ * ext_lib.lib.lib;
+ * switch statement (jump table impl) before: switch body is a single block node
+ * tests for codegen and vm
+ * opcodes string and bytes + zlib
  * destructor (needed for native struct to unload dlls)
  * "string %s literal" % ["replace"]
+ * array string to_string
  * Path.listdir() <-- default argument "."
  * implement to_string on type info, runtim instance, class ref, ...
  * error print and dbg info (stack trace)
- * switch statement (jump table impl) before: switch body is a single block node
  * undef THROW_ANLAYZER_ERROR, TOKENIZER_ERROR, ... (not THROW_BUG)
- * opcode string print
- * ext_lib.lib.lib;
  * change owner pointer from shared to weak/ inline functions
  * str(), hex(), ...
+ * while (cond) { break; stmnt; } <-- add unreachable code warning
+ * substr and arrray indexing inconsistance
 
 =============== LOW PRIORITY =====================================================
  * in, is 
- * class A{} var a = A; println(a.get_type_name()); // RuntimeInstance
- * a rich typecheck api
  * unexpected token, expected [empty]
  * try super.EnumClass(); <-- better error msg
  * math class (math.sin, math.tanh ...)
@@ -48,6 +51,7 @@
  * a, b = b, a
  * map(f, arr) -> arr // can implement in carbon too.
  * implement __repr__() // print array of string / or add "" manually in arr/dict
+ * a rich typecheck api
 
 =============== CURRENT FEATURES / DONE ============================================
  * basic language features:

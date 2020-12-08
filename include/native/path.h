@@ -28,8 +28,9 @@
 
 #include "core/core.h"
 
-namespace carbon {
+// TODO: move all to path.cpp
 
+namespace carbon {
 namespace fs = std::filesystem;
 class Path : public Object {
 

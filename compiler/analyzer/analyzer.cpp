@@ -452,6 +452,9 @@ void Analyzer::_check_super_constructor_call(const Parser::BlockNode* p_block) {
 }
 
 void Analyzer::_check_arg_count(int p_argc, int p_default_argc, int p_args_given, Vect2i p_err_pos) {
+	if (p_argc == -1 /*va args*/) return;
+
+	// TODO: error message 
 	int required_min_argc = p_argc - p_default_argc;
 	if (required_min_argc > 0) {
 		if (p_default_argc == 0) {

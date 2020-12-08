@@ -170,6 +170,11 @@ namespace carbon {
 		return __const_hash(s);
 	}
 
+	// custom destructor for malloc in shared ptr
+	struct free_delete {
+		void operator()(void* _mem) { free(_mem); }
+	};
+
 	template<typename T>
 	using ptr = std::shared_ptr<T>;
 

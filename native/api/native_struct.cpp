@@ -28,19 +28,31 @@
 
 namespace carbon {
 
-stdmap<String, ptr<NativeLib>> _NativeStruct::lib_cache;
+//stdmap<String, ptr<NativeLib>> _NativeStruct::lib_cache;
 
-void _NativeStruct::load(const String& p_path) {
-	// TODO: relative path to carbon file ??
-	String path = Path::absolute(p_path);
+//void _NativeStruct::alloc(size_t p_size) {
+//	_size = p_size;
+//	_data = ptr<void>(malloc(_size), free_delete());
+//}
 
-	auto it = lib_cache.find(path);
-	if (it != lib_cache.end()) {
-		_lib = it->second;
-	} else {
-		_lib = newptr<NativeLib>(path);
-		lib_cache[path] = _lib;
-	}
+void* _NativeStruct::get_data() {
+	return _data.get();
+}
+
+void _NativeStruct::_set_lib(var p_lib) {
+	if (_lib != nullptr) THROW_ERROR(Error::ASSERTION, "lib already initialized");
+	_lib = p_lib.cast_to<NativeLib>();
+}
+
+void _NativeStruct::_set_new_delete(const String& p_ctor, const String& p_destruct) {
+	THROW_IF_NULLPTR(_lib);
+	fp_new = (NativeLib::func_ptr)_lib->_get_function(p_ctor);
+	fp_delete = (_native_struct_delete)_lib->_get_function(p_destruct);
+}
+
+void _NativeStruct::_init(stdvec<var*>& p_va_args) {
+	void* _new_obj = fp_new((int)p_va_args.size(), (uint8_t**)p_va_args.data());
+	_data = ptr<void>(_new_obj, native_destruct(fp_delete));
 }
 
 ptr<NativeLib> _NativeStruct::get_lib() { return _lib; }

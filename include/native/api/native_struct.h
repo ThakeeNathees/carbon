@@ -28,24 +28,62 @@
 #include "native/buffer.h"
 #include "native/nativelib.h"
 
-namespace carbon {
+/* // carbon ///////////////////////
+	class Aclass : _NativeStruct {
+		func Aclass(args) {
+			_set_lib(lib);
+			_set_new_delete("new_Aclass", "delete_Aclass");
+			_init(args);
+		}
+	}
+	// c++ ////////////////////////////
+	void* new_Aclass(int argc, var** argv) { return new Aclass(args); }
+	void delete_Aclass(void* o) { delete (Aclass*)o; }
+*/
 
-class _NativeStruct : public Buffer {
-	REGISTER_CLASS(_NativeStruct, Buffer) {
-		BIND_METHOD("load", &_NativeStruct::load, PARAMS("path"));
+namespace carbon {
+	// TODO: this class is incomplete
+
+class _NativeStruct : public Object, public std::enable_shared_from_this<_NativeStruct> {
+	REGISTER_CLASS(_NativeStruct, Object) {
+
+		BIND_METHOD("_set_lib", &_NativeStruct::_set_lib, PARAMS("lib"));
+		BIND_METHOD("_set_new_delete", &_NativeStruct::_set_new_delete, PARAMS("constructor", "destructor"));
+		BIND_METHOD_VA("_init", &_NativeStruct::_init);
 		BIND_METHOD("get_lib", &_NativeStruct::get_lib);
 	}
 
+	typedef void* (*_native_struct_ctor)();
+	typedef void (*_native_struct_delete)(void*);
+	struct native_destruct {
+		native_destruct(_native_struct_delete p_fp) {
+			fp = p_fp;
+		}
+		_native_struct_delete fp;
+		void operator()(void* o) {
+			fp(o);
+		}
+	};
+
 public:
-	void load(const String& p_path);
+	void _set_lib(var p_lib);
+	void _set_new_delete(const String& p_ctor, const String& p_destruct);
+	void _init(stdvec<var*>& p_va_args);
+
+	void* get_data() override;
 	ptr<NativeLib> get_lib();
-	// TODO: defind DataType abstraction to define the layout.
+
 
 
 private:
 	// TODO: move this to a generatl native location if any in the future.
-	static stdmap<String, ptr<NativeLib>> lib_cache;
+	//static stdmap<String, ptr<NativeLib>> lib_cache;
+
 	ptr<NativeLib> _lib;
+
+	ptr<void> _data;
+	NativeLib::func_ptr fp_new;
+	_native_struct_delete fp_delete;
 };
 
 

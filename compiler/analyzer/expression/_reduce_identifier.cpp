@@ -43,7 +43,8 @@ Parser::IdentifierNode Analyzer::_find_member(const Parser::MemberContainer* p_c
 		}
 	}
 	for (int i = 0; i < (int)p_container->functions.size(); i++) {
-		if (p_container->functions[i]->name == id.name) {
+		// constructors are REF_CARBON_CLASS 
+		if (!p_container->functions[i]->is_constructor && p_container->functions[i]->name == id.name) {
 			id.ref = Parser::IdentifierNode::REF_FUNCTION;
 			id._func = p_container->functions[i].get();
 			return id;

@@ -35,6 +35,7 @@ nativeapi NativeLib::api;
 NativeLib::NativeLib(const String& p_lib_name) { if (p_lib_name.size() != 0) open(p_lib_name); }
 NativeLib::~NativeLib() { close(); }
 void NativeLib::_NativeLib(ptr<Object> p_self, const String& p_lib_name) {
+	// TODO: use cache to prevent re-load
 	NativeLib* self = ptrcast<NativeLib>(p_self).get();
 	if (p_lib_name.size() != 0) self->open(p_lib_name.c_str());
 }
@@ -60,14 +61,16 @@ void NativeLib::close() {
 	}
 }
 
-var NativeLib::call_method(const String& p_name, stdvec<var*>& p_args) {
+void* NativeLib::_get_function(const String& p_name) {
 	if (!_handle) THROW_ERROR(Error::IO_ERROR, "handle was NULL.");
 
-	typedef uint8_t* (*func_ptr)(int argc, uint8_t** argv);
-	func_ptr fp;
-	fp = (func_ptr)dlsym(_handle, p_name.c_str());
+	void* fp = dlsym(_handle, p_name.c_str());
 	if (!fp) THROW_ERROR(Error::IO_ERROR, String::format("%s.", dlerror()));
+	return fp;
+}
 
+var NativeLib::call_method(const String& p_name, stdvec<var*>& p_args) {
+	func_ptr fp = (func_ptr) _get_function(p_name);
 	uint8_t* ret = fp((int)p_args.size(), (uint8_t**)p_args.data());
 	if (ret == nullptr) return var();
 	return *(var*)ret;

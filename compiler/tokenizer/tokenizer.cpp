@@ -407,12 +407,14 @@ const void Tokenizer::tokenize(const String& p_source, const String& p_source_pa
 					} else if (GET_CHAR(0) == 0) {
 						throw TOKENIZER_ERROR(Error::UNEXPECTED_EOF, "unexpected EOF while parsing String."); // TODO: Error message.
 						break;
-					} else if(GET_CHAR(0) == '\n'){
-						throw TOKENIZER_ERROR(Error::SYNTAX_ERROR, "unexpected EOL while parsing String.");
-						break;
+					// NO MORE EOL 
+					//} else if(GET_CHAR(0) == '\n') {
+					//	throw TOKENIZER_ERROR(Error::SYNTAX_ERROR, "unexpected EOL while parsing String.");
+					//	break;
 					} else {
 						str += GET_CHAR(0);
-						EAT_CHAR(1);
+						if (GET_CHAR(0) == '\n') { EAT_LINE(); }
+						else { EAT_CHAR(1); }
 					}
 				}
 				EAT_CHAR(1);

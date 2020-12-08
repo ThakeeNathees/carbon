@@ -204,7 +204,6 @@ void CodeGen::_generate_members(Parser::MemberContainer* p_container, Bytecode* 
 		const Parser::ClassNode* class_node = nullptr;
 		if (p_container->type == Parser::Node::Type::CLASS) class_node = static_cast<const Parser::ClassNode*>(p_container);
 		ptr<CarbonFunction> cfn = _generate_function(fn.get(), class_node, p_bytecode);
-		cfn->_stack_size = _context.stack_max_size;
 		p_bytecode->_functions[cfn->_name] = cfn;
 
 		if (fn->name == GlobalStrings::main) p_bytecode->_main = cfn.get();
@@ -226,10 +225,6 @@ ptr<CarbonFunction> CodeGen::_generate_initializer(bool p_static, Bytecode* p_by
 	_context.curr_class = class_node;
 	_context.opcodes->op_dbg = &cfn->op_dbg;
 
-	cfn->_name = (p_static) ? "@static_initializer" : "@member_initializer";
-	cfn->_is_static = p_static;
-	cfn->_owner = _context.bytecode;
-
 	for (ptr<Parser::VarNode>& var_node : p_container->vars) {
 		if (var_node->is_static == p_static && var_node->assignment != nullptr) {
 			Address member;
@@ -249,7 +244,12 @@ ptr<CarbonFunction> CodeGen::_generate_initializer(bool p_static, Bytecode* p_by
 	}
 
 	_context.opcodes->insert(Opcode::END);
+
+	cfn->_name = (p_static) ? "@static_initializer" : "@member_initializer";
+	cfn->_is_static = p_static;
+	cfn->_owner = _context.bytecode;
 	cfn->_opcodes = _context.opcodes->opcodes;
+	cfn->_stack_size = _context.stack_max_size;
 
 	return cfn;
 }
@@ -264,19 +264,20 @@ ptr<CarbonFunction> CodeGen::_generate_function(const Parser::FunctionNode* p_fu
 	_context.opcodes->op_dbg = &cfn->op_dbg;
 	for (int i = 0; i < (int)p_func->args.size(); i++) _context.parameters.push_back(p_func->args[i].name);
 
+	_generate_block(p_func->body.get());
+
+	// Opcode::END dbg position
+	_context.opcodes->insert_dbg(p_func->end_line);
+	_context.opcodes->insert(Opcode::END);
+
 	cfn->_name = p_func->name;
 	cfn->_is_static = p_func->is_static;
 	cfn->_arg_count = (int)p_func->args.size();
 	cfn->_default_args = p_func->default_args;
 	cfn->_owner = _context.bytecode;
 	cfn->_default_args = p_func->default_args;
-
-	_generate_block(p_func->body.get());
-
-	// Opcode::END dbg position
-	_context.opcodes->insert_dbg(p_func->end_line);
-	_context.opcodes->insert(Opcode::END);
 	cfn->_opcodes = _context.opcodes->opcodes;
+	cfn->_stack_size = _context.stack_max_size;
 
 	return cfn;
 }

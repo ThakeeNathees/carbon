@@ -33,7 +33,7 @@ namespace carbon {
 class Buffer : public Object {
 	REGISTER_CLASS(Buffer, Object) {
 		// TODO: the below default value mis match
-		BIND_STATIC_FUNC("Buffer", &Buffer::_Buffer, PARAMS("self", "size"), DEFVALUES(0));
+		BIND_STATIC_FUNC("Buffer", &Buffer::_Buffer, PARAMS("self", "size"), DEFVALUES(nullptr, 0));
 		BIND_METHOD("alloc", &Buffer::alloc, PARAMS("size"));
 		BIND_METHOD("size", &Buffer::size);
 	}

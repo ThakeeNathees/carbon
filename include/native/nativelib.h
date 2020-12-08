@@ -37,25 +37,27 @@ namespace carbon {
 
 class NativeLib : public Object {
 	REGISTER_CLASS(NativeLib, Object) {
-		BIND_STATIC_FUNC("NativeLib", &NativeLib::_NativeLib, PARAMS("self", "path"), DEFVALUES(""));
+		BIND_STATIC_FUNC("NativeLib", &NativeLib::_NativeLib, PARAMS("self", "path"), DEFVALUES(nullptr, ""));
 
 		BIND_STATIC_FUNC("generate_api", &NativeLib::generate_api, PARAMS("path"), DEFVALUES(""));
 		BIND_METHOD("open", &NativeLib::open, PARAMS("path"));
 		BIND_METHOD("close", &NativeLib::close);
 
-		_varapi_init();
+		_native_api_init();
 	}
+	typedef uint8_t* (*func_ptr)(int argc, uint8_t** argv);
 
 	NativeLib(const String& p_lib_name = "");
 	~NativeLib();
 	static void _NativeLib(ptr<Object> p_self, const String& p_lib_name = "");
 
+	void* _get_function(const String& p_name);
 	var call_method(const String& p_name, stdvec<var*>& p_args) override;
 
 	void open(const String& p_path);
 	void close();
 
-	static void _varapi_init();
+	static void _native_api_init();
 	static void generate_api(const String& p_path = "");
 	static nativeapi* get_varapi();
 

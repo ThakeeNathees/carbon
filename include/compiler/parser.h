@@ -195,6 +195,8 @@ public:
 		String name;
 		bool is_static = false;
 		bool has_return = false;
+		bool is_constructor = false;
+		uint32_t end_line = -1; // needed for debugger, it's where destructor called
 		stdvec<ParameterNode> args;
 		stdvec<var> default_args;
 		ptr<BlockNode> body;
@@ -202,7 +204,6 @@ public:
 		FunctionNode() {
 			type = Type::FUNCTION;
 		}
-		uint32_t end_line = -1; // needed for debugger, it's where destructor called
 	};
 
 	struct BlockNode : public Node {

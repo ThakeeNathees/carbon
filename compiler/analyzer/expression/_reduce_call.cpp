@@ -181,6 +181,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 							throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", id->name.c_str()), id->pos);
 						}
 					}
+
 					_check_arg_count(argc, argc_default, argc_given, call->pos);
 
 				} break;

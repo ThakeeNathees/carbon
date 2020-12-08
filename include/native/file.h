@@ -34,7 +34,7 @@ namespace carbon {
 class File : public Object {
 
 	REGISTER_CLASS(File, Object) {
-		BIND_STATIC_FUNC("File", &File::_File, PARAMS("self", "path", "mode"), DEFVALUES("", DEFAULT));
+		BIND_STATIC_FUNC("File", &File::_File, PARAMS("self", "path", "mode"), DEFVALUES(nullptr, "", DEFAULT));
 
 		BIND_ENUM_VALUE("READ",   READ);
 		BIND_ENUM_VALUE("WRITE",  WRITE);

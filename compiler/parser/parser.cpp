@@ -625,6 +625,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 
 	func_node->name = tk->identifier;
 	if (parser_context.current_class && parser_context.current_class->name == tk->identifier) {
+		func_node->is_constructor = true;
 		parser_context.current_class->constructor = func_node.get();
 	}
 

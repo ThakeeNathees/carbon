@@ -260,7 +260,7 @@ static void api_call_static(const char* base, const char* attrib, uint8_t* args,
 
 /////////////////////////////////////////////////////////////
 
-void NativeLib::_varapi_init() {
+void NativeLib::_native_api_init() {
 
 	// string api
 	api.str_c_str = &str_c_str;

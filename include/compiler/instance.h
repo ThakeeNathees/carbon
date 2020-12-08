@@ -45,9 +45,7 @@ public:
 	static constexpr const char* get_type_name_s() { return STR(Instance); }
 	static void _bind_data(NativeClasses* p_native_classes) {}
 	/* overriding from regsiter class */
-	virtual const char* get_type_name() const override {
-		return blueprint->get_name().c_str();
-	}
+	virtual const char* get_type_name() const override { return blueprint->get_name().c_str(); }
 
 private: // members
 	ptr<Bytecode> blueprint;
@@ -64,6 +62,7 @@ public:
 	void set_member(const String& p_name, var& p_value) override;
 
 	ptr<Object> copy(bool p_deep) /*const*/ override;
+	void* get_data() override;
 
 	// TODO: implement all the operator methods here.
 	String to_string() override;
