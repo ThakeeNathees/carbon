@@ -1,12 +1,6 @@
 
 #include "tests/carbon_tests.h"
 
-#define CHECK_THROWS__ANALYZE(m_type, m_source)          \
-do {												     \
-	parser->parse(m_source, NO_PATH);				     \
-	CHECK_THROWS_ERR(m_type, analyzer.analyze(parser));  \
-} while(false)
-
 TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
@@ -31,6 +25,8 @@ TEST_CASE("[analyzer_tests]:analyzer_failure") {
 
 	CHECK_THROWS__ANALYZE(Error::ATTRIBUTE_ERROR, "var y = y * 2;");
 	CHECK_THROWS__ANALYZE(Error::ATTRIBUTE_ERROR, "func f() { var y = y * 2; }");
+
+	// TODO: this should be valid after implementing switch
 	CHECK_THROWS__ANALYZE(Error::NAME_ERROR, R"( // TODO: change name error to attribute error.
 	func f() { __assert(__func() == "f");
 		var x; switch (x) {
@@ -58,6 +54,8 @@ TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	CHECK_THROWS__ANALYZE(Error::ATTRIBUTE_ERROR, "class A{ func f(){} } class B:A{ static func g(){ f(); } }");
 	CHECK_THROWS__ANALYZE(Error::ATTRIBUTE_ERROR, "class A{ func f(){} } class B:A{ static func g(){ super.f(); } }");
 	CHECK_THROWS__ANALYZE(Error::ATTRIBUTE_ERROR, "class A{ /*non static*/ func f(){} } var x = A.f;");
+
+	// super errors
 
 	// TODO: more invalid attribute access tests
 }

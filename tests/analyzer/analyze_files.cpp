@@ -8,27 +8,19 @@ TEST_CASE("[analyzer_tests]:analyze_files") {
 	//String path, source;
 
 	Array files = Array(make_stdvec<var>(
-		"tests/analyzer/test_files/z_function.cb",
-		"tests/analyzer/test_files/gcd_subset.cb",
-		"tests/analyzer/test_files/newman_conway.cb"
+		"tests/test_files/z_function.cb",
+		"tests/test_files/gcd_subset.cb",
+		"tests/test_files/newman_conway.cb",
+		"" // end with comma above
 	));
 
-	try {
-		for (int i = 0; i < files.size(); i++) {
+	for (int i = 0; i < files.size() - 1; i++) {
+		try {
 			parser->parse(File(files[i], File::READ).read_text(), files[i]);
 			analyzer.analyze(parser);
+		} catch (Throwable& err) {
+			CHECK_MESSAGE(false, err.what());
 		}
-
-	} catch (Error& err) {
-		// Logger::logf_error("ERROR(%s): %s ", Error::get_err_name(err.get_type()).c_str(), err.get_msg().c_str());
-		// Logger::logf_info("at: (%s:%i)\n", err.get_file().c_str(), err.get_pos().x);
-		// Logger::log(
-		// 	String::format("    at: %s (%s:%i)\n", err.get_dbg_func().c_str(), err.get_dbg_file().c_str(), err.get_dbg_line()).c_str(),
-		// 	Logger::ERROR, Console::Color::L_SKYBLUE
-		// );
-		// Logger::logf_info("%s\n%s\n", err.get_line().c_str(), err.get_line_pos().c_str());
-
-		throw err; // this will print formated (no-color) in the console
 	}
 
 }

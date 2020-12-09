@@ -46,10 +46,15 @@ TEST_CASE("[parser_tests]:var_test") {
 		else if (_pair.get_member("key") == "pi") CHECK(_pair.get_member("value") == 3.14);
 	}
 
-	var str1 = "testing";
-	var it4 = str1.__iter_begin();
-	while (it4.__iter_has_next()) {
-		var char_c = it4.__iter_next();
-		//printf("%s ", char_c.to_string().c_str());
-	} //printf("\n");
+	{
+		const char* str = "testing";
+		var keep_alive = str; // var(str).__iter_begin() will delete it.
+		var it4 = keep_alive.__iter_begin();
+		int i = 0;
+		while (it4.__iter_has_next()) {
+			var char_c = it4.__iter_next();
+			CHECK_EQ(str[i], *char_c.to_string().c_str());
+			i++;
+		}
+	}
 }

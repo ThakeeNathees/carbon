@@ -200,7 +200,8 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 				} break;
 				case Parser::ClassNode::BASE_NATIVE: {
 					const StaticFuncBind* ctor = NativeClasses::singleton()->get_constructor(cls->base_class_name);
-					if (ctor && ctor->get_method_info()->get_arg_count() - ctor->get_method_info()->get_default_arg_count() - 1 != 0) can_add_default_ctor = false; // -1 for self argument
+					if (ctor && ctor->get_method_info()->get_arg_count() - ctor->get_method_info()->get_default_arg_count() != 0)
+						can_add_default_ctor = false;
 				} break;
 				case Parser::ClassNode::BASE_EXTERN: {
 					const CarbonFunction* ctor = cls->base_binary->get_constructor();

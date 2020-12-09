@@ -32,8 +32,8 @@ using namespace carbon;
 #include <doctest/doctest.h>
 
 #define NO_PATH "<NO-PATH-SET>"
+#define _PARSE(m_source) parser.parse(m_source, NO_PATH)
 
-// TODO: handle varerror.
 #define CHECK_THROWS_ERR(m_type, m_statement)																		        \
 	do {																													\
 		try {																												\
@@ -46,6 +46,34 @@ using namespace carbon;
 		CHECK_MESSAGE(false, String::format("expected error: \"%s\" but no error has thrown",								\
 			Error::get_err_name(m_type).c_str()));																			\
 	} while (false)
+
+
+#define CHECK_NOTHROW__ANALYZE(m_source)                 \
+do {													 \
+	parser->parse(m_source, NO_PATH);					 \
+	CHECK_NOTHROW(analyzer.analyze(parser));			 \
+} while (false)
+
+#define CHECK_THROWS__ANALYZE(m_type, m_source)          \
+do {												     \
+	parser->parse(m_source, NO_PATH);				     \
+	CHECK_THROWS_ERR(m_type, analyzer.analyze(parser));  \
+} while(false)
+
+#define CHECK_NOTHROW__CODEGEN(m_source)                   \
+do {													   \
+	parser->parse(m_source, NO_PATH);					   \
+	analyzer->analyze(parser);							   \
+	CHECK_NOTHROW(bytecode = codegen.generate(analyzer));  \
+} while (false)
+
+#define CHECK_NOTHROW__VM(m_source)                        \
+do {										               \
+	parser->parse(m_source, NO_PATH);					   \
+	analyzer->analyze(parser);				               \
+	bytecode = codegen->generate(analyzer);	               \
+	VM::singleton()->run(bytecode, argv);	               \
+} while (false)
 
 
 template<typename... Targs>

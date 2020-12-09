@@ -1,10 +1,10 @@
 #include "tests/carbon_tests.h"
 
-#define TEST_FILE_PATH "tests/native_classes/test_files/test_file"
-#define TEST_BIN_FILE_PATH "tests/native_classes/test_files/test_bin_file"
+#define TEST_FILE_PATH     "tests/test_files/file_test1"
+#define TEST_BIN_FILE_PATH "tests/test_files/bin_file_test1"
 
 // POSITIVE TESTS
-TEST_CASE("[native_classes]:file+") {
+TEST_CASE("[native_classes]:file_tests+") {
 
 	// native file test
 	File file1;
@@ -42,7 +42,7 @@ TEST_CASE("[native_classes]:file+") {
 }
 
 // NEGATIVE TESTS
-TEST_CASE("[native_classes]:file-") {
+TEST_CASE("[native_classes]:file_tests-") {
 	File file;
 	CHECK_THROWS_ERR(Error::IO_ERROR, file.open("./blah blah", File::READ));
 }

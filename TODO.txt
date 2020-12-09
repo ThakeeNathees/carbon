@@ -16,6 +16,7 @@
  * ext_lib.lib.lib;
  * switch statement (jump table impl) before: switch body is a single block node
  * tests for codegen and vm
+ * tests for native api, native struct
  * opcodes string and bytes + zlib
  * destructor (needed for native struct to unload dlls)
  * "string %s literal" % ["replace"]

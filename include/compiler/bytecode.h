@@ -111,11 +111,14 @@ public:
 	stdmap<String, ptr<Bytecode>>& get_classes();
 	stdmap<String, ptr<Bytecode>>& get_externs();
 	const stdmap<String, ptr<CarbonFunction>>& get_functions() const;
+	const stdmap<String, var>& get_constants();
 	stdmap<String, var>& get_static_vars();
+
 	ptr<Bytecode> get_class(const String& p_name);
 	ptr<Bytecode> get_import(const String& p_name);
 	ptr<CarbonFunction> get_function(const String& p_name);
 	var* get_static_var(const String& p_name);
+	var get_constant(const String& p_name);
 
 	const ptr<Bytecode>&  get_file() const;
 	const CarbonFunction* get_main() const;

@@ -103,17 +103,16 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 		// String(); String.format(...); method call on base built in type
 		case Parser::Node::Type::BUILTIN_TYPE: {
 			if (call->method == nullptr) { // String(...); constructor.
-				// CONSTRUCTED OBJECT CANNOT BE A COMPILE TIME CONST VALUE (like Map())
-				//if (all_const) {
-				//	ptr<Parser::BuiltinTypeNode> bt = ptrcast<Parser::BuiltinTypeNode>(call->base);
-				//	try {
-				//		GET_ARGS(call->r_args);
-				//		var ret = BuiltinTypes::construct(bt->builtin_type, args);
-				//		SET_EXPR_CONST_NODE(ret, call->pos);
-				//	} catch (Error& err) {
-				//		throw ANALYZER_ERROR(err.get_type(), err.get_msg(), call->base->pos);
-				//	}
-				//}
+				Parser::BuiltinTypeNode* bt = static_cast<Parser::BuiltinTypeNode*>(call->base.get());
+				if (all_const && BuiltinTypes::can_construct_compile_time(bt->builtin_type)) {
+					try {
+						GET_ARGS(call->args);
+						var ret = BuiltinTypes::construct(bt->builtin_type, args);
+						SET_EXPR_CONST_NODE(ret, call->pos);
+					} catch (Error& err) {
+						throw ANALYZER_ERROR(err.get_type(), err.what(), call->base->pos);
+					}
+				}
 			} else { // String.format(); static func call.
 				// TODO: check if exists, reduce if compile time callable.
 			}

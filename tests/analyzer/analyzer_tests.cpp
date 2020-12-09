@@ -2,12 +2,6 @@
 #include "tests/carbon_tests.h"
 
 
-#define CHECK_NOTHROW__ANALYZE(m_source)                       \
-do {														   \
-	parser->parse(m_source, NO_PATH);						   \
-	CHECK_NOTHROW(analyzer.analyze(parser));				   \
-} while (false)
-
 TEST_CASE("[analyzer_tests]:analyzer_test") {
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
@@ -44,6 +38,12 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("const C = [1, 2, 3].append(42)[-1];     __assert(C == 42);");
 	CHECK_NOTHROW__ANALYZE("const C = [1, [2, 3]].pop()[-1];        __assert(C == 3);");
 	CHECK_NOTHROW__ANALYZE("const C = [42].at(0);                   __assert(C == 42);");
+	CHECK_NOTHROW__ANALYZE(R"(
+	const str = "\
+line 1
+line 2
+"; __assert(str == "line 1\nline 2\n");
+	)");
 
 	CHECK_NOTHROW__ANALYZE("const C = 1; func fn(a = C){}");
 	CHECK_NOTHROW__ANALYZE("class Aclass { const C = \"str\"; func fn(arg=C){} }");
@@ -85,10 +85,10 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 			const B_C2 = 1 << 3; __assert(B_C2 == 0x10 >> 1);
 			enum E { V = B_C1 & B_C2 }
 		}
-		const C = "testing".hash();
 
-		// __assert(C == ("test" + ["ngi", "ing"][1]).hash()); //<-- arrays are runtime.
-		const C2 = ("test" + ["ngi", "ing"][1]).hash(); __assert(C == C2); //<-- now compiletime
+		const C = "testing".hash();
+		const C2 = ("test" + ["ngi", "ing"][1]).hash();
+		__assert(C == C2); //<-- arrays are runtime except for parsing const.
 
 	)");
 	

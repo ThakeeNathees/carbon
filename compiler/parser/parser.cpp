@@ -397,7 +397,7 @@ ptr<Parser::ClassNode> Parser::_parse_class() {
 				}
 			} // [[fallthrough]]
 			default: {
-				throw UNEXP_TOKEN_ERROR("");
+				throw UNEXP_TOKEN_ERROR(nullptr);
 			}
 		}
 	}

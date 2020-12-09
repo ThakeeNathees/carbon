@@ -57,6 +57,7 @@ public:
 	static Type get_type_type(const String& p_type);
 	static var::Type get_var_type(Type p_type);
 	static var construct(Type p_type, const stdvec<var*>& p_args);
+	static bool can_construct_compile_time(Type p_type);
 };
 
 }

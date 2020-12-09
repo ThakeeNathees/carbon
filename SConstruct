@@ -32,6 +32,8 @@ def USER_DATA(env):
 		Glob('tests/native_classes/*.cpp'),
 		Glob('tests/parser/*.cpp'),
 		Glob('tests/analyzer/*.cpp'),
+		Glob('tests/codegen/*.cpp'),
+		Glob('tests/vm/*.cpp'),
 	]
 
 	env.SCONSCRIPTS = [

@@ -54,6 +54,22 @@ var::Type BuiltinTypes::get_var_type(Type p_type) {
 	THROW_BUG("can't reach here.");
 }
 
+bool BuiltinTypes::can_construct_compile_time(Type p_type) {
+	switch (p_type) {
+		case UNKNOWN:
+		case _NULL:
+		case BOOL:
+		case INT:
+		case FLOAT:
+		case STRING:
+			return true;
+		case ARRAY:
+		case MAP:
+			return false;
+	}
+	THROW_BUG("can't reach here.");
+}
+
 var BuiltinTypes::construct(Type p_type, const stdvec<var*>& p_args) {
 	switch (p_type) {
 		case _NULL:

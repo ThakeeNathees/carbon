@@ -55,9 +55,9 @@ const String& Bytecode::get_base_native() const { return _base_native; }
 int Bytecode::get_member_count() const { return get_member_offset() + (int)_members.size(); }
 stdmap<String, ptr<Bytecode>>& Bytecode::get_classes() { ASSERT(!_is_class); return _classes; }
 stdmap<String, ptr<Bytecode>>& Bytecode::get_externs() { ASSERT(!_is_class); return _externs; }
+const stdmap<String, var>& Bytecode::get_constants() { return _constants; }
 const stdmap<String, ptr<CarbonFunction>>& Bytecode::get_functions() const { return _functions; }
 stdmap<String, var>& Bytecode::get_static_vars() { return _static_vars; }
-
 
 const ptr<Bytecode>&  Bytecode::get_file() const { ASSERT(_is_class); return _file; }
 const CarbonFunction* Bytecode::get_main() const { ASSERT(!_is_class); return _main; }
@@ -83,6 +83,7 @@ ptr<Bytecode> Bytecode::get_class(const String& p_name) { ASSERT(!_is_class); _G
 ptr<Bytecode> Bytecode::get_import(const String& p_name) { ASSERT(!_is_class); _GET_OR_NULL(_externs, PLACE_HOLDER_MACRO); }
 ptr<CarbonFunction> Bytecode::get_function(const String& p_name) { _GET_OR_NULL(_functions, PLACE_HOLDER_MACRO); }
 var* Bytecode::get_static_var(const String& p_name) { _GET_OR_NULL(_static_vars, &); }
+var Bytecode::get_constant(const String& p_name) { _GET_OR_NULL(_constants, PLACE_HOLDER_MACRO); }
 
 var Bytecode::__call(stdvec<var*>& p_args) {
 	throw "TODO:";

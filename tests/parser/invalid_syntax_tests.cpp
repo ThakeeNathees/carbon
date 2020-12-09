@@ -5,67 +5,68 @@ TEST_CASE("[parser_tests]:invalid_syntax_test") {
 	Parser parser;
 
 	// Eof
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("class", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("class MyClass", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("var", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("var x", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("var x =", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("var x,", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("var x = 1", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("var x = \"abc\"[0", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("func", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("func fn(", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("func fn() { if", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("func fn() { if (false", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("func fn() { if (false) { while(false) { } ", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("enum // comment", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("enum {", NO_PATH));
-	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, parser.parse("enum E ", NO_PATH));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("class"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("class MyClass"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("var"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("var x"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("var x ="));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("var x,"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("var x = 1"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("var x = \"abc\"[0"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("func"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("func fn("));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("func fn() { if"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("func fn() { if (false"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("func fn() { if (false) { while(false) { } "));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("enum // comment"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("enum {"));
+	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("enum E "));
 
 	// unexp token
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var = 1; ", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = 1 2", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = this", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = super", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = \"abc\"[]", NO_PATH));
-	// CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = \"abc\"[0] = \"A\"", NO_PATH)); // assign in expr is valid now
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = print(1 2);", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x = print(1,, 2);", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var x += 1;", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("static func fn(){}", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("class {}", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("func fn(a)) {}", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("blah_blah", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("var v1 = [1 2];", NO_PATH));
-	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, parser.parse("func fn(arg1, arg2 = 42, arg3) {}", NO_PATH));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("var = 1; "));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("var x = 1 2"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("var x = this"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("var x = super"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("func f() { super; }"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("var x = \"abc\"[]"));
+	// CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("var x = \"abc\"[0] = \"A\"")); // assign in expr is valid now
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("var x = print(1 2);"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("var x = print(1,, 2);"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("var x += 1;"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("static func fn(){}"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("class {}"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("func fn(a)) {}"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("blah_blah"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("var v1 = [1 2];"));
+	CHECK_THROWS_ERR(Error::SYNTAX_ERROR, _PARSE("func fn(arg1, arg2 = 42, arg3) {}"));
 
 	// predefined name
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("func name() {}  class name {}", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("func name() {}  var name;", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("func name() {}  enum name {};", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("func name() {}  func name() {};", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("class name {}   var name;", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("class name {}   func name() {};", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("class name {}   class name {};", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("var name;       func name() {};", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("var name;       class name {};", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("var name;       enum name {};", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("enum name {};   enum name {};", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("enum name {};   class name {};", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("enum {ENUM_NAME,};  class ENUM_NAME {};", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse("func fn(arg_name) { var arg_name; }", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse(R"(
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("func name() {}  class name {}"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("func name() {}  var name;"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("func name() {}  enum name {};"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("func name() {}  func name() {};"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("class name {}   var name;"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("class name {}   func name() {};"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("class name {}   class name {};"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("var name;       func name() {};"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("var name;       class name {};"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("var name;       enum name {};"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("enum name {};   enum name {};"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("enum name {};   class name {};"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("enum {ENUM_NAME,};  class ENUM_NAME {};"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE("func fn(arg_name) { var arg_name; }"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE(R"(
 		class Aclass {
 			enum { ENUM_NAME = 0 }
 			static func ENUM_NAME(){}
 		}
-	)", NO_PATH));
-	CHECK_THROWS_ERR(Error::NAME_ERROR, parser.parse(R"(
+	)"));
+	CHECK_THROWS_ERR(Error::NAME_ERROR, _PARSE(R"(
 		func f() {
 			var x;
 			while (false) {
 				var x;
 			}
 		}
-	)", NO_PATH));
+	)"));
 }
