@@ -80,7 +80,7 @@ public:
 
 class MethodInfo : public MemberInfo, public Object {
 	REGISTER_CLASS(MethodInfo, Object);
-	public: MethodInfo() {} // default constructor needed for inherit Object
+public: MethodInfo() {} // default constructor needed for inherit Object
 
 private:
 	String name;
@@ -91,7 +91,10 @@ private:
 	stdvec<VarTypeInfo> arg_types;
 	VarTypeInfo return_type;
 
-	var _method; // compiled version of the method
+	// to call a function using method info
+	// we need method bind
+	void* _bind = nullptr;
+
 public:
 	virtual Type get_type() const override { return Type::METHOD; }
 	virtual const String& get_name() const override { return name; }
@@ -129,6 +132,12 @@ public:
 		_is_static = p__is_static;
 	}
 
+	void _set_bind(void* p_bind) { _bind = p_bind; }
+	void* _get_bind() { return _bind; }
+
+	// defined in native.cpp
+	var __call(stdvec<var*>& p_args) override;
+
 	int get_arg_count() const { return arg_count; }
 	int get_default_arg_count() const { return (int)default_args.size(); }
 	bool is_static() const { return _is_static; }
@@ -143,7 +152,6 @@ public:
 			case "is_static"_hash: return _is_static;
 			case "arg_count"_hash: return arg_count;
 			case "default_arg_count"_hash: return default_args.size();
-			case "_method"_hash: return _method;
 			default: return Super::get_member(p_name);
 		}
 	}
@@ -159,6 +167,8 @@ private:
 	var value;
 	bool _is_const = false;
 	bool _is_static = false;
+
+	void* _bind = nullptr;
 
 public:
 	virtual Type get_type() const override { return Type::PROPERTY; }
@@ -177,6 +187,12 @@ public:
 		_is_const = p__is_const;
 		_is_static = p__is_static;
 	}
+
+	void _set_bind(void* p_bind) { _bind = p_bind; }
+	void* _get_bind() { return _bind; }
+
+	// defined in native.cpp
+	var __call(stdvec<var*>& p_args) override;
 
 	bool is_static() const { return _is_static; }
 	bool is_const() const { return _is_const; }

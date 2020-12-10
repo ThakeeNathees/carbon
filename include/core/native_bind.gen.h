@@ -130,6 +130,7 @@ public:
 		class_name = p_class_name;
 		member_ptr = p_member_ptr;
 		pi = p_pi;
+		pi->_set_bind((void*)this);
 	}
 
 	virtual var& get(ptr<Object> self) const override {
@@ -157,6 +158,7 @@ public:
 		class_name = p_class_name;
 		member = p_member;
 		pi = p_pi;
+		pi->_set_bind((void*)this);
 	}
 	virtual var& get() const { return *member; }
 	const ptr<PropertyInfo> get_prop_info() const { return pi; }
@@ -189,6 +191,7 @@ public:
 		class_name = p_class_name;
 		_const = p_const;
 		pi = p_pi;
+		pi->_set_bind((void*)this);
 	}
 
 	virtual var get() const override {
@@ -329,6 +332,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -366,6 +370,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -403,6 +408,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -440,6 +446,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -477,6 +484,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -514,6 +522,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -551,6 +560,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -588,6 +598,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -625,6 +636,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -662,6 +674,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -699,6 +712,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -736,6 +750,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -773,6 +788,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -810,6 +826,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -847,6 +864,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -884,6 +902,7 @@ public:
 		argc = p_argc;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 
@@ -921,6 +940,7 @@ public:
 		argc = p_argc;
 		static_func = p_func;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(stdvec<var*>& args) const override {
 
@@ -958,6 +978,7 @@ public:
 		argc = p_argc;
 		static_func = p_func;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(stdvec<var*>& args) const override {
 
@@ -995,6 +1016,7 @@ public:
 		argc = p_argc;
 		static_func = p_func;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(stdvec<var*>& args) const override {
 
@@ -1032,6 +1054,7 @@ public:
 		argc = p_argc;
 		static_func = p_func;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(stdvec<var*>& args) const override {
 
@@ -1069,6 +1092,7 @@ public:
 		argc = p_argc;
 		static_func = p_func;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(stdvec<var*>& args) const override {
 
@@ -1106,6 +1130,7 @@ public:
 		argc = p_argc;
 		static_func = p_func;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(stdvec<var*>& args) const override {
 
@@ -1143,6 +1168,7 @@ public:
 		argc = p_argc;
 		static_func = p_func;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(stdvec<var*>& args) const override {
 
@@ -1180,6 +1206,7 @@ public:
 		argc = p_argc;
 		static_func = p_func;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(stdvec<var*>& args) const override {
 
@@ -1440,6 +1467,7 @@ public:
 		argc = -1;
 		method = p_method;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
 		if constexpr (std::is_same<R, void>::value) {
@@ -1461,6 +1489,7 @@ public:
 		argc = -1;
 		static_func = p_func;
 		mi = p_mi;
+		mi->_set_bind((void*)this);
 	}
 	virtual var call(stdvec<var*>& args) const override {
 		if constexpr (std::is_same<R, void>::value) {

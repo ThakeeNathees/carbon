@@ -1,6 +1,9 @@
 
 
-
 func main() {
 	var now = OS.unix_time;
+
+	var t0 = now();
+	for (var i : 100000);
+	print((now() - t0)/float(1000), " ms");
 }

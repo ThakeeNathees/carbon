@@ -187,4 +187,27 @@ var NativeClasses::call_method_on(ptr<Object>& p_on, const String& p_attrib, std
 	return var();
 }
 
+// call using member info /////////////////////////
+
+// defined in native.cpp
+var MethodInfo::__call(stdvec<var*>& p_args) {
+	THROW_IF_NULLPTR(_bind);
+	if (_is_static) {
+		return ((StaticFuncBind*)_bind)->call(p_args);
+	} else {
+		THROW_BUG("not sure how to call method (->* operator in c++)");
+	}
+	return var();
+}
+
+var PropertyInfo::__call(stdvec<var*>& p_args) {
+	THROW_IF_NULLPTR(_bind);
+	if (_is_static) {
+		return ((StaticPropertyBind*)_bind)->get().__call(p_args);
+	} else {
+		THROW_BUG("not sure how to call method (->* operator in c++)");
+	}
+	return var();
+}
+
 }

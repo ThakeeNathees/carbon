@@ -2,10 +2,10 @@
 
 =============== BUGS =============================================================
  * float("") <-- crash
- * var now = OS.unix_time; // shouldn't be an error
  * "".substr() check index limit
  * null var x = 12; // no error for the null before
  * multiline string -> support 'string' and "multi line str"
+ * println(Array.append); <-- crash with TODO: bug
 
 =============== TODO =============================================================
  * implement try and catch
@@ -36,6 +36,7 @@
  * compiler as var -> runtime code compile
  * multi thread for multiple VM
  * dir() function
+ * var x = File.open; should be compile time error instead of runtime.
  * exit(SUCCESS);
 
 =============== ADDNL OR MAYBE NOT ================================================

@@ -121,6 +121,7 @@ line 2
 
 	// Native classes.
 	CHECK_NOTHROW__ANALYZE("const C = File.READ;");
+	CHECK_NOTHROW__ANALYZE("var now = OS.unix_time; var time = now();");
 	CHECK_NOTHROW__ANALYZE("const OPEN_MODE = File.READ | File.BINARY;");
 	CHECK_NOTHROW__ANALYZE("var file = File();");
 	CHECK_NOTHROW__ANALYZE("var file = File(\"the/path/to/file.txt\");");
