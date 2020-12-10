@@ -119,7 +119,7 @@ TEST_CASE("[parser_tests]:valid_syntax_test") {
 
 	// multi line string
 	CHECK_NOTHROW(_PARSE(R"(
-	var str = "\
+	var str = "\\
 	line 1
 	line 2
 	";

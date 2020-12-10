@@ -1,9 +1,7 @@
 ============ IN PROGRASS =========================================================
 
 =============== BUGS =============================================================
- * override for operator methods (like __get_mapped) not working
  * float("") <-- crash
- * println = x; // not an error
  * var now = OS.unix_time; // shouldn't be an error
  * "".substr() check index limit
  * null var x = 12; // no error for the null before

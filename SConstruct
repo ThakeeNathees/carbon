@@ -7,7 +7,7 @@ def USER_DATA(env):
 	
 	## generate files TODO: use builders
 	os.system('python include/core/native_gen.py include/core/native_bind.gen.h')
-	os.system('python %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "native/io/api.gen.inc") )
+	os.system('python %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "native/api.gen.inc") )
 	
 	env.Append(CPPPATH=[Dir(path) for path in [
 			"./thirdparty",
@@ -19,14 +19,12 @@ def USER_DATA(env):
 			"./include/compiler/",
 	]])
 
-	env.SOURCES_CORE     = []
-	env.SOURCES_COMPILER = []
 	env.SOURCES_MAIN = [
-		Glob('main/platform/%s/*.cpp' % cbenv['platform'] ),
+		Glob('main/platform/%s/*.cpp' % env['platform'] ),
 		Glob('main/*.cpp'),
 	]
 	env.SOURCES_TEST     = [
-		Glob('main/platform/%s/*.cpp' % cbenv['platform'] ),
+		Glob('main/platform/%s/*.cpp' % env['platform'] ),
 		Glob('tests/*.cpp'),
 		Glob('tests/var/*.cpp'),
 		Glob('tests/native_classes/*.cpp'),
@@ -45,9 +43,8 @@ def USER_DATA(env):
 		'compiler/SConstruct',
 	]
 
-	# if env['libs'] true -> sources will compile as separate libs as below.
-	env.LIBS = { "cb_core" : env.SOURCES_CORE, "cb_compiler" : env.SOURCES_COMPILER }
-	env.DEBUG_TESTS = True ## if true vsproj run tests to debug.
+	env.LIBS = { "cb_core" : [], "cb_compiler" : [] }
+	env.DEBUG_TESTS = False
 
 	if env['target'] == 'debug':
 		env.Append(CPPDEFINES=['DEBUG_BUILD'])
@@ -64,7 +61,7 @@ def USER_DATA(env):
 #################################################################################################
 
 ## Gets the standard flags CC, CCX, etc.
-cbenv = DefaultEnvironment()
+env = DefaultEnvironment()
 
 opts = Variables([], ARGUMENTS)
 ## Define our options
@@ -80,27 +77,27 @@ opts.Add(BoolVariable('verbose', "Use verbose build command", False))
 opts.Add(BoolVariable('libs', "Only build the libs defined in the user data", False))
 
 ## Updates the environment with the option variables.
-opts.Update(cbenv)
+opts.Update(env)
 
 ## find platform
-if cbenv['platform'] == 'linux':
-	cbenv['platform'] = 'x11'
+if env['platform'] == 'linux':
+	env['platform'] = 'x11'
 
-if cbenv['platform'] == '':
+if env['platform'] == '':
 	if sys.platform == 'win32':
-		cbenv['platform'] = 'windows'
+		env['platform'] = 'windows'
 	elif sys.platform in ('linux', 'linux2'):
-		cbenv['platform'] = 'x11'
+		env['platform'] = 'x11'
 	elif sys.platform == 'darwin':
-		cbenv['platform'] = 'osx'
+		env['platform'] = 'osx'
 	else:
 		print("platform(%s) not supported." % sys.platform)
 		quit()
 
 ## Process some arguments
-if cbenv['use_llvm']:
-	cbenv['CC'] = 'clang'
-	cbenv['CXX'] = 'clang++'
+if env['use_llvm']:
+	env['CC'] = 'clang'
+	env['CXX'] = 'clang++'
 
 ## For the reference:
 ## - CCFLAGS are compilation flags shared between C and C++
@@ -111,51 +108,51 @@ if cbenv['use_llvm']:
 ## - LINKFLAGS are for linking flags
 
 ## Check our platform specifics
-if cbenv['platform'] == "osx":
-	cbenv.Append(CXXFLAGS=['-std=c++17'])
-	if cbenv['target'] == 'debug':
-		cbenv.Append(CCFLAGS=['-g', '-O2', '-arch', 'x86_64'])
-		cbenv.Append(LINKFLAGS=['-arch', 'x86_64'])
+if env['platform'] == "osx":
+	env.Append(CXXFLAGS=['-std=c++17'])
+	if env['target'] == 'debug':
+		env.Append(CCFLAGS=['-g', '-O2', '-arch', 'x86_64'])
+		env.Append(LINKFLAGS=['-arch', 'x86_64'])
 	else:
-		cbenv.Append(CCFLAGS=['-g', '-O3', '-arch', 'x86_64'])
-		cbenv.Append(LINKFLAGS=['-arch', 'x86_64'])
+		env.Append(CCFLAGS=['-g', '-O3', '-arch', 'x86_64'])
+		env.Append(LINKFLAGS=['-arch', 'x86_64'])
 
-elif cbenv['platform'] == 'x11':
-	cbenv.Append(LIBS=['dl', 'pthread']) 
-	cbenv.Append(CXXFLAGS=['-std=c++17'])
-	if cbenv['target'] == 'debug':
-		cbenv.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
+elif env['platform'] == 'x11':
+	env.Append(LIBS=['dl', 'pthread']) 
+	env.Append(CXXFLAGS=['-std=c++17'])
+	if env['target'] == 'debug':
+		env.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
 	else:
-		cbenv.Append(CCFLAGS=['-fPIC', '-g', '-O3'])
+		env.Append(CCFLAGS=['-fPIC', '-g', '-O3'])
 
-elif cbenv['platform'] == "windows":
+elif env['platform'] == "windows":
 	## This makes sure to keep the session environment variables on windows,
 	## that way you can run scons in a vs 2017 prompt and it will find all the required tools
-	cbenv.Append(ENV=os.environ)
+	env.Append(ENV=os.environ)
 
-	cbenv.Append(CXXFLAGS=['/std:c++17', '/bigobj'])
-	cbenv.Append(CPPDEFINES=['WIN32', '_WIN32', '_WINDOWS', '_CRT_SECURE_NO_WARNINGS'])
-	#cbenv.Append(CPPDEFINES=['_HAS_CXX17']) ## for autocompletion in vs.
-	cbenv.Append(CCFLAGS=['-W3', '-GR'])
-	cbenv.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
+	env.Append(CXXFLAGS=['/std:c++17', '/bigobj'])
+	env.Append(CPPDEFINES=['WIN32', '_WIN32', '_WINDOWS', '_CRT_SECURE_NO_WARNINGS'])
+	#env.Append(CPPDEFINES=['_HAS_CXX17']) ## for autocompletion in vs.
+	env.Append(CCFLAGS=['-W3', '-GR'])
+	env.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
 
-	cbenv.Append(LIBS=[
+	env.Append(LIBS=[
 		'psapi', 'dbghelp', ## for crash handler
 		'User32',           ## console debugger
 	])
 
-	if cbenv['target'] == 'debug':
-		cbenv.Append(CPPDEFINES=['_DEBUG'])
-		cbenv.Append(CCFLAGS=['-EHsc', '-MDd', '-ZI'])
-		cbenv.Append(LINKFLAGS=['-DEBUG'])
+	if env['target'] == 'debug':
+		env.Append(CPPDEFINES=['_DEBUG'])
+		env.Append(CCFLAGS=['-EHsc', '-MDd', '-ZI'])
+		env.Append(LINKFLAGS=['-DEBUG'])
 	else:
-		cbenv.Append(CPPDEFINES=['NDEBUG'])
-		cbenv.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
+		env.Append(CPPDEFINES=['NDEBUG'])
+		env.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
 
 ## --------------------------------------------------------------------------------
 
 ## reference : https://github.com/godotengine/godot/blob/master/methods.py
-if not cbenv['verbose']:
+if not env['verbose']:
 	colors = {}
 	# Colors are disabled in non-TTY environments such as pipes. This means
 	# that if output is redirected to a file, it will not contain color codes
@@ -191,52 +188,52 @@ if not cbenv['verbose']:
 	java_library_message = "{}Creating Java Archive {}==> {}$TARGET{}".format(
 		colors["red"], colors["purple"], colors["yellow"], colors["end"]
 	)
-	cbenv.Append(CXXCOMSTR=[compile_source_message])
-	cbenv.Append(CCCOMSTR=[compile_source_message])
-	cbenv.Append(SHCCCOMSTR=[compile_shared_source_message])
-	cbenv.Append(SHCXXCOMSTR=[compile_shared_source_message])
-	cbenv.Append(ARCOMSTR=[link_library_message])
-	cbenv.Append(RANLIBCOMSTR=[ranlib_library_message])
-	cbenv.Append(SHLINKCOMSTR=[link_shared_library_message])
-	cbenv.Append(LINKCOMSTR=[link_program_message])
-	cbenv.Append(JARCOMSTR=[java_library_message])
-	cbenv.Append(JAVACCOMSTR=[java_compile_source_message])
+	env.Append(CXXCOMSTR=[compile_source_message])
+	env.Append(CCCOMSTR=[compile_source_message])
+	env.Append(SHCCCOMSTR=[compile_shared_source_message])
+	env.Append(SHCXXCOMSTR=[compile_shared_source_message])
+	env.Append(ARCOMSTR=[link_library_message])
+	env.Append(RANLIBCOMSTR=[ranlib_library_message])
+	env.Append(SHLINKCOMSTR=[link_shared_library_message])
+	env.Append(LINKCOMSTR=[link_program_message])
+	env.Append(JARCOMSTR=[java_library_message])
+	env.Append(JAVACCOMSTR=[java_compile_source_message])
 
 ## update user data
-USER_DATA(cbenv)
+USER_DATA(env)
 
-Export('cbenv')
-for script in cbenv.SCONSCRIPTS:
+Export('env')
+for script in env.SCONSCRIPTS:
 	SConscript(script)
 
 ## compile the libs.
-if cbenv['libs']:
-	for lib_name in cbenv.LIBS:
-		lib = cbenv.Library(
-			target = os.path.join(cbenv['target_path'], lib_name),
-			source = cbenv.LIBS[lib_name])
-		cbenv.Prepend(LIBS=[lib])
+if env['libs']:
+	for lib_name in env.LIBS:
+		lib = env.Library(
+			target = os.path.join(env['target_path'], lib_name),
+			source = env.LIBS[lib_name])
+		env.Prepend(LIBS=[lib])
 else:
 	LIB_SOURCES = []
-	for sources in cbenv.LIBS.values(): LIB_SOURCES += sources
+	for sources in env.LIBS.values(): LIB_SOURCES += sources
 	if len(LIB_SOURCES) > 0:
-		lib = cbenv.Library(
-			target = os.path.join(cbenv['target_path'], cbenv.PROJECT_NAME),
+		lib = env.Library(
+			target = os.path.join(env['target_path'], env.PROJECT_NAME),
 			source = LIB_SOURCES)
-		cbenv.Prepend(LIBS=[lib])
+		env.Prepend(LIBS=[lib])
 
-if not cbenv['libs']:
+if not env['libs']:
 	## the main application
-	main_program = cbenv.Program(
-		target = os.path.join(cbenv['target_path'], cbenv.PROJECT_NAME),
-		source = cbenv.SOURCES_MAIN
+	main_program = env.Program(
+		target = os.path.join(env['target_path'], env.PROJECT_NAME),
+		source = env.SOURCES_MAIN
 	)
 
 	## tests
-	if len(cbenv.SOURCES_TEST) > 0:
-		tests_program = cbenv.Program(
-			target = os.path.join(cbenv['target_path'], "tests"),
-			source = cbenv.SOURCES_TEST
+	if len(env.SOURCES_TEST) > 0:
+		tests_program = env.Program(
+			target = os.path.join(env['target_path'], "tests"),
+			source = env.SOURCES_TEST
 		)
 
 ## --------------------------------------------------------------------------------
@@ -247,8 +244,8 @@ def get_vsproj_context():
 	variants = [] ## ["debug|Win32", "debug|x64", "release|Win32", "release|x64"]
 	for target in 'debug', 'release':
 		for bits in '32', '64':
-			run_target = "tests" if cbenv.DEBUG_TESTS and len(cbenv.SOURCES_TEST) > 0 else cbenv.PROJECT_NAME
-			vsproj_targets.append(os.path.join( cbenv['target_path'], run_target + '.exe'))
+			run_target = "tests" if env.DEBUG_TESTS and len(env.SOURCES_TEST) > 0 else env.PROJECT_NAME
+			vsproj_targets.append(os.path.join( env['target_path'], run_target + '.exe'))
 			variants.append(target+'|'+('Win32' if bits=='32' else 'x64'))
 	return vsproj_targets, variants
 
@@ -266,15 +263,15 @@ def msvs_collect_header():
 		return ret
 
 	ret = []
-	cbenv.Append(CPPPATH=[]) ## A fail safe if CPPPATH doesn't exists on env.
-	for dir in cbenv['CPPPATH']:
+	env.Append(CPPPATH=[]) ## A fail safe if CPPPATH doesn't exists on env.
+	for dir in env['CPPPATH']:
 		ret += recursive_collect(str(dir))
 	return ret
 
 def msvc_collect_sources():
 	ret = []
-	all_sources = cbenv.SOURCES_MAIN + cbenv.SOURCES_TEST
-	for sources in cbenv.LIBS.values(): all_sources += sources
+	all_sources = env.SOURCES_MAIN + env.SOURCES_TEST
+	for sources in env.LIBS.values(): all_sources += sources
 	for src in all_sources:
 		if (str(src).endswith('.c')  or str(src).endswith('.cpp') or 
 			str(src).endswith('.cc') or str(src).endswith('.cxx')):
@@ -294,18 +291,18 @@ def msvc_build_commandline(commands):
 	return " ^& ".join(common_build_prefix + [commands])
 
 
-if cbenv['vsproj']:
-	cbenv["MSVSBUILDCOM"] = msvc_build_commandline(
+if env['vsproj']:
+	env["MSVSBUILDCOM"] = msvc_build_commandline(
 		"scons --directory=\"$(ProjectDir.TrimEnd('\\'))\" platform=windows target=$(Configuration) bits=!bits!"
 	)
-	cbenv["MSVSREBUILDCOM"] = msvc_build_commandline(
+	env["MSVSREBUILDCOM"] = msvc_build_commandline(
 		"scons --directory=\"$(ProjectDir.TrimEnd('\\'))\" platform=windows target=$(Configuration) bits=!bits! vsproj=yes"
 	)
-	cbenv["MSVSCLEANCOM"] = msvc_build_commandline(
+	env["MSVSCLEANCOM"] = msvc_build_commandline(
 		"scons --directory=\"$(ProjectDir.TrimEnd('\\'))\" --clean platform=windows bits=!bits! target=$(Configuration)"
 	)
 	targets, variants = get_vsproj_context()
-	cbenv.MSVSProject(target = cbenv.PROJECT_NAME + cbenv['MSVSPROJECTSUFFIX'],
+	env.MSVSProject(target = env.PROJECT_NAME + env['MSVSPROJECTSUFFIX'],
 		srcs = msvc_collect_sources(),
 		incs = msvs_collect_header(),
 		variant = variants,
@@ -315,4 +312,4 @@ if cbenv['vsproj']:
 
 
 ## Generates help for the -h scons option.
-Help(opts.GenerateHelpText(cbenv))
+Help(opts.GenerateHelpText(env))

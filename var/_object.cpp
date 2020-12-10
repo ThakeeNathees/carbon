@@ -164,9 +164,10 @@ var Object::get_member_s(ptr<Object> p_self, const String& p_name) {
 			return ptrcast<EnumValueBind>(bind_data)->get();
 		} else if (bind_data->get_type() == BindData::ENUM) {
 			return ptrcast<EnumBind>(bind_data)->get();
-
+		} else if (bind_data->get_type() == BindData::STATIC_FUNC) {
+			return ptrcast<StaticFuncBind>(bind_data)->get_method_info();
 		} else {
-			// TODO: function reference runtime object.
+			// TODO: what if non satic method.
 			THROW_ERROR(Error::TYPE_ERROR, String::format("attribute named \"%s\" on type %s is not a property.", member_name.c_str(), p_self->get_type_name()));
 		}
 	} else {

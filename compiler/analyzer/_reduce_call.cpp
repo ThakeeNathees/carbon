@@ -388,11 +388,11 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 									if (parser->parser_context.current_func->is_static) { // calling super method from static function.
 										throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("can't access non-static attribute \"%s\" statically", method_name.c_str()), call->pos);
 									}
-									const MethodInfo* mi = ptrcast<MethodBind>(bd)->get_method_info();
+									const MethodInfo* mi = ptrcast<MethodBind>(bd)->get_method_info().get();
 									_check_arg_count(mi->get_arg_count(), mi->get_default_arg_count(), (int)call->args.size(), call->pos);
 								} break;
 								case BindData::STATIC_FUNC: { // super.sfunc();
-									const MethodInfo* mi = ptrcast<StaticFuncBind>(bd)->get_method_info();
+									const MethodInfo* mi = ptrcast<StaticFuncBind>(bd)->get_method_info().get();
 									_check_arg_count(mi->get_arg_count(), mi->get_default_arg_count(), (int)call->args.size(), call->pos);
 								} break;
 								case BindData::MEMBER_VAR: { // super.a_var();

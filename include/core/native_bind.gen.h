@@ -89,7 +89,7 @@ public:
 	virtual int get_argc() const { return argc; }
 
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const = 0;
-	const MethodInfo* get_method_info() const { return mi.get(); }
+	const ptr<MethodInfo> get_method_info() const { return mi; }
 	const ptr<MemberInfo> get_member_info() const override { return mi; }
 };
 
@@ -103,7 +103,7 @@ public:
 	virtual int get_argc()              const { return argc; }
 
 	virtual var call(stdvec<var*>& args) const = 0;
-	const MethodInfo* get_method_info() const { return mi.get(); }
+	const ptr<MethodInfo> get_method_info() const { return mi; }
 	const ptr<MemberInfo> get_member_info() const override { return mi; }
 };
 
@@ -1448,7 +1448,7 @@ public:
 			return (ptrcast<T>(self).get()->*method)(args);
 		}
 	}
-	const MethodInfo* get_method_info() const { return mi.get(); }
+	const ptr<MethodInfo> get_method_info() const { return mi; }
 };
 
 template<typename R>
@@ -1469,7 +1469,7 @@ public:
 			return static_func(args);
 		}
 	}
-	const MethodInfo* get_method_info() const { return mi.get(); }
+	const ptr<MethodInfo> get_method_info() const { return mi; }
 };
 
 template<typename T, typename R>

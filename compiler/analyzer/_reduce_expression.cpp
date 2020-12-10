@@ -180,6 +180,10 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 						throw ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to array literal.", op->args[0]->pos);
 					} else if (op->args[0]->type == Parser::Node::Type::MAP) {
 						throw ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to map literal.", op->args[0]->pos);
+					} else if (op->args[0]->type == Parser::Node::Type::BUILTIN_FUNCTION) {
+						throw ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to builtin function.", op->args[0]->pos);
+					} else if (op->args[0]->type == Parser::Node::Type::BUILTIN_TYPE) {
+						throw ANALYZER_ERROR(Error::TYPE_ERROR, "can't assign anything to builtin type.", op->args[0]->pos);
 					}
 				} break;
 

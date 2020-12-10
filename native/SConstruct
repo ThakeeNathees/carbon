@@ -1,13 +1,10 @@
 #!python
 import os
-Import('cbenv')
+Import('env')
 
 ## core env
 SOURCES = [
     Glob('*.cpp'),
-    Glob('io/*.cpp'),
-    Glob('api/*.cpp'),
-    Glob('os/*.cpp'),
 ]
 
-cbenv.SOURCES_CORE += SOURCES
+env.LIBS['cb_core'] += SOURCES

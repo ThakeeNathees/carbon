@@ -1,18 +1,18 @@
 #!python
 import os
-Import('cbenv')
+Import('env')
 
 SOURCES = []
 
 ## source files
-if cbenv['platform'] == "osx":
+if env['platform'] == "osx":
     pass
-elif cbenv['platform'] in ('x11', 'linux'):
+elif env['platform'] in ('x11', 'linux'):
     pass
-elif cbenv['platform'] == "windows":
+elif env['platform'] == "windows":
     SOURCES += [
         File('dlfcn-win32/dlfcn.c')
     ]
     pass
 
-cbenv.SOURCES_CORE += SOURCES
+env.LIBS['cb_core'] += SOURCES

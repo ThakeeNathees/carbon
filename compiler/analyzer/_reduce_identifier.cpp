@@ -90,7 +90,7 @@ Parser::IdentifierNode Analyzer::_find_member(const Parser::MemberContainer* p_c
 					switch (bd->get_member_info()->get_type()) {
 						case MemberInfo::Type::METHOD: {
 							id.ref = Parser::IdentifierNode::REF_FUNCTION;
-							id._method_info = ptrcast<MethodBind>(bd)->get_method_info();
+							id._method_info = ptrcast<MethodBind>(bd)->get_method_info().get();
 							return id;
 						} break;
 						case MemberInfo::Type::PROPERTY: {

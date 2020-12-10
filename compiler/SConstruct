@@ -1,9 +1,9 @@
 #!python
 import os
-Import('cbenv')
+Import('env')
 
 ## project includes
-cbenv.Append(CPPPATH=[Dir("./")])
+env.Append(CPPPATH=[Dir("./")])
 
 SOURCES = [
 
@@ -20,4 +20,4 @@ SOURCES = [
     Glob('vm/*.cpp'),
 ]
 
-cbenv.SOURCES_COMPILER += SOURCES
+env.LIBS['cb_compiler'] += SOURCES
