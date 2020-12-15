@@ -135,7 +135,7 @@ void Parser::parse(const String& p_source, const String& p_file_path) {
 			} // [[fallthrough]]
 
 			default:
-				throw UNEXP_TOKEN_ERROR("");
+				throw UNEXP_TOKEN_ERROR(nullptr);
 		}
 
 	} // while true
@@ -644,6 +644,12 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 
 			ParameterNode parameter = ParameterNode(tk->identifier, tk->get_pos());
 			tk = &tokenizer->next();
+
+			if (tk->type == Token::OP_BIT_AND) {
+				parameter.is_reference = true;
+				tk = &tokenizer->next();
+			}
+
 			if (tk->type == Token::OP_EQ) {
 				has_default = true;
 				parameter.default_value = _parse_expression(p_parent, false);
@@ -659,7 +665,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 			} else if (tk->type == Token::BRACKET_RPARAN) {
 				break;
 			} else {
-				throw UNEXP_TOKEN_ERROR("");
+				throw UNEXP_TOKEN_ERROR(nullptr);
 			}
 		}
 	}

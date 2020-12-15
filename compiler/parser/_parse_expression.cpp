@@ -146,12 +146,12 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 				switch (tk->type) {
 					case Token::_EOF:
 						tk = &tokenizer->next(); // eat eof
-						throw UNEXP_TOKEN_ERROR("");
+						throw UNEXP_TOKEN_ERROR(nullptr);
 						break;
 					case Token::SYM_COMMA:
 						tk = &tokenizer->next(); // eat comma
 						if (!comma_valid) {
-							throw UNEXP_TOKEN_ERROR("");
+							throw UNEXP_TOKEN_ERROR(nullptr);
 						}
 						comma_valid = false;
 						break;
@@ -178,11 +178,11 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 				switch (tk->type) {
 					case Token::_EOF:
 						tk = &tokenizer->next(); // eat eof
-						throw UNEXP_TOKEN_ERROR("");
+						throw UNEXP_TOKEN_ERROR(nullptr);
 						break;
 					case Token::SYM_COMMA:
 						tk = &tokenizer->next(); // eat comma
-						if (!comma_valid) throw UNEXP_TOKEN_ERROR("");
+						if (!comma_valid) throw UNEXP_TOKEN_ERROR(nullptr);
 						comma_valid = false;
 						break;
 					case Token::BRACKET_RCUR:
@@ -202,7 +202,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			}
 			expr = map;
 		} else {
-			throw UNEXP_TOKEN_ERROR("");
+			throw UNEXP_TOKEN_ERROR(nullptr);
 		}
 
 		// -- PARSE INDEXING -------------------------------------------------------
@@ -214,7 +214,7 @@ ptr<Parser::Node> Parser::_parse_expression(const ptr<Node>& p_parent, bool p_al
 			if (tk->type == Token::SYM_DOT) {
 				tk = &tokenizer->next(1);
 
-				if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR("");
+				if (tk->type != Token::IDENTIFIER) throw UNEXP_TOKEN_ERROR(nullptr);
 
 				// call
 				if (tokenizer->peek().type == Token::BRACKET_LPARAN) {
@@ -352,7 +352,7 @@ stdvec<ptr<Parser::Node>> Parser::_parse_arguments(const ptr<Node>& p_parent) {
 			} else if (tk->type == Token::BRACKET_RPARAN) {
 				break;
 			} else {
-				throw UNEXP_TOKEN_ERROR("");
+				throw UNEXP_TOKEN_ERROR(nullptr);
 			}
 		}
 	}

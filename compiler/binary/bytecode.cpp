@@ -206,7 +206,7 @@ var* Bytecode::_get_member_var_ptr(const String& p_member_name) {
 	if (it_static != _static_vars.end()) return &it_static->second;
 
 	auto it_const = _constants.find(p_member_name);
-	if (it_const != _constants.end()) { _member_vars[p_member_name] = it_const->second; return &_member_vars[p_member_name]; }
+	if (it_const != _constants.end()) return &it_const->second; // { _member_vars[p_member_name] = it_const->second; return &_member_vars[p_member_name]; }
 
 	auto it_en = _enums.find(p_member_name);
 	if (it_en != _enums.end()) { _member_vars[p_member_name] = it_en->second; return &_member_vars[p_member_name]; }

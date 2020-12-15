@@ -262,7 +262,10 @@ ptr<CarbonFunction> CodeGen::_generate_function(const Parser::FunctionNode* p_fu
 	_context.bytecode = p_bytecode;
 	_context.curr_class = p_class;
 	_context.opcodes->op_dbg = &cfn->op_dbg;
-	for (int i = 0; i < (int)p_func->args.size(); i++) _context.parameters.push_back(p_func->args[i].name);
+	for (int i = 0; i < (int)p_func->args.size(); i++) {
+		cfn->_is_reference.push_back(p_func->args[i].is_reference);
+		_context.parameters.push_back(p_func->args[i].name);
+	}
 
 	_generate_block(p_func->body.get());
 

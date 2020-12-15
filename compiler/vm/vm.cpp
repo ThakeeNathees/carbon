@@ -66,6 +66,10 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 	context.stack = &stack;
 	context.args = &p_args;
 	if (p_self != nullptr) context.self = p_self;
+	context.curr_fn = p_func;
+	for (int i = 0; i < p_func->get_is_args_ref().size(); i++) {
+		if (!p_func->get_is_args_ref()[i]) context.value_args.push_back(*(p_args[i]));
+	}
 	if (p_bytecode->is_class()) {
 		context.bytecode_class = p_bytecode;
 		context.bytecode_file = p_bytecode->get_file().get();
@@ -619,7 +623,13 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 		} break;
 
 		case Address::PARAMETER: {
-			return (*args)[index];
+			ASSERT(curr_fn != nullptr && curr_fn->get_is_args_ref().size() > index);
+			int value_index = get_arg_value_index(index);
+			if (value_index < 0) { // argument is reference
+				return (*args)[index];
+			} else { // argument is reference
+				return &value_args[value_index];
+			}
 		} break;
 
 		case Address::THIS: {
@@ -660,6 +670,16 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 		MISSED_ENUM_CHECK(Address::CONST_VALUE, 10);
 	}
 	THROW_BUG("can't reach here");
+}
+
+int RuntimeContext::get_arg_value_index(int p_arg_ind) const {
+	auto& is_ref = curr_fn->get_is_args_ref();
+	int value_index = -1;
+	for (int i = 0; i < is_ref.size(); i++) {
+		if (!is_ref[i]) value_index++;
+		if (i == p_arg_ind) return (is_ref[i]) ? -1 : value_index;
+	}
+	return -1;
 }
 
 const String& RuntimeContext::get_name_at(uint32_t p_pos) {

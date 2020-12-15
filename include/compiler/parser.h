@@ -184,6 +184,7 @@ public:
 	struct ParameterNode {
 		Vect2i pos = Vect2i(-1, -1);
 		String name;
+		bool is_reference = false;
 		ptr<Node> default_value;
 		ParameterNode() {}
 		ParameterNode(String p_name, Vect2i p_pos) {

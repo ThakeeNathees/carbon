@@ -1,9 +1,13 @@
 
 
-func main() {
-	var now = OS.unix_time;
+func f(a, b&) {
+	a += 1;
+	b += 1;
+	println(a, " ", b);
+}
 
-	var t0 = now();
-	for (var i : 100000);
-	print((now() - t0)/float(1000), " ms");
+func main() {
+	var a = 1, b = 1;
+	f(a, b);
+	println(a, " ", b);
 }

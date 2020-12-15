@@ -53,8 +53,6 @@ namespace carbon {
 ( (c == '_') || ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') )
 
 
-/*TODO: msg += __LINE__, __FUNCTION__*/
-
 struct KeywordName { const char* name; Token tk; };
 static KeywordName _keyword_name_list[] = {
 	{ "import",   Token::KWORD_IMPORT	     },
@@ -250,7 +248,7 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 	EAT_CHAR(p_eat_size);
 }
 
-const void Tokenizer::tokenize(const String& p_source, const String& p_source_path) {
+void Tokenizer::tokenize(const String& p_source, const String& p_source_path) {
 
 	source = p_source;
 	source_path = p_source_path;

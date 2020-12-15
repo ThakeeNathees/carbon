@@ -41,7 +41,8 @@ private: // members
 	Bytecode* _owner;
 	String _name;
 	bool _is_static;
-	int _arg_count;
+	int _arg_count; // TODO: = _is_reference.size(); maybe remove this
+	stdvec<bool> _is_reference;
 	stdvec<var> _default_args;
 	stdvec<uint32_t> _opcodes;
 	stdmap<uint32_t, uint32_t> op_dbg; // opcode line to pos
@@ -52,6 +53,7 @@ public:
 	bool is_static() const;
 	int get_arg_count() const;
 	const stdvec<var>& get_default_args() const;
+	const stdvec<bool>& get_is_args_ref() const;
 	// TODO: parameter names : only for debugging
 	uint32_t get_stack_size() const;
 	const Bytecode* get_owner() const;
