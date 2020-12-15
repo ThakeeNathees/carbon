@@ -638,7 +638,6 @@ var::operator Map* () {
 	return nullptr;
 }
 
-
 // casting to reference
 
 var::operator bool&() {
