@@ -13,7 +13,7 @@ public:
 	static int A_static_func() { return 1; }
 	virtual int A_virtual_func() { return 2; }
 
-	var member = Array(make_stdvec<var>(1, "2", 3.0));
+	var member = Array(1, "2", 3.0);
 	static var static_member;
 	static const int _const;
 };
@@ -75,7 +75,7 @@ TEST_CASE("[native_classes]:method_bind+") {
 	CHECK(r.operator int() == 2);
 
 	{
-		CHECK(a.get_member("member").operator Array() == Array(make_stdvec<var>(1, "2", 3.0)));
+		CHECK(a.get_member("member").operator Array() == Array(1, "2", 3.0));
 
 		CHECK(a.get_member("static_member").operator String() == "static member");
 		ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(a.get_type_name(), "static_member");
@@ -110,7 +110,7 @@ TEST_CASE("[native_classes]:method_bind+") {
 	REQUIRE(r.get_type() == var::STRING);
 	CHECK(r.to_string() == "B2-static");
 
-	Array arr(make_stdvec<var>(1, 2.1, String("test")));
+	Array arr(1, 2.1, String("test"));
 	r = call_method(c, "C_member_func", arr);
 	REQUIRE(r.get_type() == var::ARRAY);
 	CHECK(r.operator Array()[0].operator int() == 1);

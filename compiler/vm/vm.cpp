@@ -286,7 +286,8 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 				ptr<Instance> instance = newptr<Instance>(blueprint);
 
 				const CarbonFunction* member_initializer = blueprint->get_member_initializer();
-				if (member_initializer) call_function(member_initializer, blueprint.get(), instance, stdvec<var*>(), __stack + 1);
+				stdvec<var*> _args;
+				if (member_initializer) call_function(member_initializer, blueprint.get(), instance, _args, __stack + 1);
 
 				const CarbonFunction* constructor = blueprint->get_constructor();
 				if (constructor) call_function(constructor, blueprint.get(), instance, args, __stack + 1);
@@ -450,7 +451,10 @@ var VM::call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<In
 				} else {
 
 					const CarbonFunction* member_initializer = p_bytecode->get_base_binary()->get_member_initializer();
-					if (member_initializer) call_function(member_initializer, p_bytecode->get_base_binary().get(), p_self, stdvec<var*>(), __stack + 1);
+					if (member_initializer) {
+						stdvec<var*> _args;
+						call_function(member_initializer, p_bytecode->get_base_binary().get(), p_self, _args, __stack + 1);
+					}
 
 					const CarbonFunction* ctor = p_bytecode->get_base_binary()->get_constructor();
 					if (ctor) call_function(ctor, p_bytecode->get_base_binary().get(), p_self, args, __stack + 1);

@@ -155,7 +155,7 @@ char& String::operator[](int64_t p_index) {
 size_t String::size() const { return _data->size(); }
 const char* String::c_str() const { return _data->c_str(); }
 void* String::get_data() { return (void*)_data->data(); }
-String& String::append(const String& p_other) { _data->append(p_other); return *this; }
+String& String::append(const String& p_other) { _data->append(p_other.operator std::string()); return *this; }
 
 String String::upper() const {
 	String ret = *this;

@@ -37,20 +37,20 @@ template<typename T> struct is_shared_ptr<ptr<T>> : std::true_type {};
 	VarTypeInfo m_var_type;																						              \\
 	if constexpr (std::is_same<m_T, void>::value) {																              \\
 		m_var_type = var::_NULL;																				              \\
-	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, bool>::value) {              \\
+	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>()>(), bool>::value) {              \\
 		m_var_type = var::BOOL;																					              \\
 	} else if constexpr (std::numeric_limits<m_T>::is_integer) {												              \\
 		m_var_type = var::INT;																					              \\
 	} else if constexpr (std::is_floating_point<m_T>::value) {													              \\
 		m_var_type = var::FLOAT;																				              \\
-	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, String>::value ||            \\
-			std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, const char*>::value) {			          \\
+	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>()>(), String>::value ||            \\
+			std::is_same<std::remove_const<std::remove_reference<m_T>()>(), const char*>::value) {			          \\
 		m_var_type = var::STRING;																				              \\
-	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, Array>::value) {             \\
+	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>()>(), Array>::value) {             \\
 		m_var_type = var::ARRAY;																				              \\
-	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, Map>::value) {               \\
+	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>()>(), Map>::value) {               \\
 		m_var_type = var::MAP;																					              \\
-	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, var>::value) {               \\
+	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>()>(), var>::value) {               \\
 		m_var_type = var::VAR;																					              \\
 	} else if constexpr (is_shared_ptr<m_T>::value) {																	      \\
 		m_var_type = { var::OBJECT, m_T::element_type::get_type_name_s() };                                                   \\

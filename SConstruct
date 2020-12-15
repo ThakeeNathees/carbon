@@ -6,8 +6,8 @@ def USER_DATA(env):
 	env.PROJECT_NAME = 'carbon'
 	
 	## generate files TODO: use builders
-	os.system('python include/core/native_gen.py include/core/native_bind.gen.h')
-	os.system('python %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "native/api.gen.inc") )
+	os.system('python3 include/core/native_gen.py include/core/native_bind.gen.h')
+	os.system('python3 %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "native/api.gen.inc") )
 	
 	env.Append(CPPPATH=[Dir(path) for path in [
 			"./thirdparty",

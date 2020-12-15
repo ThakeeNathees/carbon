@@ -222,7 +222,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						}
 						// check arg types.
 						const stdvec<VarTypeInfo>& arg_types = initializer->get_method_info()->get_arg_types();
-						for (int i = 0; i < (int)call->args.size(); i++) {
+						for (int i = 1; i < (int)call->args.size(); i++) {
 							if (call->args[i]->type == Parser::Node::Type::CONST_VALUE) {
 								var value = ptrcast<Parser::ConstValueNode>(call->args[i])->value;
 								if (value.get_type() != arg_types[i + 1].type) // +1 for skip self argument.

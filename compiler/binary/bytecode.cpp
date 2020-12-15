@@ -34,13 +34,13 @@ namespace carbon {
 void Bytecode::initialize() {
 	if (_static_initialized) return;
 	_static_initialized = true;
-
+	stdvec<var*> _args;
 	if (is_class()) {
 		_file->initialize();
-		if (_static_initializer) VM::singleton()->call_function(_static_initializer.get(), this, nullptr, stdvec<var*>());
+		if (_static_initializer) VM::singleton()->call_function(_static_initializer.get(), this, nullptr, _args);
 	} else {
 		for (auto p : _externs) p.second->initialize();
-		if (_static_initializer) VM::singleton()->call_function(_static_initializer.get(), this, nullptr, stdvec<var*>());
+		if (_static_initializer) VM::singleton()->call_function(_static_initializer.get(), this, nullptr, _args);
 		for (auto p : _classes) p.second->initialize();
 	}
 }
@@ -139,7 +139,8 @@ var Bytecode::call_method(const String& p_method_name, stdvec<var*>& p_args) {
 			// TODO: abstract construction and everything.
 			ptr<Instance> instance = newptr<Instance>(_class);
 			const CarbonFunction* member_initializer = _class->get_member_initializer();
-			if (member_initializer) VM::singleton()->call_function(member_initializer, _class.get(), instance, stdvec<var*>());
+			stdvec<var*> _args;
+			if (member_initializer) VM::singleton()->call_function(member_initializer, _class.get(), instance, _args);
 			const CarbonFunction* constructor = _class->get_constructor();
 			if (constructor) VM::singleton()->call_function(constructor, _class.get(), instance, p_args);
 			return instance;

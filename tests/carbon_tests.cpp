@@ -58,9 +58,19 @@ int _test_main(int argc, char** argv) {
 	return res;
 }
 
+void f(VarTypeInfo& i) {
+	if (i.type == var::STRING) {
+		printf("ok;");
+	} else printf("not");
+}
+
 int _main(int argc, char** argv) {
 
 	carbon_initialize();
+
+	auto t = static_cast<StaticFuncBind*>(NativeClasses::singleton()->get_bind_data("File", "File").get())->get_method_info()->get_arg_types()[1];
+	f(t);
+
 	int res = _test_main(argc, argv);
 	
 	Logger::log("\n===============================================================================\n", Logger::VERBOSE, Console::Color::L_YELLOW);

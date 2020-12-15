@@ -68,8 +68,12 @@ var Array::call_method(const String& p_method, const stdvec<var*>& p_args) {
 }
 
 Array::Array() { _data = newptr<stdvec<var>>(); }
-Array::Array(const ptr<stdvec<var>>& p_data) { _data = p_data; }
 Array::Array(const Array& p_copy) { _data = p_copy._data; }
+//Array::Array(const ptr<stdvec<var>>& p_data) { _data = p_data; }
+//Array::Array(const stdvec<var>& p_data) {
+//	_data = newptr<stdvec<var>>();
+//	for (const var& v : p_data) _data->push_back(v);
+//}
 
 const stdvec<var>* Array::get_stdvec() const {
 	return _data.operator->();
@@ -115,12 +119,6 @@ var& Array::operator[](int64_t p_index) {
 	throw Error(Error::INVALID_INDEX, String::format("Array index %i is invalid.", p_index));
 }
 
-
-
-Array::Array(const stdvec<var>& p_data) {
-	_data = newptr<stdvec<var>>();
-	for (const var& v : p_data) _data->push_back(v);
-}
 
 String Array::to_string() const {
 	// TODO: if the array contains itself it'll stack overflow.

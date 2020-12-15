@@ -102,7 +102,7 @@ public:
 	const ptr<Bytecode>& get_base_binary() const;
 	const String& get_base_native() const;
 
-	inline int get_member_count() const;
+	int get_member_count() const;
 	int get_member_offset() const;
 	uint32_t get_member_index(const String& p_name);
 	const ptr<MemberInfo> get_member_info(const String& p_member_name);

@@ -69,7 +69,7 @@ struct DBGSourceInfo {
 
 	DBGSourceInfo();
 	DBGSourceInfo(const String& p_file, uint32_t p_line, const String& p_func);
-	DBGSourceInfo(const String& p_file, const String& p_line_str, Vect2i& p_pos, uint32_t p_width, const String& p_func = "");
+	DBGSourceInfo(const String& p_file, const String& p_line_str, Vect2i p_pos, uint32_t p_width, const String& p_func = "");
 	String get_pos_str() const;
 };
 
