@@ -157,7 +157,7 @@ private: // members.
 
 public:
 	// methods.
-	const void tokenize(const String& p_source, const String& p_source_path = "<PATH-NOT-SET>");
+	void tokenize(const String& p_source, const String& p_source_path = "<PATH-NOT-SET>");
 	const TokenData& next(int p_offset = 0);
 	const TokenData& peek(int p_offset = 0, bool p_safe = false) const;
 	Vect2i get_pos() const;

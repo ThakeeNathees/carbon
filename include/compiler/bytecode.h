@@ -56,8 +56,8 @@ private: // members.
 	stdmap<String, ptr<Bytecode>> _externs;  // imported for FileNode
 
 	stdmap<String, uint32_t> _members;       // member index. offset willbe added for inherited instances.
-	stdmap<String, var> _static_vars;
-	stdmap<String, var> _constants;
+	stdmap<String, var> _static_vars;        // TODO : change to stdvec<String> since var is stored _member_vars
+	stdmap<String, var> _constants;			 // TODO : same as above
 	stdmap<String, int64_t> _unnamed_enums;
 	stdmap<String, ptr<EnumInfo>> _enums;
 	stdmap<String, ptr<CarbonFunction>> _functions;

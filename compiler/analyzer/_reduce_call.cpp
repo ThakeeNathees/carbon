@@ -462,6 +462,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 				// p_param.method(); a_var.method(); a_member.method();
 				case Parser::IdentifierNode::REF_PARAMETER:
 				case Parser::IdentifierNode::REF_LOCAL_VAR:
+				case Parser::IdentifierNode::REF_STATIC_VAR:
 				case Parser::IdentifierNode::REF_MEMBER_VAR: {
 				} break;
 

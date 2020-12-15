@@ -51,6 +51,14 @@ struct RuntimeContext {
 	Bytecode* bytecode_class = nullptr;  // static member reference
 	Bytecode* bytecode_file = nullptr;   // file node blueprint
 
+	const CarbonFunction* curr_fn = nullptr; // current function
+	stdvec<var> value_args;                  // for pass by value args
+	/*	TODO: this could be space optimized by only storing the reference argument
+		and map the index of argument to index of n-th reference. and only push_back
+		to args_copy when it accessed in get_var_at.
+	*/
+	int get_arg_value_index(int p_arg_ind) const;
+
 	var* get_var_at(const Address& p_addr);
 	const String& get_name_at(uint32_t p_pos);
 };

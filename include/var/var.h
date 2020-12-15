@@ -131,21 +131,38 @@ public:
 	size_t hash() const;
 	void clear();
 	var copy(bool p_deep = false) const;
+	String to_string() const;
 
 	// Operators.
 	operator bool() const;
 	operator int64_t() const;
 	operator double() const;
-	operator int() const    { return (int)operator int64_t(); }
-	operator size_t() const { return (size_t)operator int64_t(); }
-	operator float() const  { return (float)operator double(); }
-
-	// operator const char* () const; <-- never implement this
-	String to_string() const;
 	operator String() const;
 	operator Array() const;
 	operator Map() const;
 	operator ptr<Object>() const;
+	// operator const char* () const; <-- never implement this
+
+	operator int();
+	operator size_t();
+	operator float();
+	operator int () const;
+	operator size_t () const;
+	operator float() const;
+
+	explicit operator bool* ();
+	explicit operator int64_t* ();
+	explicit operator double* ();
+	explicit operator String* ();
+	explicit operator Array* ();
+	explicit operator Map* ();
+
+	operator bool&();
+	operator int64_t&();
+	operator double&();
+	operator String&();
+	operator Array&();
+	operator Map&();
 	
 
 #define _VAR_OP_DECL(m_ret, m_op, m_access)                                                        \

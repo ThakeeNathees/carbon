@@ -30,6 +30,8 @@
 
 // TODO: move all to path.cpp
 
+// TODO: add copy options for overwrite
+
 namespace carbon {
 namespace fs = std::filesystem;
 class Path : public Object {

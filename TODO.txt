@@ -2,23 +2,41 @@
 
 =============== BUGS =============================================================
  * float("") <-- crash
+ * method call on static var shouldn't error
+ * OS.system("del path\to\file"); not working
+ * arr[i] += v; addition not working here (also check map["key"] += v;
+ * native argument type float and int provided shouldn't be error.
+ * x = y = 42; <-- shouold be valid (assignment allowed now in expr)
+      K-normalized form : y = 42; tmp = y; x = tmp; and optimize tmp
  * "".substr() check index limit
- * null var x = 12; // no error for the null before
- * multiline string -> support 'string' and "multi line str"
  * println(Array.append); <-- crash with TODO: bug
+ * msg: operator "" not suported between float and int
+ * returning a non static function should be invaled. or
+   method should have a this pointer like python
+		class A {
+			func f() {
+				println(this == null); // prints true
+			}
+			func get_f() = f;
+		}
+		func main() {
+			A().get_f()();
+		}
 
 =============== TODO =============================================================
  * implement try and catch
+ * zero division error, import error are not underlined by the compiler
+ * switch statement (jump table impl) before: switch body is a single block node
  * parse command line args
  * ipc debugger
  * ext_lib.lib.lib;
- * switch statement (jump table impl) before: switch body is a single block node
  * tests for codegen and vm
  * tests for native api, native struct
  * opcodes string and bytes + zlib
  * destructor (needed for native struct to unload dlls)
  * "string %s literal" % ["replace"]
  * array string to_string
+ * print use space seperated
  * Path.listdir() <-- default argument "."
  * implement to_string on type info, runtim instance, class ref, ...
  * error print and dbg info (stack trace)
@@ -55,8 +73,8 @@
 
 =============== CURRENT FEATURES / DONE ============================================
  * basic language features:
-	   * enums and switch statements
 	   * for, foreach, while loops, if, else
+	   * enums and switch statements
 	   * static and non static variables/ functions.
  * dynamic type (strongly typed) high level
  * object oriented (and functional c++ like)
@@ -65,6 +83,7 @@
        * callables
 	   * iterables
  * default argument support
+ * arguments could be passed by reference
  * a better analyzer (to reduce runtime errors)
  * no memeory management required
  * first class function/classes/enums and everything

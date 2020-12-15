@@ -520,6 +520,21 @@ void var::set_member(const String& p_name, var& p_value) {
 	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
 }
 
+String var::to_string() const {
+	switch (type) {
+		case _NULL: return "null";
+		case BOOL: return (_data._bool) ? "true" : "false";
+		case INT: return String(_data._int);
+		case FLOAT: return String(_data._float);
+		case STRING: return _data._string;
+		case ARRAY: return _data._arr.to_string();
+		case MAP: return _data._map.to_string();
+		case OBJECT: return _data._obj->to_string();
+	}
+	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);
+	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
+}
+
 /* casting */
 var::operator bool() const {
 	switch (type) {
@@ -562,21 +577,6 @@ var::operator String() const {
 	return _data._string;
 }
 
-String var::to_string() const {
-	switch (type) {
-		case _NULL: return "null";
-		case BOOL: return (_data._bool) ? "true" : "false";
-		case INT: return String(_data._int);
-		case FLOAT: return String(_data._float);
-		case STRING: return _data._string;
-		case ARRAY: return _data._arr.to_string();
-		case MAP: return _data._map.to_string();
-		case OBJECT: return _data._obj->to_string();
-	}
-	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);
-	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
-}
-
 var::operator Array() const {
 	if (type == ARRAY) {
 		return _data._arr;
@@ -596,6 +596,79 @@ var::operator ptr<Object>() const {
 		return _data._obj;
 	}
 	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Object\".", get_type_name().c_str()));
+}
+
+
+var::operator int()    { return (int)operator int64_t(); }
+var::operator size_t() { return (size_t)operator int64_t(); }
+var::operator float()  { return (float)operator double(); }
+
+var::operator int()    const { return (int)operator int64_t(); }
+var::operator size_t() const { return (size_t)operator int64_t(); }
+var::operator float()  const { return (float)operator double(); }
+
+// casting to pointer
+var::operator bool* () {
+	if (type == BOOL) return &_data._bool;
+	return nullptr;
+}
+
+var::operator int64_t* () {
+	if (type == INT) return &_data._int;
+	return nullptr;
+}
+
+var::operator double* () {
+	if (type == FLOAT) return &_data._float;
+	return nullptr;
+}
+
+var::operator String* () {
+	if (type == STRING) return &_data._string;
+	return nullptr;
+}
+
+var::operator Array* () {
+	if (type == ARRAY) return &_data._arr;
+	return nullptr;
+}
+
+var::operator Map* () {
+	if (type == MAP) return &_data._map;
+	return nullptr;
+}
+
+
+// casting to reference
+
+var::operator bool&() {
+	if (type == BOOL) return _data._bool;
+	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"bool&\".", get_type_name().c_str()));
+}
+
+var::operator int64_t&() {
+	if (type == INT) return _data._int;
+	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"int64_t&\".", get_type_name().c_str()));
+}
+
+var::operator double&() {
+	if (type == FLOAT) return _data._float;
+	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"double&\".", get_type_name().c_str()));
+}
+
+var::operator String&() {
+	if (type == STRING) return _data._string;
+	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"String&\".", get_type_name().c_str()));
+}
+
+var::operator Array&() {
+	if (type == ARRAY) return _data._arr;
+	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Array&\".", get_type_name().c_str()));
+}
+
+var::operator Map&() {
+	if (type == MAP) return _data._map;
+	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Map&\".", get_type_name().c_str()));
 }
 
 /* operator overloading */
