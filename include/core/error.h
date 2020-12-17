@@ -51,26 +51,26 @@ if (m_ptr == nullptr){                                                          
 	} while (false)
 
 #include "logger.h"
-#include "var/var.h"
+#include "var/internal.h"
 
 namespace carbon {
 
 struct DBGSourceInfo {
-	String func;
-	String file;
+	std::string func;
+	std::string file;
 	uint32_t line = 0;
 
-	String line_before;
-	String line_str;
-	String line_after;
+	std::string line_before;
+	std::string line_str;
+	std::string line_after;
 
-	Vect2i pos;
+	std::pair<int, int> pos;
 	uint32_t width = 0;
 
 	DBGSourceInfo();
-	DBGSourceInfo(const String& p_file, uint32_t p_line, const String& p_func);
-	DBGSourceInfo(const String& p_file, const String& p_line_str, Vect2i p_pos, uint32_t p_width, const String& p_func = "");
-	String get_pos_str() const;
+	DBGSourceInfo(const std::string& p_file, uint32_t p_line, const std::string& p_func);
+	DBGSourceInfo(const std::string& p_file, const std::string& p_line_str, std::pair<int, int> p_pos, uint32_t p_width, const std::string& p_func = "");
+	std::string get_pos_str() const;
 };
 
 class Throwable : public std::exception {
@@ -116,8 +116,8 @@ public:
 		_ERROR_MAX_,
 	};
 
-	Throwable(Type p_type, const String& p_what, const DBGSourceInfo& p_source_info = DBGSourceInfo());
-	static String get_err_name(Throwable::Type p_type);
+	Throwable(Type p_type, const std::string& p_what, const DBGSourceInfo& p_source_info = DBGSourceInfo());
+	static std::string get_err_name(Throwable::Type p_type);
 
 	const char* what() const noexcept override { return _what.c_str(); }
 	virtual Kind get_kind() const = 0;
@@ -133,7 +133,7 @@ public:
 
 protected:
 	Type _type;
-	String _what;
+	std::string _what;
 	DBGSourceInfo source_info;
 
 	mutable ptr<Throwable> _nested;
@@ -144,14 +144,14 @@ protected:
 
 class Error : public Throwable {
 public:
-	Error(Type p_type, const String& p_what, const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
+	Error(Type p_type, const std::string& p_what, const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
 	virtual Kind get_kind() const { return ERROR; }
 	void console_log() const override;
 };
 
 class CompileTimeError : public Throwable {
 public:
-	CompileTimeError(Type p_type, const String& p_what,
+	CompileTimeError(Type p_type, const std::string& p_what,
 		const DBGSourceInfo& p_cb_info = DBGSourceInfo(), const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
 	virtual Kind get_kind() const { return COMPILE_TIME; }
 	void console_log() const override;
@@ -162,7 +162,7 @@ private:
 
 class Warning : public Throwable {
 public:
-	Warning(Type p_type, const String& p_what,
+	Warning(Type p_type, const std::string& p_what,
 		const DBGSourceInfo& p_cb_info = DBGSourceInfo(), const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
 	virtual Kind get_kind() const { return WARNING; }
 	void console_log() const override;
@@ -173,7 +173,7 @@ private:
 
 class TraceBack : public Throwable {
 public:
-	TraceBack(Type p_type, const String& p_what,
+	TraceBack(Type p_type, const std::string& p_what,
 		const DBGSourceInfo& p_cb_info = DBGSourceInfo(), const DBGSourceInfo& p_dbg_info = DBGSourceInfo());
 	TraceBack(const ptr<Throwable> p_nested,
 		const DBGSourceInfo& p_cb_info = DBGSourceInfo(), const DBGSourceInfo& p_dbg_info = DBGSourceInfo());

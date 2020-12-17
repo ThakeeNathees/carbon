@@ -224,7 +224,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 
 						// Aclass.ENUM_VALUE
 						case Parser::IdentifierNode::REF_ENUM_VALUE: {
-							uint64_t value = 0;
+							int64_t value = 0;
 							if (_id.ref_base == Parser::IdentifierNode::BASE_LOCAL) value = _id._enum_value->value;
 							else value = _id._enum_value_info->get_value();
 							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(value);

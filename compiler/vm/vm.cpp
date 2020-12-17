@@ -655,14 +655,14 @@ var* RuntimeContext::get_var_at(const Address& p_addr) {
 			return vm->_get_builtin_type_ref(index);
 		} break;
 		case Address::MEMBER_VAR: {
-			stdvec<var>& members = self.cast_to<Instance>()->members;
+			stdvec<var>& members = self.operator ptr<Instance>()->members;
 			THROW_INVALID_INDEX(members.size(), index);
 			return &members[index];
 		} break;
 		case Address::STATIC_MEMBER: {
 			const String& name = get_name_at(index);
 			var* member = nullptr;
-			if (self.get_type() != var::_NULL) member = self.cast_to<Instance>()->blueprint->_get_member_var_ptr(name);
+			if (self.get_type() != var::_NULL) member = self.operator ptr<Instance>()->blueprint->_get_member_var_ptr(name);
 			if (!member && bytecode_class) member = bytecode_class->_get_member_var_ptr(name);
 			if (!member) member = bytecode_file->_get_member_var_ptr(name);
 			return member;

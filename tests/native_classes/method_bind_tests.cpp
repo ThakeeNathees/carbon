@@ -1,5 +1,7 @@
 #include "tests/carbon_tests.h"
 
+// TODO: bind all possible combinations here
+
 class _TestClass_A : public Object {
 	REGISTER_CLASS(_TestClass_A, Object) {
 		BIND_STATIC_FUNC("A_static_func", &_TestClass_A::A_static_func);

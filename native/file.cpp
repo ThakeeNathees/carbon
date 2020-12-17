@@ -162,10 +162,9 @@ File::~File() {
 	close();
 }
 
-void File::_File(ptr<Object> p_self, const String& p_path, int p_mode) {
-	File* file = ptrcast<File>(p_self).get();
-	file->path = p_path;
-	if (file->path.size() != 0) file->open(file->path, p_mode);
+void File::_File(ptr<File> p_self, const String& p_path, int p_mode) {
+	p_self->path = p_path;
+	if (p_self->path.size() != 0) p_self->open(p_self->path, p_mode);
 }
 
 }

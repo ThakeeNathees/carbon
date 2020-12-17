@@ -29,56 +29,84 @@ LICENSE = '''\
 
 HEADER_GUARD = 'NATIVE_BIND_GEN_H'
 
+INCLUDES = ''
+
 DEFINE_DECLARE_VAR_TYPE = '''\
+
 template<typename T> struct is_shared_ptr : std::false_type {};
 template<typename T> struct is_shared_ptr<ptr<T>> : std::true_type {};
 
 #define DECLARE_VAR_TYPE(m_var_type, m_T) \
 	VarTypeInfo m_var_type = _remove_and_get_type_info<m_T>();
 
-template <typename m_T>
-VarTypeInfo _get_tye_info() {
-	if constexpr (std::is_same<m_T, void>::value) {
-		return var::_NULL;
-	} else if constexpr (std::is_same<m_T, bool>::value) {
-		return var::BOOL;
-	} else if constexpr (std::numeric_limits<m_T>::is_integer) {
-		return var::INT;
-	} else if constexpr (std::is_floating_point<m_T>::value) {
-		return var::FLOAT;
-	} else if constexpr (std::is_same<m_T, String>::value) {
-		return var::STRING;
-	} else if constexpr (std::is_same<m_T, Array>::value) {
-		return var::ARRAY;
-	} else if constexpr (std::is_same<m_T, Map>::value) {
-		return var::MAP;
-	} else if constexpr (std::is_same<m_T, var>::value) {
-		return var::VAR;
-	} else if constexpr (is_shared_ptr<m_T>::value) {
-		return { var::OBJECT, m_T::element_type::get_type_name_s() };
-	}
-	/* done return here : let compiler warn if missed anything */
+
+template <typename T, typename std::enable_if<std::is_same<T, void>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { return var::_NULL; }
+
+template <typename T, typename std::enable_if<std::is_integral<T>::value
+			&& !std::is_const<T>::value && !std::is_reference<T>::value, bool>::type = true>
+VarTypeInfo _get_type_info() {
+	if (std::is_same<T, bool>::value) return var::BOOL;
+	return var::INT;
 }
 
+template <typename T, typename std::enable_if<std::is_floating_point<T>::value
+			&& !std::is_const<T>::value && !std::is_reference<T>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { return var::FLOAT; }
+
+template <typename T, typename std::enable_if<std::is_same<T, String>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { return var::STRING; }
+
+template <typename T, typename std::enable_if<std::is_same<T, const char*>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { return var::STRING; }
+
+template <typename T, typename std::enable_if<std::is_same<T, Array>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { return var::ARRAY; }
+
+template <typename T, typename std::enable_if<std::is_same<T, Map>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { return var::MAP; }
+
+template <typename T, typename std::enable_if<std::is_same<T, var>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { return var::VAR; }
+
+template <typename T, typename std::enable_if<is_shared_ptr<T>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { return { var::OBJECT, T::element_type::get_type_name_s() }; }
+
+// -- for no overloaded method found compiler errors ------------
+template <typename T, typename std::enable_if<std::is_reference<T>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { throw "INTERNAL BUG"; }
+template <typename T, typename std::enable_if<std::is_const<T>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { throw "INTERNAL BUG"; }
+template <typename T, typename std::enable_if<std::is_pointer<T>::value
+	&& !std::is_same<T, const char*>::value, bool>::type = true>
+VarTypeInfo _get_type_info() { throw "INTERNAL BUG"; }
+// --------------------------------------------------------------
 
 template <typename T>
 VarTypeInfo _remove_and_get_type_info() {
 
-	if constexpr (std::is_same<T, bool&>()) {
-		// bool& not working for some reason in gcc 9.2.1
-		return var::BOOL;
-	} else if constexpr (std::is_same<T, const char*>()) {
-		return var::STRING;
-	} else if constexpr (std::is_reference<T>::value) {
+	if (std::is_reference<T>::value) {
 		return _remove_and_get_type_info<typename std::remove_reference<T>::type>();
-	}
-	else if constexpr (std::is_const<T>()){
+
+	} else if (std::is_const<T>::value){
 		return _remove_and_get_type_info<typename std::remove_const<T>::type>();
+
+	} else if (std::is_pointer<T>::value){
+		if (std::is_same<T, const char*>::value) {
+			return _get_type_info<T>();
+		} else {
+			return _remove_and_get_type_info<typename std::remove_pointer<T>::type>();
+		}
+
 	} else {
-		return _get_tye_info<T>();
+		return _get_type_info<T>();
 	}
 	/* done return here : let compiler warn if missed anything */
 }
+
+
+//template <typename T, typename std::enable_if<std::is_same<T, Array>::value, bool>::type = true>
+//VarTypeInfo _get_type_info() { return var::ARRAY; }
 
 '''
 
@@ -108,6 +136,7 @@ def generage_method_calls(path, num):
 	f.write(LICENSE)
 	f.write('\n// !!! AUTO GENERATED DO NOT EDIT !!!\n\n')
 	f.write(f'#ifndef {HEADER_GUARD}\n#define {HEADER_GUARD}\n\n')
+	f.write(INCLUDES)
 	f.write('namespace carbon {\n\n')
 	f.write(DEFINE_DECLARE_VAR_TYPE)
 	f.write('''\
@@ -320,9 +349,23 @@ public:
 
 	## class class _MethodBind_M{i}
 	for i in range(num):
+		internal_call_ret = f'''\
+
+template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
+inline var _internal_call_method_{i}(ptr<Object> self, const M& method, stdvec<var*>& args) {{
+	return (ptrcast<T>(self).get()->*method)({get_args_call_symbol(i)});
+}}
+template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
+inline var _internal_call_method_{i}(ptr<Object> self, const M& method, stdvec<var*>& args) {{
+	(ptrcast<T>(self).get()->*method)({get_args_call_symbol(i)}); return var();
+}}
+
+'''
+
 		method_bind_body = f'''\n\
 class _MethodBind_M{i}$_c$ : public MethodBind {{
-	M{i}$_c$<T, R{get_args_symbol(i, True)}> method;
+	typedef M{i}$_c$<T, R{get_args_symbol(i, True)}> _Tmethod;
+	_Tmethod method;
 public:
 	_MethodBind_M{i}$_c$(const char* p_name, const char* p_class_name, int p_argc, M{i}$_c$<T, R{get_args_symbol(i, True)}> p_method, ptr<MethodInfo> p_mi) {{
 		name = p_name;
@@ -350,25 +393,33 @@ public:
 		}}
 		for (var& v : default_args_copy) args.push_back(&v);
 
-		if constexpr (std::is_same<R, void>::value) {{
-			(ptrcast<T>(self).get()->*method)({get_args_call_symbol(i)}); return var();
-		}} else {{
-			return (ptrcast<T>(self).get()->*method)({get_args_call_symbol(i)});
-		}}
+		return _internal_call_method_{i}<T, _Tmethod, R>(self, method, args);
 	}}
 }};
-
 '''
+		f.write(internal_call_ret)
 		write_template_symbol(f, i, True)
 		f.write(method_bind_body.replace("$_c$",  ""))
 		write_template_symbol(f, i, True)
 		f.write(method_bind_body.replace("$_c$",  "_c"))
 	## class class _StaticFuncBind_F{i}
 	for i in range(num):
+		f.write(f'''\
+template <class F, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
+inline var _internal_call_static_func_{i}(const F& static_func, stdvec<var*>& args) {{
+	return static_func({get_args_call_symbol(i)});
+}}
+template <class F, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
+inline var _internal_call_static_func_{i}(const F& static_func, stdvec<var*>& args) {{
+	static_func({get_args_call_symbol(i)}); return var();
+}}
+
+''')
 		write_template_symbol(f, i, False)
 		f.write(f'''\n\
 class _StaticFuncBind_F{i} : public StaticFuncBind {{
-	F{i}<R{get_args_symbol(i, True)}> static_func;
+	typedef F{i}<R{get_args_symbol(i, True)}> _Tfunc;
+	_Tfunc static_func;
 public:
 	_StaticFuncBind_F{i}(const char* p_name, const char* p_class_name, int p_argc, F{i}<R{get_args_symbol(i, True)}> p_func, ptr<MethodInfo> p_mi) {{
 		name = p_name;
@@ -396,12 +447,9 @@ public:
 		}}
 		for (var& v : default_args_copy) args.push_back(&v);
 
-		if constexpr (std::is_same<R, void>::value) {{
-			static_func({get_args_call_symbol(i)}); return var();
-		}} else {{
-			return static_func({get_args_call_symbol(i)});
-		}}
+		return _internal_call_static_func_{i}<_Tfunc, R>(static_func, args);
 	}}
+
 }};
 
 ''')
@@ -445,9 +493,21 @@ using MVA = R(T::*)(stdvec<var*>&);
 template<typename R>
 using FVA = R(*)(stdvec<var*>&);
 
+
+template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
+inline var _internal_call_static_func_va(ptr<Object> self, const M& method, stdvec<var*>& args) {
+	return (ptrcast<T>(self).get()->*method)(args);
+}
+
+template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
+inline var _internal_call_static_func_va(ptr<Object> self, const M& method, stdvec<var*>& args) {{
+	(ptrcast<T>(self).get()->*method)(args); return var();
+}}
+
 template<typename T, typename R>
 class _MethodBind_MVA : public MethodBind {
-	MVA<T, R> method;
+	typedef MVA<T, R> _Tmethod_va;
+	_Tmethod_va method;
 public:
 	_MethodBind_MVA(const char* p_name, const char* p_class_name, MVA<T, R> p_method, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -458,18 +518,29 @@ public:
 		mi->_set_bind((void*)this);
 	}
 	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
-		if constexpr (std::is_same<R, void>::value) {
-			(ptrcast<T>(self).get()->*method)(args); return var();
-		} else {
-			return (ptrcast<T>(self).get()->*method)(args);
-		}
+		return _internal_call_static_func_va<T, _Tmethod_va, R>(self, method, args);
 	}
+
 	const ptr<MethodInfo> get_method_info() const { return mi; }
 };
 
+// -----------------------------------------------------------
+
+template <class F, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
+inline var _internal_call_static_func_va(const F& static_func, stdvec<var*>& args) {
+	return static_func(args);
+}
+
+template <class F, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
+inline var _internal_call_static_func_va(const F& static_func, stdvec<var*>& args) {{
+	static_func(args); return var();
+}}
+
+
 template<typename R>
 class _StaticFuncBind_FVA : public StaticFuncBind {
-	FVA<R> static_func;
+	typedef FVA<R> _Tfunc_va;
+	_Tfunc_va static_func;
 public:
 	_StaticFuncBind_FVA(const char* p_name, const char* p_class_name, FVA<R> p_func, ptr<MethodInfo> p_mi) {
 		name = p_name;
@@ -480,12 +551,9 @@ public:
 		mi->_set_bind((void*)this);
 	}
 	virtual var call(stdvec<var*>& args) const override {
-		if constexpr (std::is_same<R, void>::value) {
-			static_func(args); return var();
-		} else {
-			return static_func(args);
-		}
+		return _internal_call_static_func_va<_Tfunc_va, R>(static_func, args);
 	}
+
 	const ptr<MethodInfo> get_method_info() const { return mi; }
 };
 

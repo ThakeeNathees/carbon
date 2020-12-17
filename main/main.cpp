@@ -38,8 +38,8 @@ int _main(int argc, char** argv) {
 
 			// TODO: properly parse command line args
 			if (strcmp(argv[1], "--native-api") == 0) {
-				String path = Path::get_cwd();
-				if (argc >= 3) path = Path::absolute(argv[2]);
+				String path = OS::getcwd();
+				if (argc >= 3) path = Path(argv[2]).absolute();
 				NativeLib::generate_api(path);
 				printf("%s was generated.\n", path.c_str());
 			} else {

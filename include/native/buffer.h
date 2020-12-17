@@ -41,7 +41,7 @@ class Buffer : public Object {
 public:
 
 	Buffer(size_t p_size = 0);
-	static void _Buffer(ptr<Object> self, int64_t p_size = 0);
+	static void _Buffer(ptr<Buffer> self, int64_t p_size = 0);
 
 	// Methods.
 	void alloc(size_t p_size);
@@ -59,7 +59,7 @@ public:
 
 private:
 	// Members.
-	std::shared_ptr<byte_t[]> _buffer;
+	std::shared_ptr<byte_t> _buffer;
 	size_t _size = 0;
 };
 

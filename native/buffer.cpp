@@ -29,10 +29,10 @@
 namespace carbon {
 
 Buffer::Buffer(size_t p_size) { alloc(p_size); }
-void Buffer::_Buffer(ptr<Object> self, int64_t p_size) { ptrcast<Buffer>(self)->alloc(p_size); }
+void Buffer::_Buffer(ptr<Buffer> self, int64_t p_size) { self->alloc(p_size); }
 
 void Buffer::alloc(size_t p_size) {
-	_buffer = std::shared_ptr<byte_t[]>(new byte_t[p_size]);
+	_buffer = std::shared_ptr<byte_t>(new byte_t[p_size], [](byte_t* bytes) { delete[] bytes; });
 	_size = p_size;
 }
 
@@ -41,7 +41,7 @@ byte_t* Buffer::front() {
 }
 
 void* Buffer::get_data() {
-	return (uint8_t*)_buffer.get();
+	return (void*)front();
 }
 
 size_t  Buffer::size() const { return _size; }
@@ -54,8 +54,6 @@ const byte_t& Buffer::operator[](size_t p_index) const {
 	THROW_INVALID_INDEX(_size, p_index);
 	return _buffer.get()[p_index];
 }
-
-
 
 var Buffer::__get_mapped(const var& p_key) /*const*/ {
 	if (p_key.get_type() != var::INT) THROW_ERROR(Error::TYPE_ERROR, "expected an integer as key.");

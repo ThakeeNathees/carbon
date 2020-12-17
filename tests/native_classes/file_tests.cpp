@@ -22,7 +22,7 @@ TEST_CASE("[native_classes]:file_tests+") {
 	}
 	file1.write(buff);
 	buff = nullptr;
-	buff = file1.read().cast_to<Buffer>();
+	buff = file1.read().operator ptr<Buffer>();
 	for (int i = 0; i < 5; i++) {
 		CHECK((*buff)[i] == i);
 	}

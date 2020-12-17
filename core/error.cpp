@@ -25,6 +25,7 @@
 
 #include "error.h"
 #include "logger.h"
+#include "var.h"
 
 namespace carbon {
 
@@ -55,15 +56,15 @@ static const char* _error_names[Error::_ERROR_MAX_] = {
 };
 MISSED_ENUM_CHECK(Error::Type::_ERROR_MAX_, 22);
 
-String Throwable::get_err_name(Throwable::Type p_type) {
+std::string Throwable::get_err_name(Throwable::Type p_type) {
 	THROW_INVALID_INDEX(_ERROR_MAX_, (int)p_type);
 	return _error_names[p_type];
 }
 
 DBGSourceInfo::DBGSourceInfo() {}
-DBGSourceInfo::DBGSourceInfo(const String& p_file, uint32_t p_line, const String& p_func) : func(p_func), file(p_file), line(p_line) {}
-DBGSourceInfo::DBGSourceInfo(const String& p_file, const String& p_source, Vect2i p_pos, uint32_t p_width, const String& p_func)
-	: func(p_func), file(p_file), pos(p_pos), line((uint32_t)p_pos.x), width(p_width) {
+DBGSourceInfo::DBGSourceInfo(const std::string& p_file, uint32_t p_line, const std::string& p_func) : func(p_func), file(p_file), line(p_line) {}
+DBGSourceInfo::DBGSourceInfo(const std::string& p_file, const std::string& p_source, std::pair<int, int> p_pos, uint32_t p_width, const std::string& p_func)
+	: func(p_func), file(p_file), pos(p_pos), line((uint32_t)p_pos.first), width(p_width) {
 
 	const char* source = p_source.c_str();
 	uint64_t cur_line = 1;
@@ -84,22 +85,22 @@ DBGSourceInfo::DBGSourceInfo(const String& p_file, const String& p_source, Vect2
 	}
 }
 
-Throwable::Throwable(Type p_type, const String& p_what, const DBGSourceInfo& p_source_info)
+Throwable::Throwable(Type p_type, const std::string& p_what, const DBGSourceInfo& p_source_info)
 	: _type(p_type), _what(p_what), source_info(p_source_info) {
 }
 void Throwable::set_source_info(const DBGSourceInfo& p_source_info) { source_info = p_source_info; }
 
-Error::Error(Type p_type, const String& p_what, const DBGSourceInfo& p_dbg_info)
+Error::Error(Type p_type, const std::string& p_what, const DBGSourceInfo& p_dbg_info)
 	: Throwable(p_type, p_what, p_dbg_info) {}
 
-CompileTimeError::CompileTimeError(Type p_type, const String& p_what, const DBGSourceInfo& p_cb_dbg, const DBGSourceInfo& p_dbg_info)
+CompileTimeError::CompileTimeError(Type p_type, const std::string& p_what, const DBGSourceInfo& p_cb_dbg, const DBGSourceInfo& p_dbg_info)
 	: _cb_dbg_info(p_cb_dbg), Throwable(p_type, p_what, p_dbg_info) {}
 
-Warning::Warning(Type p_type, const String& p_what, const DBGSourceInfo& p_cb_dbg, const DBGSourceInfo& p_dbg_info)
+Warning::Warning(Type p_type, const std::string& p_what, const DBGSourceInfo& p_cb_dbg, const DBGSourceInfo& p_dbg_info)
 	: _cb_dbg_info(p_cb_dbg), Throwable(p_type, p_what, p_dbg_info) {}
 
 
-TraceBack::TraceBack(Type p_type, const String& p_what,
+TraceBack::TraceBack(Type p_type, const std::string& p_what,
 	const DBGSourceInfo& p_cb_info, const DBGSourceInfo& p_dbg_info)
 	: _cb_dbg_info(p_cb_info), Throwable(p_type, p_what, p_dbg_info) {}
 
@@ -121,7 +122,7 @@ void Error::console_log() const {
 void CompileTimeError::console_log() const {
 	Logger::set_level(Logger::JUST_LOG);
 	Logger::logf_error("Error(%s) : %s\n",      Error::get_err_name(get_type()).c_str(), what());
-	Logger::log( String::format("    source : %s (%s:%i)\n", source_info.func.c_str(), source_info.file.c_str(), source_info.line).c_str(),
+	Logger::log(String::format("    source : %s (%s:%i)\n", source_info.func.c_str(), source_info.file.c_str(), source_info.line).c_str(),
 		Console::Color::L_SKYBLUE);
 	Logger::log(String::format("        at : (%s:%i)\n", _cb_dbg_info.file.c_str(), _cb_dbg_info.line).c_str(), Console::Color::L_WHITE);
 
@@ -159,7 +160,7 @@ void TraceBack::console_log() const {
 
 //-----------------------------------------------
 
-String DBGSourceInfo::get_pos_str() const {
+std::string DBGSourceInfo::get_pos_str() const {
 	// var x = blabla;
 	//         ^^^^^^
 
@@ -168,7 +169,7 @@ String DBGSourceInfo::get_pos_str() const {
 	bool done = false;
 	for (size_t i = 0; i < line_str.size(); i++) {
 		cur_col++;
-		if (cur_col == pos.y) {
+		if (cur_col == pos.second) {
 			for (uint32_t i = 0; i < width; i++) {
 				ss_pos << '^';
 			}

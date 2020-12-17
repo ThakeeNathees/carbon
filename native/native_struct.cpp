@@ -41,7 +41,7 @@ void* _NativeStruct::get_data() {
 
 void _NativeStruct::_set_lib(var p_lib) {
 	if (_lib != nullptr) THROW_ERROR(Error::ASSERTION, "lib already initialized");
-	_lib = p_lib.cast_to<NativeLib>();
+	_lib = p_lib;
 }
 
 void _NativeStruct::_set_new_delete(const String& p_ctor, const String& p_destruct) {

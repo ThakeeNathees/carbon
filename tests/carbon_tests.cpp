@@ -30,8 +30,8 @@
 int _test_main(int argc, char** argv) {
 
 	// to run the tests directly from the bin/
-	if (!Path::exists("tests/test_files") && Path::exists("../tests/test_files")) {
-		Path::set_cwd("..");
+	if (!Path("tests/test_files").exists() && Path("../tests/test_files").exists()) {
+		OS::chdir("..");
 	}
 
 	doctest::Context context;

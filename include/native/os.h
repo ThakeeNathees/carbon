@@ -34,11 +34,32 @@ class OS : public Object {
 	REGISTER_CLASS(OS, Object) {
 		BIND_STATIC_FUNC("unix_time", &OS::unix_time);
 		BIND_STATIC_FUNC("system", &OS::syscall, PARAMS("command"));
+
+
+		// TODO: implement cross-platform manner
+		BIND_STATIC_FUNC("getcwd", &OS::getcwd);
+		BIND_STATIC_FUNC("chdir", &OS::chdir, PARAMS("path"));
+		//BIND_STATIC_FUNC("mkdir", &OS::mkdir, PARAMS("path", "recursive"), DEFVALUES(false));
+		//BIND_STATIC_FUNC("copy_file", &OS::copy_file, PARAMS("from", "to"));
+		//BIND_STATIC_FUNC("copy_tree", &OS::copy_tree, PARAMS("from", "to"));
+		//BIND_STATIC_FUNC("remove", &OS::remove, PARAMS("path", "recursive"), DEFVALUES(false));
+		//BIND_STATIC_FUNC("rename", &OS::rename, PARAMS("old", "new")); // move and rename are the same.
+		//BIND_STATIC_FUNC("listdir", &OS::listdir, PARAMS("path", "recursive"), DEFVALUES(false));
 	}
 
 public:
-	static uint64_t unix_time();
+	static int64_t unix_time();
 	static int syscall(const String& p_cmd);
+
+	// dir/path related
+	static String getcwd();
+	static void chdir(const String& p_path);
+	//static void mkdir(const String& p_path, bool p_recursive = false);
+	//static void copy_file(const String& p_from, const String& p_to);
+	//static void copy_tree(const String& p_from, const String& p_to);
+	//static void remove(const String& p_path, bool p_recursive = false);
+	//static void rename(const String& p_path, const String& p_new);
+	//static Array listdir(const String& p_path, bool p_recursive = false);
 
 };
 
