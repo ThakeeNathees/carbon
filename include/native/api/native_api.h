@@ -70,7 +70,7 @@ struct nativeapi {
 	// var api
 	void (*new_var)(uint8_t* self);
 	void (*new_var_from_bool)(uint8_t* self, bool value);
-	void (*new_var_from_int)(uint8_t* self, long long value);
+	void (*new_var_from_int)(uint8_t* self, int64_t value);
 	void (*new_var_from_float)(uint8_t* self, double value);
 	void (*new_var_from_cstr)(uint8_t* self, const char* value);
 	void (*new_var_from_str)(uint8_t* self, uint8_t* str);

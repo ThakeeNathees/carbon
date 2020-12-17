@@ -132,15 +132,15 @@ struct Opcodes {
 	std::stack<uint32_t> jump_out_or;
 	std::stack<stdvec<uint32_t>> jump_out_break; // multiple break statement jump out to one addr.
 
-	inline uint32_t last(); // last instruction
-	inline uint32_t next(); // next instruction
+	uint32_t last(); // last instruction
+	uint32_t next(); // next instruction
 
 	static String get_opcode_name(Opcode p_opcode);
 	void insert_dbg(uint32_t p_line);
 
-	inline void insert(uint32_t p_opcode);
-	inline void insert(const Address& p_addr);
-	inline void insert(Opcode p_opcode);
+	void insert(uint32_t p_opcode);
+	void insert(const Address& p_addr);
+	void insert(Opcode p_opcode);
 
 	void write_assign(const Address& dst, const Address& src);
 	void write_if(const Address& p_cond);

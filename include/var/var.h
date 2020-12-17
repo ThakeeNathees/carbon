@@ -125,7 +125,7 @@ public:
 	static String get_op_name_s(Operator op);
 
 	// methods.
-	inline Type get_type() const;
+	Type get_type() const;
 	String get_type_name() const;
 	void* get_data();
 	size_t hash() const;

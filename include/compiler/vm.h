@@ -34,6 +34,8 @@
 
 namespace carbon {
 
+class VM;
+
 class VMStack {
 private: // members
 	ptr<stdvec<var>> _stack;

@@ -111,7 +111,8 @@ void* Instance::get_data() {
 String Instance::to_string() {
 	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::to_string);
 	if (fn == nullptr) return Super::to_string();
-	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
+	stdvec<var*> _args;
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), _args);
 }
 
 
@@ -124,17 +125,20 @@ var Instance::__call(stdvec<var*>& p_args) {
 var Instance::__iter_begin() {
 	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__iter_begin);
 	if (fn == nullptr) return Super::__iter_begin();
-	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
+	stdvec<var*> _args;
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), _args);
 }
 bool Instance::__iter_has_next() {
 	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__iter_has_next);
 	if (fn == nullptr) return Super::__iter_has_next();
-	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
+	stdvec<var*> _args;
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), _args);
 }
 var Instance::__iter_next() {
 	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__iter_next);
 	if (fn == nullptr) return Super::__iter_next();
-	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
+	stdvec<var*> _args;
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), _args);
 }
 
 var Instance::__get_mapped(const var& p_key) {
@@ -152,7 +156,8 @@ void Instance::__set_mapped(const var& p_key, const var& p_val) {
 int64_t Instance::__hash() {
 	ptr<CarbonFunction> fn = blueprint->get_function(GlobalStrings::__hash);
 	if (fn == nullptr) return Super::__hash();
-	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), stdvec<var*>());
+	stdvec<var*> _args;
+	return VM::singleton()->call_function(fn.get(), blueprint.get(), shared_from_this(), _args);
 }
 
 #define CALL_OPERATOR(m_ret, m_operator)                                                            \

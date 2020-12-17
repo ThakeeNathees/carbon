@@ -58,9 +58,11 @@ int _test_main(int argc, char** argv) {
 	return res;
 }
 
+
 int _main(int argc, char** argv) {
 
 	carbon_initialize();
+
 	int res = _test_main(argc, argv);
 	
 	Logger::log("\n===============================================================================\n", Logger::VERBOSE, Console::Color::L_YELLOW);

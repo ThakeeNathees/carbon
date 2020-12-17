@@ -31,6 +31,7 @@
 namespace carbon {
 
 class String;
+class var;
 
 class Array {
 	friend class var;
@@ -38,15 +39,15 @@ public:
 	constexpr static  const char* get_type_name_s() { return "Array"; }
 
 	Array();
-	Array(const ptr<stdvec<var>>& p_data);
+	//Array(const ptr<stdvec<var>>& p_data);
+	//Array(const stdvec<var>& p_data);
 	Array(const Array& p_copy);
-	Array(const stdvec<var>& p_data);
 
-	//template <typename... Targs>
-	//Array(Targs... p_args) {
-	//	_data = newptr<stdvec<var>>();
-	//	_make_va_arg_array(p_args...);
-	//}
+	template <typename... Targs>
+	Array(Targs... p_args) {
+		_data = newptr<stdvec<var>>();
+		_make_va_arg_array(p_args...);
+	}
 
 	Array copy(bool p_deep = true) const;
 	var call_method(const String& p_method, const stdvec<var*>& p_args);

@@ -292,4 +292,4 @@ public:
 
 }
 
-#endif _TYPE_INFO_H
+#endif // _TYPE_INFO_H
