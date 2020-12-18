@@ -26,33 +26,45 @@
 
 #include "path.h"
 
-#include "core/platform/windows/platform_windows.h"
-
-
 namespace carbon {
 
-String Path::absolute() {
-	char buffer[VSNPRINTF_BUFF_SIZE];
-	if (GetFullPathNameA(_path.c_str(), VSNPRINTF_BUFF_SIZE, buffer, NULL) == 0) {
-		THROW_ERROR(Error::IO_ERROR, windows::get_last_error_as_string());
-	}
-	return buffer;
+// constructors
+Path::Path(const String& p_path) :_path(p_path) {}
+void Path::_Path(ptr<Path> p_self, const String& p_path) {
+	p_self->_path = p_path;
 }
 
-bool Path::exists() {
-	DWORD ftyp = GetFileAttributesA(_path.c_str());
-	if (ftyp == INVALID_FILE_ATTRIBUTES) return false;  //something is wrong with your path!
-
-	if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;   // this is a directory!
-	else return true;                                   // this is not a directory!
+String Path::parent() {
+	const std::string& str = _path;
+	size_t found = str.find_last_of("/\\");
+	if (found == std::string::npos) return "";
+	return str.substr(0, found);
 }
 
-bool Path::isdir() {
-	DWORD ftyp = GetFileAttributesA(_path.c_str());
-	if (ftyp == INVALID_FILE_ATTRIBUTES) return false;  //something is wrong with your path!
+String Path::filename() {
+	const std::string& str = _path;
+	size_t found = str.find_last_of("/\\");
+	if (found == std::string::npos) return "";
+	return str.substr(found + 1);
+}
 
-	if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;   // this is a directory!
-	else return false;									// this is not a directory!
+String Path::extension() {
+	const std::string& str = _path;
+	size_t found = str.rfind('.');
+	if (found == std::string::npos) return "";
+	return str.substr(found);
+}
+
+String Path::join(const String& p_path2) {
+	THROW_BUG("Not imlpemented");
+}
+
+String Path::to_string() {
+	return _path;
+}
+
+Path::operator const String& () {
+	return _path;
 }
 
 }

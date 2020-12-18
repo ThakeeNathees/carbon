@@ -26,33 +26,33 @@
 
 #include "path.h"
 
-#include "core/platform/windows/platform_windows.h"
-
+// TODO: move these headers to platform abstraction
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace carbon {
 
 String Path::absolute() {
-	char buffer[VSNPRINTF_BUFF_SIZE];
-	if (GetFullPathNameA(_path.c_str(), VSNPRINTF_BUFF_SIZE, buffer, NULL) == 0) {
-		THROW_ERROR(Error::IO_ERROR, windows::get_last_error_as_string());
-	}
-	return buffer;
+	char* path = realpath(_path.c_str(), NULL);
+    String ret;
+    if (path != NULL) {
+        ret = path;
+        free(path);
+    }
+    return ret;
 }
 
 bool Path::exists() {
-	DWORD ftyp = GetFileAttributesA(_path.c_str());
-	if (ftyp == INVALID_FILE_ATTRIBUTES) return false;  //something is wrong with your path!
-
-	if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;   // this is a directory!
-	else return true;                                   // this is not a directory!
+	struct stat _stat;
+	return stat(_path.c_str(), &_stat) == 0;
 }
 
 bool Path::isdir() {
-	DWORD ftyp = GetFileAttributesA(_path.c_str());
-	if (ftyp == INVALID_FILE_ATTRIBUTES) return false;  //something is wrong with your path!
-
-	if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;   // this is a directory!
-	else return false;									// this is not a directory!
+	struct stat _stat;
+	if (stat(_path.c_str(), &_stat) == 0 && (_stat.st_mode & S_IFMT == S_IFDIR))
+        return true;
+    return false;
 }
 
 }

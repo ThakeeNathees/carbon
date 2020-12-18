@@ -25,7 +25,7 @@ TEST_CASE("[analyzer_tests]:inheritance_test+") {
 
 }
 
-TEST_CASE("[analyzer_tests]:inheritance_test+") {
+TEST_CASE("[analyzer_tests]:inheritance_test-") {
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
 
