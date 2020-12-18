@@ -125,7 +125,7 @@ public:
 	static String get_op_name_s(Operator op);
 
 	// methods.
-	inline Type get_type() const;
+	Type get_type() const;
 	String get_type_name() const;
 	void* get_data();
 	size_t hash() const;
@@ -150,6 +150,12 @@ public:
 	operator size_t () const;
 	operator float() const;
 
+	explicit operator bool* ();
+	explicit operator int64_t* ();
+	explicit operator double* ();
+	explicit operator String* ();
+	explicit operator Array* ();
+	explicit operator Map* ();
 
 	operator bool&();
 	operator int64_t&();

@@ -607,6 +607,37 @@ var::operator int()    const { return (int)operator int64_t(); }
 var::operator size_t() const { return (size_t)operator int64_t(); }
 var::operator float()  const { return (float)operator double(); }
 
+// casting to pointer
+var::operator bool* () {
+	if (type == BOOL) return &_data._bool;
+	return nullptr;
+}
+
+var::operator int64_t* () {
+	if (type == INT) return &_data._int;
+	return nullptr;
+}
+
+var::operator double* () {
+	if (type == FLOAT) return &_data._float;
+	return nullptr;
+}
+
+var::operator String* () {
+	if (type == STRING) return &_data._string;
+	return nullptr;
+}
+
+var::operator Array* () {
+	if (type == ARRAY) return &_data._arr;
+	return nullptr;
+}
+
+var::operator Map* () {
+	if (type == MAP) return &_data._map;
+	return nullptr;
+}
+
 // casting to reference
 
 var::operator bool&() {

@@ -33,28 +33,52 @@ DEFINE_DECLARE_VAR_TYPE = '''\
 template<typename T> struct is_shared_ptr : std::false_type {};
 template<typename T> struct is_shared_ptr<ptr<T>> : std::true_type {};
 
-#define DECLARE_VAR_TYPE(m_var_type, m_T)                                                                                     \\
-	VarTypeInfo m_var_type;																						              \\
-	if constexpr (std::is_same<m_T, void>::value) {																              \\
-		m_var_type = var::_NULL;																				              \\
-	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, bool>::value) {              \\
-		m_var_type = var::BOOL;																					              \\
-	} else if constexpr (std::numeric_limits<m_T>::is_integer) {												              \\
-		m_var_type = var::INT;																					              \\
-	} else if constexpr (std::is_floating_point<m_T>::value) {													              \\
-		m_var_type = var::FLOAT;																				              \\
-	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, String>::value ||            \\
-			std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, const char*>::value) {			          \\
-		m_var_type = var::STRING;																				              \\
-	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, Array>::value) {             \\
-		m_var_type = var::ARRAY;																				              \\
-	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, Map>::value) {               \\
-		m_var_type = var::MAP;																					              \\
-	} else if constexpr (std::is_same<std::remove_const<std::remove_reference<m_T>::type>::type, var>::value) {               \\
-		m_var_type = var::VAR;																					              \\
-	} else if constexpr (is_shared_ptr<m_T>::value) {																	      \\
-		m_var_type = { var::OBJECT, m_T::element_type::get_type_name_s() };                                                   \\
+#define DECLARE_VAR_TYPE(m_var_type, m_T) \
+	VarTypeInfo m_var_type = _remove_and_get_type_info<m_T>();
+
+template <typename m_T>
+VarTypeInfo _get_tye_info() {
+	if constexpr (std::is_same<m_T, void>::value) {
+		return var::_NULL;
+	} else if constexpr (std::is_same<m_T, bool>::value) {
+		return var::BOOL;
+	} else if constexpr (std::numeric_limits<m_T>::is_integer) {
+		return var::INT;
+	} else if constexpr (std::is_floating_point<m_T>::value) {
+		return var::FLOAT;
+	} else if constexpr (std::is_same<m_T, String>::value) {
+		return var::STRING;
+	} else if constexpr (std::is_same<m_T, Array>::value) {
+		return var::ARRAY;
+	} else if constexpr (std::is_same<m_T, Map>::value) {
+		return var::MAP;
+	} else if constexpr (std::is_same<m_T, var>::value) {
+		return var::VAR;
+	} else if constexpr (is_shared_ptr<m_T>::value) {
+		return { var::OBJECT, m_T::element_type::get_type_name_s() };
 	}
+	/* done return here : let compiler warn if missed anything */
+}
+
+
+template <typename T>
+VarTypeInfo _remove_and_get_type_info() {
+
+	if constexpr (std::is_same<T, bool&>()) {
+		// bool& not working for some reason in gcc 9.2.1
+		return var::BOOL;
+	} else if constexpr (std::is_same<T, const char*>()) {
+		return var::STRING;
+	} else if constexpr (std::is_reference<T>::value) {
+		return _remove_and_get_type_info<typename std::remove_reference<T>::type>();
+	}
+	else if constexpr (std::is_const<T>()){
+		return _remove_and_get_type_info<typename std::remove_const<T>::type>();
+	} else {
+		return _get_tye_info<T>();
+	}
+	/* done return here : let compiler warn if missed anything */
+}
 
 '''
 

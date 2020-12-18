@@ -62,7 +62,7 @@ String Throwable::get_err_name(Throwable::Type p_type) {
 
 DBGSourceInfo::DBGSourceInfo() {}
 DBGSourceInfo::DBGSourceInfo(const String& p_file, uint32_t p_line, const String& p_func) : func(p_func), file(p_file), line(p_line) {}
-DBGSourceInfo::DBGSourceInfo(const String& p_file, const String& p_source, Vect2i& p_pos, uint32_t p_width, const String& p_func)
+DBGSourceInfo::DBGSourceInfo(const String& p_file, const String& p_source, Vect2i p_pos, uint32_t p_width, const String& p_func)
 	: func(p_func), file(p_file), pos(p_pos), line((uint32_t)p_pos.x), width(p_width) {
 
 	const char* source = p_source.c_str();

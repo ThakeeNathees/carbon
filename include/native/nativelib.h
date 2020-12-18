@@ -37,7 +37,7 @@ namespace carbon {
 
 class NativeLib : public Object {
 	REGISTER_CLASS(NativeLib, Object) {
-		BIND_STATIC_FUNC("NativeLib", &NativeLib::_NativeLib, PARAMS("self", "path"), DEFVALUES(nullptr, ""));
+		BIND_STATIC_FUNC("NativeLib", &NativeLib::_NativeLib, PARAMS("self", "path"), DEFVALUES(""));
 
 		BIND_STATIC_FUNC("generate_api", &NativeLib::generate_api, PARAMS("path"), DEFVALUES(""));
 		BIND_METHOD("open", &NativeLib::open, PARAMS("path"));

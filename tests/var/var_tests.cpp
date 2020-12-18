@@ -14,24 +14,23 @@ TEST_CASE("[parser_tests]:var_test") {
 	v = 1; v += 3.14;
 	CHECK(v.get_type() == var::FLOAT);
 
-	v = Array(make_stdvec<var>(1, "2", 3.14));
+	v = Array(1, "2", 3.14);
 	CHECK(v.operator Array()[-1] == 3.14);
 	CHECK(v[-2] == "2");
-	CHECK(v == var(Array(make_stdvec<var>(1, "2", 3.14))));
 
 	CHECK(call_method(v, "at", 0) == 1);
 	call_method(v, "append", 10);
 	CHECK(call_method(v, "pop") == 10);
 
-	v = Array(make_stdvec<var>(1));
-	CHECK((v * 3).operator Array() == Array(make_stdvec<var>(1, 1, 1)));
+	v = Array(1);
+	CHECK((v * 3).operator Array() == Array(1, 1, 1));
 
 	Map m = Map();
 	m["key"] = "value";
 	CHECK(m["key"].operator String() == "value");
 
 	// iterator tests.
-	var it_arr = Array(make_stdvec<var>(1, 2, 3, 4));
+	var it_arr = Array(1, 2, 3, 4);
 	var it1 = it_arr.__iter_begin();
 	while (it1.__iter_has_next()) {
 		static int i = 0;

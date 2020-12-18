@@ -31,6 +31,7 @@
 namespace carbon {
 
 class String;
+class var;
 
 class Map {
 	friend class var;

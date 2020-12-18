@@ -7,12 +7,12 @@ TEST_CASE("[analyzer_tests]:analyze_files") {
 	Analyzer analyzer;
 	//String path, source;
 
-	Array files = Array(make_stdvec<var>(
+	Array files = Array(
 		"tests/test_files/z_function.cb",
 		"tests/test_files/gcd_subset.cb",
 		"tests/test_files/newman_conway.cb",
 		"" // end with comma above
-	));
+	);
 
 	for (int i = 0; i < files.size() - 1; i++) {
 		try {

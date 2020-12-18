@@ -829,7 +829,7 @@ static void print_enum_node(const Parser::EnumNode* p_enum, int p_indent) {
 		//} else {
 		//	PRINT_COLOR("[TODO: auto increase]\n", Console::Color::L_GRAY);
 		//}
-		printf("%lli\n", value.second.value);
+		printf("%li\n", value.second.value);
 	}
 }
 
