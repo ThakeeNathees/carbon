@@ -75,6 +75,7 @@ public:
 	// operator bool() {} don't implement this don't even delete
 	operator std::string() const { return *_data; } // <-- TODO: remove this and find alternative.
 	operator std::string& () { return *_data; }
+	operator const std::string& () const { return *_data; }
 	
 	bool operator==(const String& p_other) const;
 	bool operator!=(const String& p_other) const;

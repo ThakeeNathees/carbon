@@ -25,4 +25,17 @@
 
 #include "core/core.h"
 #include <Windows.h>
+#include <direct.h>
 
+namespace carbon {
+	namespace windows {
+		inline std::string get_last_error_as_string() {
+			DWORD errorMessageID = ::GetLastError();
+			if (errorMessageID == 0) {
+				return ""; //No error message has been recorded
+			} else {
+				return std::system_category().message(errorMessageID);
+			}
+		}
+	}
+}

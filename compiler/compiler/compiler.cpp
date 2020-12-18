@@ -25,6 +25,10 @@
 
 #include "compiler.h"
 
+#include "native/path.h"
+#include "native/file.h"
+#include "native/os.h"
+
 namespace carbon {
 
 Compiler* Compiler::_singleton = nullptr;
@@ -39,10 +43,10 @@ void Compiler::cleanup() {
 
 void Compiler::add_flag(CompileFlags p_flag) { _flags |= p_flag; }
 void Compiler::add_include_dir(const String& p_dir) {
-	if (!Path::exists(p_dir) || !Path::is_dir(p_dir)) {
+	if (!Path(p_dir).isdir()) {
 		// TODO: throw error / warning (ignore for now)
 	} else {
-		_include_dirs.push_back(Path::absolute(p_dir));
+		_include_dirs.push_back(Path(p_dir).absolute());
 	}
 }
 
@@ -63,9 +67,9 @@ ptr<Bytecode> Compiler::compile_source(const String& p_source, const String& p_p
 
 ptr<Bytecode> Compiler::compile(const String& p_path) {
 
-	if (!Path::exists(p_path)) THROW_ERROR(Error::IO_ERROR, String::format("path \"%s\" does not exists.", p_path.c_str()));
+	if (!Path(p_path).exists()) THROW_ERROR(Error::IO_ERROR, String::format("path \"%s\" does not exists.", p_path.c_str()));
 
-	String path = Path::absolute(p_path);
+	String path = Path(p_path).absolute();
 	auto it = _cache.find(path);
 	if (it != _cache.end()) {
 		if (it->second.compiling)  throw "TODO: cyclic import found";
@@ -75,7 +79,7 @@ ptr<Bytecode> Compiler::compile(const String& p_path) {
 		_cache[path] = _Cache();
 	}
 
-	String extension = Path::extension(path);
+	//String extension = Path::extension(path);
 	// TODO: check endswith .cb
 
 	class ScopeDestruct {
@@ -85,14 +89,14 @@ ptr<Bytecode> Compiler::compile(const String& p_path) {
 			_cwd_ptr = p_cwd_ptr;
 		}
 		~ScopeDestruct() {
-			Path::set_cwd(_cwd_ptr->top());
+			OS::chdir(_cwd_ptr->top());
 			_cwd_ptr->pop();
 		}
 	};
 	ScopeDestruct destruct = ScopeDestruct(&_cwd);
 
-	_cwd.push(Path::get_cwd());
-	Path::set_cwd(Path::parent(path)); // TODO: error handle
+	_cwd.push(OS::getcwd());
+	OS::chdir(Path(path).parent()); // TODO: error handle
 
 	File file(path, File::READ);
 	Logger::log(String::format("compiling: %s\n", path.c_str()).c_str());

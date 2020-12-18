@@ -109,7 +109,7 @@ CompileTimeError Tokenizer::_tokenize_error(Error::Type m_err_type, const String
 	if (token_str.size() > 1 && token_str[0] == '<' && token_str[token_str.size() - 1] == '>') err_len = 1;
 	else err_len = (uint32_t)token_str.size();
 
-	return CompileTimeError(m_err_type, m_msg,  DBGSourceInfo(source_path, source, Vect2i(cur_line, cur_col), err_len),p_dbg_info);
+	return CompileTimeError(m_err_type, m_msg,  DBGSourceInfo(source_path, source, std::pair<int, int>(cur_line, cur_col), err_len),p_dbg_info);
 }
 
 const TokenData& Tokenizer::next(int p_offset) {

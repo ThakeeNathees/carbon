@@ -63,6 +63,7 @@ def USER_DATA(env):
 
 ## Gets the standard flags CC, CCX, etc.
 env = DefaultEnvironment()
+#env = Environment(tools = ['mingw'], ENV = {'PATH' : os.environ['PATH']})
 
 opts = Variables([], ARGUMENTS)
 ## Define our options
@@ -110,7 +111,7 @@ if env['use_llvm']:
 
 ## Check our platform specifics
 if env['platform'] == "osx":
-	env.Append(CXXFLAGS=['-std=c++17'])
+	env.Append(CXXFLAGS=['-std=c++11'])
 	if env['target'] == 'debug':
 		env.Append(CCFLAGS=['-g', '-O2', '-arch', 'x86_64'])
 		env.Append(LINKFLAGS=['-arch', 'x86_64'])
@@ -120,7 +121,7 @@ if env['platform'] == "osx":
 
 elif env['platform'] == 'x11':
 	env.Append(LIBS=['dl', 'pthread']) 
-	env.Append(CXXFLAGS=['-std=c++17'])
+	env.Append(CXXFLAGS=['-std=c++11'])
 	if env['target'] == 'debug':
 		env.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
 	else:
@@ -131,9 +132,8 @@ elif env['platform'] == "windows":
 	## that way you can run scons in a vs 2017 prompt and it will find all the required tools
 	env.Append(ENV=os.environ)
 
-	env.Append(CXXFLAGS=['/std:c++17', '/bigobj'])
+	env.Append(CXXFLAGS=['/bigobj']) ## '/std:c++17'
 	env.Append(CPPDEFINES=['WIN32', '_WIN32', '_WINDOWS', '_CRT_SECURE_NO_WARNINGS'])
-	#env.Append(CPPDEFINES=['_HAS_CXX17']) ## for autocompletion in vs.
 	env.Append(CCFLAGS=['-W3', '-GR'])
 	env.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
 

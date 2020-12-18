@@ -23,38 +23,48 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "carbon.h"
-using namespace carbon;
 
-int _main(int argc, char** argv) {
+#include "path.h"
 
-	carbon_initialize();
-	log_copyright_and_license();
+namespace carbon {
 
-	try {
-		if (argc < 2) {
-			log_help();
-		} else {
+// constructors
+Path::Path(const String& p_path) :_path(p_path) {}
+void Path::_Path(ptr<Path> p_self, const String& p_path) {
+	p_self->_path = p_path;
+}
 
-			// TODO: properly parse command line args
-			if (strcmp(argv[1], "--native-api") == 0) {
-				String path = OS::getcwd();
-				if (argc >= 3) path = Path(argv[2]).absolute();
-				NativeLib::generate_api(path);
-				printf("%s was generated.\n", path.c_str());
-			} else {
+String Path::parent() {
+	const std::string& str = _path;
+	size_t found = str.find_last_of("/\\");
+	if (found == std::string::npos) return "";
+	return str.substr(0, found);
+}
 
-				stdvec<String> args;
-				for (int i = 1; i < argc; i++) args.push_back(argv[i]);
+String Path::filename() {
+	const std::string& str = _path;
+	size_t found = str.find_last_of("/\\");
+	if (found == std::string::npos) return "";
+	return str.substr(found + 1);
+}
 
-				ptr<Bytecode> bytecode = Compiler::singleton()->compile(argv[1]);
-				VM::singleton()->run(bytecode, args);
-			}
-		}
-	} catch (Throwable& err) {
-		err.console_log();
-	}
+String Path::extension() {
+	const std::string& str = _path;
+	size_t found = str.rfind('.');
+	if (found == std::string::npos) return "";
+	return str.substr(found);
+}
 
-	carbon_cleanup();
-	return 0;
+String Path::join(const String& p_path2) {
+	THROW_BUG("Not imlpemented");
+}
+
+String Path::to_string() {
+	return _path;
+}
+
+Path::operator const String& () {
+	return _path;
+}
+
 }

@@ -41,7 +41,7 @@ void NativeLib::_NativeLib(ptr<Object> p_self, const String& p_lib_name) {
 }
 
 void NativeLib::open(const String& path) {
-	_path = Path::absolute(path);
+	_path = Path(path).absolute();
 	if (_handle) THROW_ERROR(Error::IO_ERROR, "lib already opened (close before reopening).");
 	_handle = dlopen(_path.c_str(), RTLD_LAZY);
 	if (!_handle) THROW_ERROR(Error::IO_ERROR, String::format("failed to load lib : %s.", dlerror()));
@@ -79,12 +79,12 @@ var NativeLib::call_method(const String& p_name, stdvec<var*>& p_args) {
 void NativeLib::generate_api(const String& p_path) {
 	String path;
 	if (p_path != "") {
-		if (!Path::is_dir(p_path)) THROW_ERROR(Error::IO_ERROR, String::format("expected a directory path, got : %s", p_path.c_str()));
+		if (!Path(p_path).isdir()) THROW_ERROR(Error::IO_ERROR, String::format("expected a directory path, got : %s", p_path.c_str()));
 		path = p_path;
-	} else path = Path::get_cwd();
+	} else path = OS::getcwd();
 
 	File target;
-	target.open(Path::join(path, "carbon_api.h"), File::WRITE);
+	target.open(Path(path).join("carbon_api.h"), File::WRITE);
 	target.write_text(NATIVE_API_STR);
 	target.close();
 

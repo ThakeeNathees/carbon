@@ -50,7 +50,8 @@ CompileTimeError Parser::_parser_error(Error::Type p_type, const String& p_msg, 
 	uint32_t err_len = (uint32_t)token_str.size();
 
 	Vect2i pos = (p_pos.x > 0 && p_pos.y > 0) ? p_pos : tokenizer->peek(-1, true).get_pos();
-	return CompileTimeError(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source, pos, err_len), p_dbg_info);
+	return CompileTimeError(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source,
+		std::pair<int, int>((int)pos.x, (int)pos.y), err_len), p_dbg_info);
 }
 
 CompileTimeError Parser::_predefined_error(const String& p_what, const String& p_name, Vect2i p_pos, const DBGSourceInfo& p_dbg_info) const {
@@ -64,7 +65,7 @@ void Parser::parse(const String& p_source, const String& p_file_path) {
 	tokenizer = newptr<Tokenizer>();
 	file_node = new_node<FileNode>();
 	file_node->source = p_source;
-	file_node->path = Path::absolute(p_file_path);
+	file_node->path = Path(p_file_path).absolute();
 
 	tokenizer->tokenize(file_node->source, file_node->path);
 

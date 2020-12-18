@@ -24,6 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "core.h"
+#include "var.h"
 #include "runtime_types.h"
 
 namespace carbon {
@@ -292,6 +293,10 @@ var var::operator[](const var& p_key) const {
 		case OBJECT: return _data._obj->__get_mapped(p_key);
 	}
 	THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED, String::format("operator[] not supported on base %s", get_type_name().c_str()));
+}
+
+var var::operator[](int index) const {
+	return operator[](var(index));
 }
 
 var var::__get_mapped(const var& p_key) const {
@@ -590,14 +595,6 @@ var::operator Map() const {
 	}
 	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Map\".", get_type_name().c_str()));
 }
-
-var::operator ptr<Object>() const {
-	if (type == OBJECT) {
-		return _data._obj;
-	}
-	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Object\".", get_type_name().c_str()));
-}
-
 
 var::operator int()    { return (int)operator int64_t(); }
 var::operator size_t() { return (size_t)operator int64_t(); }

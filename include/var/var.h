@@ -26,6 +26,7 @@
 #ifndef _VAR_H
 #define _VAR_H
 
+#include "error.h"
 #include "_string.h"
 #include "_array.h"
 #include "_map.h"
@@ -115,11 +116,6 @@ public:
 		new(&_data._obj) ptr<Object>(p_ptr);
 	}
 
-	template <typename T>
-	ptr<T> cast_to() const {
-		return ptrcast<T>(operator ptr<Object>());
-	}
-
 	static bool is_hashable(var::Type p_type);
 	static const char* get_type_name_s(var::Type p_type);
 	static String get_op_name_s(Operator op);
@@ -140,8 +136,15 @@ public:
 	operator String() const;
 	operator Array() const;
 	operator Map() const;
-	operator ptr<Object>() const;
 	// operator const char* () const; <-- never implement this
+
+	template <typename T>
+	operator ptr<T>() const {
+		if (type == OBJECT) {
+			return ptrcast<T>(_data._obj);
+		}
+		THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Object\".", get_type_name().c_str()));
+	}
 
 	operator int();
 	operator size_t();
@@ -150,12 +153,12 @@ public:
 	operator size_t () const;
 	operator float() const;
 
-	explicit operator bool* ();
-	explicit operator int64_t* ();
-	explicit operator double* ();
-	explicit operator String* ();
-	explicit operator Array* ();
-	explicit operator Map* ();
+	operator bool* ();
+	operator int64_t* ();
+	operator double* ();
+	operator String* ();
+	operator Array* ();
+	operator Map* ();
 
 	operator bool&();
 	operator int64_t&();
@@ -187,6 +190,7 @@ public:
 	var operator--(int);
 	bool operator !() const { return !operator bool(); }
 	var operator[](const var& p_key) const;
+	var operator[](int index) const;
 	// var& operator[](const var& p_key); // TODO:
 
 	var __get_mapped(const var& p_key) const;

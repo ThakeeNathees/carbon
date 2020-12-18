@@ -85,7 +85,7 @@ private:
 
 	// va_args constructor internal
 	template <typename T, typename... Targs>
-	constexpr void _make_va_arg_array(T p_val, Targs... p_args) {
+	void _make_va_arg_array(T p_val, Targs... p_args) {
 		push_back(p_val);
 		_make_va_arg_array(p_args...);
 	}

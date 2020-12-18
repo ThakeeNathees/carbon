@@ -63,7 +63,7 @@ public:
 
 	File(const String& p_path = "", int p_mode = DEFAULT);
 	~File();
-	static void _File(ptr<Object> p_self, const String& p_path = "", int p_mode = DEFAULT);
+	static void _File(ptr<File> p_self, const String& p_path = "", int p_mode = DEFAULT);
 
 	// Methods.
 	inline bool is_open() const { return _file != NULL; }

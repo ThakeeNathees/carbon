@@ -37,7 +37,8 @@ CompileTimeError Analyzer::_analyzer_error(Error::Type p_type, const String& p_m
 	else err_len = (uint32_t)token_str.size();
 
 	Vect2i pos = (p_pos.x > 0 && p_pos.y > 0) ? p_pos : parser->tokenizer->peek(-1, true).get_pos();
-	return CompileTimeError(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source, pos, err_len), p_dbg_info);
+	return CompileTimeError(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source,
+		std::pair<int, int>((int)pos.x, (int)pos.y), err_len), p_dbg_info);
 }
 
 void Analyzer::_analyzer_warning(Warning::Type p_type, const String& p_msg, Vect2i p_pos, const DBGSourceInfo& p_dbg_info) {
@@ -49,7 +50,9 @@ void Analyzer::_analyzer_warning(Warning::Type p_type, const String& p_msg, Vect
 	else err_len = (uint32_t)token_str.size();
 
 	Vect2i pos = (p_pos.x > 0 && p_pos.y > 0) ? p_pos : parser->tokenizer->peek(-1, true).get_pos();
-	Warning warning(p_type, p_msg, DBGSourceInfo(file_node->path, file_node->source, pos, err_len), p_dbg_info);
+	Warning warning(p_type, p_msg,
+		DBGSourceInfo(file_node->path, file_node->source,
+			std::pair<int, int>((int)pos.x, (int)pos.y), err_len), p_dbg_info);
 	
 	warnings.push_back(warning);
 }

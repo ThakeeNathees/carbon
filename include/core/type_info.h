@@ -46,7 +46,7 @@ public:
 
 struct VarTypeInfo {
 	var::Type type = var::_NULL;
-	const char* class_name = nullptr;
+	const char* class_name = "";
 	VarTypeInfo(var::Type p_type = var::VAR) : type(p_type) {}
 	VarTypeInfo(var::Type p_type, const char* p_class_name) : type(p_type), class_name(p_class_name) {}
 

@@ -23,38 +23,36 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "carbon.h"
-using namespace carbon;
 
-int _main(int argc, char** argv) {
+#include "path.h"
 
-	carbon_initialize();
-	log_copyright_and_license();
+// TODO: move these headers to platform abstraction
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
-	try {
-		if (argc < 2) {
-			log_help();
-		} else {
+namespace carbon {
 
-			// TODO: properly parse command line args
-			if (strcmp(argv[1], "--native-api") == 0) {
-				String path = OS::getcwd();
-				if (argc >= 3) path = Path(argv[2]).absolute();
-				NativeLib::generate_api(path);
-				printf("%s was generated.\n", path.c_str());
-			} else {
+String Path::absolute() {
+	char* path = realpath(_path.c_str(), NULL);
+    String ret;
+    if (path != NULL) {
+        ret = path;
+        free(path);
+    }
+    return ret;
+}
 
-				stdvec<String> args;
-				for (int i = 1; i < argc; i++) args.push_back(argv[i]);
+bool Path::exists() {
+	struct stat _stat;
+	return stat(_path.c_str(), &_stat) == 0;
+}
 
-				ptr<Bytecode> bytecode = Compiler::singleton()->compile(argv[1]);
-				VM::singleton()->run(bytecode, args);
-			}
-		}
-	} catch (Throwable& err) {
-		err.console_log();
-	}
+bool Path::isdir() {
+	struct stat _stat;
+	if (stat(_path.c_str(), &_stat) == 0 && (_stat.st_mode & S_IFMT == S_IFDIR))
+        return true;
+    return false;
+}
 
-	carbon_cleanup();
-	return 0;
 }

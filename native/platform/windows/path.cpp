@@ -23,38 +23,36 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "carbon.h"
-using namespace carbon;
 
-int _main(int argc, char** argv) {
+#include "path.h"
 
-	carbon_initialize();
-	log_copyright_and_license();
+#include "core/platform/windows/platform_windows.h"
 
-	try {
-		if (argc < 2) {
-			log_help();
-		} else {
 
-			// TODO: properly parse command line args
-			if (strcmp(argv[1], "--native-api") == 0) {
-				String path = OS::getcwd();
-				if (argc >= 3) path = Path(argv[2]).absolute();
-				NativeLib::generate_api(path);
-				printf("%s was generated.\n", path.c_str());
-			} else {
+namespace carbon {
 
-				stdvec<String> args;
-				for (int i = 1; i < argc; i++) args.push_back(argv[i]);
-
-				ptr<Bytecode> bytecode = Compiler::singleton()->compile(argv[1]);
-				VM::singleton()->run(bytecode, args);
-			}
-		}
-	} catch (Throwable& err) {
-		err.console_log();
+String Path::absolute() {
+	char buffer[VSNPRINTF_BUFF_SIZE];
+	if (GetFullPathNameA(_path.c_str(), VSNPRINTF_BUFF_SIZE, buffer, NULL) == 0) {
+		THROW_ERROR(Error::IO_ERROR, windows::get_last_error_as_string());
 	}
+	return buffer;
+}
 
-	carbon_cleanup();
-	return 0;
+bool Path::exists() {
+	DWORD ftyp = GetFileAttributesA(_path.c_str());
+	if (ftyp == INVALID_FILE_ATTRIBUTES) return false;  //something is wrong with your path!
+
+	if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;   // this is a directory!
+	else return true;                                   // this is not a directory!
+}
+
+bool Path::isdir() {
+	DWORD ftyp = GetFileAttributesA(_path.c_str());
+	if (ftyp == INVALID_FILE_ATTRIBUTES) return false;  //something is wrong with your path!
+
+	if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;   // this is a directory!
+	else return false;									// this is not a directory!
+}
+
 }
