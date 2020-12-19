@@ -26,7 +26,7 @@
 #ifndef OBJECT_H
 #define OBJECT_H
 
-#include "internal.h"
+#include "core/internal.h"
 
 #define REGISTER_CLASS(m_class, m_inherits)                                                          \
 public:                                                                                              \

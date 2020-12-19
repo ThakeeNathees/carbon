@@ -26,7 +26,7 @@
 #ifndef  ARRAY_H
 #define  ARRAY_H
 
-#include "internal.h"
+#include "core/internal.h"
 
 namespace carbon {
 

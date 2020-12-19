@@ -34,6 +34,18 @@ void Path::_Path(ptr<Path> p_self, const String& p_path) {
 	p_self->_path = p_path;
 }
 
+String Path::absolute() {
+	return _Platform::path_absolute(_path);
+}
+
+bool Path::exists() {
+	return _Platform::path_exists(_path);
+}
+
+bool Path::isdir() {
+	return _Platform::path_isdir(_path);
+}
+
 String Path::parent() {
 	const std::string& str = _path;
 	size_t found = str.find_last_of("/\\");
@@ -54,7 +66,6 @@ String Path::extension() {
 	if (found == std::string::npos) return "";
 	return str.substr(found);
 }
-
 
 ptr<Path> Path::join(const String& p_path) const {
 	// TODO: this is temp and try corss platform libraries (boost/filesystem?)

@@ -67,7 +67,7 @@ public:
 
 	static void logf(const char* p_fmt, ...);
 	static void logf_stderr(const char* p_fmt, ...);
-	static void logf(const char* p_fmt, va_list p_args, bool p_err = false, Console::Color p_forground = Console::Color::DEFAULT, Console::Color p_background = Console::Color::DEFAULT);
+	static void logf(const char* p_fmt, va_list p_args, bool p_stderr = false, Console::Color p_forground = Console::Color::DEFAULT, Console::Color p_background = Console::Color::DEFAULT);
 	static void log(const char* p_message, bool p_stderr = false, Console::Color p_forground = Console::Color::DEFAULT, Console::Color p_background = Console::Color::DEFAULT);
 
 private:

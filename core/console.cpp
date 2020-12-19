@@ -23,22 +23,48 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
+#include "core/console.h"
 #include "core/core.h"
-#include <Windows.h>
-#include <direct.h>
-
-// TODO: better way (maybe rename ERROR)
-#undef ERROR
 
 namespace carbon {
-	namespace windows {
-		inline std::string get_last_error_as_string() {
-			DWORD errorMessageID = ::GetLastError();
-			if (errorMessageID == 0) {
-				return ""; //No error message has been recorded
-			} else {
-				return std::system_category().message(errorMessageID);
-			}
-		}
-	}
+
+void Console::initialize() {}
+void Console::cleanup() {}
+
+void Console::set_cursor(int p_line, int p_column) {
+	_Platform::console_set_cursor(p_line, p_column);
+}
+
+void Console::get_cursor(int* p_line, int* p_column) {
+	_Platform::console_get_cursor(p_line, p_column);
+}
+
+std::string Console::getline() {
+	std::string ret;
+	std::getline(std::cin, ret);
+	return ret;
+}
+
+void Console::logf(const char* p_fmt, ...) {
+	va_list args;
+	va_start(args, p_fmt);
+	vprintf(p_fmt, args);
+	va_end(args);
+}
+
+void Console::logf_stderr(const char* p_fmt, ...) {
+	va_list args;
+	va_start(args, p_fmt);
+	vfprintf(stderr, p_fmt, args);
+	va_end(args);
+}
+
+void Console::logf(const char* p_fmt, va_list p_args, bool p_stderr, Console::Color p_forground, Console::Color p_background) {
+	_Platform::console_logf(p_fmt, p_args, p_stderr, p_forground, p_background);
+}
+
+void Console::log(const char* p_message, bool p_stderr, Console::Color p_forground, Console::Color p_background) {
+	_Platform::console_log(p_message, p_stderr, p_forground, p_background);
+}
+
 }

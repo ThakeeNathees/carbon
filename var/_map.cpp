@@ -74,7 +74,16 @@ String Map::to_string() const {
 	ss << "{ ";
 	for (_map_internal_t::iterator it = (*_data).begin(); it != (*_data).end(); it++) {
 		if (it != (*_data).begin()) ss << ", ";
-		ss << it->second.key.to_string() << " : " << it->second.value.to_string();
+		
+		if (it->second.key.get_type() == var::STRING) ss << "\"";
+		ss << it->second.key.to_string();
+		if (it->second.key.get_type() == var::STRING) ss << "\"";
+
+		ss << " : ";
+
+		if (it->second.value.get_type() == var::STRING) ss << "\"";
+		ss << it->second.value.to_string();
+		if (it->second.value.get_type() == var::STRING) ss << "\"";
 	}
 	ss << " }";
 	return ss.str();

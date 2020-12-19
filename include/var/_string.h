@@ -26,7 +26,7 @@
 #ifndef STRING_H
 #define STRING_H
 
-#include "internal.h"
+#include "core/internal.h"
 
 namespace carbon {
 

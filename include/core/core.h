@@ -28,9 +28,10 @@
 
 #include "_error.h"
 #include "logger.h"
-#include "var/var.h"
 #include "console.h"
+#include "platform.h"
 #include "type_info.h"
 #include "native.h"
+#include "var/var.h"
 
 #endif // CORE_H
