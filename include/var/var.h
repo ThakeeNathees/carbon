@@ -26,7 +26,7 @@
 #ifndef _VAR_H
 #define _VAR_H
 
-#include "error.h"
+#include "_error.h"
 #include "_string.h"
 #include "_array.h"
 #include "_map.h"
@@ -140,10 +140,12 @@ public:
 
 	template <typename T>
 	operator ptr<T>() const {
-		if (type == OBJECT) {
-			return ptrcast<T>(_data._obj);
+		if (type != OBJECT) {
+			THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Object\".", get_type_name().c_str()));
 		}
-		THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Object\".", get_type_name().c_str()));
+
+		// TODO: check if type compatable
+		return ptrcast<T>(_data._obj);
 	}
 
 	operator int();

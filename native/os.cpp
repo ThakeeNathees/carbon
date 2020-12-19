@@ -36,4 +36,12 @@ int OS::syscall(const String& p_cmd) {
 	return system(p_cmd.c_str());
 }
 
+String OS::getcwd() {
+	return _Platform::os_getcwd();
+}
+
+void OS::chdir(const String& p_path) {
+	_Platform::os_chdir(p_path.c_str());
+}
+
 }

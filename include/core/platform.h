@@ -23,36 +23,31 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
+#include "internal.h"
+#include "console.h"
+#include "logger.h"
 
-#include "path.h"
-
-#include "core/platform/windows/platform_windows.h"
-
+#ifndef _PLATFORM_H
+#define _PLATFORM_H
 
 namespace carbon {
 
-String Path::absolute() {
-	char buffer[VSNPRINTF_BUFF_SIZE];
-	if (GetFullPathNameA(_path.c_str(), VSNPRINTF_BUFF_SIZE, buffer, NULL) == 0) {
-		THROW_ERROR(Error::IO_ERROR, windows::get_last_error_as_string());
-	}
-	return buffer;
-}
+class _Platform {
 
-bool Path::exists() {
-	DWORD ftyp = GetFileAttributesA(_path.c_str());
-	if (ftyp == INVALID_FILE_ATTRIBUTES) return false;  //something is wrong with your path!
+public:
+	static void console_get_cursor(int* p_line, int* p_column);
+	static void console_set_cursor(int p_line, int p_column);
+	static void console_logf(const char* p_fmt, va_list p_args, bool p_stderr = false, Console::Color p_forground = Console::Color::DEFAULT, Console::Color p_background = Console::Color::DEFAULT);
+	static void console_log(const char* p_message, bool p_stderr = false, Console::Color p_forground = Console::Color::DEFAULT, Console::Color p_background = Console::Color::DEFAULT);
 
-	if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;   // this is a directory!
-	else return true;                                   // this is not a directory!
-}
+	static std::string os_getcwd();
+	static void os_chdir(const std::string& p_path);
 
-bool Path::isdir() {
-	DWORD ftyp = GetFileAttributesA(_path.c_str());
-	if (ftyp == INVALID_FILE_ATTRIBUTES) return false;  //something is wrong with your path!
-
-	if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;   // this is a directory!
-	else return false;									// this is not a directory!
-}
+	static std::string path_absolute(const std::string& p_path);
+	static bool path_exists(const std::string& p_path);
+	static bool path_isdir(const std::string& p_path);
+};
 
 }
+
+#endif //_PLATFORM_H

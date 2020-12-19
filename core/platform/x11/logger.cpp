@@ -25,6 +25,8 @@
 
 #include "core/core.h"
 
+#error "TODO: refactor required see: windows/logger.cpp"
+
 namespace carbon {
 
 

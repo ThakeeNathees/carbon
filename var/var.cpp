@@ -25,7 +25,7 @@
 
 #include "core.h"
 #include "var.h"
-#include "runtime_types.h"
+#include "iterators.h"
 
 namespace carbon {
 
@@ -37,7 +37,6 @@ std::istream& operator>>(std::istream& p_istream, String& p_str) {
 	p_istream >> *p_str._data;
 	return p_istream;
 }
-
 std::ostream& operator<<(std::ostream& p_ostream, const var& p_var) {
 	p_ostream << p_var.to_string();
 	return p_ostream;

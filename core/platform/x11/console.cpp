@@ -26,6 +26,8 @@
 #include <stdio.h>
 #include "core/console.h"
 
+#error "TODO: refactor required see: windows/console.cpp"
+
 namespace carbon {
 
 class ConsoleX11 : public Console {
@@ -39,14 +41,6 @@ public:
 	static void initialize() {}
 	static void cleanup() {
 		delete _singleton;
-	}
-
-	void* get_handle() const override {
-		return (void*)nullptr; // TODO:
-	}
-
-	void get_console_size(int* p_columns, int* p_rows) const override {
-		//  TODO:
 	}
 
 	void set_cursor(int p_line, int p_column) const override {

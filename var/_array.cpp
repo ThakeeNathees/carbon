@@ -24,8 +24,8 @@
 //------------------------------------------------------------------------------
 
 #include "_array.h"
+
 #include "var.h"
-#include "error.h"
 #include "type_info.h"
 #include "var_private.h"
 
@@ -69,11 +69,6 @@ var Array::call_method(const String& p_method, const stdvec<var*>& p_args) {
 
 Array::Array() { _data = newptr<stdvec<var>>(); }
 Array::Array(const Array& p_copy) { _data = p_copy._data; }
-//Array::Array(const ptr<stdvec<var>>& p_data) { _data = p_data; }
-//Array::Array(const stdvec<var>& p_data) {
-//	_data = newptr<stdvec<var>>();
-//	for (const var& v : p_data) _data->push_back(v);
-//}
 
 const stdvec<var>* Array::get_stdvec() const {
 	return _data.operator->();
@@ -125,7 +120,9 @@ String Array::to_string() const {
 	std::stringstream ss;
 	ss << "[ ";
 	for (unsigned int i = 0; i < _data->size(); i++) {
-		ss << _data->operator[](i).to_string();
+		if ((*_data)[i].get_type() == var::STRING) ss << "\"";
+		ss << (*_data)[i].to_string();
+		if ((*_data)[i].get_type() == var::STRING) ss << "\"";
 		if (i != _data->size() - 1) ss << ", ";
 		else ss << " ";
 	}

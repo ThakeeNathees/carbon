@@ -27,9 +27,12 @@
 
 namespace carbon {
 
-// singleton declaration is in <platform>/logger_<platform>.cpp
 Logger::LogLevel Logger::level = Logger::LogLevel::VERBOSE;
 Logger::LogLevel Logger::last_level = Logger::LogLevel::VERBOSE;
+
+
+void Logger::initialize() {}
+void Logger::cleanup() {}
 
 void Logger::set_level(LogLevel p_level) {
 	last_level = level;
@@ -48,25 +51,25 @@ bool Logger::is_level(LogLevel p_level) {
 	return (int)p_level >= (int)level;
 }
 
-void Logger::log(const char* p_msg, LogLevel p_level, Console::Color p_fg, Console::Color p_bg) {
-	if (!is_level(p_level)) return; singleton->log_impl(p_msg, p_fg, p_bg);
-}
-
 void Logger::log(const char* p_msg, Console::Color p_fg, Console::Color p_bg) {
-	singleton->log_impl(p_msg, p_fg, p_bg); // JUST_LOG
+	_log(p_msg, false, p_fg, p_bg);
 }
 
-void Logger::log_verbose(const char* p_msg) { if (!is_level(LogLevel::VERBOSE)) return; singleton->log_verbose_impl(p_msg); }
-void Logger::log_info(const char* p_msg)    { if (!is_level(LogLevel::INFO))    return; singleton->log_info_impl(p_msg); }
-void Logger::log_success(const char* p_msg) { if (!is_level(LogLevel::SUCCESS)) return; singleton->log_success_impl(p_msg); }
-void Logger::log_warning(const char* p_msg) { if (!is_level(LogLevel::WARNING)) return; singleton->log_warning_impl(p_msg); }
-void Logger::log_error(const char* p_msg)   { if (!is_level(LogLevel::ERROR))   return; singleton->log_error_impl(p_msg); }
+void Logger::log(const char* p_msg, LogLevel p_level, Console::Color p_fg, Console::Color p_bg) {
+	if (!is_level(p_level)) return; log(p_msg, p_fg, p_bg);
+}
+
+void Logger::log_verbose(const char* p_msg) { if (!is_level(LogLevel::VERBOSE)) return;  _log(p_msg, false);                          }
+void Logger::log_info(const char* p_msg)    { if (!is_level(LogLevel::INFO))    return;  _log(p_msg, false, Console::Color::L_WHITE); }
+void Logger::log_success(const char* p_msg) { if (!is_level(LogLevel::SUCCESS)) return;  _log(p_msg, false, Console::Color::L_GREEN); }
+void Logger::log_warning(const char* p_msg) { if (!is_level(LogLevel::WARNING)) return;  _log(p_msg, true, Console::Color::D_YELLOW); }
+void Logger::log_error(const char* p_msg)   { if (!is_level(LogLevel::ERROR))   return;  _log(p_msg, true, Console::Color::D_RED);    }
 
 void Logger::logf_verbose(const char* p_fmt, ...) {
 	if (!is_level(LogLevel::VERBOSE)) return;
 	va_list args;
 	va_start(args, p_fmt);
-	singleton->logf_verbose_impl(p_fmt, args);
+	_logf(p_fmt, args, false);
 	va_end(args);
 }
 
@@ -74,7 +77,7 @@ void Logger::logf_info(const char* p_fmt, ...) {
 	if (!is_level(LogLevel::INFO)) return;
 	va_list args;
 	va_start(args, p_fmt);
-	singleton->logf_info_impl(p_fmt, args);
+	_logf(p_fmt, args, false, Console::Color::L_WHITE);
 	va_end(args);
 }
 
@@ -82,7 +85,7 @@ void Logger::logf_success(const char* p_fmt, ...) {
 	if (!is_level(LogLevel::SUCCESS)) return;
 	va_list args;
 	va_start(args, p_fmt);
-	singleton->logf_success_impl(p_fmt, args);
+	_logf(p_fmt, args, false, Console::Color::L_GREEN);
 	va_end(args);
 }
 
@@ -90,7 +93,7 @@ void Logger::logf_warning(const char* p_fmt, ...) {
 	if (!is_level(LogLevel::WARNING)) return;
 	va_list args;
 	va_start(args, p_fmt);
-	singleton->logf_warning_impl(p_fmt, args);
+	_logf(p_fmt, args, true, Console::Color::D_YELLOW);
 	va_end(args);
 }
 
@@ -98,8 +101,16 @@ void Logger::logf_error(const char* p_fmt, ...) {
 	if (!is_level(LogLevel::ERROR)) return;
 	va_list args;
 	va_start(args, p_fmt);
-	singleton->logf_error_impl(p_fmt, args);
+	_logf(p_fmt, args, true, Console::Color::D_RED);
 	va_end(args);
+}
+
+void Logger::_log(const char* p_message, bool p_stderr, Console::Color p_forground, Console::Color p_background) {
+	Console::log(p_message, p_stderr, p_forground, p_background);
+}
+
+void Logger::_logf(const char* p_fmt, va_list p_args, bool p_err, Console::Color p_forground, Console::Color p_background) {
+	Console::logf(p_fmt, p_args, p_err, p_forground, p_background);
 }
 
 }

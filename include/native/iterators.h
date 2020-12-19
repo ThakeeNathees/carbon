@@ -32,8 +32,6 @@ namespace carbon {
 
 class NativeClasses;
 
-/////////////// ITERATORS //////////////////////
-
 // TODO: implement it += 1;
 
 class _Iterator_int : public Object {

@@ -24,9 +24,9 @@
 //------------------------------------------------------------------------------
 
 #include "_string.h"
+
 #include "_array.h"
 #include "var.h"
-#include "error.h"
 #include "type_info.h"
 #include "var_private.h"
 

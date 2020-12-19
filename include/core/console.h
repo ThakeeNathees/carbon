@@ -26,6 +26,9 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
+// TODO: move var/internal.h -> core/internal.h
+#include <string>
+
 namespace carbon {
 
 class Console {
@@ -54,29 +57,18 @@ public:
 		__COLOR_MAX__,
 	};
 
-	// TODO: refactor currently only key event
-	struct KeyEvent {
-		bool is_down;
-		unsigned short keycode;       // TODO: make it enum
-		unsigned short repeat_count;
-		char ascii;
-		unsigned long ctrl_key_state; // dwControlKeyState in windows.h
-	};
-
-	static Console* singleton();
 	static void initialize();
 	static void cleanup();
 
-	virtual void get_cursor(int* p_line, int* p_column) const = 0;
-	virtual void* get_handle() const = 0;
-	virtual void get_console_size(int* p_columns, int* p_rows) const = 0;
+	static void set_cursor(int p_line, int p_column);
+	static void get_cursor(int* p_line, int* p_column);
 
-	virtual void set_cursor(int p_line, int p_column) const = 0;
-	virtual void set_console_color(Color p_forground, Color p_background = Color::DEFAULT) const = 0;
+	static std::string getline();
 
-	virtual void enable_input_mode() = 0;
-	virtual void listen_input_event() = 0;
-	virtual bool get_input_event(KeyEvent& p_event) = 0;
+	static void logf(const char* p_fmt, ...);
+	static void logf_stderr(const char* p_fmt, ...);
+	static void logf(const char* p_fmt, va_list p_args, bool p_stderr = false, Console::Color p_forground = Console::Color::DEFAULT, Console::Color p_background = Console::Color::DEFAULT);
+	static void log(const char* p_message, bool p_stderr = false, Console::Color p_forground = Console::Color::DEFAULT, Console::Color p_background = Console::Color::DEFAULT);
 
 private:
 

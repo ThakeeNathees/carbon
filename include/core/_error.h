@@ -23,8 +23,8 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef ERRORS_H
-#define ERRORS_H
+#ifndef _ERRORS_H
+#define _ERRORS_H
 
 #define _DBG_SOURCE DBGSourceInfo(__FILE__, __LINE__, __FUNCTION__)
 
@@ -51,7 +51,7 @@ if (m_ptr == nullptr){                                                          
 	} while (false)
 
 #include "logger.h"
-#include "var/internal.h"
+#include "internal.h"
 
 namespace carbon {
 
@@ -188,4 +188,4 @@ private:
 
 }
 
-#endif // ERRORS_H
+#endif // _ERRORS_H

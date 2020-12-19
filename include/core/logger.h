@@ -29,6 +29,8 @@
 #include <stdarg.h> // for va_list
 #include "console.h"
 
+// TODO: implement log to file, redirect error logs, ...
+
 namespace carbon {
 
 class Logger {
@@ -43,6 +45,9 @@ public:
 		WARNING = 4,
 		ERROR   = 5,
 	};
+
+	static void initialize();
+	static void cleanup();
 
 	static void set_level(LogLevel p_level);
 	static void reset_level();
@@ -64,28 +69,12 @@ public:
 	static void logf_warning(const char* p_fmt, ...);
 	static void logf_error(const char* p_fmt, ...);
 
-	static void initialize();
-	static void cleanup();
-
-protected:
-	virtual void log_impl(const char* p_msg, Console::Color p_fg, Console::Color p_bg) const = 0;
-
-	virtual void log_verbose_impl(const char* p_msg) const = 0;
-	virtual void log_info_impl(const char* p_msg) const = 0;
-	virtual void log_success_impl(const char* p_msg) const = 0;
-	virtual void log_warning_impl(const char* p_msg) const = 0;
-	virtual void log_error_impl(const char* p_msg) const = 0;
-
-	virtual void logf_verbose_impl(const char* p_fmt, va_list p_list) const = 0;
-	virtual void logf_info_impl(const char* p_fmt, va_list p_list) const = 0;
-	virtual void logf_success_impl(const char* p_fmt, va_list p_list) const = 0;
-	virtual void logf_warning_impl(const char* p_fmt, va_list p_list) const = 0;
-	virtual void logf_error_impl(const char* p_fmt, va_list p_list) const = 0;
-
 private:
-	static Logger* singleton;
 	static LogLevel level;
 	static LogLevel last_level;
+
+	static void _log(const char* p_message, bool p_stderr, Console::Color p_forground = Console::Color::DEFAULT, Console::Color p_background = Console::Color::DEFAULT);
+	static void _logf(const char* p_fmt, va_list p_args, bool p_err, Console::Color p_forground = Console::Color::DEFAULT, Console::Color p_background = Console::Color::DEFAULT);
 };
 
 }

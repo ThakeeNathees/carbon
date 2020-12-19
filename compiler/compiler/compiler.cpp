@@ -79,7 +79,7 @@ ptr<Bytecode> Compiler::compile(const String& p_path) {
 		_cache[path] = _Cache();
 	}
 
-	//String extension = Path::extension(path);
+	//String extension = Path(path).extension();
 	// TODO: check endswith .cb
 
 	class ScopeDestruct {

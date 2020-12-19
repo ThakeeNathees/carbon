@@ -26,7 +26,8 @@
 #ifndef NATIVE_CLASSES_H
 #define NATIVE_CLASSES_H
 
-#include "error.h"
+#include "_error.h"
+#include "var/var.h"
 #include "type_info.h"
 #include "native_bind.gen.h"
 

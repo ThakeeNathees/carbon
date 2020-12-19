@@ -95,31 +95,25 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var*>& p_args, var& r_ret)
 		case Type::__FILE:
 			THROW_BUG("the compile time func should be called by the analyzer.");
 
-		case Type::PRINT: {
-			for (int i = 0; i < (int)p_args.size(); i++) {
-				//printf("%s", p_args[i]->to_string().c_str());
-				std::cout << p_args[i]->to_string().c_str();
-			}
-		} break;
-
+		case Type::PRINT: // [[FALLTHROUGH]]
 		case Type::PRINTLN: {
 			for (int i = 0; i < (int)p_args.size(); i++) {
-				//printf("%s", p_args[i]->to_string().c_str());
-				std::cout << p_args[i]->to_string().c_str();
+				if (i > 0) Console::log(" ");
+				Console::log(p_args[i]->to_string().c_str());
 			}
-			std::cout << std::endl; // printf("\n");
+
+			if (p_func == Type::PRINTLN) Console::log("\n");
+			
 		} break;
 
 		case Type::INPUT: {
 			if (p_args.size() >= 2) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at most 1 argument.");
 			// Not safe to use scanf() possibly lead to buffer overflow.
 			if (p_args.size() == 1) {
-				if (p_args[0]->get_type() != var::STRING) THROW_ERROR(Error::TYPE_ERROR, "expected a string value at argument 0.");
-				std::cout << p_args[0]->operator String();
+				//if (p_args[0]->get_type() != var::STRING) THROW_ERROR(Error::TYPE_ERROR, "expected a string value at argument 0.");
+				Console::log(p_args[0]->operator String().c_str());
 			}
-			std::string inp;
-			std::getline(std::cin, inp);
-			r_ret = String(inp);
+			r_ret = String(Console::getline());
 		} break;
 
 		case Type::MATH_MAX: {
