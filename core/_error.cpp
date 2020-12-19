@@ -37,6 +37,7 @@ static const char* _error_names[Error::_ERROR_MAX_] = {
 	"NOT_IMPLEMENTED",
 	"ZERO_DIVISION",
 	"TYPE_ERROR",
+	"VALUE_ERROR",
 	"ATTRIBUTE_ERROR",
 	"INVALID_ARG_COUNT",
 	"INVALID_INDEX",
@@ -54,7 +55,7 @@ static const char* _error_names[Error::_ERROR_MAX_] = {
 	"STACK_OVERFLOW",
 	//_ERROR_MAX_
 };
-MISSED_ENUM_CHECK(Error::Type::_ERROR_MAX_, 22);
+MISSED_ENUM_CHECK(Error::Type::_ERROR_MAX_, 23);
 
 std::string Throwable::get_err_name(Throwable::Type p_type) {
 	THROW_INVALID_INDEX(_ERROR_MAX_, (int)p_type);

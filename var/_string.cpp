@@ -99,9 +99,17 @@ String::String(size_t p_i) { _data = new std::string(std::to_string(p_i).c_str()
 String::String(double p_d) { _data = new std::string(std::to_string(p_d).c_str()); }
 String::~String() { delete _data; }
 
-double String::to_float() const { return std::stod(*_data); }
-size_t String::hash() const { return std::hash<std::string>{}(*_data); }
-size_t String::const_hash() const { return __const_hash(_data->c_str()); }
+double String::to_float() const {
+	_TRY_VAR_STL(return std::stod(*_data));
+}
+
+size_t String::hash() const {
+	return std::hash<std::string>{}(*_data);
+}
+
+size_t String::const_hash() const {
+	return __const_hash(_data->c_str());
+}
 
 bool String::operator==(const String& p_other) const { return *_data == *p_other._data; }
 bool String::operator!=(const String& p_other) const { return *_data != *p_other._data; }
@@ -111,20 +119,20 @@ bool String::operator>(const String& p_other) const { return *_data > * p_other.
 bool String::operator>=(const String& p_other) const { return *_data >= *p_other._data; }
 
 String String::operator+(char p_c) const              { return *_data + p_c; }
-String String::operator+(int p_i) const               { return *_data + std::to_string(p_i); }
-String String::operator+(double p_d) const            { return *_data + std::to_string(p_d); }
+//String String::operator+(int p_i) const             { return *_data + std::to_string(p_i); }
+//String String::operator+(double p_d) const          { return *_data + std::to_string(p_d); }
 String String::operator+(const char* p_cstr) const    { return *_data + p_cstr; }
 String String::operator+(const String& p_other) const { return *_data + *p_other._data; }
 
 String& String::operator+=(char p_c)              { *_data += p_c;                 return *this; }
-String& String::operator+=(int p_i)               { *_data += std::to_string(p_i); return *this; }
-String& String::operator+=(double p_d)            { *_data += std::to_string(p_d); return *this; }
+//String& String::operator+=(int p_i)             { *_data += std::to_string(p_i); return *this; }
+//String& String::operator+=(double p_d)          { *_data += std::to_string(p_d); return *this; }
 String& String::operator+=(const char* p_cstr)    { *_data += p_cstr;              return *this; }
 String& String::operator+=(const String& p_other) { *_data += *p_other._data;      return *this; }
 
 String& String::operator=(char p_c)              { *_data = p_c;                 return *this; }
-String& String::operator=(int p_i)               { *_data = std::to_string(p_i); return *this; }
-String& String::operator=(double p_d)            { *_data = std::to_string(p_d); return *this; }
+//String& String::operator=(int p_i)             { *_data = std::to_string(p_i); return *this; }
+//String& String::operator=(double p_d)          { *_data = std::to_string(p_d); return *this; }
 String& String::operator=(const char* p_cstr)    { *_data = p_cstr;              return *this; }
 String& String::operator=(const String& p_other) { *_data = *p_other._data;      return *this; }
 
@@ -182,11 +190,14 @@ String String::lower() const {
 int64_t String::to_int() const {
 	// TODO: this should throw std::exceptions
 	if (startswith("0x") || startswith("0X")) {
-		return std::stoll(*_data, nullptr, 16);
+		_TRY_VAR_STL(
+			return std::stoll(*_data, nullptr, 16));
 	} else if (startswith("0b") || startswith("0B")) {
-		return std::stoll(substr(2, size()), nullptr, 2);
+		_TRY_VAR_STL(
+			return std::stoll(substr(2, size()), nullptr, 2));
 	} else {
-		return std::stoll(*_data);
+		_TRY_VAR_STL(
+			return std::stoll(*_data));
 	}
 }
 

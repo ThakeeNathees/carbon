@@ -39,6 +39,15 @@
 #define DATA_PTR(T) reinterpret_cast<T *>(_data._mem)
 #define DATA_PTR_OTHER(T) reinterpret_cast<T *>(p_other._data._mem)
 
+#define _TRY_VAR_STL(m_statement)                    \
+do {												 \
+	try {											 \
+		m_statement;								 \
+	} catch (std::exception& err) {					 \
+		THROW_ERROR(Error::VALUE_ERROR, err.what()); \
+	}												 \
+} while (false)
+
 namespace carbon {
 
 class var {

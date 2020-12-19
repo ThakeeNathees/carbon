@@ -26,6 +26,7 @@
 #ifndef CORE_H
 #define CORE_H
 
+#include "internal.h"
 #include "_error.h"
 #include "logger.h"
 #include "console.h"
