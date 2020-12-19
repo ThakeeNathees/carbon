@@ -24,7 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "type_info.h"
-#include "error.h"
+#include "_error.h"
 #include "native.h"
 
 namespace carbon {

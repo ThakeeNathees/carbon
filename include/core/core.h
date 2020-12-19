@@ -26,10 +26,10 @@
 #ifndef CORE_H
 #define CORE_H
 
-#include "var/var.h"
+#include "_error.h"
 #include "logger.h"
+#include "var/var.h"
 #include "console.h"
-#include "error.h"
 #include "type_info.h"
 #include "native.h"
 

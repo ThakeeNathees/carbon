@@ -24,8 +24,8 @@
 //------------------------------------------------------------------------------
 
 #include "_map.h"
+
 #include "var.h"
-#include "error.h"
 #include "type_info.h"
 #include "var_private.h"
 

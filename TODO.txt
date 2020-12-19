@@ -25,6 +25,7 @@
 
 =============== TODO =============================================================
  * implement try and catch
+ * native api complete refactor
  * zero division error, import error are not underlined by the compiler
  * switch statement (jump table impl) before: switch body is a single block node
  * parse command line args
@@ -45,6 +46,16 @@
  * str(), hex(), ...
  * while (cond) { break; stmnt; } <-- add unreachable code warning
  * substr and arrray indexing inconsistance
+ * build using batch file/make file
+
+=============== WRITE TESTS ======================================================
+ * tests for Path and OS class
+ * write test for all methods of var (at least 1)
+ * bind all combinations
+ * write tests for every errors possibly should thrown
+ * inheritance tests
+ * codegen tests
+ * vm tests
 
 =============== LOW PRIORITY =====================================================
  * in, is 
@@ -90,7 +101,9 @@
  * easy integration (c++ bindings)
  * native api (calling c/c++ at runtime from dll/so)
 
+ /* syntax features */
  * get_func()(); vars_callable();
+ * var path = Path("C:/dev") / "path/to" / "file.txt";
  * func f(x) = x + 2; // single expr function defn
  * support both `&&`/`and` , `||`/`or`, `!`/`not`
  * python like arithmetic operators in builtin

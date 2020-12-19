@@ -27,6 +27,9 @@
 #include <Windows.h>
 #include <direct.h>
 
+// TODO: better way (maybe rename ERROR)
+#undef ERROR
+
 namespace carbon {
 	namespace windows {
 		inline std::string get_last_error_as_string() {

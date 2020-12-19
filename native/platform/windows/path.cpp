@@ -28,7 +28,6 @@
 
 #include "core/platform/windows/platform_windows.h"
 
-
 namespace carbon {
 
 String Path::absolute() {

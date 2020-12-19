@@ -55,15 +55,36 @@ String Path::extension() {
 	return str.substr(found);
 }
 
-String Path::join(const String& p_path2) {
-	THROW_BUG("Not imlpemented");
+
+ptr<Path> Path::join(const String& p_path) const {
+	// TODO: this is temp and try corss platform libraries (boost/filesystem?)
+	if (p_path.size() == 0) return newptr<Path>(_path);
+	if (_path.size() == 0 || p_path[0] == '\\' || p_path[0] == '/') newptr<Path>(p_path);
+	if (_path[0] == '\\' || p_path[0] == '/') {
+		return newptr<Path>(_path + p_path);
+	}
+	return newptr<Path>(_path + '/' + p_path);
+}
+
+ptr<Path> Path::operator /(const Path& p_other) const {
+	return join(p_other);
+}
+
+var Path::__div(const var& p_other) {
+	if (p_other.get_type() == var::STRING) {
+		return join(p_other.operator String());
+	}
+	if (p_other.get_type_name() != get_type_name_s()) {
+		THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Object\".", p_other.get_type_name().c_str()));
+	}
+	return join(p_other.operator ptr<Path>()->operator const String &());
 }
 
 String Path::to_string() {
 	return _path;
 }
 
-Path::operator const String& () {
+Path::operator const String& () const {
 	return _path;
 }
 

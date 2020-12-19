@@ -1,5 +1,5 @@
 
-
+// pass by value and reference
 func f(a, b&) {
 	a += 1;
 	b += 1;
@@ -7,6 +7,11 @@ func f(a, b&) {
 }
 
 func main() {
+
+	// operator overloading
+	var path = Path("C:/dev") / "path/to" / "file.txt";
+	println(path);
+
 	var a = 1, b = 1;
 	f(a, b);
 	println(a, " ", b);

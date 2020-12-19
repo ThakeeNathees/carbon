@@ -123,7 +123,7 @@ def generate_inc(header):
 def generate_file(target, inc):
     with open(target, 'w') as file:
     	file.write(inc)
-    print('%s generated' % target)
+    print('[native_api] %s generated' % target)
 
 #######################################################################
 

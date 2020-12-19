@@ -84,7 +84,7 @@ void NativeLib::generate_api(const String& p_path) {
 	} else path = OS::getcwd();
 
 	File target;
-	target.open(Path(path).join("carbon_api.h"), File::WRITE);
+	target.open(*Path(path).join("carbon_api.h"), File::WRITE);
 	target.write_text(NATIVE_API_STR);
 	target.close();
 

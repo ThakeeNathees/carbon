@@ -191,12 +191,19 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 					if (!all_const) break;
 					stdvec<var*> args;
 					for (int i = 0; i < (int)op->args.size(); i++) args.push_back(&ptrcast<Parser::ConstValueNode>(op->args[i])->value);
-					#define SET_EXPR_CONST_NODE(m_var, m_pos)											      \
+					#define SET_EXPR_CONST_NODE(m_expr, m_pos)											      \
 						do {                                                                                  \
-							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(m_var);         \
+							var value;																		  \
+							try {																			  \
+								value = (m_expr);														      \
+							} catch (Throwable& err) {														  \
+								throw ANALYZER_ERROR(err.get_type(), err.what(), op->pos);					  \
+							}																				  \
+							ptr<Parser::ConstValueNode> cv = new_node<Parser::ConstValueNode>(value);         \
 							cv->pos = m_pos;                                                                  \
 							p_expr = cv;                                                                      \
 						} while (false)
+
 					switch (op->op_type) {
 						case Parser::OperatorNode::OpType::OP_EQEQ:
 							SET_EXPR_CONST_NODE(*args[0] == *args[1], op->pos);

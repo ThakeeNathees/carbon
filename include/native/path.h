@@ -53,16 +53,19 @@ public:
 	Path(const String& p_path = "");
 	static void _Path(ptr<Path> p_self, const String& p_path);
 
-	String absolute();
-	String parent();
+	String absolute(); // TODO: return Path instance (ptr<Path>)
+	String parent();   // TODO: return Path instance
 	String filename();
 	String extension();
-	String join(const String& p_path);
 	bool exists();
 	bool isdir();
 
+	ptr<Path> join(const String& p_path) const;
+	ptr<Path> operator /(const Path& p_other) const;
+	var __div(const var& p_other) override;
+
 	String to_string() override;
-	operator const String& ();
+	operator const String& () const;
 
 private:
 	String _path;
