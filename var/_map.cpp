@@ -75,15 +75,15 @@ String Map::to_string() const {
 	for (_map_internal_t::iterator it = (*_data).begin(); it != (*_data).end(); it++) {
 		if (it != (*_data).begin()) ss << ", ";
 		
-		if (it->second.key.get_type() == var::STRING) ss << "\"";
-		ss << it->second.key.to_string();
-		if (it->second.key.get_type() == var::STRING) ss << "\"";
+		if (it->first.get_type() == var::STRING) ss << "\"";
+		ss << it->first.to_string();
+		if (it->first.get_type() == var::STRING) ss << "\"";
 
 		ss << " : ";
 
-		if (it->second.value.get_type() == var::STRING) ss << "\"";
-		ss << it->second.value.to_string();
-		if (it->second.value.get_type() == var::STRING) ss << "\"";
+		if (it->second.get_type() == var::STRING) ss << "\"";
+		ss << it->second.to_string();
+		if (it->second.get_type() == var::STRING) ss << "\"";
 	}
 	ss << " }";
 	return ss.str();
@@ -93,34 +93,72 @@ Map Map::copy(bool p_deep) const {
 	Map ret;
 	for (_map_internal_t::iterator it = (*_data).begin(); it != (*_data).end(); it++) {
 		if (p_deep) {
-			ret[(int64_t)it->first] = it->second.value.copy(true);
+			ret[it->first] = it->second.copy(true);
 		} else {
-			ret[(int64_t)it->first] = it->second.value;
+			ret[it->first] = it->second;
 		}
 	}
 	return ret;
 }
 
-// TODO: error message.
-#define _INSERT_KEY_IF_HAVENT(m_key)                            \
-	_map_internal_t::iterator it = (*_data).find(m_key.hash()); \
-	if (it == _data->end()) (*_data)[m_key.hash()].key = m_key
+bool Map::_Comparator::operator() (const var& l, const var& r) const {
+	switch (l.get_type()) {
+		case var::_NULL:
+			if (r.get_type() == var::_NULL) return false;
+			break;
+		case var::BOOL:
+			if (r.get_type() == var::BOOL) { return (int)l.operator bool() < (int)r.operator bool(); }
+			break;
+		case var::INT:
+			if (r.get_type() == var::INT) { return l.operator int64_t() < r.operator int64_t(); }
+			break;
+		case var::FLOAT:
+			if (r.get_type() == var::FLOAT) { return l.operator double() < r.operator double(); }
+			break;
+		case var::STRING:
+			if (r.get_type() == var::STRING) { return l.operator const String&() < r.operator const String&(); }
+			break;
 
-var Map::operator[](const var& p_key) const { _INSERT_KEY_IF_HAVENT(p_key); return (*_data).operator[](p_key.hash()).value;  }
-var& Map::operator[](const var& p_key) { _INSERT_KEY_IF_HAVENT(p_key); return (*_data).operator[](p_key.hash()).value; }
-var Map::operator[](const char* p_key) const { _INSERT_KEY_IF_HAVENT(var(p_key)); return (*_data).operator[](var(p_key).hash()).value; }
-var& Map::operator[](const char* p_key) { _INSERT_KEY_IF_HAVENT(var(p_key)); return (*_data).operator[](var(p_key).hash()).value; }
+		case var::ARRAY: // [[FALLTHROUGHT]]
+		case var::MAP: {
+			//	.hash() method will throw unhashable type error
+			return l.hash() < r.hash();
+		} break;
+
+		case var::OBJECT: {
+			// TODO: maybe use __lt() / user defined method
+			if (r.get_type() == var::OBJECT) return l.hash() < r.hash();
+		} break;
+	}
+	MISSED_ENUM_CHECK(var::_TYPE_MAX_, 9);
+
+	return (int)l.get_type() < (int)r.get_type();
+}
+
+// TODO: error message.
+//#define _INSERT_KEY_IF_HAVENT(m_key)                          \
+//	_map_internal_t::iterator it = (*_data).find(m_key.hash()); \
+//	if (it == _data->end()) (*_data)[m_key.hash()].key = m_key
+
+var Map::operator[](const var& p_key) const  { /*_INSERT_KEY_IF_HAVENT(p_key);      */ return (*_data)[p_key]; }
+var& Map::operator[](const var& p_key)       { /*_INSERT_KEY_IF_HAVENT(p_key);      */ return (*_data)[p_key]; }
+var Map::operator[](const char* p_key) const { /*_INSERT_KEY_IF_HAVENT(var(p_key)); */ return (*_data)[p_key]; }
+var& Map::operator[](const char* p_key)      { /*_INSERT_KEY_IF_HAVENT(var(p_key)); */ return (*_data)[p_key]; }
 
 Map::_map_internal_t::iterator Map::begin() const { return (*_data).begin(); }
 Map::_map_internal_t::iterator Map::end() const { return (*_data).end(); }
-Map::_map_internal_t::iterator Map::find(const var& p_key) const { return (*_data).find(p_key.hash()); }
+Map::_map_internal_t::iterator Map::find(const var& p_key) const { return (*_data).find(p_key); }
 
 void Map::insert(const var& p_key, const var& p_value) {
-	(*_data).insert(std::pair<size_t, _KeyValue>(p_key.hash(), _KeyValue(p_key, p_value)));
+	(*_data)[p_key] = p_value;
+	//(*_data).insert(std::pair<size_t, _KeyValue>(p_key.hash(), _KeyValue(p_key, p_value)));
 }
 
 bool Map::has(const var& p_key) const { return find(p_key) != end(); }
-var Map::at(const var& p_key) const { return _data->at(p_key).value; }
+var Map::at(const var& p_key) const {
+	_TRY_VAR_STL(
+		return _data->at(p_key));
+}
 void Map::clear() { _data->clear(); }
 
 size_t Map::size() const { return _data->size(); }
@@ -130,9 +168,9 @@ bool Map::operator ==(const Map& p_other) const {
 	if (size() != p_other.size())
 		return false;
 	for (_map_internal_t::iterator it_other = p_other.begin(); it_other != p_other.end(); it_other++) {
-		_map_internal_t::iterator it_self = find(it_other->second.key);
+		_map_internal_t::iterator it_self = find(it_other->first);
 		if (it_self == end()) return false;
-		if (it_self->second.value != it_other->second.value) return false;
+		if (it_self->second != it_other->second) return false;
 
 	}
 	return true;

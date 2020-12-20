@@ -603,8 +603,11 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					// TODO: check if function exists and check args.
 				} break;
 
+				case Parser::IdentifierNode::REF_ENUM_NAME: {
+					// TODO: check if method exists
+				} break;
+
 				// TODO: EnumType.get_value_count();
-				//case Parser::IdentifierNode::REF_ENUM_NAME:
 				//case Parser::IdentifierNode::REF_ENUM_VALUE:
 				default: {
 					throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("attribute \"%s\" doesn't support method calls.", base->name.c_str()), base->pos);

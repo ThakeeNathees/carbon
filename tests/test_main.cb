@@ -7,6 +7,8 @@ func f(a, b&) {
 }
 
 func main() {	
+	var m = { 1:1, "2":2, 3:3, 4:4 };
+	println(m);
 
 	var in = File("tests/large_file", File.READ);
 	var line = in.read_line();

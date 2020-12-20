@@ -84,9 +84,14 @@ class _Map_KeyValue_Pair : public Object {
 
 public:
 	_Map_KeyValue_Pair() {}
-	_Map_KeyValue_Pair(var* p_key, var* p_value) : key(p_key), value(p_value) {}
+	_Map_KeyValue_Pair(const var* p_key, var* p_value) : key(p_key), value(p_value) {}
 
 	bool _is_registered() const override { return false; }
+
+	String to_string() override {
+		// TODO: implement and use __repr__() here
+		return String::format("MapKVPair(%s:%s)", key->to_string().c_str(), value->to_string().c_str());
+	}
 
 	var get_member(const String& p_name) override {
 		switch (p_name.const_hash()) {
@@ -98,13 +103,16 @@ public:
 
 	void set_member(const String& p_name, var& p_value) override {
 		switch (p_name.const_hash()) {
-			case "key"_hash: *key = p_value; return;
+			case "key"_hash: {
+				THROW_ERROR(Error::ATTRIBUTE_ERROR, "key of a map is immutable");
+			} break;
 			case "value"_hash: *value = p_value; return;
 			default: Super::set_member(p_name, p_value); return;
 		}
 	}
 
-	var* key, * value;
+	const var* key;
+	var* value;
 };
 
 class _Iterator_Map : public Object {
@@ -116,7 +124,7 @@ class _Iterator_Map : public Object {
 public:
 
 	_Iterator_Map() {}
-	_Iterator_Map(const Map* p_map) {
+	_Iterator_Map(Map* p_map) {
 		_map_data = (Map::_map_internal_t*)p_map->get_data();
 		_it = _map_data->begin();
 	}
@@ -125,13 +133,11 @@ public:
 	virtual bool __iter_has_next() override { return _it != _map_data->end(); }
 
 	virtual var __iter_next() override {
-		ptr<_Map_KeyValue_Pair> ret = newptr<_Map_KeyValue_Pair>(&_it->second.key, &(_it)->second.value);
+		ptr<_Map_KeyValue_Pair> ret = newptr<_Map_KeyValue_Pair>(&(_it->first), &(_it->second));
 		_it++;
 		return ret;
 	}
 };
-
-
 
 }
 
