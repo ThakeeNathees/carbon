@@ -41,6 +41,7 @@ public:
 		INT,
 		FLOAT,
 		STRING,
+		STR,
 		ARRAY,
 		MAP,
 		//OBJECT,

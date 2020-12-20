@@ -47,12 +47,14 @@ var::Type BuiltinTypes::get_var_type(Type p_type) {
 		case BOOL:   return var::BOOL;
 		case INT:    return var::INT;
 		case FLOAT:  return var::FLOAT;
+		case STR: // [[FALLTHROUGH]]
 		case STRING: return var::STRING;
 		case ARRAY:  return var::ARRAY;
 		case MAP:    return var::MAP;
 	}
 	THROW_BUG("can't reach here.");
 }
+MISSED_ENUM_CHECK(BuiltinTypes::Type::_TYPE_MAX_, 9);
 
 bool BuiltinTypes::can_construct_compile_time(Type p_type) {
 	switch (p_type) {
@@ -62,6 +64,7 @@ bool BuiltinTypes::can_construct_compile_time(Type p_type) {
 		case INT:
 		case FLOAT:
 		case STRING:
+		case STR:
 			return true;
 		case ARRAY:
 		case MAP:
@@ -69,6 +72,7 @@ bool BuiltinTypes::can_construct_compile_time(Type p_type) {
 	}
 	THROW_BUG("can't reach here.");
 }
+MISSED_ENUM_CHECK(BuiltinTypes::Type::_TYPE_MAX_, 9);
 
 var BuiltinTypes::construct(Type p_type, const stdvec<var*>& p_args) {
 	switch (p_type) {
@@ -101,11 +105,12 @@ var BuiltinTypes::construct(Type p_type, const stdvec<var*>& p_args) {
 					THROW_ERROR(Error::TYPE_ERROR, String::format("cannot construct float from type %s", p_args[0]->get_type_name().c_str()));
 				}
 			}
+
+		case STR: // [[FALLTHROUGH]]
 		case STRING: {
 			if (p_args.size() >= 2) THROW_ERROR(Error::INVALID_ARG_COUNT, "expected at most 1 argument."); // TODO: what if multiple args??
 			if (p_args.size() == 0) return String();
 			return p_args[0]->to_string();
-			//if (p_args[0]->get_type() != var::STRING) THROW_ERROR(Error::TYPE_ERROR, "expected a string at argument 0.");
 
 		} break;
 		case ARRAY: {
@@ -125,7 +130,7 @@ var BuiltinTypes::construct(Type p_type, const stdvec<var*>& p_args) {
 		}
 	}
 
-	MISSED_ENUM_CHECK(BuiltinTypes::Type::_TYPE_MAX_, 8);
+	MISSED_ENUM_CHECK(BuiltinTypes::Type::_TYPE_MAX_, 9);
 	THROW_BUG("can't reach here");
 }
 

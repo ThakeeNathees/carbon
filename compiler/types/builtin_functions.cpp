@@ -50,6 +50,12 @@ int BuiltinFunctions::get_arg_count(BuiltinFunctions::Type p_func) {
 		case Type::PRINT:
 		case Type::PRINTLN:
 		case Type::INPUT:
+			return -1;
+
+		case Type::HEX:
+		case Type::BIN:
+			return 1;
+
 		case Type::MATH_MAX:
 		case Type::MATH_MIN:
 			return -1;
@@ -57,7 +63,7 @@ int BuiltinFunctions::get_arg_count(BuiltinFunctions::Type p_func) {
 			return 2;
 	}
 	return 0;
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 11);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 13);
 }
 
 bool BuiltinFunctions::can_const_fold(Type p_func) {
@@ -69,7 +75,7 @@ bool BuiltinFunctions::can_const_fold(Type p_func) {
 		default:
 			return true;
 	}
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 11);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 13);
 }
 
 bool BuiltinFunctions::is_compiletime(Type p_func) {
@@ -82,7 +88,7 @@ bool BuiltinFunctions::is_compiletime(Type p_func) {
 		default:
 			return false;
 	}
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 11);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 13);
 }
 
 // TODO: change this to return r_ret for consistancy.
@@ -108,12 +114,24 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var*>& p_args, var& r_ret)
 
 		case Type::INPUT: {
 			if (p_args.size() >= 2) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected at most 1 argument.");
-			// Not safe to use scanf() possibly lead to buffer overflow.
-			if (p_args.size() == 1) {
-				//if (p_args[0]->get_type() != var::STRING) THROW_ERROR(Error::TYPE_ERROR, "expected a string value at argument 0.");
-				Console::log(p_args[0]->operator String().c_str());
-			}
+			if (p_args.size() == 1) Console::log(p_args[0]->operator String().c_str());
 			r_ret = String(Console::getline());
+		} break;
+
+		case Type::HEX: {
+			if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected exctly 1 argument.");
+
+			std::stringstream ss;
+			ss << "0x" << std::hex << p_args[0]->operator int64_t();
+			r_ret = String(ss.str());
+		} break;
+
+		case Type::BIN: {
+			if (p_args.size() != 1) THROW_ERROR(Error::INVALID_ARG_COUNT, "Expected exctly 1 argument.");
+
+			std::stringstream ss;
+			ss << "0b" << std::bitset<sizeof(int64_t)>(p_args[0]->operator int64_t());
+			r_ret = String(ss.str());
 		} break;
 
 		case Type::MATH_MAX: {
@@ -148,7 +166,7 @@ void BuiltinFunctions::call(Type p_func, const stdvec<var*>& p_args, var& r_ret)
 		} break;
 
 	}
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 11);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 13);
 }
 
 }

@@ -6,7 +6,10 @@ func f(a, b&) {
 	println(a, " ", b);
 }
 
-func main() {
+func main() {	
+
+	var x = "asdf" + 1;
+	print(x);
 
 	// operator overloading
 	var path = Path("C:/dev") / "path/to" / "file.txt";

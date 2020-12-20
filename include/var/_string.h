@@ -85,24 +85,24 @@ public:
 	bool operator>=(const String& p_other) const;
 
 	String operator+(char p_c) const;
-	String operator+(int p_i) const;
-	String operator+(double p_d) const;
 	String operator+(const char* p_cstr) const;
 	String operator+(const String& p_other) const;
+	//String operator+(int p_i) const;
+	//String operator+(double p_d) const;
 	// String operator+(var& p_obj) const          { TODO: }
 
 	String& operator+=(char p_c);
-	String& operator+=(int p_i);
-	String& operator+=(double p_d);
 	String& operator+=(const char* p_cstr);
 	String& operator+=(const String& p_other);
+	//String& operator+=(int p_i);
+	//String& operator+=(double p_d);
 	// String& operator+(var& p_obj)               { TODO: }
 
 	String& operator=(char p_c);
-	String& operator=(int p_i);
-	String& operator=(double p_d);
 	String& operator=(const char* p_cstr);
 	String& operator=(const String& p_other);
+	//String& operator=(int p_i);
+	//String& operator=(double p_d);
 	// String& operator=(var& p_obj)               { TODO: }
 
 	// Wrappers.

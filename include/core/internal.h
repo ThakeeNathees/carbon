@@ -39,6 +39,7 @@
 #include <functional>
 #include <type_traits>
 #include <typeinfo>
+#include <bitset>
 
 #include <vector>
 #include <cstring>

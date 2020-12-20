@@ -320,12 +320,14 @@ stdmap<BuiltinFunctions::Type, String> BuiltinFunctions::_func_list = {
 	{ BuiltinFunctions::PRINT,     "print"    },
 	{ BuiltinFunctions::PRINTLN,   "println"  },
 	{ BuiltinFunctions::INPUT,     "input"    },
+	{ BuiltinFunctions::HEX,       "hex"      },
+	{ BuiltinFunctions::BIN,       "bin"      },
 	{ BuiltinFunctions::MATH_MIN,  "min"      },
 	{ BuiltinFunctions::MATH_MAX,  "max"      },
 	{ BuiltinFunctions::MATH_POW,  "pow"      },
 
 };
-MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 11);
+MISSED_ENUM_CHECK(BuiltinFunctions::Type::_FUNC_MAX_, 13);
 
 stdmap<BuiltinTypes::Type, String> BuiltinTypes::_type_list = {
 	//{ "", BuiltinTypes::UNKNOWN    },
@@ -336,11 +338,12 @@ stdmap<BuiltinTypes::Type, String> BuiltinTypes::_type_list = {
 	{ BuiltinTypes::INT,    "int",       },
 	{ BuiltinTypes::FLOAT,  "float",     },
 	{ BuiltinTypes::STRING, "String",    },
+	{ BuiltinTypes::STR,    "str",       },
 	{ BuiltinTypes::ARRAY,  "Array",     },
 	{ BuiltinTypes::MAP,    "Map",       },
 
 };
-MISSED_ENUM_CHECK(BuiltinTypes::Type::_TYPE_MAX_, 8);
+MISSED_ENUM_CHECK(BuiltinTypes::Type::_TYPE_MAX_, 9);
 
 
 

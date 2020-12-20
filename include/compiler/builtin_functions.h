@@ -46,6 +46,9 @@ public:
 		PRINTLN,
 		INPUT,
 
+		HEX,
+		BIN,
+
 		MATH_MIN,
 		MATH_MAX,
 		MATH_POW,

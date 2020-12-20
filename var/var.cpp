@@ -1045,9 +1045,15 @@ var var::operator %(const var& p_other) const {
 				case INT: return _data._int % p_other._data._int;
 			}
 		}
+		case STRING: {
+			THROW_ERROR(Error::NOT_IMPLEMENTED, "TODO: implement this ASAP");
+			//switch (p_other.type) {
+			//	// check if array or a single var
+			//}
+		}
 	}
 	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);
-	THROW_OPERATOR_NOT_SUPPORTED(%);
+	THROW_OPERATOR_NOT_SUPPORTED(%%);
 }
 
 var& var::operator+=(const var& p_other) {

@@ -1,11 +1,10 @@
 ============ IN PROGRASS =========================================================
 
 =============== BUGS =============================================================
- * float("") <-- crash
  * method call on static var shouldn't error
  * OS.system("del path\to\file"); not working
  * arr[i] += v; addition not working here (also check map["key"] += v;
- * native argument type float and int provided shouldn't be error.
+ * native argument type float and int provided shouldn't be error -> type compatability.
  * x = y = 42; <-- shouold be valid (assignment allowed now in expr)
       K-normalized form : y = 42; tmp = y; x = tmp; and optimize tmp
  * "".substr() check index limit
@@ -36,17 +35,15 @@
  * opcodes string and bytes + zlib
  * destructor (needed for native struct to unload dlls)
  * "string %s literal" % ["replace"]
- * array string to_string
- * print use space seperated
  * Path.listdir() <-- default argument "."
  * implement to_string on type info, runtim instance, class ref, ...
  * error print and dbg info (stack trace)
  * undef THROW_ANLAYZER_ERROR, TOKENIZER_ERROR, ... (not THROW_BUG)
  * change owner pointer from shared to weak/ inline functions
- * str(), hex(), ...
  * while (cond) { break; stmnt; } <-- add unreachable code warning
  * substr and arrray indexing inconsistance
  * build using batch file/make file
+ * var x = 1; println(x/0); <-- runtime error but should be compile time.
 
 =============== WRITE TESTS ======================================================
  * tests for Path and OS class
