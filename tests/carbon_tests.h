@@ -32,7 +32,7 @@ using namespace carbon;
 #include <doctest/doctest.h>
 
 #define NO_PATH "<NO-PATH-SET>"
-#define _PARSE(m_source) parser.parse(m_source, NO_PATH)
+#define _PARSE(m_source) tokenizer->tokenize(m_source, NO_PATH); parser->parse(tokenizer)
 
 #define CHECK_THROWS_ERR(m_type, m_statement)																		        \
 	do {																													\
@@ -50,26 +50,26 @@ using namespace carbon;
 
 #define CHECK_NOTHROW__ANALYZE(m_source)                 \
 do {													 \
-	parser->parse(m_source, NO_PATH);					 \
+	_PARSE(m_source);									 \
 	CHECK_NOTHROW(analyzer.analyze(parser));			 \
 } while (false)
 
 #define CHECK_THROWS__ANALYZE(m_type, m_source)          \
 do {												     \
-	parser->parse(m_source, NO_PATH);				     \
+	_PARSE(m_source);				     				 \
 	CHECK_THROWS_ERR(m_type, analyzer.analyze(parser));  \
 } while(false)
 
 #define CHECK_NOTHROW__CODEGEN(m_source)                   \
 do {													   \
-	parser->parse(m_source, NO_PATH);					   \
+	_PARSE(m_source);					   				   \
 	analyzer->analyze(parser);							   \
 	CHECK_NOTHROW(bytecode = codegen.generate(analyzer));  \
 } while (false)
 
 #define CHECK_NOTHROW__VM(m_source)                        \
 do {										               \
-	parser->parse(m_source, NO_PATH);					   \
+	_PARSE(m_source);									   \
 	analyzer->analyze(parser);				               \
 	bytecode = codegen->generate(analyzer);	               \
 	VM::singleton()->run(bytecode, argv);	               \

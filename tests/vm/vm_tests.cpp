@@ -2,6 +2,7 @@
 #include "tests/carbon_tests.h"
 
 TEST_CASE("[vm_tests]:vm_tests") {
+	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
 	ptr<Parser> parser = newptr<Parser>();
 	ptr<Analyzer> analyzer = newptr<Analyzer>();
 	ptr<CodeGen> codegen = newptr<CodeGen>();

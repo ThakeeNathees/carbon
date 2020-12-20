@@ -2,7 +2,8 @@
 #include "tests/carbon_tests.h"
 
 TEST_CASE("[parser_tests]:valid_syntax_test") {
-	Parser parser;
+	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
+	ptr<Parser> parser = newptr<Parser>();
 
 	// variables.
 	CHECK_NOTHROW(_PARSE("var v1; var v2 = 2; var v3 = 3, v4 = 4, v5 = 5;"));
@@ -119,7 +120,7 @@ TEST_CASE("[parser_tests]:valid_syntax_test") {
 
 	// multi line string
 	CHECK_NOTHROW(_PARSE(R"(
-	var str = "\\
+	var s = "\\
 	line 1
 	line 2
 	";

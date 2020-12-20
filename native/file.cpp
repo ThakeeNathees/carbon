@@ -111,7 +111,7 @@ String File::read_line() {
 void File::write_text(const String& p_text) {
 	if (!is_open()) THROW_ERROR(Error::IO_ERROR, "can't write on a closed file.");
 	if (!(mode & WRITE) && !(mode & APPEND) && !(mode & EXTRA)) THROW_ERROR(Error::IO_ERROR, "opened file mode isn't supported for writing.");
-	fprintf(_file, p_text.c_str());
+	fprintf(_file, "%s", p_text.c_str());
 }
 
 ptr<Buffer> File::read_bytes() {
@@ -165,6 +165,30 @@ File::~File() {
 void File::_File(ptr<File> p_self, const String& p_path, int p_mode) {
 	p_self->path = p_path;
 	if (p_self->path.size() != 0) p_self->open(p_self->path, p_mode);
+}
+
+// file iterator ------------------------------------------
+
+class _Iterator_File : public Object {
+	REGISTER_CLASS(_Iterator_File, Object) {}
+
+	File* _file = nullptr;
+	String _line;
+public:
+	_Iterator_File() {}
+	_Iterator_File(File* p_file) {
+		_file = p_file;
+		_line = _file->read_line();
+	}
+
+	bool _is_registered() const override { return false; }
+	virtual bool __iter_has_next() override { return _line != ""; }
+	virtual var __iter_next() override { return _line = _file->read_line(); }
+
+};
+
+var File::__iter_begin() {
+	return newptr<_Iterator_File>(this);
 }
 
 }

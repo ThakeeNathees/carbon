@@ -2,7 +2,8 @@
 #include "tests/carbon_tests.h"
 
 TEST_CASE("[parser_tests]:invalid_syntax_test") {
-	Parser parser;
+	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
+	ptr<Parser> parser = newptr<Parser>();
 
 	// Eof
 	CHECK_THROWS_ERR(Error::UNEXPECTED_EOF, _PARSE("class"));

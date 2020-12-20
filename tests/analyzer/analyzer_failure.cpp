@@ -2,6 +2,7 @@
 #include "tests/carbon_tests.h"
 
 TEST_CASE("[analyzer_tests]:analyzer_failure") {
+	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
 

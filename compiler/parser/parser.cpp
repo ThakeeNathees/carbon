@@ -60,14 +60,14 @@ CompileTimeError Parser::_predefined_error(const String& p_what, const String& p
 		Vect2i(), p_dbg_info);
 }
 
-void Parser::parse(const String& p_source, const String& p_file_path) {
+void Parser::parse(ptr<Tokenizer> p_tokenizer) {
 	
-	tokenizer = newptr<Tokenizer>();
+	tokenizer = p_tokenizer;
 	file_node = new_node<FileNode>();
-	file_node->source = p_source;
-	file_node->path = Path(p_file_path).absolute();
 
-	tokenizer->tokenize(file_node->source, file_node->path);
+	// TODO: maybe redundant
+	file_node->source = tokenizer->get_source();
+	file_node->path = tokenizer->get_source_path();
 
 	while (true) {
 	
