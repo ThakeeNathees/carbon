@@ -524,7 +524,8 @@ public:
 	*/
 
 	// Methods.
-	void parse(const String& p_source, const String& p_file_path);
+	//void parse(const String& p_source, const String& p_file_path);
+	void parse(ptr<Tokenizer> p_tokenizer);
 #ifdef DEBUG_BUILD
 	void print_tree() const;
 #endif

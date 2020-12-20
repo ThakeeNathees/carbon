@@ -27,6 +27,8 @@
 #define TOKENIZER_H
 
 #include "core/core.h"
+#include "native/file.h"
+
 #include "builtin_functions.h"
 #include "builtin_types.h"
 
@@ -157,12 +159,17 @@ private: // members.
 
 public:
 	// methods.
+	void tokenize(ptr<File> p_file);
 	void tokenize(const String& p_source, const String& p_source_path = "<PATH-NOT-SET>");
+
 	const TokenData& next(int p_offset = 0);
 	const TokenData& peek(int p_offset = 0, bool p_safe = false) const;
 	Vect2i get_pos() const;
 	uint32_t get_width() const;
 	const TokenData& get_token_at(const Vect2i& p_pos, bool p_safe = false) const;
+
+	const String& get_source() const;
+	const String& get_source_path() const;
 
 	static const char* get_token_name(Token p_tk);
 
@@ -173,6 +180,8 @@ private:
 	void _eat_eof();
 	void _eat_const_value(const var& p_value, int p_eat_size = 0);
 	void _eat_identifier(const String& p_idf, int p_eat_size = 0);
+
+	void _clear();
 
 };
 

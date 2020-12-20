@@ -1,6 +1,8 @@
 
-func z_function(str) {
-	var n = str.size();
+// TODO: fix: str builtin type -> can't use as local 
+
+func z_function(_str) {
+	var n = _str.size();
 	var z = Array(); z.resize(n);
 	z[0] = 0;
 
@@ -8,14 +10,14 @@ func z_function(str) {
 	for (var i = 1; i < n; i+=1) {
 		if (i >= r) {
 			l = i; r = i;
-			while (r < n && str[r - l] == str[r]) r+= 1;
+			while (r < n && _str[r - l] == _str[r]) r+= 1;
 			z[i] = r - l;
 		} else {
 			if (i + z[i - l] < r) {
 				z[i] = z[i - l];
 			} else {
 				l = i;
-				while (r < n && str[r - l] == str[r]) r+=1;
+				while (r < n && _str[r - l] == _str[r]) r+=1;
 				z[i] = r - l;
 			}
 		}

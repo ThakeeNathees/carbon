@@ -73,7 +73,6 @@ public:
 	String get_path() const { return path; }
 	int get_mode() const { return mode; }
 
-
 	String read_text();
 	String read_line();
 	void write_text(const String& p_text);
@@ -83,6 +82,8 @@ public:
 
 	var read();
 	void write(const var& p_what);
+
+	var __iter_begin() override;
 
 
 protected:

@@ -57,7 +57,8 @@ public:
 	void add_flag(CompileFlags p_flag);
 	void add_include_dir(const String& p_dir);
 	ptr<Bytecode> compile(const String& p_path);
-	ptr<Bytecode> compile_source(const String& p_source, const String& p_path = "<string-soruce>");
+	ptr<Bytecode> compile_file(const String& p_path);
+	//ptr<Bytecode> compile_source(const String& p_source, const String& p_path = "<string-soruce>");
 
 
 };

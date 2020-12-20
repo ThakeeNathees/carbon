@@ -3,6 +3,7 @@
 
 
 TEST_CASE("[analyzer_tests]:analyze_files") {
+	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
 	//String path, source;
@@ -16,7 +17,8 @@ TEST_CASE("[analyzer_tests]:analyze_files") {
 
 	for (int i = 0; i < files.size() - 1; i++) {
 		try {
-			parser->parse(File(files[i], File::READ).read_text(), files[i]);
+			tokenizer->tokenize(newptr<File>(files[i], File::READ));
+			parser->parse(tokenizer);
 			analyzer.analyze(parser);
 		} catch (Throwable& err) {
 			CHECK_MESSAGE(false, err.what());

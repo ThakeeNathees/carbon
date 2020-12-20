@@ -24,6 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "tokenizer.h"
+#include "native/path.h"
 
 namespace carbon {
 
@@ -149,6 +150,13 @@ const TokenData& Tokenizer::get_token_at(const Vect2i& p_pos, bool p_safe) const
 	throw TOKENIZER_ERROR(Error::BUG, "TokenData::get_token_at() called with invalid position.");
 }
 
+const String& Tokenizer::get_source() const {
+	return source;
+}
+
+const String& Tokenizer::get_source_path() const {
+	return source_path;
+}
 
 void Tokenizer::_eat_token(Token p_tk, int p_eat_size) {
 	TokenData tk;
@@ -248,13 +256,25 @@ void Tokenizer::_eat_identifier(const String& p_idf, int p_eat_size) {
 	EAT_CHAR(p_eat_size);
 }
 
+void Tokenizer::_clear() {
+	source = "";
+	source_path = "";
+	tokens.clear();
+	cur_line = 1, cur_col = 1;
+	char_ptr = 0;
+	token_ptr = 0;
+	__const_val_token_len = 0;
+}
+
+void Tokenizer::tokenize(ptr<File> p_file) {
+	tokenize(p_file->read_text(), Path(p_file->get_path()).absolute());
+}
+
 void Tokenizer::tokenize(const String& p_source, const String& p_source_path) {
 
+	_clear();
 	source = p_source;
 	source_path = p_source_path;
-	cur_line = cur_col = 1;
-	char_ptr = 0;
-	tokens.clear();
 
 	while (char_ptr < (int)source.size()) {
 
@@ -395,7 +415,7 @@ void Tokenizer::tokenize(const String& p_source, const String& p_source_path) {
 				break;
 			}
 
-			// double quote string value single quote not supported yet
+			// double quote string value (single quote not supported)
 			case '"': {
 				EAT_CHAR(1);
 				String str;
@@ -403,7 +423,7 @@ void Tokenizer::tokenize(const String& p_source, const String& p_source_path) {
 					if (GET_CHAR(0) == '\\') {
 						_eat_escape(str);
 					} else if (GET_CHAR(0) == 0) {
-						throw TOKENIZER_ERROR(Error::UNEXPECTED_EOF, "unexpected EOF while parsing String."); // TODO: Error message.
+						throw TOKENIZER_ERROR(Error::UNEXPECTED_EOF, "unexpected EOF while parsing String.");
 						break;
 					// NO MORE EOL 
 					//} else if(GET_CHAR(0) == '\n') {

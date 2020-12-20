@@ -94,9 +94,9 @@ void _Platform::console_log(const char* p_message, bool p_stderr, Console::Color
 	if (p_background == Console::Color::DEFAULT) p_background = Console::Color::BLACK;
 	_set_console_color(p_forground, p_background);
 	if (p_stderr) {
-		fprintf(stderr, p_message);
+		fprintf(stderr, "%s", p_message);
 	} else {
-		fprintf(stdout, p_message);
+		fprintf(stdout, "%s", p_message);
 	}
 	_set_console_color(Console::Color::L_WHITE);
 }

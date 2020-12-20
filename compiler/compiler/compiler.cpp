@@ -50,19 +50,45 @@ void Compiler::add_include_dir(const String& p_dir) {
 	}
 }
 
-ptr<Bytecode> Compiler::compile_source(const String& p_source, const String& p_path) {
+ptr<Bytecode> Compiler::compile_file(const String& p_path) {
+
+	// TODO: remove this
+	Logger::log(String::format("compiling: %s\n", p_path.c_str()).c_str());
+
+	class ScopeDestruct {
+	public:
+		std::stack<String>* _cwd_ptr = nullptr;
+		ScopeDestruct(std::stack<String>* p_cwd_ptr) {
+			_cwd_ptr = p_cwd_ptr;
+		}
+		~ScopeDestruct() {
+			OS::chdir(_cwd_ptr->top());
+			_cwd_ptr->pop();
+		}
+	};
+	ScopeDestruct destruct = ScopeDestruct(&_cwd);
+	_cwd.push(OS::getcwd());
+	OS::chdir(Path(p_path).parent());
+
+	ptr<File> file = newptr<File>();
+	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
 	ptr<Parser> parser = newptr<Parser>();
 	ptr<Analyzer> analyzer = newptr<Analyzer>();
 	ptr<CodeGen> codegen = newptr<CodeGen>();
+	ptr<Bytecode> bytecode;
 
-	parser->parse(p_source, p_path);
+	file->open(p_path, File::READ);
+	tokenizer->tokenize(file);
+	parser->parse(tokenizer);
 	analyzer->analyze(parser);
+	bytecode = codegen->generate(analyzer);
 
+	file->close();
 	for (const Warning& warning : analyzer->get_warnings()) {
 		warning.console_log(); // TODO: it shouldn't print, add to warnings list instead.
 	}
 
-	return codegen->generate(analyzer);
+	return bytecode;
 }
 
 ptr<Bytecode> Compiler::compile(const String& p_path) {
@@ -82,26 +108,7 @@ ptr<Bytecode> Compiler::compile(const String& p_path) {
 	//String extension = Path(path).extension();
 	// TODO: check endswith .cb
 
-	class ScopeDestruct {
-	public:
-		std::stack<String>* _cwd_ptr = nullptr;
-		ScopeDestruct(std::stack<String>* p_cwd_ptr) {
-			_cwd_ptr = p_cwd_ptr;
-		}
-		~ScopeDestruct() {
-			OS::chdir(_cwd_ptr->top());
-			_cwd_ptr->pop();
-		}
-	};
-	ScopeDestruct destruct = ScopeDestruct(&_cwd);
-
-	_cwd.push(OS::getcwd());
-	OS::chdir(Path(path).parent()); // TODO: error handle
-
-	File file(path, File::READ);
-	Logger::log(String::format("compiling: %s\n", path.c_str()).c_str());
-
-	ptr<Bytecode> bytecode = compile_source(file.read_text(), path);
+	ptr<Bytecode> bytecode = compile_file(path);
 
 	_cache[path].bytecode = bytecode;
 	return bytecode;

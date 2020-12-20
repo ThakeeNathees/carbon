@@ -3,6 +3,7 @@
 
 
 TEST_CASE("[analyzer_tests]:analyzer_test") {
+	ptr<Tokenizer> tokenizer = newptr <Tokenizer>();
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
 
@@ -39,10 +40,10 @@ TEST_CASE("[analyzer_tests]:analyzer_test") {
 	CHECK_NOTHROW__ANALYZE("const C = [1, [2, 3]].pop()[-1];        __assert(C == 3);");
 	CHECK_NOTHROW__ANALYZE("const C = [42].at(0);                   __assert(C == 42);");
 	CHECK_NOTHROW__ANALYZE(R"(
-	const str = "\
+	const S = "\
 line 1
 line 2
-"; __assert(str == "line 1\nline 2\n");
+"; __assert(S == "line 1\nline 2\n");
 	)");
 
 	CHECK_NOTHROW__ANALYZE("const C = 1; func fn(a = C){}");

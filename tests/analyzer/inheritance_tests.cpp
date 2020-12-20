@@ -2,6 +2,7 @@
 #include "tests/carbon_tests.h"
 
 TEST_CASE("[analyzer_tests]:inheritance_test+") {
+	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
 
@@ -26,6 +27,7 @@ TEST_CASE("[analyzer_tests]:inheritance_test+") {
 }
 
 TEST_CASE("[analyzer_tests]:inheritance_test-") {
+	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
 	ptr<Parser> parser = newptr<Parser>();
 	Analyzer analyzer;
 

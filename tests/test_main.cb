@@ -8,8 +8,13 @@ func f(a, b&) {
 
 func main() {	
 
-	var x = "asdf" + 1;
-	print(x);
+	var in = File("tests/large_file", File.READ);
+	var line = in.read_line();
+	var l = 0;
+	while(line) {
+		println(l+=1, line = in.read_line());
+	}
+	in.close();
 
 	// operator overloading
 	var path = Path("C:/dev") / "path/to" / "file.txt";
