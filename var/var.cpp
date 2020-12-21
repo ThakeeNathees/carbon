@@ -634,8 +634,7 @@ var::operator Map* () {
 	return nullptr;
 }
 
-// casting to reference
-
+// casting to reference // TODO: move error messages to a general location
 var::operator bool&() {
 	if (type == BOOL) return _data._bool;
 	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"bool&\".", get_type_name().c_str()));
@@ -662,6 +661,22 @@ var::operator Array&() {
 }
 
 var::operator Map&() {
+	if (type == MAP) return _data._map;
+	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Map&\".", get_type_name().c_str()));
+}
+
+// - const& -
+var::operator const String&() const {
+	if (type == STRING) return _data._string;
+	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"String&\".", get_type_name().c_str()));
+}
+
+var::operator const Array&() const {
+	if (type == ARRAY) return _data._arr;
+	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Array&\".", get_type_name().c_str()));
+}
+
+var::operator const Map&() const {
 	if (type == MAP) return _data._map;
 	THROW_ERROR(Error::TYPE_ERROR, String::format("can't cast \"%s\" to \"Map&\".", get_type_name().c_str()));
 }

@@ -177,6 +177,10 @@ public:
 	operator String&();
 	operator Array&();
 	operator Map&();
+
+	operator const String& () const;
+	operator const Array& () const;
+	operator const Map& () const;
 	
 
 #define _VAR_OP_DECL(m_ret, m_op, m_access)                                                        \

@@ -69,6 +69,7 @@ public:
 	virtual Type get_type() const { return  CLASS; };
 	virtual const String& get_name() const { return name; };
 
+	bool _is_registered() const override { return false; }
 	var get_member(const String& p_name) override {
 		switch (p_name.const_hash()) {
 			case "name"_hash: return name;
@@ -146,6 +147,7 @@ public:
 	const stdvec<VarTypeInfo>& get_arg_types() const { return arg_types; }
 	VarTypeInfo get_return_type() const { return return_type; }
 
+	bool _is_registered() const override { return false; }
 	var get_member(const String& p_name) override {
 		switch (p_name.const_hash()) {
 			case "name"_hash: return name;
@@ -200,6 +202,7 @@ public:
 	const var& get_value() const { return value; }         // value for constants.
 	const var& get_default_value() const { return value; } // defalut_value for variables.
 
+	bool _is_registered() const override { return false; }
 	var get_member(const String& p_name) override {
 		switch (p_name.const_hash()) {
 			case "name"_hash: return name;
@@ -229,6 +232,7 @@ public:
 		}
 	}
 
+	bool _is_registered() const override { return false; }
 	var get_member(const String& p_name) override {
 		stdmap<String, int64_t>::iterator it = _values.find(p_name);
 		if (it != _values.end()) return it->second;
@@ -238,6 +242,18 @@ public:
 		stdmap<String, int64_t>::iterator it = _values.find(p_name);
 		if (it != _values.end()) throw "TODO:";// TODO: more throw_error to _type_info.cpp => THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("cannot assign a value to enum value."));
 		else Super::set_member(p_name, p_value);
+	}
+	var call_method(const String& p_name, stdvec<var*>& p_args) override {
+		switch (p_name.const_hash()) {
+			case "as_map"_hash: {
+				Map as_map;
+				for (auto p : _values) {
+					as_map[p.first] = p.second;
+				}
+				return as_map;
+			} break;
+		}
+		return Super::call_method(p_name, p_args);
 	}
 
 	const stdmap<String, int64_t>& get_values() const { return _values; }

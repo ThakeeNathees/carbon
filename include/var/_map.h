@@ -37,7 +37,11 @@ class Map {
 	friend class var;
 public:
 	struct _KeyValue;
-	typedef stdmap<size_t, _KeyValue> _map_internal_t;
+	struct _Comparator {
+		bool operator() (const var& l, const var& r) const;
+	};
+	//typedef stdmap<size_t, _KeyValue> _map_internal_t;
+	typedef std::map<var, var, _Comparator> _map_internal_t;
 
 	constexpr static  const char* get_type_name_s() { return "Map"; }
 
