@@ -26,7 +26,8 @@
 #ifndef BYTECODE_H
 #define BYTECODE_H
 
-#include "core/core.h"
+#include "var/var.h"
+#include "core/type_info.h"
 #include "opcodes.h"
 
 namespace carbon {

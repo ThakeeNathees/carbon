@@ -23,8 +23,8 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "var/_object.h"
-#include "core/core.h"
+#include "var/var.h"
+#include "core/native.h"
 
 namespace carbon {
 

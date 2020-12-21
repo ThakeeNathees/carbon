@@ -24,7 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "core/console.h"
-#include "core/core.h"
+#include "core/platform.h"
 
 namespace carbon {
 

@@ -1,4 +1,4 @@
-#include "tests/carbon_tests.h"
+#include "../carbon_tests.h"
 
 #define TEST_FILE_PATH     "tests/test_files/file_test1"
 #define TEST_BIN_FILE_PATH "tests/test_files/bin_file_test1"

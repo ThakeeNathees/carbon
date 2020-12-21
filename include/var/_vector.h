@@ -55,7 +55,7 @@ struct Vect2 {
 
 	// Methods.
 	double get_length() const {
-		return (real_t)sqrtf((real_t)(x * x + y * y));
+		return sqrtf((x * x + y * y));
 	}
 	float get_angle() const {
 		if (x == 0) return (float)M_PI_2;
@@ -134,7 +134,7 @@ struct Vect3 {
 
 	// Methods.
 	double get_length() const {
-		return (real_t)sqrtf((real_t)(x * x + y * y + z * z));
+		return sqrtf((x * x + y * y + z * z));
 	}
 
 	// Operators.

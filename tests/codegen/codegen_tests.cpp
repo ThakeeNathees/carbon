@@ -1,5 +1,5 @@
 
-#include "tests/carbon_tests.h"
+#include "../carbon_tests.h"
 
 TEST_CASE("[codeten_tests]:codegen_tests") {
 	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();

@@ -6,13 +6,15 @@ SOURCES = []
 
 ## source files
 if env['platform'] == "osx":
-    pass
+	pass
 elif env['platform'] in ('x11', 'linux'):
-    pass
+	pass
 elif env['platform'] == "windows":
-    SOURCES += [
-        File('dlfcn-win32/dlfcn.c')
-    ]
-    pass
+	## also using platform header guard in dlfcn.c
+	## if someone include all source (src/*.cpp)
+	SOURCES += [
+		File('dlfcn-win32/dlfcn.c')
+	]
+	pass
 
 env.LIBS['cb_core'] += SOURCES

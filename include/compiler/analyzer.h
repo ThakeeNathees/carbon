@@ -26,7 +26,7 @@
 #ifndef ANALYZER_H
 #define ANALYZER_H
 
-#include "core/core.h"
+#include "var/var.h"
 #include "parser.h"
 #include "globals.h"
 

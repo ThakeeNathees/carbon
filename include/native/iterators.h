@@ -26,7 +26,7 @@
 #ifndef _RUNTIME_TYPES_H
 #define _RUNTIME_TYPES_H
 
-#include "core/core.h"
+#include "core/native.h"
 
 namespace carbon {
 

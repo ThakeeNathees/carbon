@@ -26,8 +26,7 @@
 #ifndef DEBUGGER_H
 #define DEBUGGER_H
 
-#include "core/core.h"
-
+#include "var/var.h"
 
 namespace carbon {
 

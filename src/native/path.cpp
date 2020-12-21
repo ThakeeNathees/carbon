@@ -25,6 +25,7 @@
 
 
 #include "native/path.h"
+#include "core/platform.h"
 
 namespace carbon {
 

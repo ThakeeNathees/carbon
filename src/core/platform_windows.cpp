@@ -24,13 +24,16 @@
 //------------------------------------------------------------------------------
 
 #include "core/platform.h"
-#include "core/core.h"
+#include "var/var.h"
 
 #ifdef PLATFORM_WINDOWS
 
-#define NOMINMAX
+#ifndef NOMINMAX // mingw already has defined for us.
+	#define NOMINMAX
+#endif
 #include <Windows.h>
 #undef ERROR
+
 #include <direct.h>
 
 

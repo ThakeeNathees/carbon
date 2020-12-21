@@ -1,22 +1,19 @@
 #!python
 import os, subprocess, sys
 
+## TODO: debug/release compiler flags for mingw
+##       refactor *.gen.h generation
+
 ###### USER DATA #############################################################################
 def USER_DATA(env):
 	env.PROJECT_NAME = 'carbon'
 	
 	## generate files TODO: use builders
 	py = 'python' if env['platform'] == 'windows' else 'python3'
-	os.system(f'{py} include/core/native_gen.py include/core/native_bind.gen.h')
-	os.system(f'{py} %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "src/native/api.gen.inc") )
+	#os.system(f'{py} include/core/native_gen.py include/core/native_bind.gen.h')
+	#os.system(f'{py} %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "src/native/api.gen.inc") )
 	
-	env.Append(CPPPATH=[Dir(path) for path in [
-			## TODO: implement SConscript for tests
-			"./", ## <-- for tests and will be removed
-			"./src/thirdparty/",
-
-			"./include/",
-	]])
+	env.Append(CPPPATH=[Dir("./include/")])
 
 	env.SOURCES_MAIN = [
 		Glob('src/main/*.cpp'),
@@ -31,6 +28,13 @@ def USER_DATA(env):
 		Glob('tests/vm/*.cpp'),
 	]
 
+	## skip test/main sources if not found
+	## this will only generate the carbon.lib
+	if not os.path.exists('./src/main/'):
+		env.SOURCES_MAIN = []
+	if not os.path.exists('./tests/'):
+		env.SOURCES_TEST = []
+
 	env.SCONSCRIPTS = [
 		'src/thirdparty/SConstruct',
 		'src/var/SConstruct',
@@ -44,21 +48,23 @@ def USER_DATA(env):
 
 	if env['target'] == 'debug':
 		env.Append(CPPDEFINES=['DEBUG_BUILD'])
-	else:
-		env.Append(CPPDEFINES=['RELEASE_BUILD'])
+
+	if env['platform'] == 'windows':
+		if env['CC'] == 'cl':
+			env.Append(LIBS=[
+				'psapi', 'dbghelp', ## for crash handler
+			])
+	elif env['platform'] == 'x11':
+		env.Append(LIBS=['dl', 'pthread']) 
+		pass
 
 	## set stack size 
-	if env['platform'] == 'windows':
-		env.Append(CPPPATH=[Dir('./src/thirdparty/dlfcn-win32/')])
+	if env['CC'] == 'cl':
 		env.Append(LINKFLAGS=['/STACK:%s'% (40 * 1024 * 1024) ])
-	## TODO: not sure about other platforms
+	## TODO: not sure about other compilers
 		
 
 #################################################################################################
-
-## Gets the standard flags CC, CCX, etc.
-env = DefaultEnvironment()
-#env = Environment(tools = ['mingw'], ENV = {'PATH' : os.environ['PATH']})
 
 opts = Variables([], ARGUMENTS)
 ## Define our options
@@ -66,12 +72,27 @@ opts.Add(EnumVariable('platform', "Compilation platform", '', ['', 'windows', 'x
 opts.Add(EnumVariable('target', "Compilation target", 'debug', ['debug', 'release']))
 opts.Add(EnumVariable('bits', 'output program bits', '64', ['32', '64']))
 opts.Add(BoolVariable('use_llvm', "Use the LLVM / Clang compiler", False))
+opts.Add(BoolVariable('use_mingw', "Use the MinGW compiler", False))
 
 opts.Add(BoolVariable('vsproj', "make a visual studio project", False))
 opts.Add(PathVariable('target_path', 'The path to the output library.', 'bin/', PathVariable.PathAccept))
 opts.Add(BoolVariable('verbose', "Use verbose build command", False))
 
 opts.Add(BoolVariable('libs', "Only build the libs defined in the user data", False))
+
+if 'use_llvm' in opts.args.keys() and opts.args['use_llvm']:
+	env['CC'] = 'clang'
+	env['CXX'] = 'clang++'
+
+elif 'use_mingw' in opts.args.keys() and opts.args['use_mingw']:
+	env = Environment(tools = ['mingw'], ENV = {'PATH' : os.environ['PATH']})
+	env['tools'] = ['mingw']
+
+else:
+	## Gets the standard flags CC, CCX, etc.
+	env = DefaultEnvironment()
+	## scons can't find "cl.exe"
+	os.environ['PATH'] = env['ENV']['PATH']
 
 ## Updates the environment with the option variables.
 opts.Update(env)
@@ -91,10 +112,10 @@ if env['platform'] == '':
 		print("platform(%s) not supported." % sys.platform)
 		quit()
 
-## Process some arguments
-if env['use_llvm']:
-	env['CC'] = 'clang'
-	env['CXX'] = 'clang++'
+def dbg_print(expr)	:
+	print('[*]', expr, '=', eval(expr))
+dbg_print("env['CC']")
+dbg_print("env['platform']")
 
 ## For the reference:
 ## - CCFLAGS are compilation flags shared between C and C++
@@ -115,7 +136,6 @@ if env['platform'] == "osx":
 		env.Append(LINKFLAGS=['-arch', 'x86_64'])
 
 elif env['platform'] == 'x11':
-	env.Append(LIBS=['dl', 'pthread']) 
 	env.Append(CXXFLAGS=['-std=c++11'])
 	if env['target'] == 'debug':
 		env.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
@@ -127,23 +147,23 @@ elif env['platform'] == "windows":
 	## that way you can run scons in a vs 2017 prompt and it will find all the required tools
 	env.Append(ENV=os.environ)
 
-	env.Append(CXXFLAGS=['/bigobj']) ## '/std:c++17'
-	env.Append(CPPDEFINES=['WIN32', '_WIN32', '_WINDOWS', '_CRT_SECURE_NO_WARNINGS'])
-	env.Append(CCFLAGS=['-W3', '-GR'])
-	env.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
+	## MSVC
+	if env['CC'] == 'cl':
+		env.Append(CXXFLAGS=['/bigobj'])
+		env.Append(CPPDEFINES=['_CRT_SECURE_NO_WARNINGS'])
+		env.Append(CCFLAGS=['-W3', '-GR'])
+		env.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
+		if env['target'] == 'debug':
+			env.Append(CPPDEFINES=['_DEBUG'])
+			env.Append(CCFLAGS=['-EHsc', '-MDd', '-ZI'])
+			env.Append(LINKFLAGS=['-DEBUG'])
+		else:
+			env.Append(CPPDEFINES=['NDEBUG'])
+			env.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
 
-	env.Append(LIBS=[
-		'psapi', 'dbghelp', ## for crash handler
-		'User32',           ## console debugger
-	])
-
-	if env['target'] == 'debug':
-		env.Append(CPPDEFINES=['_DEBUG'])
-		env.Append(CCFLAGS=['-EHsc', '-MDd', '-ZI'])
-		env.Append(LINKFLAGS=['-DEBUG'])
-	else:
-		env.Append(CPPDEFINES=['NDEBUG'])
-		env.Append(CCFLAGS=['-O2', '-EHsc', '-MD'])
+	## MINGW
+	if env['CC'] == 'gcc':
+		pass
 
 ## --------------------------------------------------------------------------------
 
@@ -220,10 +240,11 @@ else:
 
 if not env['libs']:
 	## the main application
-	main_program = env.Program(
-		target = os.path.join(env['target_path'], env.PROJECT_NAME),
-		source = env.SOURCES_MAIN
-	)
+	if len(env.SOURCES_MAIN) > 0:
+		main_program = env.Program(
+			target = os.path.join(env['target_path'], env.PROJECT_NAME),
+			source = env.SOURCES_MAIN
+		)
 
 	## tests
 	if len(env.SOURCES_TEST) > 0:

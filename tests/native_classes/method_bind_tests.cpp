@@ -1,4 +1,4 @@
-#include "tests/carbon_tests.h"
+#include "../carbon_tests.h"
 
 // TODO: bind all possible combinations here
 

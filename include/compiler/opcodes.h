@@ -26,7 +26,7 @@
 #ifndef OPCODES_H
 #define OPCODES_H
 
-#include "core/core.h"
+#include "var/var.h"
 #include "builtin.h"
 
 namespace carbon {

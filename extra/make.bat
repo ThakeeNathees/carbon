@@ -56,16 +56,27 @@ set MSVC_INITIALIZED=true
 
 :L_COMPILATION_START
 
+if not exist "./src" (
+	cd ..
+	if not exist "./src" (
+		echo [make.bat] Error: cannot find "src/" directory.
+	)
+	if not exist "./include" (
+		echo [make.bat] Error: cannot find "include/" directory.
+	)
+)
 if not exist "bin" md "./bin"
 
-set SOURCE_DIR="./src"
 set ADDNL_INCLUDE=/Iinclude
 set ADDNL_CPPFLAGS=/EHsc /MDd
-set ADDNL_LIBS=psapi.lib dbghelp.lib User32.lib
+set ADDNL_LIBS=psapi.lib dbghelp.lib
+
+echo [make.bat] CPPFLAGS = %ADDNL_CPPFLAGS%
+echo [make.bat] LIBS = %ADDNL_CPPFLAGS%
 
 set object_files=
 :: loop all files in src matching *.cpp and compile
-for /r %SOURCE_DIR% %%f in (*.c, *.cpp) do (
+for /r "./src" %%f in (*.c, *.cpp) do (
 	for %%i in ("%%f") do (
 		rem echo filedrive=%%~di
 		rem echo filepath=%%~pi

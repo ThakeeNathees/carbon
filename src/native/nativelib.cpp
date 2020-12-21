@@ -26,6 +26,8 @@
 #include "native/nativelib.h"
 
 #ifdef _WIN32
+// FIXME: including like this is to reduce buil workload
+//        for a newbie trying to compile the source
 #include "../thirdparty/dlfcn-win32/dlfcn.h"
 #else
 #include <dlfcn.h>

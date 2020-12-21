@@ -27,7 +27,7 @@
 #ifndef BUILTIN_H
 #define BUILTIN_H
 
-#include "core/core.h"
+#include "var/var.h"
 
 /******************************************************************************************************************/
 /*                                          BUILTIN TYPES                                                         */

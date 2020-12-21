@@ -26,7 +26,7 @@
 #ifndef VM_H
 #define VM_H
 
-#include "core/core.h"
+#include "var/var.h"
 #include "builtin.h"
 #include "bytecode.h"
 #include "function.h"

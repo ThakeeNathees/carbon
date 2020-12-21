@@ -19,6 +19,14 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA
  */
 
+// Modified By : https://www.github.com/ThakeeNathees/
+#include "core/internal.h"
+#ifdef __cplusplus
+#error Use a "C" compiler to compile this source
+#endif
+#if defined(PLATFORM_WINDOWS)
+// Modification End //////////////////////////////////
+
 #ifdef _DEBUG
 #define _CRTDBG_MAP_ALLOC
 #include <stdlib.h>
@@ -483,3 +491,7 @@ BOOL WINAPI DllMain( HINSTANCE hinstDLL, DWORD fdwReason, LPVOID lpvReserved )
     return TRUE;
 }
 #endif
+
+// Modified By : https://www.github.com/ThakeeNathees/
+#endif
+// Modification End //////////////////////////////////

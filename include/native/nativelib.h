@@ -26,7 +26,7 @@
 #ifndef NATIVELIB_H
 #define NATIVELIB_H
 
-#include "core/core.h"
+#include "core/native.h"
 
 #include "api/native_api.h"
 #include "file.h"

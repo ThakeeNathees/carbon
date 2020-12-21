@@ -26,7 +26,28 @@
 #ifndef CARBON_H
 #define CARBON_H
 
-#include "core/core.h"
+// core imports
+#include "core/internal.h"
+#include "core/_error.h"
+#include "core/logger.h"
+#include "core/console.h"
+#include "core/platform.h"
+#include "core/type_info.h"
+#include "core/native.h"
+
+// var imports
+#include "var/_string.h"
+#include "var/_array.h"
+#include "var/_map.h"
+#include "var/_object.h"
+#include "var/var.h"
+
+// native imports
+#include "native/file.h"
+#include "native/nativelib.h"
+#include "native/api/native_struct.h"
+#include "native/path.h"
+#include "native/os.h"
 
 // compilation pipeline
 #include "compiler/tokenizer.h"
@@ -38,12 +59,6 @@
 #include "compiler/function.h"
 #include "compiler/bytecode.h"
 
-// native imports
-#include "native/file.h"
-#include "native/nativelib.h"
-#include "native/api/native_struct.h"
-#include "native/path.h"
-#include "native/os.h"
 
 namespace carbon {
 

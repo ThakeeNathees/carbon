@@ -26,7 +26,7 @@
 #ifndef	PATH_H
 #define	PATH_H
 
-#include "core/core.h"
+#include "core/native.h"
 
 // TODO: split path to path and dir
 

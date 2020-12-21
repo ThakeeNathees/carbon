@@ -26,7 +26,7 @@
 #ifndef _FUNCTION_H
 #define _FUNCTION_H
 
-#include "core/core.h"
+#include "core/native.h"
 #include "opcodes.h"
 
 namespace carbon {

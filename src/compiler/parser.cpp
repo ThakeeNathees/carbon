@@ -721,7 +721,7 @@ ptr<Parser::FunctionNode> Parser::_parse_func(ptr<Node> p_parent) {
 
 // -----------------------------------------------------------------------------
 
-#if DEBUG_BUILD
+#ifdef DEBUG_BUILD
 // properly implement this.
 #define KEYWORD_COLOR Console::Color::L_YELLOW
 #define TYPE_COLOR Console::Color::L_GREEN

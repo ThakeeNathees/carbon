@@ -23,7 +23,6 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "core/core.h"
 #include "var/var.h"
 #include "native/iterators.h"
 

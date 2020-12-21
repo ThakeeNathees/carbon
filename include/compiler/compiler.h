@@ -26,7 +26,7 @@
 #ifndef COMPILER_H
 #define COMPILER_H
 
-#include "core/core.h"
+#include "var/var.h"
 #include "codegen.h"
 
 namespace carbon {

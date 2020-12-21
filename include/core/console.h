@@ -26,8 +26,7 @@
 #ifndef CONSOLE_H
 #define CONSOLE_H
 
-// TODO: move var/internal.h -> core/internal.h
-#include <string>
+#include "internal.h"
 
 namespace carbon {
 

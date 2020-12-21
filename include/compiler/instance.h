@@ -26,7 +26,7 @@
 #ifndef INSTANCE_H
 #define INSTANCE_H
 
-#include "core/core.h"
+#include "var/var.h"
 #include "globals.h"
 #include "bytecode.h"
 

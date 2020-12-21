@@ -24,6 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "native/os.h"
+#include "core/platform.h"
 
 namespace carbon {
 

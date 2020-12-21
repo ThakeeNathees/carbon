@@ -1,5 +1,5 @@
 
-#include "tests/carbon_tests.h"
+#include "../carbon_tests.h"
 
 TEST_CASE("[parser_tests]:valid_syntax_test") {
 	ptr<Tokenizer> tokenizer = newptr<Tokenizer>();
