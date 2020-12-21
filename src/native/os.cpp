@@ -1,4 +1,4 @@
-#pragma once//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // MIT License
 //------------------------------------------------------------------------------
 // 
@@ -23,12 +23,25 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_REF_H
-#define CARBON_REF_H
+#include "native/os.h"
 
-#include "core/core.h"
-#include "builtin.h"
+namespace carbon {
 
+int64_t OS::unix_time() {
+	using namespace std::chrono;
+	return duration_cast<milliseconds>(system_clock::now().time_since_epoch()).count();
+}
 
+int OS::syscall(const String& p_cmd) {
+	return system(p_cmd.c_str());
+}
 
-#endif // CARBON_REF_H
+String OS::getcwd() {
+	return _Platform::os_getcwd();
+}
+
+void OS::chdir(const String& p_path) {
+	_Platform::os_chdir(p_path.c_str());
+}
+
+}

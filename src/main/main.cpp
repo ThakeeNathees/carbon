@@ -1,4 +1,4 @@
-#pragma once//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // MIT License
 //------------------------------------------------------------------------------
 // 
@@ -23,12 +23,40 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_REF_H
-#define CARBON_REF_H
+#include "carbon.h"
+using namespace carbon;
 
-#include "core/core.h"
-#include "builtin.h"
+#include "main.inc"
 
+int _main(int argc, char** argv) {
 
+	carbon_initialize();
+	log_copyright_and_license();
 
-#endif // CARBON_REF_H
+	try {
+		if (argc < 2) {
+			log_help();
+		} else {
+
+			// TODO: properly parse command line args
+			if (strcmp(argv[1], "--native-api") == 0) {
+				String path = OS::getcwd();
+				if (argc >= 3) path = Path(argv[2]).absolute();
+				NativeLib::generate_api(path);
+				printf("%s was generated.\n", path.c_str());
+			} else {
+
+				stdvec<String> args;
+				for (int i = 1; i < argc; i++) args.push_back(argv[i]);
+
+				ptr<Bytecode> bytecode = Compiler::singleton()->compile(argv[1]);
+				VM::singleton()->run(bytecode, args);
+			}
+		}
+	} catch (Throwable& err) {
+		err.console_log();
+	}
+
+	carbon_cleanup();
+	return 0;
+}

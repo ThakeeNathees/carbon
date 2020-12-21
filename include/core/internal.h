@@ -57,6 +57,29 @@
 #include <fstream>
 #include <new>
 
+#if defined(WIN32) || defined(_WIN32) || defined(__WIN32__) || defined(__NT__)
+	#define PLATFORM_WINDOWS
+#elif defined(__APPLE__) || defined(__MACH__)
+	#include <TargetConditionals.h>
+	#if TARGET_IPHONE_SIMULATOR
+		#define PLATFORM_IOS_SIMULATOR
+	#elif TARGET_OS_IPHONE
+		#define PLATFORM_IOS
+	#elif TARGET_OS_MAC
+		#define PLATFORM_APPLE
+	#else
+		#error "Unknown Apple platform"
+	#endif
+#elif defined(__linux__)
+	#define PLATFORM_LINUX
+#elif defined(__unix__)
+	#define PLATFORM_UNIX
+#elif defined(_POSIX_VERSION)
+	#define PLATFORM_POSIX
+#else
+	#error "Unknown Platform"
+#endif
+
 // Reference : https://stackoverflow.com/questions/2111667/compile-time-string-hashing
 #include "compile_time_crc32.inc"
 
@@ -83,26 +106,9 @@
 #define NO_ERRECT_MACRO(m) m
 #define VSNPRINTF_BUFF_SIZE 8192
 
-#if defined(DOUBLE_AS_REAL)
-typedef double real_t;
-#else
-typedef float real_t;
-#endif
-
 #define MISSED_ENUM_CHECK(m_max_enum, m_max_value) \
 	static_assert((int)m_max_enum == m_max_value, "MissedEnum: " STRINGIFY(m_max_enum) " != " STRINGIFY(m_value) \
 		"\n\tat: " __FILE__ "(" STRINGIFY(__LINE__) ")")
-
-// platform macros
-#ifdef _WIN32
-#	define PLATFORM_WINDOWS
-#elif defined(__APPLE__) || defined(__MACH__)
-#	define PLATFORM_APPLE
-#elif defined(__linux__)
-#	define PLATFORM_X11
-#else
-#	error "PLATFORM NOT SUPPORTED."
-#endif
 
 #ifdef DEBUG_BUILD
 #	ifdef _MSC_VER
@@ -124,28 +130,22 @@ do {                            \
 } while(false)
 
 #ifdef DEBUG_BUILD
-// TODO: Use debug print library.
-#define DEBUG_PRINT(m_msg)                                                                                        \
-do {                                                                                                              \
-	printf("DEBUG_PRINT: \"%s\" at %s (%s:%i)\n", String("" m_msg).c_str(), __FUNCTION__, __FILE__, __LINE__);    \
-} while (false)
-#define DEBUG_PRINT_COND(m_cond, m_msg) if (m_cond) DEBUG_PRINT(m_msg)
-#else
-#define DEBUG_PRINT(m_msg)
-#define DEBUG_PRINT_COND(m_cond, m_msg)
-#endif
-
-#if defined(DEBUG_BUILD)
-#define ASSERT(m_cond)                                                                                       \
-	do {                                                                                                     \
-		if (!(m_cond)) {                                                                                     \
-			DEBUG_BREAK();                                                                                   \
-			THROW_ERROR(Error::BUG, String::format("ASSERTION FAILED: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond)));  \
-		}                                                                                                    \
+	#define DEBUG_PRINT(m_msg)                                                                                        \
+	do {                                                                                                              \
+		printf("DEBUG_PRINT: \"%s\" at %s (%s:%i)\n", String("" m_msg).c_str(), __FUNCTION__, __FILE__, __LINE__);    \
 	} while (false)
-
+	#define DEBUG_PRINT_COND(m_cond, m_msg) if (m_cond) DEBUG_PRINT(m_msg)
+	#define ASSERT(m_cond)                                                                                       \
+		do {                                                                                                     \
+			if (!(m_cond)) {                                                                                     \
+				DEBUG_BREAK();                                                                                   \
+				THROW_ERROR(Error::BUG, String::format("ASSERTION FAILED: at %s (%s:%i)\n%s is false", __FUNCTION__, __FILE__, __LINE__, STR(m_cond)));  \
+			}                                                                                                    \
+		} while (false)
 #else
-#define ASSERT(m_cond)
+	#define DEBUG_PRINT(m_msg)
+	#define DEBUG_PRINT_COND(m_cond, m_msg)
+	#define ASSERT(m_cond)
 #endif
 
 #define MISSED_ENUM_CHECK(m_max_enum, m_max_value) \

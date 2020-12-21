@@ -35,7 +35,7 @@
 #include "compiler/codegen.h"
 #include "compiler/vm.h"
 #include "compiler/compiler.h"
-#include "compiler/carbon_function.h"
+#include "compiler/function.h"
 #include "compiler/bytecode.h"
 
 // native imports
@@ -61,7 +61,7 @@ inline void carbon_initialize() {
 	NativeClasses::singleton()->register_class<Buffer>();
 
 	NativeClasses::singleton()->register_class<Bytecode>();
-	NativeClasses::singleton()->register_class<CarbonFunction>();
+	NativeClasses::singleton()->register_class<Function>();
 }
 
 inline void carbon_cleanup() {

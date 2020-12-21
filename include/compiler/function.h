@@ -1,4 +1,4 @@
-#pragma once//------------------------------------------------------------------------------
+//------------------------------------------------------------------------------
 // MIT License
 //------------------------------------------------------------------------------
 // 
@@ -23,12 +23,48 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#ifndef CARBON_REF_H
-#define CARBON_REF_H
+#ifndef _FUNCTION_H
+#define _FUNCTION_H
 
 #include "core/core.h"
-#include "builtin.h"
+#include "opcodes.h"
 
+namespace carbon {
 
+class Bytecode;
 
-#endif // CARBON_REF_H
+class Function : public Object {
+	REGISTER_CLASS(Function, Object) {}
+	friend class CodeGen;
+
+private: // members
+	Bytecode* _owner;
+	String _name;
+	bool _is_static;
+	int _arg_count; // TODO: = _is_reference.size(); maybe remove this
+	stdvec<bool> _is_reference;
+	stdvec<var> _default_args;
+	stdvec<uint32_t> _opcodes;
+	stdmap<uint32_t, uint32_t> op_dbg; // opcode line to pos
+	uint32_t _stack_size;
+	
+public:
+	const String& get_name() const;
+	bool is_static() const;
+	int get_arg_count() const;
+	const stdvec<var>& get_default_args() const;
+	const stdvec<bool>& get_is_args_ref() const;
+	// TODO: parameter names : only for debugging
+	uint32_t get_stack_size() const;
+	const Bytecode* get_owner() const;
+	
+	const stdvec<uint32_t>& get_opcodes() const;
+	const stdmap<uint32_t, uint32_t>& get_op_dbg() const;
+	String get_opcodes_as_string() const;
+
+	var __call(stdvec<var*>& p_args) override;
+};
+
+}
+
+#endif // _FUNCTION_H

@@ -15,7 +15,7 @@ TEST_CASE("[codeten_tests]:codegen_tests") {
 )");
 	CHECK(bytecode->get_static_var("x") != nullptr); // but value of v is null till runtime.
 	CHECK(bytecode->get_constant("C") == "another string");
-	ptr<CarbonFunction> f = bytecode->get_function("f");
+	ptr<Function> f = bytecode->get_function("f");
 	REQUIRE(f != nullptr);
 	CHECK(f->get_arg_count() == 2);
 	CHECK(f->get_default_args().size() == 1);

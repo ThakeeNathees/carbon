@@ -28,9 +28,7 @@
 
 #include "core/core.h"
 #include "native/file.h"
-
-#include "builtin_functions.h"
-#include "builtin_types.h"
+#include "builtin.h"
 
 namespace carbon {
 

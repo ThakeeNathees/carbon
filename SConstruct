@@ -8,24 +8,20 @@ def USER_DATA(env):
 	## generate files TODO: use builders
 	py = 'python' if env['platform'] == 'windows' else 'python3'
 	os.system(f'{py} include/core/native_gen.py include/core/native_bind.gen.h')
-	os.system(f'{py} %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "native/api.gen.inc") )
+	os.system(f'{py} %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "src/native/api.gen.inc") )
 	
 	env.Append(CPPPATH=[Dir(path) for path in [
-			"./thirdparty",
-			"./",
+			## TODO: implement SConscript for tests
+			"./", ## <-- for tests and will be removed
+			"./src/thirdparty/",
+
 			"./include/",
-			"./include/core/",
-			"./include/var/",
-			"./include/native/",
-			"./include/compiler/",
 	]])
 
 	env.SOURCES_MAIN = [
-		Glob('main/platform/%s/*.cpp' % env['platform'] ),
-		Glob('main/*.cpp'),
+		Glob('src/main/*.cpp'),
 	]
 	env.SOURCES_TEST     = [
-		Glob('main/platform/%s/*.cpp' % env['platform'] ),
 		Glob('tests/*.cpp'),
 		Glob('tests/var/*.cpp'),
 		Glob('tests/native_classes/*.cpp'),
@@ -36,12 +32,11 @@ def USER_DATA(env):
 	]
 
 	env.SCONSCRIPTS = [
-		'thirdparty/SConstruct',
-
-		'var/SConstruct',
-		'core/SConstruct',
-		'native/SConstruct',
-		'compiler/SConstruct',
+		'src/thirdparty/SConstruct',
+		'src/var/SConstruct',
+		'src/core/SConstruct',
+		'src/native/SConstruct',
+		'src/compiler/SConstruct',
 	]
 
 	env.LIBS = { "cb_core" : [], "cb_compiler" : [] }
@@ -54,7 +49,7 @@ def USER_DATA(env):
 
 	## set stack size 
 	if env['platform'] == 'windows':
-		env.Append(CPPPATH=[Dir('./thirdparty/dlfcn-win32/')])
+		env.Append(CPPPATH=[Dir('./src/thirdparty/dlfcn-win32/')])
 		env.Append(LINKFLAGS=['/STACK:%s'% (40 * 1024 * 1024) ])
 	## TODO: not sure about other platforms
 		
