@@ -33,7 +33,11 @@
 #include <dlfcn.h>
 #endif
 
+#if 0 // TODO:
 #include "api.gen.inc"
+#else
+static const char* NATIVE_API_STR = "";
+#endif
 
 namespace carbon {
 

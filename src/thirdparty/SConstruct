@@ -7,7 +7,7 @@ SOURCES = []
 ## source files
 if env['platform'] == "osx":
 	pass
-elif env['platform'] in ('x11', 'linux'):
+elif env['platform'] == 'linux':
 	pass
 elif env['platform'] == "windows":
 	## also using platform header guard in dlfcn.c

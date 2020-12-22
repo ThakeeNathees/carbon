@@ -35,6 +35,7 @@ def USER_DATA(env):
 	if not os.path.exists('./tests/'):
 		env.SOURCES_TEST = []
 
+	## TODO: remove all sub scons script to make it a simple build
 	env.SCONSCRIPTS = [
 		'src/thirdparty/SConstruct',
 		'src/var/SConstruct',
@@ -54,7 +55,7 @@ def USER_DATA(env):
 			env.Append(LIBS=[
 				'psapi', 'dbghelp', ## for crash handler
 			])
-	elif env['platform'] == 'x11':
+	elif env['platform'] == 'linux':
 		env.Append(LIBS=['dl', 'pthread']) 
 		pass
 
@@ -68,7 +69,7 @@ def USER_DATA(env):
 
 opts = Variables([], ARGUMENTS)
 ## Define our options
-opts.Add(EnumVariable('platform', "Compilation platform", '', ['', 'windows', 'x11', 'linux', 'osx']))
+opts.Add(EnumVariable('platform', "Compilation platform", '', ['', 'windows', 'linux', 'osx']))
 opts.Add(EnumVariable('target', "Compilation target", 'debug', ['debug', 'release']))
 opts.Add(EnumVariable('bits', 'output program bits', '64', ['32', '64']))
 opts.Add(BoolVariable('use_llvm', "Use the LLVM / Clang compiler", False))
@@ -98,24 +99,16 @@ else:
 opts.Update(env)
 
 ## find platform
-if env['platform'] == 'linux':
-	env['platform'] = 'x11'
-
 if env['platform'] == '':
 	if sys.platform == 'win32':
 		env['platform'] = 'windows'
-	elif sys.platform in ('linux', 'linux2'):
-		env['platform'] = 'x11'
+	elif sys.platform in ('x11', 'linux', 'linux2'):
+		env['platform'] = 'linux'
 	elif sys.platform == 'darwin':
 		env['platform'] = 'osx'
 	else:
 		print("platform(%s) not supported." % sys.platform)
 		quit()
-
-def dbg_print(expr)	:
-	print('[*]', expr, '=', eval(expr))
-dbg_print("env['CC']")
-dbg_print("env['platform']")
 
 ## For the reference:
 ## - CCFLAGS are compilation flags shared between C and C++
@@ -135,7 +128,7 @@ if env['platform'] == "osx":
 		env.Append(CCFLAGS=['-g', '-O3', '-arch', 'x86_64'])
 		env.Append(LINKFLAGS=['-arch', 'x86_64'])
 
-elif env['platform'] == 'x11':
+elif env['platform'] == 'linux':
 	env.Append(CXXFLAGS=['-std=c++11'])
 	if env['target'] == 'debug':
 		env.Append(CCFLAGS=['-fPIC', '-g3', '-Og'])
@@ -217,6 +210,26 @@ if not env['verbose']:
 
 ## update user data
 USER_DATA(env)
+
+def dbg_print(expr)	:
+	value = ""
+	try:
+		value = eval(expr)
+	except Exception as err:
+		pass
+	if type(value) == type([]):
+		value = '[' + ", ".join(map(lambda i : "'%s'"%str(i), value)) + ']'
+	print(expr, '=', str(value))
+
+dbg_print("env['platform']")
+dbg_print("env['CC']")
+dbg_print("env['CXX']")
+dbg_print("env['CCFLAGS']")
+dbg_print("env['CXXFLAGS']")
+dbg_print("env['LINKFLAGS']")
+dbg_print("env['CPPPATH']")
+dbg_print("env['LIBS']")
+dbg_print("env['LIBPATH']")
 
 Export('env')
 for script in env.SCONSCRIPTS:

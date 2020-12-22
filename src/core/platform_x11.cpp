@@ -23,36 +23,40 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
-#include "core/core.h"
+#include "core/platform.h"
+#include "var/var.h"
 
-#error "TODO: refactor required see: windows/logger.cpp"
+#ifdef PLATFORM_LINUX
+
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 namespace carbon {
 
+void _Platform::console_get_cursor(int* p_line, int* p_column) {
+	THROW_BUG("TODO:");
+}
 
-class LoggerX11 :public Logger
-{
-private:
+void _Platform::console_set_cursor(int p_line, int p_column) {
+	printf("\033[%d;%dH", p_column + 1, p_line + 1);
+}
 
-protected:
-	virtual void log_impl(const char* p_msg, Console::Color p_fg, Console::Color p_bg) const override {
-		log(p_msg, false, p_fg, p_bg);
-	}
+void _Platform::console_logf(const char* p_fmt, va_list p_args, bool p_stderr, Console::Color p_forground, Console::Color p_background) {
+	static const unsigned int BUFFER_SIZE = VSNPRINTF_BUFF_SIZE;
+		char buf[BUFFER_SIZE + 1]; // +1 for the terminating character
+		int len = vsnprintf(buf, BUFFER_SIZE, p_fmt, p_args);
+		
+		if (len <= 0) return;
+		if ((unsigned int)len >= BUFFER_SIZE) len = BUFFER_SIZE; // Output is too big, will be truncated
+		buf[len] = 0;
 
-	virtual void log_verbose_impl(const char* p_msg) const override { log(p_msg, false); }
-	virtual void log_info_impl(const char* p_msg)    const override { log(p_msg, false, Console::Color::L_WHITE); }
-	virtual void log_success_impl(const char* p_msg) const override { log(p_msg, false, Console::Color::D_GREEN); }
-	virtual void log_warning_impl(const char* p_msg) const override { log(p_msg, true, Console::Color::D_YELLOW); }
-	virtual void log_error_impl(const char* p_msg)   const override { log(p_msg, true, Console::Color::D_RED); }
+		console_log(buf, p_stderr, p_forground, p_background);
+}
 
-	virtual void logf_verbose_impl(const char* p_fmt, va_list p_list) const override { logf(p_fmt, p_list, false); }
-	virtual void logf_info_impl(const char* p_fmt, va_list p_list)    const override { logf(p_fmt, p_list, false, Console::Color::L_WHITE); }
-	virtual void logf_success_impl(const char* p_fmt, va_list p_list) const override { logf(p_fmt, p_list, false, Console::Color::D_GREEN); }
-	virtual void logf_warning_impl(const char* p_fmt, va_list p_list) const override { logf(p_fmt, p_list, true, Console::Color::D_YELLOW); }
-	virtual void logf_error_impl(const char* p_fmt, va_list p_list)   const override { logf(p_fmt, p_list, true, Console::Color::D_RED); }
+void _Platform::console_log(const char* p_msg, bool p_stderr, Console::Color p_forground, Console::Color p_background) {
 
-
-	enum ANSI_Codes {
+    enum ANSI_Codes {
 		FG_OFFSET      = 0,
 		BG_OFFSET      = 10, // fg, bg offset = 10.
 
@@ -83,11 +87,7 @@ protected:
 		BRIGHT_WHITE   = 97,
 	};
 
-public:
-
-	static void log(const char* p_msg, bool p_err, Console::Color p_fg = Console::Color::DEFAULT, Console::Color p_bg = Console::Color::DEFAULT) {
-
-#define MAP_COLOR(m_target, m_offset)                                                             \
+	#define MAP_COLOR(m_target, m_offset)                                                         \
 	switch (p_##m_target) {                                                                       \
 		case Console::Color::DEFAULT:   /*[[fallthrought]]*/                                      \
 		case Console::Color::BLACK:     m_target = ANSI_Codes::DEFAULT + m_offset;        break;  \
@@ -109,39 +109,54 @@ public:
 	}
 	MISSED_ENUM_CHECK(Console::Color::__COLOR_MAX__, 16);
 
-		int fg = ANSI_Codes::WHITE + ANSI_Codes::FG_OFFSET;
-		int bg = ANSI_Codes::BLACK + ANSI_Codes::BG_OFFSET;
-		MAP_COLOR(fg, ANSI_Codes::FG_OFFSET);
-		MAP_COLOR(bg, ANSI_Codes::BG_OFFSET);
-		if (!p_err) {
-			fprintf(stdout, "\033[%i;%i;%im%s\033[%im", ANSI_Codes::FMT_DEFAULT, fg, bg, p_msg, ANSI_Codes::FMT_DEFAULT);
+		int forground = ANSI_Codes::WHITE + ANSI_Codes::FG_OFFSET;
+		int background = ANSI_Codes::BLACK + ANSI_Codes::BG_OFFSET;
+		MAP_COLOR(forground, ANSI_Codes::FG_OFFSET);
+		MAP_COLOR(background, ANSI_Codes::BG_OFFSET);
+		if (!p_stderr) {
+			fprintf(stdout, "\033[%i;%i;%im%s\033[%im", ANSI_Codes::FMT_DEFAULT, forground, background, p_msg, ANSI_Codes::FMT_DEFAULT);
 		} else {
-			fprintf(stderr, "\033[%i;%i;%im%s\033[%im", ANSI_Codes::FMT_DEFAULT, fg, bg, p_msg, ANSI_Codes::FMT_DEFAULT);
+			fprintf(stderr, "\033[%i;%i;%im%s\033[%im", ANSI_Codes::FMT_DEFAULT, forground, background, p_msg, ANSI_Codes::FMT_DEFAULT);
 		}
-	}
-
-	static void logf(const char* p_fmt, va_list p_args, bool p_err, Console::Color p_fg = Console::Color::DEFAULT, Console::Color p_bg = Console::Color::DEFAULT) {
-		static const unsigned int BUFFER_SIZE = VSNPRINTF_BUFF_SIZE;
-		char buf[BUFFER_SIZE + 1]; // +1 for the terminating character
-		int len = vsnprintf(buf, BUFFER_SIZE, p_fmt, p_args);
-		
-		if (len <= 0) return;
-		if ((unsigned int)len >= BUFFER_SIZE) len = BUFFER_SIZE; // Output is too big, will be truncated
-		buf[len] = 0;
-
-		log(buf, p_err, p_fg, p_bg);
-	}
-};
-
-Logger* Logger::singleton = nullptr;
-
-void Logger::initialize() {
-	singleton = new LoggerX11();
-}
-
-void Logger::cleanup() {
-	delete singleton;
 }
 
 
+std::string _Platform::os_getcwd() {
+	char buffer[VSNPRINTF_BUFF_SIZE];
+    if (getcwd(buffer, sizeof(buffer)) == NULL) {
+        THROW_ERROR(Error::IO_ERROR, "getcwd() returned NULL.");
+    }
+    return buffer;
 }
+
+void _Platform::os_chdir(const std::string& p_path) {
+	if (chdir(p_path.c_str()) != 0){
+        THROW_ERROR(Error::IO_ERROR, "chdir() failed.");
+    }
+}
+
+std::string _Platform::path_absolute(const std::string& p_path) {
+	char* path = realpath(p_path.c_str(), NULL);
+    String ret;
+    if (path != NULL) {
+        ret = path;
+        free(path);
+    }
+    return ret;
+}
+
+bool _Platform::path_exists(const std::string& p_path) {
+	struct stat _stat;
+	return stat(p_path.c_str(), &_stat) == 0;
+}
+
+bool _Platform::path_isdir(const std::string& p_path) {
+	struct stat _stat;
+	if (stat(p_path.c_str(), &_stat) == 0 && (_stat.st_mode & S_IFMT == S_IFDIR))
+        return true;
+    return false;
+}
+
+} // namespace carbon
+
+#endif // PLATFORM_WINDOWS

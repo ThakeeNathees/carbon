@@ -1,0 +1,55 @@
+scons: Reading SConscript files ...
+[*] env['CC'] = gcc
+[*] env['platform'] = linux
+scons: done reading SConscript files.
+scons: Building targets ...
+g++ -o src/main/crash_handler.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/main/crash_handler.cpp
+g++ -o src/main/main.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/main/main.cpp
+g++ -o src/var/_array.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/var/_array.cpp
+g++ -o src/var/_map.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/var/_map.cpp
+g++ -o src/var/_object.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/var/_object.cpp
+g++ -o src/var/_string.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/var/_string.cpp
+g++ -o src/var/var.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/var/var.cpp
+g++ -o src/core/_error.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/core/_error.cpp
+g++ -o src/core/console.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/core/console.cpp
+g++ -o src/core/logger.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/core/logger.cpp
+g++ -o src/core/native.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/core/native.cpp
+g++ -o src/core/platform_windows.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/core/platform_windows.cpp
+g++ -o src/core/platform_x11.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/core/platform_x11.cpp
+g++ -o src/core/type_info.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/core/type_info.cpp
+g++ -o src/native/buffer.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/native/buffer.cpp
+g++ -o src/native/file.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/native/file.cpp
+g++ -o src/native/native_api.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/native/native_api.cpp
+g++ -o src/native/native_struct.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/native/native_struct.cpp
+g++ -o src/native/nativelib.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/native/nativelib.cpp
+g++ -o src/native/os.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/native/os.cpp
+g++ -o src/native/path.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/native/path.cpp
+g++ -o src/compiler/analyzer.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/analyzer.cpp
+g++ -o src/compiler/builtin.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/builtin.cpp
+g++ -o src/compiler/bytecode.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/bytecode.cpp
+g++ -o src/compiler/codegen.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/codegen.cpp
+g++ -o src/compiler/compiler.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/compiler.cpp
+g++ -o src/compiler/debugger.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/debugger.cpp
+g++ -o src/compiler/function.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/function.cpp
+g++ -o src/compiler/instance.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/instance.cpp
+g++ -o src/compiler/opcodes.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/opcodes.cpp
+g++ -o src/compiler/parser.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/parser.cpp
+g++ -o src/compiler/tokenizer.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/tokenizer.cpp
+g++ -o src/compiler/vm.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude src/compiler/vm.cpp
+ar rc bin/libcarbon.a src/var/_array.o src/var/_map.o src/var/_object.o src/var/_string.o src/var/var.o src/core/_error.o src/core/console.o src/core/logger.o src/core/native.o src/core/platform_windows.o src/core/platform_x11.o src/core/type_info.o src/native/buffer.o src/native/file.o src/native/native_api.o src/native/native_struct.o src/native/nativelib.o src/native/os.o src/native/path.o src/compiler/analyzer.o src/compiler/builtin.o src/compiler/bytecode.o src/compiler/codegen.o src/compiler/compiler.o src/compiler/debugger.o src/compiler/function.o src/compiler/instance.o src/compiler/opcodes.o src/compiler/parser.o src/compiler/tokenizer.o src/compiler/vm.o
+ranlib bin/libcarbon.a
+g++ -o bin/carbon src/main/crash_handler.o src/main/main.o bin/libcarbon.a -ldl -lpthread
+g++ -o tests/main.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/main.cpp
+g++ -o tests/var/var_tests.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/var/var_tests.cpp
+g++ -o tests/native_classes/file_tests.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/native_classes/file_tests.cpp
+g++ -o tests/native_classes/method_bind_tests.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/native_classes/method_bind_tests.cpp
+g++ -o tests/parser/invalid_syntax_tests.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/parser/invalid_syntax_tests.cpp
+g++ -o tests/parser/valid_syntax_tests.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/parser/valid_syntax_tests.cpp
+g++ -o tests/analyzer/analyze_files.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/analyzer/analyze_files.cpp
+g++ -o tests/analyzer/analyzer_failure.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/analyzer/analyzer_failure.cpp
+g++ -o tests/analyzer/analyzer_tests.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/analyzer/analyzer_tests.cpp
+g++ -o tests/analyzer/inheritance_tests.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/analyzer/inheritance_tests.cpp
+g++ -o tests/codegen/codegen_tests.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/codegen/codegen_tests.cpp
+g++ -o tests/vm/vm_tests.o -c -std=c++11 -fPIC -g3 -Og -DDEBUG_BUILD -Iinclude tests/vm/vm_tests.cpp
+g++ -o bin/tests tests/main.o tests/var/var_tests.o tests/native_classes/file_tests.o tests/native_classes/method_bind_tests.o tests/parser/invalid_syntax_tests.o tests/parser/valid_syntax_tests.o tests/analyzer/analyze_files.o tests/analyzer/analyzer_failure.o tests/analyzer/analyzer_tests.o tests/analyzer/inheritance_tests.o tests/codegen/codegen_tests.o tests/vm/vm_tests.o bin/libcarbon.a -ldl -lpthread
+scons: done building targets.

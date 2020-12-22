@@ -3,20 +3,12 @@
 func f(a, b&) {
 	a += 1;
 	b += 1;
-	println(a, " ", b);
+	println(a, b);
 }
 
 func main() {	
 	var m = { 1:1, "2":2, 3:3, 4:4 };
 	println(m);
-
-	var in = File("tests/large_file", File.READ);
-	var line = in.read_line();
-	var l = 0;
-	while(line) {
-		println(l+=1, line = in.read_line());
-	}
-	in.close();
 
 	// operator overloading
 	var path = Path("C:/dev") / "path/to" / "file.txt";
@@ -24,5 +16,5 @@ func main() {
 
 	var a = 1, b = 1;
 	f(a, b);
-	println(a, " ", b);
+	println(a, b);
 }

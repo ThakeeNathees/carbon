@@ -4,9 +4,6 @@ Import('env')
 
 SOURCES = [
     Glob('*.cpp'),
-
-    ## platform/_windows.cpp, platform/_x11.cpp, ...
-    #Glob('platform/_%s.cpp' % env['platform'] ),
 ]
 
 env.LIBS['cb_core'] += SOURCES
