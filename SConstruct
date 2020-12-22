@@ -18,6 +18,7 @@ def USER_DATA(env):
 	env.SOURCES_MAIN = [
 		Glob('src/main/*.cpp'),
 	]
+
 	env.SOURCES_TEST     = [
 		Glob('tests/*.cpp'),
 		Glob('tests/var/*.cpp'),
@@ -35,16 +36,18 @@ def USER_DATA(env):
 	if not os.path.exists('./tests/'):
 		env.SOURCES_TEST = []
 
-	## TODO: remove all sub scons script to make it a simple build
-	env.SCONSCRIPTS = [
-		'src/thirdparty/SConstruct',
-		'src/var/SConstruct',
-		'src/core/SConstruct',
-		'src/native/SConstruct',
-		'src/compiler/SConstruct',
-	]
+	## env.SCONSCRIPTS = []
 
-	env.LIBS = { "cb_core" : [], "cb_compiler" : [] }
+	env.LIBS = {
+	"cb_core" : [
+		File('src/thirdparty/dlfcn-win32/dlfcn.c'),
+		Glob('src/core/*.cpp'),
+		Glob('src/var/*.cpp'),
+		Glob('src/native/*.cpp'),
+	],
+	"cb_compiler" : [
+		Glob('src/compiler/*.cpp'),
+	]}
 	env.DEBUG_TESTS = False
 
 	if env['target'] == 'debug':
@@ -211,29 +214,30 @@ if not env['verbose']:
 ## update user data
 USER_DATA(env)
 
-def dbg_print(expr)	:
-	value = ""
-	try:
-		value = eval(expr)
-	except Exception as err:
-		pass
-	if type(value) == type([]):
-		value = '[' + ", ".join(map(lambda i : "'%s'"%str(i), value)) + ']'
-	print(expr, '=', str(value))
+if env['verbose']:
+	def dbg_print(expr)	:
+		value = ""
+		try:
+			value = eval(expr)
+		except Exception as err:
+			pass
+		if type(value) == type([]):
+			value = '[' + ", ".join(map(lambda i : "'%s'"%str(i), value)) + ']'
+		print(expr, '=', str(value))
 
-dbg_print("env['platform']")
-dbg_print("env['CC']")
-dbg_print("env['CXX']")
-dbg_print("env['CCFLAGS']")
-dbg_print("env['CXXFLAGS']")
-dbg_print("env['LINKFLAGS']")
-dbg_print("env['CPPPATH']")
-dbg_print("env['LIBS']")
-dbg_print("env['LIBPATH']")
+	dbg_print("env['platform']")
+	dbg_print("env['CC']")
+	dbg_print("env['CXX']")
+	dbg_print("env['CCFLAGS']")
+	dbg_print("env['CXXFLAGS']")
+	dbg_print("env['LINKFLAGS']")
+	dbg_print("env['CPPPATH']")
+	dbg_print("env['LIBS']")
+	dbg_print("env['LIBPATH']")
 
-Export('env')
-for script in env.SCONSCRIPTS:
-	SConscript(script)
+##Export('env')
+##for script in env.SCONSCRIPTS:
+##	SConscript(script)
 
 ## compile the libs.
 if env['libs']:

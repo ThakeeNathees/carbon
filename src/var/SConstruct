@@ -1,8 +1,0 @@
-#!python
-import os, subprocess
-Import('env')
-
-SOURCES = [ Glob('*.cpp') ]
-
-## source files
-env.LIBS['cb_core'] += SOURCES
