@@ -29,7 +29,7 @@
 #include "carbon.h"
 using namespace carbon;
 
-#include <doctest/doctest.h>
+#include "thirdparty/doctest/doctest.h"
 
 #define NO_PATH "<NO-PATH-SET>"
 #define _PARSE(m_source) tokenizer->tokenize(m_source, NO_PATH); parser->parse(tokenizer)

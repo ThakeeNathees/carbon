@@ -26,19 +26,18 @@
 #ifndef BYTECODE_H
 #define BYTECODE_H
 
-#include "core/core.h"
-#include "binary.h"
+#include "var/var.h"
+#include "core/type_info.h"
+#include "opcodes.h"
 
 namespace carbon {
-
-class CarbonFunction;
 
 class Bytecode : public Object {
 	REGISTER_CLASS(Bytecode, Object) {}
 
 	friend class CodeGen;
 	friend struct CGContext;
-	friend class CarbonFunction;
+	friend class Function;
 
 private: // members.
 	bool _is_class = false;
@@ -60,7 +59,7 @@ private: // members.
 	stdmap<String, var> _constants;			 // TODO : same as above
 	stdmap<String, int64_t> _unnamed_enums;
 	stdmap<String, ptr<EnumInfo>> _enums;
-	stdmap<String, ptr<CarbonFunction>> _functions;
+	stdmap<String, ptr<Function>> _functions;
 
 	stdvec<String> _global_names_array;
 	stdmap<String, uint32_t> _global_names;
@@ -71,11 +70,11 @@ private: // members.
 	stdmap<String, var> _member_vars;         // all members as var (constructed at runtime)
 
 	union {
-		CarbonFunction* _main = nullptr;      // file
-		CarbonFunction* _constructor;         // class
+		Function* _main = nullptr;      // file
+		Function* _constructor;         // class
 	};
-	ptr<CarbonFunction> _static_initializer = nullptr;
-	ptr<CarbonFunction> _member_initializer = nullptr; // class
+	ptr<Function> _static_initializer = nullptr;
+	ptr<Function> _member_initializer = nullptr; // class
 	bool _static_initialized = false;
 
 	bool _is_compiled = false;
@@ -110,21 +109,21 @@ public:
 
 	stdmap<String, ptr<Bytecode>>& get_classes();
 	stdmap<String, ptr<Bytecode>>& get_externs();
-	const stdmap<String, ptr<CarbonFunction>>& get_functions() const;
+	const stdmap<String, ptr<Function>>& get_functions() const;
 	const stdmap<String, var>& get_constants();
 	stdmap<String, var>& get_static_vars();
 
 	ptr<Bytecode> get_class(const String& p_name);
 	ptr<Bytecode> get_import(const String& p_name);
-	ptr<CarbonFunction> get_function(const String& p_name);
+	ptr<Function> get_function(const String& p_name);
 	var* get_static_var(const String& p_name);
 	var get_constant(const String& p_name);
 
 	const ptr<Bytecode>&  get_file() const;
-	const CarbonFunction* get_main() const;
-	const CarbonFunction* get_constructor() const;
-	const CarbonFunction* get_member_initializer() const;
-	const CarbonFunction* get_static_initializer() const;
+	const Function* get_main() const;
+	const Function* get_constructor() const;
+	const Function* get_member_initializer() const;
+	const Function* get_static_initializer() const;
 
 	const String& get_global_name(uint32_t p_pos);
 	var* get_global_const_value(uint32_t p_index);

@@ -1,5 +1,5 @@
 
-#include "tests/carbon_tests.h"
+#include "../carbon_tests.h"
 
 
 TEST_CASE("[analyzer_tests]:analyzer_test") {

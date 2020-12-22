@@ -54,8 +54,8 @@ struct Vect2 {
 	constexpr static  const char* get_type_name_s() { return "Vect2<T>"; }
 
 	// Methods.
-	real_t get_length() const {
-		return (real_t)sqrtf((real_t)(x * x + y * y));
+	double get_length() const {
+		return sqrtf((x * x + y * y));
 	}
 	float get_angle() const {
 		if (x == 0) return (float)M_PI_2;
@@ -133,8 +133,8 @@ struct Vect3 {
 	constexpr static  const char* get_type_name_s() { return "Vect3<T>"; }
 
 	// Methods.
-	real_t get_length() const {
-		return (real_t)sqrtf((real_t)(x * x + y * y + z * z));
+	double get_length() const {
+		return sqrtf((x * x + y * y + z * z));
 	}
 
 	// Operators.

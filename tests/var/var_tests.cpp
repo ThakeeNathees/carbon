@@ -1,5 +1,5 @@
 
-#include "tests/carbon_tests.h"
+#include "../carbon_tests.h"
 
 TEST_CASE("[parser_tests]:var_test") {
 	var v;

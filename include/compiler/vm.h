@@ -26,9 +26,10 @@
 #ifndef VM_H
 #define VM_H
 
-#include "core/core.h"
+#include "var/var.h"
+#include "builtin.h"
 #include "bytecode.h"
-#include "carbon_function.h"
+#include "function.h"
 #include "instance.h"
 #include "debugger.h"
 
@@ -53,7 +54,7 @@ struct RuntimeContext {
 	Bytecode* bytecode_class = nullptr;  // static member reference
 	Bytecode* bytecode_file = nullptr;   // file node blueprint
 
-	const CarbonFunction* curr_fn = nullptr; // current function
+	const Function* curr_fn = nullptr; // current function
 	stdvec<var> value_args;                  // for pass by value args
 	/*	TODO: this could be space optimized by only storing the reference argument
 		and map the index of argument to index of n-th reference. and only push_back
@@ -76,7 +77,7 @@ private: // members
 public:
 	int run(ptr<Bytecode> bytecode, stdvec<String> args);
 	var call_function(const String& p_func_name, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*>& p_args);
-	var call_function(const CarbonFunction* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*>& p_args, int __stack = 0);
+	var call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance> p_self, stdvec<var*>& p_args, int __stack = 0);
 
 	static VM* singleton();
 	static void cleanup();

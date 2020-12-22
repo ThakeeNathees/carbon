@@ -26,11 +26,9 @@
 #ifndef TOKENIZER_H
 #define TOKENIZER_H
 
-#include "core/core.h"
+#include "var/var.h"
 #include "native/file.h"
-
-#include "builtin_functions.h"
-#include "builtin_types.h"
+#include "builtin.h"
 
 namespace carbon {
 

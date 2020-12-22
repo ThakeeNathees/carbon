@@ -26,7 +26,7 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "core/core.h"
+#include "core/native.h"
 
 namespace carbon {
 

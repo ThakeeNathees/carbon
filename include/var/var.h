@@ -26,7 +26,8 @@
 #ifndef _VAR_H
 #define _VAR_H
 
-#include "_error.h"
+#include "core/_error.h"
+
 #include "_string.h"
 #include "_array.h"
 #include "_map.h"

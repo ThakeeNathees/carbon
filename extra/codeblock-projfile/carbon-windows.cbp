@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<CodeBlocks_project_file>
+	<FileVersion major="1" minor="6" />
+	<Project>
+		<Option title="carbon" />
+		<Option pch_mode="2" />
+		<Option compiler="gcc" />
+		<Build>
+			<Target title="Debug">
+				<Option output="bin/Debug/carbon" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Debug/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-g" />
+				</Compiler>
+			</Target>
+			<Target title="Release">
+				<Option output="bin/Release/carbon" prefix_auto="1" extension_auto="1" />
+				<Option object_output="obj/Release/" />
+				<Option type="1" />
+				<Option compiler="gcc" />
+				<Compiler>
+					<Add option="-O2" />
+				</Compiler>
+				<Linker>
+					<Add option="-s" />
+				</Linker>
+			</Target>
+		</Build>
+		<Compiler>
+			<Add option="-Wall" />
+		</Compiler>
+		<Unit filename="src/compiler/analyzer.cpp" />
+		<Unit filename="src/compiler/binary.cpp" />
+		<Unit filename="src/compiler/bytecode.cpp" />
+		<Unit filename="src/compiler/carbon_function.cpp" />
+		<Unit filename="src/compiler/codegen.cpp" />
+		<Unit filename="src/compiler/compiler.cpp" />
+		<Unit filename="src/compiler/debugger.cpp" />
+		<Unit filename="src/compiler/parser.cpp" />
+		<Unit filename="src/compiler/tokenizer.cpp" />
+		<Unit filename="src/compiler/builtin.cpp" />
+		<Unit filename="src/compiler/instance.cpp" />
+		<Unit filename="src/compiler/vm.cpp" />
+		<Unit filename="src/core/error.cpp" />
+		<Unit filename="src/core/logger.cpp" />
+		<Unit filename="src/core/native.cpp" />
+		<Unit filename="src/core/console.cpp" />
+		<Unit filename="src/core/logger.cpp" />
+		<Unit filename="src/core/platform_windows.h" />
+		<Unit filename="src/core/type_info.cpp" />
+		<Unit filename="include/compiler/analyzer.h" />
+		<Unit filename="include/compiler/binary.h" />
+		<Unit filename="include/compiler/builtin_functions.h" />
+		<Unit filename="include/compiler/builtin_types.h" />
+		<Unit filename="include/compiler/bytecode.h" />
+		<Unit filename="include/compiler/carbon_function.h" />
+		<Unit filename="include/compiler/carbon_ref.h" />
+		<Unit filename="include/compiler/codegen.h" />
+		<Unit filename="include/compiler/compiler.h" />
+		<Unit filename="include/compiler/debugger.h" />
+		<Unit filename="include/compiler/globals.h" />
+		<Unit filename="include/compiler/instance.h" />
+		<Unit filename="include/compiler/parser.h" />
+		<Unit filename="include/compiler/tokenizer.h" />
+		<Unit filename="include/compiler/vm.h" />
+		<Unit filename="include/core/console.h" />
+		<Unit filename="include/core/core.h" />
+		<Unit filename="include/core/error.h" />
+		<Unit filename="include/core/logger.h" />
+		<Unit filename="include/core/native.h" />
+		<Unit filename="include/core/native_bind.gen.h" />
+		<Unit filename="include/core/native_gen.py" />
+		<Unit filename="include/core/type_info.h" />
+		<Unit filename="include/native/api/gen.py" />
+		<Unit filename="include/native/api/native_api.h" />
+		<Unit filename="include/native/api/native_struct.h" />
+		<Unit filename="include/native/api/wrapper.h" />
+		<Unit filename="include/native/buffer.h" />
+		<Unit filename="include/native/file.h" />
+		<Unit filename="include/native/nativelib.h" />
+		<Unit filename="include/native/os.h" />
+		<Unit filename="include/native/path.h" />
+		<Unit filename="include/native/runtime_types.h" />
+		<Unit filename="include/var/_array.h" />
+		<Unit filename="include/var/_map.h" />
+		<Unit filename="include/var/_object.h" />
+		<Unit filename="include/var/_string.h" />
+		<Unit filename="include/var/_vector.h" />
+		<Unit filename="include/var/compile_time_crc32.inc" />
+		<Unit filename="include/var/internal.h" />
+		<Unit filename="include/var/shared_api.h" />
+		<Unit filename="include/var/var.h" />
+		<Unit filename="src/main/main.cpp" />
+		<Unit filename="src/main/crash_handler.cpp" />
+		<Unit filename="src/main/crash_handler.h" />
+		<Unit filename="src/native/api.gen.inc" />
+		<Unit filename="src/native/buffer.cpp" />
+		<Unit filename="src/native/file.cpp" />
+		<Unit filename="src/native/native_api.cpp" />
+		<Unit filename="src/native/native_struct.cpp" />
+		<Unit filename="src/native/nativelib.cpp" />
+		<Unit filename="src/native/os.cpp" />
+		<Unit filename="src/native/path.cpp" />
+		<Unit filename="src/thirdparty/dlfcn-win32/dlfcn.c">
+			<Option compilerVar="CC" />
+		</Unit>
+		<Unit filename="var/_array.cpp" />
+		<Unit filename="var/_map.cpp" />
+		<Unit filename="var/_object.cpp" />
+		<Unit filename="var/_string.cpp" />
+		<Unit filename="var/var.cpp" />
+		<Unit filename="var/var_private.h" />
+		<Extensions>
+			<code_completion />
+			<envvars />
+			<debugger />
+			<lib_finder disable_auto="1" />
+		</Extensions>
+	</Project>
+</CodeBlocks_project_file>

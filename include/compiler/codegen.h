@@ -26,11 +26,11 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 
-#include "core/core.h"
+#include "var/var.h"
 #include "globals.h"
 #include "analyzer.h"
 #include "bytecode.h"
-#include "carbon_function.h"
+#include "function.h"
 
 namespace carbon {
 
@@ -38,7 +38,7 @@ struct CGContext {
 	// members
 	Bytecode* bytecode = nullptr;
 	const Parser::ClassNode* curr_class = nullptr;
-	CarbonFunction* function = nullptr;
+	Function* function = nullptr;
 
 	std::stack<stdmap<String, uint32_t>> stack_locals_frames;
 	stdmap<String, uint32_t> stack_locals;
@@ -74,8 +74,8 @@ public:
 private:
 	void _generate_members(Parser::MemberContainer* p_container, Bytecode* p_bytecode);
 
-	ptr<CarbonFunction> _generate_function(const Parser::FunctionNode* p_func, const Parser::ClassNode* p_class, Bytecode* p_bytecode);
-	ptr<CarbonFunction> _generate_initializer(bool p_static, Bytecode* p_bytecode, Parser::MemberContainer* p_container);
+	ptr<Function> _generate_function(const Parser::FunctionNode* p_func, const Parser::ClassNode* p_class, Bytecode* p_bytecode);
+	ptr<Function> _generate_initializer(bool p_static, Bytecode* p_bytecode, Parser::MemberContainer* p_container);
 	void _generate_block(const Parser::BlockNode* p_block);
 	void _generate_control_flow(const Parser::ControlFlowNode* p_cflow);
 	Address _generate_expression(const Parser::Node* p_expr, Address* p_dst = nullptr);

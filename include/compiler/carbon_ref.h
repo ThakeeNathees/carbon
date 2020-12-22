@@ -27,61 +27,8 @@
 #define CARBON_REF_H
 
 #include "core/core.h"
-#include "builtin_functions.h"
-#include "builtin_types.h"
+#include "builtin.h"
 
-namespace carbon {
 
-class NativeClassRef : public Object {
-	REGISTER_CLASS(NativeClassRef, Object) {}
-
-private:
-	String _name;
-
-public:
-	NativeClassRef() {}
-	NativeClassRef(const String& p_native_class);
-
-	bool _is_native_ref() const override { return true; }
-	String _get_native_ref() const { return _name; }
-
-	var __call(stdvec<var*>& p_args) override; // construct
-	var call_method(const String& p_name, stdvec<var*>& p_args) override; // static method call
-	var get_member(const String& p_name) override; // static member, constants, functions, ...
-	void set_member(const String& p_name, var& p_value) override; // static members
-};
-
-class BuiltinFuncRef : public Object {
-	REGISTER_CLASS(BuiltinFuncRef, Object) {}
-
-private: // members
-	BuiltinFunctions::Type _type;
-
-public:
-	BuiltinFuncRef();
-	BuiltinFuncRef(BuiltinFunctions::Type p_type);
-
-	var __call(stdvec<var*>& p_args) override;
-	String to_string() override;
-
-	// TODO: add wrapper methods.
-};
-
-class BuiltinTypeRef : public Object {
-	REGISTER_CLASS(BuiltinTypeRef, Object) {}
-
-private: // members
-	BuiltinTypes::Type _type;
-
-public:
-	BuiltinTypeRef();
-	BuiltinTypeRef(BuiltinTypes::Type p_type);
-
-	var __call(stdvec<var*>& p_args) override;
-	String to_string() override;
-
-};
-
-}
 
 #endif // CARBON_REF_H

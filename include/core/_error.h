@@ -26,6 +26,9 @@
 #ifndef _ERRORS_H
 #define _ERRORS_H
 
+#include "logger.h"
+#include "internal.h"
+
 #define _DBG_SOURCE DBGSourceInfo(__FILE__, __LINE__, __FUNCTION__)
 
 #define THROW_INVALID_INDEX(m_size, m_ind)                                                              \
@@ -50,8 +53,6 @@ if (m_ptr == nullptr){                                                          
 		THROW_ERROR(Error::BUG, m_msg);									                \
 	} while (false)
 
-#include "logger.h"
-#include "internal.h"
 
 namespace carbon {
 
