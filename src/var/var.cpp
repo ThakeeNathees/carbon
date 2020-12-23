@@ -685,7 +685,7 @@ var::operator const Map&() const {
 
 #define THROW_OPERATOR_NOT_SUPPORTED(m_op)                                                         \
 do {                                                                                               \
-	THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED,                                                \
+	THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED,                                                     \
 		String::format("operator \"" STR(m_op) "\" not supported on operands \"%s\" and \"%s\".",  \
 			get_type_name().c_str(), p_other.get_type_name().c_str())                              \
 	);                                                                                             \
@@ -1060,10 +1060,7 @@ var var::operator %(const var& p_other) const {
 			}
 		}
 		case STRING: {
-			THROW_ERROR(Error::NOT_IMPLEMENTED, "TODO: implement this ASAP");
-			//switch (p_other.type) {
-			//	// check if array or a single var
-			//}
+			return _data._string % p_other;
 		}
 	}
 	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);

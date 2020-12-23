@@ -34,18 +34,20 @@ namespace carbon {
 
 const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_string() {
 	static stdmap<size_t, ptr<MemberInfo>> member_info_s = {
-		_NEW_METHOD_INFO("size",                                                             var::INT     ),
-		_NEW_METHOD_INFO("length",                                                           var::INT     ),
-		_NEW_METHOD_INFO("to_int",                                                           var::INT     ),
-		_NEW_METHOD_INFO("to_float",                                                         var::FLOAT   ),
-		_NEW_METHOD_INFO("hash",                                                             var::INT     ),
-		_NEW_METHOD_INFO("upper",                                                            var::STRING  ),
-		_NEW_METHOD_INFO("lower",                                                            var::STRING  ),
-		_NEW_METHOD_INFO("substr",     _PARAMS("start", "end"), _TYPES(var::INT, var::INT),  var::STRING  ),
-		_NEW_METHOD_INFO("endswith",   _PARAMS("what" ),        _TYPES(var::STRING),         var::BOOL    ),
-		_NEW_METHOD_INFO("startswith", _PARAMS("what" ),        _TYPES(var::STRING),         var::BOOL    ),
-		_NEW_METHOD_INFO("split",      _PARAMS("delimiter" ),   _TYPES(var::STRING),         var::BOOL,     false, _DEFVALS("")),
-		_NEW_METHOD_INFO("join",       _PARAMS("strings" ),     _TYPES(var::ARRAY),          var::STRING  ),
+		_NEW_METHOD_INFO("size",                                                                     var::INT     ),
+		_NEW_METHOD_INFO("length",                                                                   var::INT     ),
+		_NEW_METHOD_INFO("to_int",                                                                   var::INT     ),
+		_NEW_METHOD_INFO("to_float",                                                                 var::FLOAT   ),
+		_NEW_METHOD_INFO("hash",                                                                     var::INT     ),
+		_NEW_METHOD_INFO("upper",                                                                    var::STRING  ),
+		_NEW_METHOD_INFO("lower",                                                                    var::STRING  ),
+		_NEW_METHOD_INFO("substr",     _PARAMS("start", "end"),  _TYPES(var::INT, var::INT),         var::STRING  ),
+		_NEW_METHOD_INFO("endswith",   _PARAMS("what" ),         _TYPES(var::STRING),                var::BOOL    ),
+		_NEW_METHOD_INFO("startswith", _PARAMS("what" ),         _TYPES(var::STRING),                var::BOOL    ),
+		_NEW_METHOD_INFO("split",      _PARAMS("delimiter" ),    _TYPES(var::STRING),                var::BOOL,     false, _DEFVALS("")),
+		_NEW_METHOD_INFO("strip",                                                                    var::STRING  ),
+		_NEW_METHOD_INFO("join",       _PARAMS("strings" ),      _TYPES(var::ARRAY),                 var::STRING  ),
+		_NEW_METHOD_INFO("replace",    _PARAMS("with", "what"),  _TYPES(var::STRING, var::STRING),   var::STRING  ),
 	};
 	return member_info_s;
 }
@@ -63,11 +65,13 @@ var String::call_method(const String& p_method, const stdvec<var*>& p_args) {
 		case "substr"_hash:     return substr((size_t)p_args[0]->operator int64_t(), (size_t)p_args[1]->operator int64_t());
 		case "endswith"_hash:   return endswith(p_args[0]->operator String());
 		case "startswith"_hash: return startswith(p_args[0]->operator String());
+		case "strip"_hash:      return strip();
 		case "split"_hash: {
 			if (p_args.size() == 0) return split();
 			else return split(p_args[0]->operator String());
 		}
 		case "join"_hash:       return join(p_args[0]->operator Array());
+		case "replace"_hash:    return replace(p_args[0]->operator const String & (), p_args[1]->operator const String & ());
 	}
 	// TODO: more.
 	THROW_ERROR(Error::BUG, "can't reach here.");
@@ -109,6 +113,65 @@ size_t String::hash() const {
 
 size_t String::const_hash() const {
 	return __const_hash(_data->c_str());
+}
+
+String String::operator %(const var& p_other) const {
+	// TODO: implement a better algorithm (it's for testing purposes and will optimized in the future)
+	switch (p_other.get_type()) {
+		case var::MAP: {
+			THROW_ERROR(Error::OPERATOR_NOT_SUPPORTED,
+				String::format("operator \"%%\" not supported on operands String and \"%s\".", p_other.get_type_name().c_str()));
+		} break;
+		default : {
+			String ret;
+
+			const Array* arr = nullptr;
+			const var* _var = &p_other;
+			if (p_other.get_type() == var::ARRAY) arr = &p_other.operator const carbon::Array& ();
+
+			int arr_i = 0;
+			for (int i = 0; i < (int)_data->size(); i++) {
+				switch ((*_data)[i]) {
+					case '%': {
+						if (i == _data->size() - 1)
+							THROW_ERROR(Error::VALUE_ERROR, "incomplete formated string");
+
+						// TODO: support more formatings
+						switch ((*_data)[i + 1]) {
+							case '%': {
+								ret += '%';
+								i += 1;
+							} break;
+							case 's': {
+								if (arr) {
+									ret += (*arr)[arr_i++].to_string();
+								} else if(_var) {
+									ret += _var->to_string();
+									_var = nullptr; // done with _var.
+								} else {
+									THROW_ERROR(Error::INVALID_ARG_COUNT, "not enough arguments for format string");
+								}
+								i += 1;
+							} break;
+							default: {
+								THROW_ERROR(Error::VALUE_ERROR, String::format("unsupported formated character %%%c", (*_data)[i + 1]));
+							}
+						}
+					} break; // formated character
+
+					default: {
+						ret += (*_data)[i];
+					}
+				} // switch character
+			}
+			if (arr) {
+				if (arr_i != arr->size()) THROW_ERROR(Error::TYPE_ERROR, "not all arguments converted during string formatting");
+			} else if (_var != nullptr) {
+				THROW_ERROR(Error::TYPE_ERROR, "not all arguments converted during string formatting");
+			}
+			return ret;
+		} break;
+	}
 }
 
 bool String::operator==(const String& p_other) const { return *_data == *p_other._data; }
@@ -244,11 +307,40 @@ Array String::split(const String& p_delimiter) const {
 	}
 }
 
+String String::strip() const {
+	if (size() == 0) return "";
+	size_t start = 0, end = size() - 1;
+	
+#define IS_WHITE_SPACE(c) ( (c) == ' ' || (c) == '\t' || (c) == '\n' )
+
+	while (IS_WHITE_SPACE((*_data)[start])) {
+		start++;
+		if (start >= size()) return "";
+	}
+	while (IS_WHITE_SPACE((*_data)[end])) {
+		end--;
+		if (end < 0) return "";
+	}
+	return _data->substr(start, end - start + 1);
+	
+#undef IS_WHITE_SPACE
+}
+
 String String::join(const Array& p_elements) const {
 	String ret;
 	for (int i = 0; i < p_elements.size(); i++) {
 		if (i > 0) ret += *this;
 		ret += p_elements[i].operator String();
+	}
+	return ret;
+}
+
+String String::replace(const String& p_with, const String& p_what) const {
+	std::string ret = *_data;
+	std::string::size_type n = 0;
+	while ((n = ret.find(p_with.operator const std::string &(), n)) != std::string::npos) {
+		ret.replace(n, p_with.size(), p_what.operator const std::string &());
+		n += p_what.size();
 	}
 	return ret;
 }

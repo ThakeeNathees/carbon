@@ -33,7 +33,7 @@
 #include <dlfcn.h>
 #endif
 
-#if 0 // TODO:
+#if 1 // TODO:
 #include "api.gen.inc"
 #else
 static const char* NATIVE_API_STR = "";
@@ -82,9 +82,7 @@ void* NativeLib::_get_function(const String& p_name) {
 
 var NativeLib::call_method(const String& p_name, stdvec<var*>& p_args) {
 	func_ptr fp = (func_ptr) _get_function(p_name);
-	uint8_t* ret = fp((int)p_args.size(), (uint8_t**)p_args.data());
-	if (ret == nullptr) return var();
-	return *(var*)ret;
+	return fp((int)p_args.size(), (uint8_t**)p_args.data());
 }
 
 void NativeLib::generate_api(const String& p_path) {

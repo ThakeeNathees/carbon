@@ -51,8 +51,9 @@ void _NativeStruct::_set_new_delete(const String& p_ctor, const String& p_destru
 }
 
 void _NativeStruct::_init(stdvec<var*>& p_va_args) {
-	void* _new_obj = fp_new((int)p_va_args.size(), (uint8_t**)p_va_args.data());
-	_data = ptr<void>(_new_obj, native_destruct(fp_delete));
+	THROW_BUG("TODO:");
+	//void* _new_obj = fp_new((int)p_va_args.size(), (uint8_t**)p_va_args.data());
+	//_data = ptr<void>(_new_obj, native_destruct(fp_delete));
 }
 
 ptr<NativeLib> _NativeStruct::get_lib() { return _lib; }

@@ -29,7 +29,7 @@
 namespace carbon {
 
 
-ptr<Object> Object::copy(bool p_deep) /*const*/ { throw Error(Error::NOT_IMPLEMENTED, "Virtual method \"copy()\" not implemented on type \"Object\"."); }
+ptr<Object> Object::copy(bool p_deep) /*const*/ { THROW_ERROR(Error::NOT_IMPLEMENTED, "Virtual method \"copy()\" not implemented on type \"Object\"."); }
 
 Object::operator String() { return to_string(); }
 var Object::operator()(stdvec<var*>& p_args) { return __call(p_args); }
