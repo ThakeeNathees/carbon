@@ -45,7 +45,7 @@ class NativeLib : public Object {
 
 		_native_api_init();
 	}
-	typedef uint8_t* (*func_ptr)(int argc, uint8_t** argv);
+	typedef int (*func_ptr)(int argc, uint8_t** argv);
 
 	NativeLib(const String& p_lib_name = "");
 	~NativeLib();

@@ -96,7 +96,7 @@ var& Array::at(int64_t p_index) {
 		return (*_data).at(p_index);
 	if ((int64_t)size() * -1 <= p_index && p_index < 0)
 		return (*_data).at(size() + p_index);
-	throw Error(Error::INVALID_INDEX, String::format("Array index %i is invalid.", p_index));
+	THROW_ERROR(Error::INVALID_INDEX, String::format("Array index %i is invalid.", p_index));
 }
 
 var& Array::operator[](int64_t p_index) const {
@@ -104,14 +104,14 @@ var& Array::operator[](int64_t p_index) const {
 		return _data->operator[](p_index);
 	if ((int64_t)size() * -1 <= p_index && p_index < 0)
 		return _data->operator[](size() + p_index);
-	throw Error(Error::INVALID_INDEX, String::format("Array index %i is invalid.", p_index));
+	THROW_ERROR(Error::INVALID_INDEX, String::format("Array index %i is invalid.", p_index));
 }
 var& Array::operator[](int64_t p_index) {
 	if (0 <= p_index && p_index < (int64_t)size())
 		return _data->operator[](p_index);
 	if ((int64_t)size() * -1 <= p_index && p_index < 0)
 		return _data->operator[](size() + p_index);
-	throw Error(Error::INVALID_INDEX, String::format("Array index %i is invalid.", p_index));
+	THROW_ERROR(Error::INVALID_INDEX, String::format("Array index %i is invalid.", p_index));
 }
 
 

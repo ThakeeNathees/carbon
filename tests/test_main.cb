@@ -7,6 +7,10 @@ func f(a, b&) {
 }
 
 func main() {	
+
+	println("\n".strip());
+
+
 	var m = { 1:1, "2":2, 3:3, 4:4 };
 	println(m);
 

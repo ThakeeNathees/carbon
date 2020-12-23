@@ -65,8 +65,9 @@ public:
 	bool endswith(const String& p_str) const;
 	bool startswith(const String& p_str) const;
 	Array split(const String& p_delimiter = "") const;
-	// String strip(p_delemeter = " "); lstrip(); rstrip();
+	String strip() const; // lstrip, rstrip
 	String join(const Array& p_elements) const;
+	String replace(const String& p_with, const String& p_what) const;
 
 	// operators.
 	char operator[](int64_t p_index) const;
@@ -77,6 +78,8 @@ public:
 	operator std::string& () { return *_data; }
 	operator const std::string& () const { return *_data; }
 	
+	String operator %(const var& p_other) const;
+
 	bool operator==(const String& p_other) const;
 	bool operator!=(const String& p_other) const;
 	bool operator<(const String& p_other) const;

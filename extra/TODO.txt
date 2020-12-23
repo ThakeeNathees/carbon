@@ -105,4 +105,4 @@
  * support both `&&`/`and` , `||`/`or`, `!`/`not`
  * python like arithmetic operators in builtin
         * "str" * 3, [3.14] * 10
-		* "%s - %s" % "first", "second"; // <-- TODO:
+		* "%s - %s" % ["first", "second"];
