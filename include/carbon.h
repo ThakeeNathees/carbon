@@ -46,7 +46,6 @@
 // native imports
 #include "native/iterators.h"
 #include "native/file.h"
-#include "native/nativelib.h"
 #include "native/path.h"
 #include "native/os.h"
 
@@ -71,7 +70,6 @@ inline void carbon_initialize() {
 	NativeClasses::singleton()->register_class<Object>();
 	NativeClasses::singleton()->register_class<OS>();
 	NativeClasses::singleton()->register_class<File>();
-	NativeClasses::singleton()->register_class<NativeLib>();
 	NativeClasses::singleton()->register_class<Path>();
 	NativeClasses::singleton()->register_class<Buffer>();
 

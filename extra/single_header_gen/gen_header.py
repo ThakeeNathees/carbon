@@ -49,13 +49,6 @@ def gen_file(file): ## file is the complete path
 	global GEN
 	with open(file, 'r') as fp:
 		source = fp.read().replace(LICENSE, "");
-		
-		## FIXME:
-		if 'nativelib.cpp' in file:
-			with open('src/thirdparty/dlfcn-win32/dlfcn.h', 'r') as dlf_source:
-				source = source.replace('#include "../thirdparty/dlfcn-win32/dlfcn.h"', '\n' + dlf_source.read() + '\n')
-			with open('src/native/api.gen.inc', 'r') as api_gen:
-				source = source.replace('#include "api.gen.inc"', '\n' + api_gen.read() + '\n')
 				
 		if 'main.cpp' in file:
 			with open('src/main/crash_handler.h') as ch_source:
@@ -120,7 +113,6 @@ def append_all_headers():
 def main():
 	os.chdir('../../')
 	gen_last = [
-		'src/thirdparty/dlfcn-win32/dlfcn.c',
 		'src/main/main.cpp',
 	]
 	
