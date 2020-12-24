@@ -10,13 +10,18 @@ def USER_DATA(env):
 	
 	## generate files TODO: use builders
 	py = 'python' if env['platform'] == 'windows' else 'python3'
-	#os.system(f'{py} include/core/native_gen.py include/core/native_bind.gen.h')
-	#os.system(f'{py} %s %s %s' % ("include/native/api/gen.py", "include/native/api/", "src/native/api.gen.inc") )
+	sys.path.append('include/native')
+	sys.path.append('include/core')
+	from native_api_gen import generate_api
+	from native_bind_gen import generage_method_binds
+	generate_api('include/native/native_api.h', 'src/native/api.gen.inc')
+	generage_method_binds('include/core/native_bind.gen.h')
 	
 	env.Append(CPPPATH=[Dir("./include/")])
 
 	env.SOURCES_MAIN = [
 		Glob('src/main/*.cpp'),
+		#Glob('src/*.cpp'),
 	]
 
 	env.SOURCES_TEST     = [
@@ -28,6 +33,7 @@ def USER_DATA(env):
 		Glob('tests/codegen/*.cpp'),
 		Glob('tests/vm/*.cpp'),
 	]
+	env.SOURCES_TEST     = []
 
 	## skip test/main sources if not found
 	## this will only generate the carbon.lib

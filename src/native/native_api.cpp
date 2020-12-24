@@ -24,7 +24,7 @@
 //------------------------------------------------------------------------------
 
 #include "native/nativelib.h"
-#include "native/api/native_api.h"
+#include "native/native_api.h"
 
 #define _TYPE_CHECK(m_var, m_type)                                                             \
 do {																						   \
@@ -158,6 +158,10 @@ static void var_set_member(uint8_t* self, const char* name, uint8_t* value) {
 
 static void* var_get_data(uint8_t* self) {
 	return ((var*)self)->get_data();
+}
+
+static int var_get_type(uint8_t* self) {
+	return (int)((var*)self)->get_type();
 }
 
 /////////////////////////////////////////////////////////////
@@ -296,6 +300,7 @@ void NativeLib::_native_api_init() {
 	api.var_get_member = &var_get_member;
 	api.var_set_member = &var_set_member;
 	api.var_get_data = &var_get_data;
+	api.var_get_type = &var_get_type;
 
 	api.new_string = &new_string;
 	api.new_array = &new_array;

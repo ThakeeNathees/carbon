@@ -94,11 +94,6 @@
 #define CARBON_API
 #endif
 
-#ifdef __cplusplus
-// Reference : https://stackoverflow.com/questions/2111667/compile-time-string-hashing
-#include "compile_time_crc32.inc"
-#endif
-
 // https://stackoverflow.com/questions/2124339/c-preprocessor-va-args-number-of-arguments
 #ifdef _MSC_VER // Microsoft compilers
 	#define GET_ARG_COUNT(...)  INTERNAL_EXPAND_ARGS_PRIVATE(INTERNAL_ARGS_AUGMENTER(__VA_ARGS__))
@@ -184,9 +179,19 @@ namespace carbon {
 		return __const_hash(s);
 	}
 
-	// custom destructor for malloc in shared ptr
-	struct free_delete {
+	// custom free operator for malloc in shared ptr
+	struct _mem_free_t {
 		void operator()(void* _mem) { free(_mem); }
+	};
+
+	// custom destructor for malloc in shared ptr
+	struct _mem_delete_t {
+		typedef void (*_clean_f)(void*);
+		_mem_delete_t(_clean_f fp) : fp(fp) {}
+		_clean_f fp;
+		void operator()(void* _mem) {
+			fp(_mem);
+		}
 	};
 
 	template<typename T>

@@ -131,7 +131,7 @@ def get_args_call_symbol(i):
 		ret += f'*args[{j}]'
 	return ret
 
-def generage_method_calls(path, num):
+def generage_method_binds(path, num = 8):
 	f = open(path, 'w')
 	f.write(LICENSE)
 	f.write('\n// !!! AUTO GENERATED DO NOT EDIT !!!\n\n')
@@ -575,11 +575,8 @@ ptr<StaticFuncBind> _bind_va_static_func(const char* func_name, const char* p_cl
 	f.write(f'#endif // {HEADER_GUARD}\n')
 	f.close()
 
+	print("[native_gen] native bind source generated!");
+
 import sys
 if __name__ == '__main__':
-	if len(sys.argv) < 2:
-		print("[native_gen] no path were provided!")
-	path = sys.argv[1]
-	assert(path.endswith('native_bind.gen.h'))
-	generage_method_calls(path, 8)
-	print("[native_gen] native bind source generated!");
+	generage_method_binds('native_bind.gen.h', 8)

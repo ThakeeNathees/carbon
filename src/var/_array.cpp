@@ -27,7 +27,7 @@
 
 #include "var/var.h"
 #include "core/type_info.h"
-#include "var_private.h"
+#include "var/var_internal.h"
 
 namespace carbon {
 const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_array() {

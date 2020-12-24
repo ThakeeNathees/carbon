@@ -21,9 +21,6 @@
 
 // Modified By : https://www.github.com/ThakeeNathees/
 #include "core/internal.h"
-#ifdef __cplusplus
-#error Use a "C" compiler to compile this source
-#endif
 #if defined(PLATFORM_WINDOWS)
 // Modification End //////////////////////////////////
 
@@ -37,6 +34,10 @@
 #include <stdlib.h>
 
 #ifdef _MSC_VER
+// Modified By : https://www.github.com/ThakeeNathees/
+// include after <windows.h>
+#include <intrin.h>
+// Modification End //////////////////////////////////
 /* https://docs.microsoft.com/en-us/cpp/intrinsics/returnaddress */
 #pragma intrinsic(_ReturnAddress)
 #else
@@ -422,7 +423,10 @@ void *dlsym( void *handle, const char *name )
          */
         if( MyEnumProcessModules( hCurrentProc, NULL, 0, &dwSize ) != 0 )
         {
-            modules = malloc( dwSize );
+            // Modified By : https://www.github.com/ThakeeNathees/
+            // --    modules = malloc( dwSize );
+            /* ++ */ modules = (HMODULE*)malloc( dwSize );
+            // Modification End //////////////////////////////////
             if( modules )
             {
                 if( MyEnumProcessModules( hCurrentProc, modules, dwSize, &cbNeeded ) != 0 && dwSize == cbNeeded )

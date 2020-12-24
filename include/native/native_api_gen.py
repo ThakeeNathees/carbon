@@ -1,3 +1,4 @@
+LICENSE = '''\
 //------------------------------------------------------------------------------
 // MIT License
 //------------------------------------------------------------------------------
@@ -22,40 +23,49 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 //------------------------------------------------------------------------------
+'''
 
-#include "native/api/native_struct.h"
-#include "native/path.h"
+## this file heavily modified for this project
+## use https://gist.github.com/ThakeeNathees/774be053c916d3883038ed7085388198
+## for single header generation.
 
-namespace carbon {
+USAGE = '''
+/* ------------------------ USAGE ---------------------------
 
-//stdmap<String, ptr<NativeLib>> _NativeStruct::lib_cache;
+#define CARBON_API_IMPLEMENTATION
+#include "carbon_api.h"
+using namespace carbon;
 
-//void _NativeStruct::alloc(size_t p_size) {
-//	_size = p_size;
-//	_data = ptr<void>(malloc(_size), free_delete());
-//}
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-void* _NativeStruct::get_data() {
-	return _data.get();
+EXPORT var* your_function(int argc, var** argv) {
+    return nullptr;
 }
 
-void _NativeStruct::_set_lib(var p_lib) {
-	if (_lib != nullptr) THROW_ERROR(Error::ASSERTION, "lib already initialized");
-	_lib = p_lib;
+#ifdef __cplusplus
 }
+#endif
 
-void _NativeStruct::_set_new_delete(const String& p_ctor, const String& p_destruct) {
-	THROW_IF_NULLPTR(_lib);
-	fp_new = (NativeLib::func_ptr)_lib->_get_function(p_ctor);
-	fp_delete = (_native_struct_delete)_lib->_get_function(p_destruct);
-}
+---------------------------------------------------------*/
+'''
 
-void _NativeStruct::_init(stdvec<var*>& p_va_args) {
-	THROW_BUG("TODO:");
-	//void* _new_obj = fp_new((int)p_va_args.size(), (uint8_t**)p_va_args.data());
-	//_data = ptr<void>(_new_obj, native_destruct(fp_delete));
-}
+import sys, os, re
 
-ptr<NativeLib> _NativeStruct::get_lib() { return _lib; }
+TARGET_FILE   = 'api.gen.inc'
+PATH = 'native_api.h'
 
-}
+def generate_api(path, out):
+    gen = "const char* NATIVE_API_STR = \n"
+    with open(path, 'r') as header:
+        for line in header:
+            gen += '"' + line.rstrip().replace('"', '\\"') + '\\n"\n'
+    gen += ";\n\n"
+    with open(out, 'w') as file:
+    	file.write(gen)
+    print('[api_gen] %s generated' % out)
+
+
+if __name__ == '__main__':
+    generate_api(PATH, TARGET_FILE)

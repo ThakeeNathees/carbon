@@ -23,10 +23,14 @@
 // SOFTWARE.
 //------------------------------------------------------------------------------
 
+#ifndef CARBON_NO_MAIN
+
 #include "carbon.h"
 using namespace carbon;
 
-#include "main.inc"
+#define _INCLUDE_CRASH_HANDLER_MAIN_
+#define _CRASH_HANDLER_IMPLEMENTATION_
+#include "crash_handler.h"
 
 int _main(int argc, char** argv) {
 
@@ -60,3 +64,5 @@ int _main(int argc, char** argv) {
 	carbon_cleanup();
 	return 0;
 }
+
+#endif // CARBON_NO_MAIN

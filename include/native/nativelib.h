@@ -28,7 +28,9 @@
 
 #include "core/native.h"
 
-#include "api/native_api.h"
+#define NO_CARBON_WRAPPER
+#include "native_api.h"
+
 #include "file.h"
 #include "path.h"
 #include "os.h"
