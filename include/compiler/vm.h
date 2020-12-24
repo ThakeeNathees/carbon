@@ -56,10 +56,6 @@ struct RuntimeContext {
 
 	const Function* curr_fn = nullptr; // current function
 	stdvec<var> value_args;                  // for pass by value args
-	/*	TODO: this could be space optimized by only storing the reference argument
-		and map the index of argument to index of n-th reference. and only push_back
-		to args_copy when it accessed in get_var_at.
-	*/
 	int get_arg_value_index(int p_arg_ind) const;
 
 	var* get_var_at(const Address& p_addr);

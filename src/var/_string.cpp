@@ -28,7 +28,7 @@
 #include "var/_array.h"
 #include "var/var.h"
 #include "core/type_info.h"
-#include "var_private.h"
+#include "var/var_internal.h"
 
 namespace carbon {
 
@@ -294,7 +294,7 @@ Array String::split(const String& p_delimiter) const {
 		THROW_BUG("TODO:"); // use isspace(c)
 	} else {
 		while (true) {
-			end = _data->find_first_of(p_delimiter.operator std::string(), start);
+			end = _data->find(p_delimiter.operator std::string(), start);
 			if (end == std::string::npos) {
 				ret.append(substr(start, size()));
 				break;

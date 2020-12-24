@@ -36,6 +36,7 @@
 #include "core/native.h"
 
 // var imports
+#include "var/var_internal.h"
 #include "var/_string.h"
 #include "var/_array.h"
 #include "var/_map.h"
@@ -43,9 +44,9 @@
 #include "var/var.h"
 
 // native imports
+#include "native/iterators.h"
 #include "native/file.h"
 #include "native/nativelib.h"
-#include "native/api/native_struct.h"
 #include "native/path.h"
 #include "native/os.h"
 
@@ -71,7 +72,6 @@ inline void carbon_initialize() {
 	NativeClasses::singleton()->register_class<OS>();
 	NativeClasses::singleton()->register_class<File>();
 	NativeClasses::singleton()->register_class<NativeLib>();
-	NativeClasses::singleton()->register_class<_NativeStruct>();
 	NativeClasses::singleton()->register_class<Path>();
 	NativeClasses::singleton()->register_class<Buffer>();
 

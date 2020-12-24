@@ -27,7 +27,7 @@
 
 #include "var/var.h"
 #include "core/type_info.h"
-#include "var_private.h"
+#include "var/var_internal.h"
 
 namespace carbon {
 	
