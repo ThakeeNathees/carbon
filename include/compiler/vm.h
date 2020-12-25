@@ -31,7 +31,6 @@
 #include "bytecode.h"
 #include "function.h"
 #include "instance.h"
-#include "debugger.h"
 
 namespace carbon {
 
@@ -86,7 +85,6 @@ private:
 
 	static VM* _singleton;
 	const int STACK_MAX = 1024; // TODO: increase
-	Debugger debugger;
 
 };
 
