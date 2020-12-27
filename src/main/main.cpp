@@ -28,9 +28,30 @@
 #include "carbon.h"
 using namespace carbon;
 
-#define _INCLUDE_CRASH_HANDLER_MAIN_
-#define _CRASH_HANDLER_IMPLEMENTATION_
+#define CARBON_INCLUDE_CRASH_HANDLER_MAIN
+#define CARBON_CRASH_HANDLER_IMPLEMENTATION
 #include "crash_handler.h"
+
+inline void log_copyright_and_license() {
+	Logger::log(1 + R"(
+Carbon 1.0.0 (https://github.com/ThakeeNathees/carbon/)
+Copyright (c) 2020 ThakeeNathees.
+Free and open source software under the terms of the MIT license.
+
+)");
+}
+
+inline void log_help() {
+	Logger::log(1 + R"(
+usage: carbon [options] file ...
+Options:
+    -h, --help          : Display this help message.
+    -v, --version       : Display the version.
+    -o                  : Output path.
+    -w                  : Warnings are treated as errors.
+    -I(path)            : Import search path.
+)");
+}
 
 int _main(int argc, char** argv) {
 

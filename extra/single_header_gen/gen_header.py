@@ -35,6 +35,10 @@ USAGE = '''\
 // 
 // define CARBON_NO_MAIN before including "carbon.h" if you don't want to
 // implement the carbon entrypoint and embed carbon into your project.
+// 
+// define CARBON_INCLUDE_CRASH_HANDLER_MAIN with CARBON_NO_MAIN to only
+// use crash handler main and define _main(int argc, char** argv) for the
+// entry point
 '''
 
 GEN = ""

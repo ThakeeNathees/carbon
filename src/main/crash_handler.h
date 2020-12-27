@@ -66,7 +66,7 @@ public:
 
 #endif
 
-#ifdef _INCLUDE_CRASH_HANDLER_MAIN_
+#ifdef CARBON_INCLUDE_CRASH_HANDLER_MAIN
 
 /***************************************************************************************************************************/
 /*                                                CRASH HANDLER MAIN                                                       */
@@ -104,9 +104,9 @@ int _main(int, char**);
 
 #endif
 
-#endif //_INCLUDE_CRASH_HANDLER_MAIN_
+#endif // CARBON_INCLUDE_CRASH_HANDLER_MAIN
 
-#ifdef _CRASH_HANDLER_IMPLEMENTATION_
+#if defined(CARBON_CRASH_HANDLER_IMPLEMENTATION) || (defined(CARBON_INCLUDE_CRASH_HANDLER_MAIN) && defined(CARBON_IMPLEMENTATION))
 /***************************************************************************************************************************/
 /*                                                CRASH HANDLER WINDOWS                                                    */
 /***************************************************************************************************************************/
@@ -529,5 +529,5 @@ void CrashHandler::initialize() {
 
 
 #endif
-#endif // _CRASH_HANDLER_IMPLEMENTATION_
+#endif // CARBON_CRASH_HANDLER_IMPLEMENTATION
 

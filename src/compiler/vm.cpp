@@ -578,9 +578,6 @@ int VM::run(ptr<Bytecode> bytecode, stdvec<String> args) {
 		THROW_ERROR(Error::NULL_POINTER, "entry point was null");
 	}
 
-	// TODO: temp debugging code
-	//printf("%s\n", main->get_opcodes_as_string().c_str());
-
 	ASSERT(main->get_arg_count() <= 1); // main() or main(args)
 
 	stdvec<var*> call_args; var argv = Array();

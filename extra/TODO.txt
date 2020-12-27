@@ -24,11 +24,9 @@
 
 =============== TODO =============================================================
  * implement try and catch
- * native api complete refactor
- * zero division error, import error are not underlined by the compiler
+ * import error are not underlined by the compiler
  * switch statement (jump table impl) before: switch body is a single block node
  * parse command line args
- * ipc debugger
  * ext_lib.lib.lib;
  * tests for codegen and vm
  * tests for native api, native struct
