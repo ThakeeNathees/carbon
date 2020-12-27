@@ -127,6 +127,7 @@ public:
 	}
 
 	static bool is_hashable(var::Type p_type);
+	static bool is_compatible(var::Type p_type1, var::Type p_type2);
 	static const char* get_type_name_s(var::Type p_type);
 	static String get_op_name_s(Operator op);
 

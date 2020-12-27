@@ -1782,8 +1782,8 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 						for (int i = 0; i < argc_given; i++) {
 							if (call->args[i]->type == Parser::Node::Type::CONST_VALUE) {
 								var value = ptrcast<Parser::ConstValueNode>(call->args[i])->value;
-								if (value.get_type() != arg_types[i + 1].type) // +1 for skip self argument.
-									throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(arg_types[i].type), i), call->args[i]->pos);
+								if (!var::is_compatible(value.get_type(), arg_types[i + 1].type)) // +1 for skip self argument.
+									throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(arg_types[i + 1].type), i), call->args[i]->pos);
 							}
 						}
 					} else {

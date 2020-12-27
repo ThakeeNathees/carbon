@@ -133,6 +133,22 @@ bool var::is_hashable(var::Type p_type) {
 	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
 }
 
+bool var::is_compatible(var::Type p_type1, var::Type p_type2) {
+	switch (p_type1) {
+		case _NULL:  return p_type2 == _NULL;
+		case VAR: return true;
+		case BOOL: return (p_type2 == BOOL) || (p_type2 == INT) || (p_type2 == FLOAT);
+		case INT: return (p_type2 == BOOL) || (p_type2 == INT) || (p_type2 == FLOAT);
+		case FLOAT: return (p_type2 == BOOL) || (p_type2 == INT) || (p_type2 == FLOAT);
+		case STRING: return p_type2 == STRING;
+		case ARRAY: return p_type2 == ARRAY;
+		case MAP: return p_type2 == MAP;
+		case OBJECT: return p_type2 == OBJECT;
+	}
+	MISSED_ENUM_CHECK(_TYPE_MAX_, 9);
+	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
+}
+
 const char* var::get_type_name_s(var::Type p_type) {
 	switch (p_type) {
 		case var::_NULL:  return "null";
