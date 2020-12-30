@@ -99,7 +99,11 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 		for (var& v : default_args_copy) p_args.push_back(&v);
 	}
 
+
 #define CHECK_OPCODE_SIZE(m_size) ASSERT(ip + m_size < opcodes.size())
+#define DISPATCH() goto L_loop
+
+	L_loop:
 	while (ip < opcodes.size()) {
 		ASSERT(opcodes[ip] <= Opcode::END);
 		uint32_t last_ip = ip;
@@ -113,7 +117,7 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				ip++;
 
 				*dst = on->get_member(name);
-			} break;
+			} DISPATCH();
 
 			case Opcode::SET: {
 				CHECK_OPCODE_SIZE(4);
@@ -123,7 +127,7 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				ip++;
 
 				on->set_member(name, *value);
-			} break;
+			} DISPATCH();
 
 			case Opcode::GET_MAPPED: {
 				CHECK_OPCODE_SIZE(4);
@@ -133,7 +137,7 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				ip++;
 
 				*dst = on->__get_mapped(*key);
-			} break;
+			} DISPATCH();
 
 			case Opcode::SET_MAPPED: {
 				CHECK_OPCODE_SIZE(4);
@@ -143,7 +147,7 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				ip++;
 
 				on->__set_mapped(*key, *value);
-			} break;
+			} DISPATCH();
 
 			case Opcode::SET_TRUE: {
 				CHECK_OPCODE_SIZE(2);
@@ -151,7 +155,7 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				ip++;
 
 				*dst = true;
-			} break;
+			} DISPATCH();
 
 			case Opcode::SET_FALSE: {
 				CHECK_OPCODE_SIZE(2);
@@ -221,10 +225,10 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				CHECK_OPCODE_SIZE(4);
 				uint32_t b_type = opcodes[++ip];
 				uint32_t argc = opcodes[++ip];
-				stdvec<var*> args;
+				stdvec<var*> args(argc);
 				for (int i = 0; i < (int)argc; i++) {
 					var* arg = context.get_var_at(opcodes[++ip]);
-					args.push_back(arg);
+					args[i] = arg;
 				}
 				var* dst = context.get_var_at(opcodes[++ip]);
 				ip++;
@@ -237,25 +241,25 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				CHECK_OPCODE_SIZE(4);
 				const String& class_name = context.get_name_at(opcodes[++ip]);
 				uint32_t argc = opcodes[++ip];
-				stdvec<var*> args;
+				stdvec<var*> args(argc);
 				for (int i = 0; i < (int)argc; i++) {
 					var* arg = context.get_var_at(opcodes[++ip]);
-					args.push_back(arg);
+					args[i] = arg;
 				}
 				var* dst = context.get_var_at(opcodes[++ip]);
 				ip++;
 
 				*dst = NativeClasses::singleton()->construct(class_name, args);
-			} break;
+			} DISPATCH();
 
 			case Opcode::CONSTRUCT_CARBON: {
 				CHECK_OPCODE_SIZE(4);
 				const String& name = context.get_name_at(opcodes[++ip]);
 				uint32_t argc = opcodes[++ip];
-				stdvec<var*> args;
+				stdvec<var*> args(argc);
 				for (int i = 0; i < (int)argc; i++) {
 					var* arg = context.get_var_at(opcodes[++ip]);
-					args.push_back(arg);
+					args[i] = arg;
 				}
 				var* dst = context.get_var_at(opcodes[++ip]);
 				ip++;
@@ -276,7 +280,7 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				if (constructor) call_function(constructor, blueprint.get(), instance, args, __stack + 1);
 
 				*dst = instance;
-			} break;
+			} DISPATCH();
 
 			case Opcode::CONSTRUCT_LITERAL_ARRAY: {
 				CHECK_OPCODE_SIZE(3);
@@ -291,7 +295,7 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				ip++;
 
 				*dst = arr;
-			} break;
+			} DISPATCH();
 
 			case Opcode::CONSTRUCT_LITERAL_MAP: {
 				CHECK_OPCODE_SIZE(3);
@@ -307,32 +311,32 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				ip++;
 
 				*dst = map;
-			} break;
+			} DISPATCH();
 
 			case Opcode::CALL: {
 				CHECK_OPCODE_SIZE(4);
 				var* on = context.get_var_at(opcodes[++ip]);
 				uint32_t argc = opcodes[++ip];
-				stdvec<var*> args;
+				stdvec<var*> args(argc);
 				for (int i = 0; i < (int)argc; i++) {
 					var* arg = context.get_var_at(opcodes[++ip]);
-					args.push_back(arg);
+					args[i] = arg;
 				}
 				var* ret_value = context.get_var_at(opcodes[++ip]);
 				ip++;
 
 				*ret_value = on->__call(args);
-			} break;
+			} DISPATCH();
 
 			case Opcode::CALL_FUNC: {
 				CHECK_OPCODE_SIZE(4);
 
 				const String& func = context.get_name_at(opcodes[++ip]);
 				uint32_t argc = opcodes[++ip];
-				stdvec<var*> args;
+				stdvec<var*> args(argc);
 				for (int i = 0; i < (int)argc; i++) {
 					var* arg = context.get_var_at(opcodes[++ip]);
-					args.push_back(arg);
+					args[i] = arg;
 				}
 				var* ret_value = context.get_var_at(opcodes[++ip]);
 				ip++;
@@ -380,7 +384,7 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				}
 
 
-			} break;
+			} DISPATCH();
 
 			case Opcode::CALL_METHOD: {
 				CHECK_OPCODE_SIZE(5);
@@ -388,43 +392,43 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				var* on = context.get_var_at(opcodes[++ip]);
 				const String& method = context.get_name_at(opcodes[++ip]);
 				uint32_t argc = opcodes[++ip];
-				stdvec<var*> args;
+				stdvec<var*> args(argc);
 				for (int i = 0; i < (int)argc; i++) {
 					var* arg = context.get_var_at(opcodes[++ip]);
-					args.push_back(arg);
+					args[i] = arg;
 				}
 				var* ret_value = context.get_var_at(opcodes[++ip]);
 				ip++;
 
 				*ret_value = on->call_method(method, args);
 
-			} break;
+			} DISPATCH();
 
 			case Opcode::CALL_BUILTIN: {
 				CHECK_OPCODE_SIZE(4);
 
 				uint32_t func = opcodes[++ip];
 				uint32_t argc = opcodes[++ip];
-				stdvec<var*> args;
+				stdvec<var*> args(argc);
 				for (int i = 0; i < (int)argc; i++) {
 					var* arg = context.get_var_at(opcodes[++ip]);
-					args.push_back(arg);
+					args[i] = arg;
 				}
 				var* ret = context.get_var_at(opcodes[++ip]);
 
 				ASSERT(func < BuiltinFunctions::_FUNC_MAX_);
 				BuiltinFunctions::call((BuiltinFunctions::Type)func, args, *ret);
 				ip++;
-			} break;
+			} DISPATCH();
 
 			case Opcode::CALL_SUPER_CTOR: {
 				CHECK_OPCODE_SIZE(2);
 				uint32_t argc = opcodes[++ip];
-				stdvec<var*> args;
+				stdvec<var*> args(argc);
 
 				for (int i = 0; i < (int)argc; i++) {
 					var* arg = context.get_var_at(opcodes[++ip]);
-					args.push_back(arg);
+					args[i] = arg;
 				}
 				ip++;
 
@@ -443,17 +447,17 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 					if (ctor) call_function(ctor, p_bytecode->get_base_binary().get(), p_self, args, __stack + 1);
 				}
 
-			} break;
+			} DISPATCH();
 
 			case Opcode::CALL_SUPER_METHOD: {
 				CHECK_OPCODE_SIZE(4);
 
 				const String& method = context.get_name_at(opcodes[++ip]);
 				uint32_t argc = opcodes[++ip];
-				stdvec<var*> args;
+				stdvec<var*> args(argc);
 				for (int i = 0; i < (int)argc; i++) {
 					var* arg = context.get_var_at(opcodes[++ip]);
-					args.push_back(arg);
+					args[i] = arg;
 				}
 				var* ret_value = context.get_var_at(opcodes[++ip]);
 				ip++;
@@ -481,13 +485,13 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 					}
 				}
 
-			} break;
+			} DISPATCH();
 
 			case Opcode::JUMP: {
 				CHECK_OPCODE_SIZE(2);
 				uint32_t addr = opcodes[++ip];
 				ip = addr;
-			} break;
+			} DISPATCH();
 
 			case Opcode::JUMP_IF: {
 				CHECK_OPCODE_SIZE(3);
@@ -495,7 +499,7 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				uint32_t addr = opcodes[++ip];
 				if (cond->operator bool()) ip = addr;
 				else ip++;
-			} break;
+			} DISPATCH();
 
 			case Opcode::JUMP_IF_NOT: {
 				CHECK_OPCODE_SIZE(3);
@@ -503,13 +507,13 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				uint32_t addr = opcodes[++ip];
 				if (!cond->operator bool()) ip = addr;
 				else ip++;
-			} break;
+			} DISPATCH();
 
 			case Opcode::RETURN: {
 				CHECK_OPCODE_SIZE(2);
 				var* val = context.get_var_at(opcodes[++ip]);
 				return *val;
-			} break;
+			} DISPATCH();
 
 			case Opcode::ITER_BEGIN: {
 				CHECK_OPCODE_SIZE(3);
@@ -518,7 +522,8 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 				ip++;
 
 				*iterator = on->__iter_begin();
-			} break;
+			} DISPATCH();
+
 			case Opcode::ITER_NEXT: {
 				CHECK_OPCODE_SIZE(4);
 				var* iter_value = context.get_var_at(opcodes[++ip]);
@@ -532,10 +537,12 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 					ip = addr;
 				}
 
-			} break;
+			} DISPATCH();
+
 			case Opcode::END: {
 				return var();
-			} break;
+			} DISPATCH();
+
 			MISSED_ENUM_CHECK(Opcode::END, 25);
 
 		}} catch (Throwable& err) {

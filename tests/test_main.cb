@@ -6,19 +6,9 @@ func f(a, b&) {
 	println(a, b);
 }
 
-func main() {	
-
-	println("\n".strip());
-
-
-	var m = { 1:1, "2":2, 3:3, 4:4 };
-	println(m);
-
-	// operator overloading
-	var path = Path("C:/dev") / "path/to" / "file.txt";
-	println(path);
-
-	var a = 1, b = 1;
-	f(a, b);
-	println(a, b);
+func main() {
+	for (var i : 100000) {
+		
+	}
 }
+

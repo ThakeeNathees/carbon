@@ -168,11 +168,11 @@ var NativeClasses::call_method_on(ptr<Object>& p_on, const String& p_attrib, std
 	if (bd != nullptr) {
 		switch (bd->get_type()) {
 			case BindData::METHOD:
-				return static_cast<MethodBind*>(bd)->call(p_on, p_args);
+				return static_cast<MethodBind*>(bd)->call(p_on.get(), p_args);
 			case BindData::STATIC_FUNC:
 				return static_cast<StaticFuncBind*>(bd)->call(p_args);
 			case BindData::MEMBER_VAR:
-				return static_cast<PropertyBind*>(bd)->get(p_on).__call(p_args);
+				return static_cast<PropertyBind*>(bd)->get(p_on.get()).__call(p_args);
 			case BindData::STATIC_VAR:
 				return static_cast<StaticPropertyBind*>(bd)->get().__call(p_args);
 			case BindData::STATIC_CONST:

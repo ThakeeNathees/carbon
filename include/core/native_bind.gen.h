@@ -137,7 +137,7 @@ public:
 	virtual BindData::Type get_type() const { return BindData::METHOD; }
 	virtual int get_argc() const { return argc; }
 
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const = 0;
+	virtual var call(Object* self, stdvec<var*>& args) const = 0;
 	const ptr<MethodInfo> get_method_info() const { return mi; }
 	const ptr<MemberInfo> get_member_info() const override { return mi; }
 };
@@ -162,7 +162,7 @@ protected:
 	ptr<PropertyInfo> pi;
 public:
 	virtual BindData::Type get_type() const { return BindData::MEMBER_VAR; }
-	virtual var& get(ptr<Object> self) const = 0;
+	virtual var& get(Object* self) const = 0;
 
 	const ptr<PropertyInfo> get_prop_info() const { return pi; }
 	const ptr<MemberInfo> get_member_info() const override { return pi; }
@@ -182,7 +182,7 @@ public:
 		pi->_set_bind((void*)this);
 	}
 
-	virtual var& get(ptr<Object> self) const override {
+	virtual var& get(Object* self) const override {
 		return ptrcast<Class>(self).get()->*member_ptr;
 	}
 };
@@ -373,12 +373,12 @@ using F7 = R(*)(a0, a1, a2, a3, a4, a5, a6);
 
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_0(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	return (ptrcast<T>(self).get()->*method)();
+inline var _internal_call_method_0(Object* self, const M& method, stdvec<var*>& args) {
+	return (((T*)self)->*method)();
 }
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_0(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	(ptrcast<T>(self).get()->*method)(); return var();
+inline var _internal_call_method_0(Object* self, const M& method, stdvec<var*>& args) {
+	(((T*)self)->*method)(); return var();
 }
 
 template<typename T, typename R>
@@ -394,7 +394,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -428,7 +428,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -451,12 +451,12 @@ public:
 };
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_1(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	return (ptrcast<T>(self).get()->*method)(*args[0]);
+inline var _internal_call_method_1(Object* self, const M& method, stdvec<var*>& args) {
+	return (((T*)self)->*method)(*args[0]);
 }
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_1(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	(ptrcast<T>(self).get()->*method)(*args[0]); return var();
+inline var _internal_call_method_1(Object* self, const M& method, stdvec<var*>& args) {
+	(((T*)self)->*method)(*args[0]); return var();
 }
 
 template<typename T, typename R, typename a0>
@@ -472,7 +472,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -506,7 +506,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -529,12 +529,12 @@ public:
 };
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_2(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	return (ptrcast<T>(self).get()->*method)(*args[0], *args[1]);
+inline var _internal_call_method_2(Object* self, const M& method, stdvec<var*>& args) {
+	return (((T*)self)->*method)(*args[0], *args[1]);
 }
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_2(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	(ptrcast<T>(self).get()->*method)(*args[0], *args[1]); return var();
+inline var _internal_call_method_2(Object* self, const M& method, stdvec<var*>& args) {
+	(((T*)self)->*method)(*args[0], *args[1]); return var();
 }
 
 template<typename T, typename R, typename a0, typename a1>
@@ -550,7 +550,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -584,7 +584,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -607,12 +607,12 @@ public:
 };
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_3(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	return (ptrcast<T>(self).get()->*method)(*args[0], *args[1], *args[2]);
+inline var _internal_call_method_3(Object* self, const M& method, stdvec<var*>& args) {
+	return (((T*)self)->*method)(*args[0], *args[1], *args[2]);
 }
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_3(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	(ptrcast<T>(self).get()->*method)(*args[0], *args[1], *args[2]); return var();
+inline var _internal_call_method_3(Object* self, const M& method, stdvec<var*>& args) {
+	(((T*)self)->*method)(*args[0], *args[1], *args[2]); return var();
 }
 
 template<typename T, typename R, typename a0, typename a1, typename a2>
@@ -628,7 +628,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -662,7 +662,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -685,12 +685,12 @@ public:
 };
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_4(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	return (ptrcast<T>(self).get()->*method)(*args[0], *args[1], *args[2], *args[3]);
+inline var _internal_call_method_4(Object* self, const M& method, stdvec<var*>& args) {
+	return (((T*)self)->*method)(*args[0], *args[1], *args[2], *args[3]);
 }
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_4(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	(ptrcast<T>(self).get()->*method)(*args[0], *args[1], *args[2], *args[3]); return var();
+inline var _internal_call_method_4(Object* self, const M& method, stdvec<var*>& args) {
+	(((T*)self)->*method)(*args[0], *args[1], *args[2], *args[3]); return var();
 }
 
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3>
@@ -706,7 +706,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -740,7 +740,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -763,12 +763,12 @@ public:
 };
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_5(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	return (ptrcast<T>(self).get()->*method)(*args[0], *args[1], *args[2], *args[3], *args[4]);
+inline var _internal_call_method_5(Object* self, const M& method, stdvec<var*>& args) {
+	return (((T*)self)->*method)(*args[0], *args[1], *args[2], *args[3], *args[4]);
 }
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_5(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	(ptrcast<T>(self).get()->*method)(*args[0], *args[1], *args[2], *args[3], *args[4]); return var();
+inline var _internal_call_method_5(Object* self, const M& method, stdvec<var*>& args) {
+	(((T*)self)->*method)(*args[0], *args[1], *args[2], *args[3], *args[4]); return var();
 }
 
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4>
@@ -784,7 +784,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -818,7 +818,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -841,12 +841,12 @@ public:
 };
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_6(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	return (ptrcast<T>(self).get()->*method)(*args[0], *args[1], *args[2], *args[3], *args[4], *args[5]);
+inline var _internal_call_method_6(Object* self, const M& method, stdvec<var*>& args) {
+	return (((T*)self)->*method)(*args[0], *args[1], *args[2], *args[3], *args[4], *args[5]);
 }
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_6(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	(ptrcast<T>(self).get()->*method)(*args[0], *args[1], *args[2], *args[3], *args[4], *args[5]); return var();
+inline var _internal_call_method_6(Object* self, const M& method, stdvec<var*>& args) {
+	(((T*)self)->*method)(*args[0], *args[1], *args[2], *args[3], *args[4], *args[5]); return var();
 }
 
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5>
@@ -862,7 +862,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -896,7 +896,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -919,12 +919,12 @@ public:
 };
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_7(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	return (ptrcast<T>(self).get()->*method)(*args[0], *args[1], *args[2], *args[3], *args[4], *args[5], *args[6]);
+inline var _internal_call_method_7(Object* self, const M& method, stdvec<var*>& args) {
+	return (((T*)self)->*method)(*args[0], *args[1], *args[2], *args[3], *args[4], *args[5], *args[6]);
 }
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_7(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	(ptrcast<T>(self).get()->*method)(*args[0], *args[1], *args[2], *args[3], *args[4], *args[5], *args[6]); return var();
+inline var _internal_call_method_7(Object* self, const M& method, stdvec<var*>& args) {
+	(((T*)self)->*method)(*args[0], *args[1], *args[2], *args[3], *args[4], *args[5], *args[6]); return var();
 }
 
 template<typename T, typename R, typename a0, typename a1, typename a2, typename a3, typename a4, typename a5, typename a6>
@@ -940,7 +940,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -974,7 +974,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -1580,13 +1580,13 @@ using FVA = R(*)(stdvec<var*>&);
 
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_static_func_va(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	return (ptrcast<T>(self).get()->*method)(args);
+inline var _internal_call_static_func_va(Object* self, const M& method, stdvec<var*>& args) {
+	return (((T*)self)->*method)(args);
 }
 
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_static_func_va(ptr<Object> self, const M& method, stdvec<var*>& args) {{
-	(ptrcast<T>(self).get()->*method)(args); return var();
+inline var _internal_call_static_func_va(Object* self, const M& method, stdvec<var*>& args) {{
+	(((T*)self)->*method)(args); return var();
 }}
 
 template<typename T, typename R>
@@ -1602,7 +1602,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 		return _internal_call_static_func_va<T, _Tmethod_va, R>(self, method, args);
 	}
 

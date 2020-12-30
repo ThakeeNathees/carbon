@@ -81,9 +81,9 @@ public:
 	var& operator[](const var& p_key);
 
 	// TODO: move them to native
-	static var call_method_s(ptr<Object> p_self, const String& p_name, stdvec<var*>& p_args);
-	static var get_member_s(ptr<Object> p_self, const String& p_name);
-	static void set_member_s(ptr<Object> p_self, const String& p_name, var& p_value);
+	static var call_method_s(ptr<Object>& p_self, const String& p_name, stdvec<var*>& p_args);
+	static var get_member_s(ptr<Object>& p_self, const String& p_name);
+	static void set_member_s(ptr<Object>& p_self, const String& p_name, var& p_value);
 
 	virtual var call_method(const String& p_method_name, stdvec<var*>& p_args);
 	virtual var get_member(const String& p_member_name);
