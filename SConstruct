@@ -146,10 +146,10 @@ elif env['platform'] == "windows":
 
 	## MSVC
 	if env['CC'] == 'cl':
-		env.Append(CXXFLAGS=['/bigobj'])
+		env.Append(CXXFLAGS=['/bigobj', '/FS'])
 		env.Append(CPPDEFINES=['_CRT_SECURE_NO_WARNINGS'])
 		env.Append(CCFLAGS=['-W3', '-GR'])
-		env.Append(LINKFLAGS='-SUBSYSTEM:CONSOLE')
+		env.Append(LINKFLAGS=['-SUBSYSTEM:CONSOLE'])
 		if env['target'] == 'debug':
 			env.Append(CPPDEFINES=['_DEBUG'])
 			env.Append(CCFLAGS=['-EHsc', '-MDd', '-ZI'])
