@@ -1,6 +1,6 @@
 
 <p align="center" >
-<img src="https://raw.githubusercontent.com/ThakeeNathees/carbon/master/extra/logo.png" width="300" alt="Carbon Programming Language" title="Carbon Programming Language">
+<img src="https://raw.githubusercontent.com/carbon-org/carbon/master/extra/images/logo.png" width="300" alt="Carbon Programming Language" title="Carbon Programming Language">
 </p>
 
 Carbon is a simple embeddable, object-oriented, dynamic-typed, bytecode-interpreted, scripting language written in C++11 with smart pointers for safe memory deallocation. Carbon is syntactically similar to C/C++, it's analyzer and backend written using <a href="https://docs.godotengine.org/en/stable/getting_started/scripting/gdscript/gdscript_basics.html">GDScript</a>  as a reference (its performance is as much as GDScript).
