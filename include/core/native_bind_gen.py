@@ -3,7 +3,7 @@ LICENSE = '''\
 // MIT License
 //------------------------------------------------------------------------------
 // 
-// Copyright (c) 2020 Thakee Nathees
+// Copyright (c) 2020-2021 Thakee Nathees
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -172,7 +172,7 @@ public:
 	virtual BindData::Type get_type() const { return BindData::METHOD; }
 	virtual int get_argc() const { return argc; }
 
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const = 0;
+	virtual var call(Object* self, stdvec<var*>& args) const = 0;
 	const ptr<MethodInfo> get_method_info() const { return mi; }
 	const ptr<MemberInfo> get_member_info() const override { return mi; }
 };
@@ -197,7 +197,7 @@ protected:
 	ptr<PropertyInfo> pi;
 public:
 	virtual BindData::Type get_type() const { return BindData::MEMBER_VAR; }
-	virtual var& get(ptr<Object> self) const = 0;
+	virtual var& get(Object* self) const = 0;
 
 	const ptr<PropertyInfo> get_prop_info() const { return pi; }
 	const ptr<MemberInfo> get_member_info() const override { return pi; }
@@ -217,7 +217,7 @@ public:
 		pi->_set_bind((void*)this);
 	}
 
-	virtual var& get(ptr<Object> self) const override {
+	virtual var& get(Object* self) const override {
 		return ptrcast<Class>(self).get()->*member_ptr;
 	}
 };
@@ -352,12 +352,12 @@ public:
 		internal_call_ret = f'''\
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_{i}(ptr<Object> self, const M& method, stdvec<var*>& args) {{
-	return (ptrcast<T>(self).get()->*method)({get_args_call_symbol(i)});
+inline var _internal_call_method_{i}(Object* self, const M& method, stdvec<var*>& args) {{
+	return (((T*)self)->*method)({get_args_call_symbol(i)});
 }}
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_method_{i}(ptr<Object> self, const M& method, stdvec<var*>& args) {{
-	(ptrcast<T>(self).get()->*method)({get_args_call_symbol(i)}); return var();
+inline var _internal_call_method_{i}(Object* self, const M& method, stdvec<var*>& args) {{
+	(((T*)self)->*method)({get_args_call_symbol(i)}); return var();
 }}
 
 '''
@@ -375,7 +375,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {{
+	virtual var call(Object* self, stdvec<var*>& args) const override {{
 
 		int default_arg_count = mi->get_default_arg_count();
 		int args_given = (int)args.size();
@@ -495,13 +495,13 @@ using FVA = R(*)(stdvec<var*>&);
 
 
 template <typename T, class M, typename _TRet, typename std::enable_if<!std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_static_func_va(ptr<Object> self, const M& method, stdvec<var*>& args) {
-	return (ptrcast<T>(self).get()->*method)(args);
+inline var _internal_call_static_func_va(Object* self, const M& method, stdvec<var*>& args) {
+	return (((T*)self)->*method)(args);
 }
 
 template <typename T, class M, typename _TRet, typename std::enable_if<std::is_same<_TRet, void>::value, bool>::type = true>
-inline var _internal_call_static_func_va(ptr<Object> self, const M& method, stdvec<var*>& args) {{
-	(ptrcast<T>(self).get()->*method)(args); return var();
+inline var _internal_call_static_func_va(Object* self, const M& method, stdvec<var*>& args) {{
+	(((T*)self)->*method)(args); return var();
 }}
 
 template<typename T, typename R>
@@ -517,7 +517,7 @@ public:
 		mi = p_mi;
 		mi->_set_bind((void*)this);
 	}
-	virtual var call(ptr<Object> self, stdvec<var*>& args) const override {
+	virtual var call(Object* self, stdvec<var*>& args) const override {
 		return _internal_call_static_func_va<T, _Tmethod_va, R>(self, method, args);
 	}
 

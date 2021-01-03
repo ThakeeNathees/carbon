@@ -2,7 +2,7 @@
 // MIT License
 //------------------------------------------------------------------------------
 // 
-// Copyright (c) 2020 Thakee Nathees
+// Copyright (c) 2020-2021 Thakee Nathees
 // 
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -109,7 +109,7 @@ void Object::_bind_data(NativeClasses* p_native_classes) {
 }
 
 // call_method() should call it's parent if method not exists.
-var Object::call_method_s(ptr<Object> p_self, const String& p_name, stdvec<var*>& p_args) {
+var Object::call_method_s(ptr<Object>& p_self, const String& p_name, stdvec<var*>& p_args) {
 
 	if (!p_self->_is_registered()) return p_self->call_method(p_name, p_args);
 
@@ -123,7 +123,7 @@ var Object::call_method_s(ptr<Object> p_self, const String& p_name, stdvec<var*>
 
 	if (bind_data != nullptr) {
 		if (bind_data->get_type() == BindData::METHOD) {
-			if (!p_self->_is_native_ref()) return ptrcast<MethodBind>(bind_data)->call(p_self, p_args);
+			if (!p_self->_is_native_ref()) return ptrcast<MethodBind>(bind_data)->call(p_self.get(), p_args);
 			else THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("cannot call a non static method named \"%s\" (on type %s) statically.", method_name.c_str(), p_self->get_type_name()));
 
 		} else if (bind_data->get_type() == BindData::STATIC_FUNC) {
@@ -133,7 +133,7 @@ var Object::call_method_s(ptr<Object> p_self, const String& p_name, stdvec<var*>
 			return ptrcast<StaticPropertyBind>(bind_data)->get().__call(p_args);
 
 		} else if (bind_data->get_type() == BindData::MEMBER_VAR) {
-			return ptrcast<PropertyBind>(bind_data)->get(p_self).__call(p_args);
+			return ptrcast<PropertyBind>(bind_data)->get(p_self.get()).__call(p_args);
 
 		} else {
 			THROW_ERROR(Error::TYPE_ERROR, String::format("attribute named \"%s\" on type %s is not callable.", method_name.c_str(), p_self->get_type_name()));
@@ -145,7 +145,7 @@ var Object::call_method_s(ptr<Object> p_self, const String& p_name, stdvec<var*>
 	THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("type %s has no method named \"%s\".", p_self->get_type_name(), method_name.c_str()));
 }
 
-var Object::get_member_s(ptr<Object> p_self, const String& p_name) {
+var Object::get_member_s(ptr<Object>& p_self, const String& p_name) {
 
 	if (!p_self->_is_registered()) return p_self->get_member(p_name);
 
@@ -159,7 +159,7 @@ var Object::get_member_s(ptr<Object> p_self, const String& p_name) {
 
 	if (bind_data != nullptr) {
 		if (bind_data->get_type() == BindData::MEMBER_VAR) {
-			if (!p_self->_is_native_ref()) return ptrcast<PropertyBind>(bind_data)->get(p_self);
+			if (!p_self->_is_native_ref()) return ptrcast<PropertyBind>(bind_data)->get(p_self.get());
 			else THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("cannot access a non static attribute named \"%s\" (on type %s) statically.", member_name.c_str(), class_name.c_str()));
 		} else if (bind_data->get_type() == BindData::STATIC_VAR) {
 			return ptrcast<StaticPropertyBind>(bind_data)->get();
@@ -182,7 +182,7 @@ var Object::get_member_s(ptr<Object> p_self, const String& p_name) {
 }
 
 
-void Object::set_member_s(ptr<Object> p_self, const String& p_name, var& p_value) {
+void Object::set_member_s(ptr<Object>& p_self, const String& p_name, var& p_value) {
 
 	if (!p_self->_is_registered()) { p_self->set_member(p_name, p_value); return; }
 
@@ -197,7 +197,7 @@ void Object::set_member_s(ptr<Object> p_self, const String& p_name, var& p_value
 	if (bind_data != nullptr) {
 		if (bind_data->get_type() == BindData::MEMBER_VAR) {
 			if (!p_self->_is_native_ref()) {
-				ptrcast<PropertyBind>(bind_data)->get(p_self) = p_value;
+				ptrcast<PropertyBind>(bind_data)->get(p_self.get()) = p_value;
 				return;
 			} else {
 				THROW_ERROR(Error::ATTRIBUTE_ERROR, String::format("cannot access a non static attribute named \"%s\" (on type %s) statically.", member_name.c_str(), class_name.c_str()));
