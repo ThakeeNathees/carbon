@@ -48,6 +48,7 @@ const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_string() {
 		_NEW_METHOD_INFO("strip",                                                                    var::STRING  ),
 		_NEW_METHOD_INFO("join",       _PARAMS("strings" ),      _TYPES(var::ARRAY),                 var::STRING  ),
 		_NEW_METHOD_INFO("replace",    _PARAMS("with", "what"),  _TYPES(var::STRING, var::STRING),   var::STRING  ),
+		_NEW_METHOD_INFO("find",       _PARAMS("what", "offset"),_TYPES(var::STRING, var::INT),      var::INT,     false, _DEFVALS(0)),
 	};
 	return member_info_s;
 }
@@ -72,6 +73,10 @@ var String::call_method(const String& p_method, const stdvec<var*>& p_args) {
 		}
 		case "join"_hash:       return join(p_args[0]->operator Array());
 		case "replace"_hash:    return replace(p_args[0]->operator const String & (), p_args[1]->operator const String & ());
+		case "find"_hash: {
+			if (p_args.size() == 1) return find(p_args[0]->operator const String & (), 0);
+			else return find(p_args[0]->operator const String & (), p_args[1]->operator int64_t());
+		}
 	}
 	// TODO: more.
 	THROW_ERROR(Error::BUG, "can't reach here.");
@@ -343,6 +348,12 @@ String String::replace(const String& p_with, const String& p_what) const {
 		n += p_what.size();
 	}
 	return ret;
+}
+
+int64_t String::find(const String& p_what, int64_t p_offset) const {
+	 std::size_t pos = _data->find(p_what.operator const std::string & (), p_offset);
+	 if (pos == std::string::npos) return -1;
+	 return (int64_t)pos;
 }
 
 } // namespace carbon

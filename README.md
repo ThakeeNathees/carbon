@@ -11,10 +11,6 @@ Carbon is a simple embeddable, object-oriented, dynamic-typed, bytecode-interpre
 class Vector {
 	// non-static members
 	var x = 0, y = 0;
-	
-	// static members
-	static var ZERO = Vector(0, 0);
-	static var UNIT = Vector(1, 1);
 
 	// constructor
 	func Vector (x = 0, y = 0) {
@@ -51,10 +47,12 @@ func main() {
 ## Features
 * Minimal setup
 * Embeddable
-*  Dynamic typing
+* Dynamic typing
 * Garbage collection
 * Object-oriented
+* Enums and switch statements
 * Reference, default argument
+* Static, non-static members
 * Operator overriding
 * First class types, functions
 * Callables and Iterables
