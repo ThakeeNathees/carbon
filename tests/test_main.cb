@@ -1,14 +1,14 @@
+class Vector {
 
-// pass by value and reference
-func f(a, b&) {
-	a += 1;
-	b += 1;
-	println(a, b);
+	func __add( x) {
+		println(x);
+	}
+
+
 }
 
 func main() {
-	for (var i : 100000) {
-		
-	}
+	//Vector()("tesdf");
+	Vector() + Vector();
+	println("aebcde".find("e", 2));
 }
-

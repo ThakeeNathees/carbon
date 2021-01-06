@@ -68,6 +68,7 @@ public:
 	String strip() const; // lstrip, rstrip
 	String join(const Array& p_elements) const;
 	String replace(const String& p_with, const String& p_what) const;
+	int64_t find(const String& p_what, int64_t p_offset = 0) const;
 
 	// operators.
 	char operator[](int64_t p_index) const;

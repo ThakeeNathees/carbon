@@ -85,19 +85,19 @@ opts.Add(BoolVariable('verbose', "Use verbose build command", False))
 
 opts.Add(BoolVariable('libs', "Only build the libs defined in the user data", False))
 
+## Setup the Environment
 if 'use_llvm' in opts.args.keys() and opts.args['use_llvm']:
 	env['CC'] = 'clang'
 	env['CXX'] = 'clang++'
-
 elif 'use_mingw' in opts.args.keys() and opts.args['use_mingw']:
 	env = Environment(tools = ['mingw'], ENV = {'PATH' : os.environ['PATH']})
 	env['tools'] = ['mingw']
-
 else:
 	## Gets the standard flags CC, CCX, etc.
 	env = DefaultEnvironment()
-	## scons can't find "cl.exe"
-	os.environ['PATH'] = env['ENV']['PATH']
+	if sys.platform == 'win32':
+		## scons can't find "cl.exe"
+		os.environ['PATH'] = env['ENV']['PATH']
 
 ## Updates the environment with the option variables.
 opts.Update(env)
