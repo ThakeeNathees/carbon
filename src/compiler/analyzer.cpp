@@ -189,8 +189,12 @@ void Analyzer::analyze(ptr<Parser> p_parser) {
 
 	// class function.
 	for (size_t i = 0; i < file_node->classes.size(); i++) {
+
 		parser->parser_context.current_class = file_node->classes[i].get();
 		for (size_t j = 0; j < file_node->classes[i]->functions.size(); j++) {
+			// check magic methods arguments
+			_check_operator_methods(file_node->classes[i]->functions[j].get());
+
 			parser->parser_context.current_func = file_node->classes[i]->functions[j].get();
 			_reduce_block(file_node->classes[i]->functions[j]->body);
 		}
@@ -416,6 +420,30 @@ void Analyzer::_resolve_enumvalue(Parser::EnumValueNode& p_enumvalue, int* p_pos
 
 	p_enumvalue._is_reducing = false;
 	p_enumvalue.is_reduced = true;
+}
+
+void Analyzer::_check_operator_methods(const Parser::FunctionNode* p_func) {
+	const String& name = p_func->name;
+	const int params = (int)p_func->args.size();
+	int required = 0;
+	if (name == GlobalStrings::copy) required = 1;
+	else if (name == GlobalStrings::to_string) required = 0;
+	else if (name == GlobalStrings::__iter_begin) required = 0;
+	else if (name == GlobalStrings::__iter_has_next) required = 0;
+	else if (name == GlobalStrings::__iter_next) required = 0;
+	else if (name == GlobalStrings::__get_mapped) required = 0;
+	else if (name == GlobalStrings::__set_mapped) required = 1;
+	else if (name == GlobalStrings::__hash) required = 0;
+	else if (name == GlobalStrings::__add) required = 1;
+	else if (name == GlobalStrings::__sub) required = 1;
+	else if (name == GlobalStrings::__mul) required = 1;
+	else if (name == GlobalStrings::__div) required = 1;
+	else if (name == GlobalStrings::__gt) required = 1;
+	else if (name == GlobalStrings::__lt) required = 1;
+	else if (name == GlobalStrings::__eq) required = 1;
+
+	if (params != required)
+		throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("method \"%s\" required %i parameter(s) %i given.", name.c_str(), required, params), p_func->pos);
 }
 
 void Analyzer::_check_super_constructor_call(const Parser::BlockNode* p_block) {

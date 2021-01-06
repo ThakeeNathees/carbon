@@ -59,6 +59,7 @@ private:
 
 	void _check_identifier(ptr<Parser::Node>& p_expr);
 	void _check_member_var_shadow(void* p_base, Parser::ClassNode::BaseType p_base_type, stdvec<ptr<Parser::VarNode>>& p_vars);
+	void _check_operator_methods(const Parser::FunctionNode* p_func);
 	void _check_super_constructor_call(const Parser::BlockNode* p_block);
 	void _check_arg_count(int p_argc, int p_default_argc, int p_args_given, Vect2i p_err_pos = Vect2i(0, 0));
 

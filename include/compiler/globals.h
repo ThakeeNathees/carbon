@@ -50,10 +50,10 @@ public:
 	_GLOBAL_STR(__mul);
 	_GLOBAL_STR(__div);
 
-	_GLOBAL_STR(__add_eq);
-	_GLOBAL_STR(__sub_eq);
-	_GLOBAL_STR(__mul_eq);
-	_GLOBAL_STR(__div_eq);
+	//_GLOBAL_STR(__add_eq);
+	//_GLOBAL_STR(__sub_eq);
+	//_GLOBAL_STR(__mul_eq);
+	//_GLOBAL_STR(__div_eq);
 
 	_GLOBAL_STR(__gt);
 	_GLOBAL_STR(__lt);
