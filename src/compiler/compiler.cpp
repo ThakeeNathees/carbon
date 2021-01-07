@@ -52,8 +52,8 @@ void Compiler::add_include_dir(const String& p_dir) {
 
 ptr<Bytecode> Compiler::compile_file(const String& p_path) {
 
-	// TODO: remove this
-	Logger::log(String::format("compiling: %s\n", p_path.c_str()).c_str());
+	// TODO: print only if serialize to bytecode.
+	//Logger::log(String::format("compiling: %s\n", p_path.c_str()).c_str());
 
 	class ScopeDestruct {
 	public:

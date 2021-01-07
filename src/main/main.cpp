@@ -35,7 +35,7 @@ using namespace carbon;
 inline void log_copyright_and_license() {
 	Logger::log(1 + R"(
 Carbon 1.0.0 (https://github.com/ThakeeNathees/carbon/)
-Copyright (c) 2020 ThakeeNathees.
+Copyright (c) 2020-2021 ThakeeNathees.
 Free and open source software under the terms of the MIT license.
 
 )");
@@ -43,6 +43,7 @@ Free and open source software under the terms of the MIT license.
 
 inline void log_help() {
 	Logger::log(1 + R"(
+TODO: THESE HELP TEXT ARE DUMMY
 usage: carbon [options] file ...
 Options:
     -h, --help          : Display this help message.
@@ -56,10 +57,11 @@ Options:
 int _main(int argc, char** argv) {
 
 	carbon_initialize();
-	log_copyright_and_license();
+	//log_copyright_and_license();
 
 	try {
 		if (argc < 2) {
+			log_copyright_and_license();
 			log_help();
 		} else {
 			// TODO: properly parse command line args
