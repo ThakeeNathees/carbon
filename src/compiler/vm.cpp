@@ -57,29 +57,6 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 	THROW_IF_NULLPTR(p_bytecode);
 	if (__stack >= STACK_MAX) THROW_ERROR(Error::STACK_OVERFLOW, "stack was overflowed.");
 
-	p_bytecode->initialize();
-
-	VMStack stack(p_func->get_stack_size());
-	RuntimeContext context;
-	context.vm = this;
-	context.stack = &stack;
-	context.args = &p_args;
-	if (p_self != nullptr) context.self = p_self;
-	context.curr_fn = p_func;
-	for (int i = 0; i < p_func->get_is_args_ref().size(); i++) {
-		if (!p_func->get_is_args_ref()[i]) context.value_args.push_back(*(p_args[i]));
-	}
-	if (p_bytecode->is_class()) {
-		context.bytecode_class = p_bytecode;
-		context.bytecode_file = p_bytecode->get_file().get();
-	} else {
-		context.bytecode_file = p_bytecode;
-	}
-
-	uint32_t ip = 0; // instruction pointer
-
-	const stdvec<uint32_t>& opcodes = p_func->get_opcodes();
-
 	// check argc and add default args
 	stdvec<var> default_args_copy;
 	if (p_args.size() > p_func->get_arg_count()) {
@@ -99,6 +76,29 @@ var VM::call_function(const Function* p_func, Bytecode* p_bytecode, ptr<Instance
 		for (var& v : default_args_copy) p_args.push_back(&v);
 	}
 
+	p_bytecode->initialize();
+
+	VMStack stack(p_func->get_stack_size());
+	RuntimeContext context;
+	context.vm = this;
+	context.stack = &stack;
+	context.args = &p_args;
+	if (p_self != nullptr) context.self = p_self;
+	context.curr_fn = p_func;
+	for (int i = 0; i < p_func->get_is_args_ref().size(); i++) {
+		if (!p_func->get_is_args_ref()[i]) {
+			context.value_args.push_back(*(p_args[i]));
+		}
+	}
+	if (p_bytecode->is_class()) {
+		context.bytecode_class = p_bytecode;
+		context.bytecode_file = p_bytecode->get_file().get();
+	} else {
+		context.bytecode_file = p_bytecode;
+	}
+
+	uint32_t ip = 0; // instruction pointer
+	const stdvec<uint32_t>& opcodes = p_func->get_opcodes();
 
 #define CHECK_OPCODE_SIZE(m_size) ASSERT(ip + m_size < opcodes.size())
 #define DISPATCH() goto L_loop

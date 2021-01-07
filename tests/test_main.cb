@@ -1,6 +1,6 @@
 class Vector {
 
-	func __add( x) {
+	func __call(x, y) {
 		println(x);
 	}
 
@@ -8,7 +8,6 @@ class Vector {
 }
 
 func main() {
-	//Vector()("tesdf");
-	Vector() + Vector();
-	println("aebcde".find("e", 2));
+	var v = Vector();
+	v(1);
 }

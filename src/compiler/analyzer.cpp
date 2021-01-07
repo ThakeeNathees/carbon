@@ -428,6 +428,7 @@ void Analyzer::_check_operator_methods(const Parser::FunctionNode* p_func) {
 	int required = 0;
 	if (name == GlobalStrings::copy) required = 1;
 	else if (name == GlobalStrings::to_string) required = 0;
+	else if (name == GlobalStrings::__call) return;
 	else if (name == GlobalStrings::__iter_begin) required = 0;
 	else if (name == GlobalStrings::__iter_has_next) required = 0;
 	else if (name == GlobalStrings::__iter_next) required = 0;
