@@ -86,8 +86,16 @@ var* Bytecode::get_static_var(const String& p_name) { _GET_OR_NULL(_static_vars,
 var Bytecode::get_constant(const String& p_name) { _GET_OR_NULL(_constants, PLACE_HOLDER_MACRO); }
 
 var Bytecode::__call(stdvec<var*>& p_args) {
-	throw "TODO:";
-	return var(); // TODO:
+	if (!is_class())
+		THROW_ERROR(Error::ATTRIBUTE_ERROR, "Bytecode module is not callable");
+
+	ptr<Instance> instance = newptr<Instance>(shared_from_this());
+	const Function* member_initializer = get_member_initializer();
+	stdvec<var*> _args;
+	if (member_initializer) VM::singleton()->call_function(member_initializer, this, instance, _args);
+	const Function* constructor = get_constructor();
+	if (constructor) VM::singleton()->call_function(constructor, this, instance, p_args);
+	return instance;
 }
 
 var Bytecode::call_method(const String& p_method_name, stdvec<var*>& p_args) {

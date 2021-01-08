@@ -491,7 +491,6 @@ void Analyzer::_check_super_constructor_call(const Parser::BlockNode* p_block) {
 void Analyzer::_check_arg_count(int p_argc, int p_default_argc, int p_args_given, Vect2i p_err_pos) {
 	if (p_argc == -1 /*va args*/) return;
 
-	// TODO: error message 
 	int required_min_argc = p_argc - p_default_argc;
 	if (required_min_argc > 0) {
 		if (p_default_argc == 0) {
@@ -616,7 +615,6 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 
 					case Parser::ControlFlowNode::IF: {
 						ASSERT(cf_node->args.size() == 1);
-						// TODO: if it's evaluvated to compile time constant true/false it could be optimized/warned.
 						_reduce_expression(cf_node->args[0]);
 						_reduce_block(cf_node->body);
 						if (cf_node->body_else != nullptr) {
@@ -628,7 +626,6 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 
 					case Parser::ControlFlowNode::SWITCH: {
 						ASSERT(cf_node->args.size() == 1);
-						// TODO: if it's evaluvated to compile time constant integer it could be optimized/warned.
 						_reduce_expression(cf_node->args[0]);
 
 						Parser::EnumNode* _switch_enum = nullptr;
@@ -704,7 +701,6 @@ void Analyzer::_reduce_block(ptr<Parser::BlockNode>& p_block) {
 						parser->parser_context.current_block = parent_block;
 
 						_reduce_block(cf_node->body);
-						// TODO: if it's evaluvated to compile time constant it could be optimized/warned.
 						if (cf_node->args[0] == nullptr && cf_node->args[1] == nullptr && cf_node->args[2] == nullptr) {
 							if (!cf_node->has_break) {
 								ANALYZER_WARNING(Warning::NON_TERMINATING_LOOP, "", cf_node->pos);
@@ -839,7 +835,6 @@ void Analyzer::_reduce_expression(ptr<Parser::Node>& p_expr) {
 			bool all_const = true;
 			for (int i = 0; i < (int)map->elements.size(); i++) {
 				_reduce_expression(map->elements[i].key);
-				// TODO: if key is const value and two keys are the same throw error.
 				if (map->elements[i].key->type == Parser::Node::Type::CONST_VALUE) {
 					var& key_v = ptrcast<Parser::ConstValueNode>(map->elements[i].key)->value;
 					if (!var::is_hashable(key_v.get_type())) throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("unhasnable type %s used as map key.", key_v.get_type_name().c_str()), map->pos);
@@ -1447,7 +1442,7 @@ void Analyzer::_reduce_indexing(ptr < Parser::Node>& p_expr) {
 					THROW_BUG("there isn't any contant value currently support attribute access and most probably in the future");
 				} break;
 
-					// EnumClass.prop; <-- TODO: could the prop be a method?
+				// EnumClass.prop; <-- TODO: could the prop be a method?
 				case Parser::IdentifierNode::REF_ENUM_NAME: {
 					if (base->ref_base == Parser::IdentifierNode::BASE_LOCAL) {
 						stdmap<String, Parser::EnumValueNode>::iterator it = base->_enum_node->values.find(member->name);
@@ -1966,7 +1961,6 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 
 							// super.method(); // super is native
 						case Parser::ClassNode::BASE_NATIVE: {
-							// TODO: can also check types at compile time it arg is constvalue.
 							ptr<BindData> bd = NativeClasses::singleton()->find_bind_data(curr_class->base_class_name, method_name);
 							if (bd == nullptr) throw ANALYZER_ERROR(Error::ATTRIBUTE_ERROR, String::format("attribute \"%s\" isn't exists in base \"%s\".", method_name.c_str(), curr_class->base_class_name.c_str()), call->pos);
 							switch (bd->get_type()) {
