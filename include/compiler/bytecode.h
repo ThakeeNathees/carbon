@@ -32,7 +32,7 @@
 
 namespace carbon {
 
-class Bytecode : public Object {
+class Bytecode : public Object, public std::enable_shared_from_this<Bytecode> {
 	REGISTER_CLASS(Bytecode, Object) {}
 
 	friend class CodeGen;

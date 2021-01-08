@@ -1,11 +1,10 @@
 
-func open_file(s) {
-	var f = File(s);
-}
-
 class Aclass {
 	func Aclass() {
 		println("Aclass constructor");
+	}
+	func f() {
+		println("A.f called");
 	}
 }
 

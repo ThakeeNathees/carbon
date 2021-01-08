@@ -7,7 +7,11 @@ class Vector {
 
 }
 
+import x = "test_lib.cb";
+
 func main() {
-	var v = Vector();
-	v(1);
+	var A = x.Aclass;
+	println(A);
+	var a = A();
+	a.f();
 }
