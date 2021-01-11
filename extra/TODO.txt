@@ -1,15 +1,9 @@
 ============ IN PROGRASS =========================================================
 
 =============== BUGS =============================================================
- * method call on static var shouldn't error
  * OS.system("del path\to\file"); not working
- * arr[i] += v; addition not working here (also check map["key"] += v;
- * native argument type float and int provided shouldn't be error -> type compatability.
- * x = y = 42; <-- shouold be valid (assignment allowed now in expr)
-      K-normalized form : y = 42; tmp = y; x = tmp; and optimize tmp
  * "".substr() check index limit
  * println(Array.append); <-- crash with TODO: bug
- * msg: operator "" not suported between float and int
  * returning a non static function should be invaled. or
    method should have a this pointer like python
 		class A {
@@ -104,3 +98,4 @@
  * python like arithmetic operators in builtin
         * "str" * 3, [3.14] * 10
 		* "%s - %s" % ["first", "second"];
+ * x = y = 42;

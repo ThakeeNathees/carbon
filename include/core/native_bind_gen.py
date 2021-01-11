@@ -218,7 +218,7 @@ public:
 	}
 
 	virtual var& get(Object* self) const override {
-		return ptrcast<Class>(self).get()->*member_ptr;
+		return ((Class*)(self))->*member_ptr;
 	}
 };
 

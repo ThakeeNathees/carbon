@@ -1,17 +1,6 @@
-class Vector {
-
-	func __call(x, y) {
-		println(x);
-	}
-
-
-}
-
-import x = "test_lib.cb";
 
 func main() {
-	var A = x.Aclass;
-	println(A);
-	var a = A();
-	a.f();
+	var arr = [11];
+	arr[0] += 21;
+	println(arr);
 }
