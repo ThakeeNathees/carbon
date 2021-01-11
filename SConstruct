@@ -29,7 +29,7 @@ def USER_DATA(env):
 		Glob('tests/codegen/*.cpp'),
 		Glob('tests/vm/*.cpp'),
 	]
-	env.SOURCES_TEST     = []
+	#env.SOURCES_TEST     = []
 
 	## skip test/main sources if not found
 	## this will only generate the carbon.lib

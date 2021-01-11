@@ -442,6 +442,7 @@ void Analyzer::_check_operator_methods(const Parser::FunctionNode* p_func) {
 	else if (name == GlobalStrings::__gt) required = 1;
 	else if (name == GlobalStrings::__lt) required = 1;
 	else if (name == GlobalStrings::__eq) required = 1;
+	else return;
 
 	if (params != required)
 		throw ANALYZER_ERROR(Error::INVALID_ARG_COUNT, String::format("method \"%s\" required %i parameter(s) %i given.", name.c_str(), required, params), p_func->pos);

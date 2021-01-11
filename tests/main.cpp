@@ -26,9 +26,9 @@
 #define DOCTEST_CONFIG_IMPLEMENT
 #include "carbon_tests.h"
 
-// FIXME: include crash handled main properly
-#include "../src/main/main.inc"
-#include "../src/main/crash_handler.cpp"
+#define CARBON_INCLUDE_CRASH_HANDLER_MAIN
+#define CARBON_CRASH_HANDLER_IMPLEMENTATION
+#include "../src/main/crash_handler.h"
 
 int _main(int argc, char** argv) {
 

@@ -756,11 +756,28 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 						uint32_t name = add_global_name(ptrcast<Parser::IdentifierNode>(index->member)->name);
 						Address value = _generate_expression(op->args[1].get());
 
-						_context.insert_dbg(index->member.get());
-						_context.opcodes->write_set_index(on, name, value);
+						if (var_op != var::_OP_MAX_) {
+							Address tmp = _context.add_stack_temp();
+							_context.insert_dbg(index->member.get());
+							_context.opcodes->write_get_index(on, name, tmp);
 
-						_pop_addr_if_temp(on);
-						return value;
+							_context.insert_dbg(p_expr);
+							_context.opcodes->write_operator(tmp, var_op, tmp, value);
+
+							_context.insert_dbg(index->member.get());
+							_context.opcodes->write_set_index(on, name, tmp);
+
+							_pop_addr_if_temp(on);
+							return tmp;
+
+						} else {
+
+							_context.insert_dbg(index->member.get());
+							_context.opcodes->write_set_index(on, name, value);
+
+							_pop_addr_if_temp(on);
+							return value;
+						}
 
 					} else if (op->args[0]->type == Parser::Node::Type::MAPPED_INDEX) {
 						const Parser::MappedIndexNode* mapped = static_cast<const Parser::MappedIndexNode*>(op->args[0].get());
@@ -768,12 +785,29 @@ Address CodeGen::_generate_expression(const Parser::Node* p_expr, Address* p_dst
 						Address key = _generate_expression(mapped->key.get());
 						Address value = _generate_expression(op->args[1].get());
 
-						_context.insert_dbg(mapped->key.get());
-						_context.opcodes->write_set_mapped(on, key, value);
+						if (var_op != var::_OP_MAX_) {
+							Address tmp = _context.add_stack_temp();
+							_context.insert_dbg(mapped->key.get());
+							_context.opcodes->write_get_mapped(on, key, tmp);
 
-						_pop_addr_if_temp(on);
-						_pop_addr_if_temp(key);
-						return value;
+							_context.insert_dbg(p_expr);
+							_context.opcodes->write_operator(tmp, var_op, tmp, value);
+
+							_context.insert_dbg(mapped->key.get());
+							_context.opcodes->write_set_mapped(on, key, tmp);
+
+							_pop_addr_if_temp(on);
+							_pop_addr_if_temp(key);
+							return tmp;
+
+						} else {
+							_context.insert_dbg(mapped->key.get());
+							_context.opcodes->write_set_mapped(on, key, value);
+
+							_pop_addr_if_temp(on);
+							_pop_addr_if_temp(key);
+							return value;
+						}
 
 					} else {
 						Address left = _generate_expression(op->args[0].get());

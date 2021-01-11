@@ -44,7 +44,7 @@ TEST_CASE("[analyzer_tests]:analyzer_failure") {
 	CHECK_THROWS__ANALYZE(Error::INVALID_ARG_COUNT, "func f(arg1 = 1){} class Aclass { func g(){ f(false, true); } }");
 	CHECK_THROWS__ANALYZE(Error::INVALID_ARG_COUNT, "func f(){ var f = File(\"path\", File.WRITE, false); }");
 	CHECK_THROWS__ANALYZE(Error::TYPE_ERROR, "func f() { var f = File(1); }");
-	CHECK_THROWS__ANALYZE(Error::TYPE_ERROR, "func f() { var b = Buffer(false); }");
+	// CHECK_THROWS__ANALYZE(Error::TYPE_ERROR, "func f() { var b = Buffer(false); }"); //< not error since false casting to int 0.
 
 	// compiletime functions
 	CHECK_THROWS__ANALYZE(Error::SYNTAX_ERROR, "__func(); // can't call outside a function");
