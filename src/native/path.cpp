@@ -47,6 +47,16 @@ bool Path::isdir() {
 	return _Platform::path_isdir(_path);
 }
 
+Array Path::listdir() {
+	Array ret;
+	stdvec<std::string> dirs = _Platform::path_listdir(_path);
+	for (const std::string& dir : dirs) {
+		if (dir == "." || dir == "..") continue;
+		ret.push_back(newptr<Path>(dir));
+	}
+	return ret;
+}
+
 String Path::parent() {
 	const std::string& str = _path;
 	size_t found = str.find_last_of("/\\");

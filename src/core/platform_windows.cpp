@@ -33,6 +33,9 @@
 #endif
 #include <Windows.h>
 #undef ERROR
+#include <tchar.h> 
+#include <stdio.h>
+#include <strsafe.h>
 
 #include <direct.h>
 
@@ -152,6 +155,56 @@ bool _Platform::path_isdir(const std::string& p_path) {
 
 	if (ftyp & FILE_ATTRIBUTE_DIRECTORY) return true;   // this is a directory!
 	else return false;									// this is not a directory!
+}
+
+stdvec<std::string> _Platform::path_listdir(const std::string& p_path) {
+	// reference: https://docs.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
+	WIN32_FIND_DATA ffd;
+	LARGE_INTEGER filesize;
+	TCHAR szDir[MAX_PATH];
+	size_t path_len;
+	HANDLE hFind = INVALID_HANDLE_VALUE;
+	DWORD dwError = 0;
+
+	StringCchLength(p_path.c_str(), MAX_PATH, &path_len);
+	if (path_len > (MAX_PATH - 3)) {
+		THROW_ERROR(Error::IO_ERROR, String::format("Directory path is too long (%s)", p_path.c_str()));
+	}
+
+	// Prepare string for use with FindFile functions.  First, copy the
+   // string to a buffer, then append '\*' to the directory name.
+
+	StringCchCopy(szDir, MAX_PATH, p_path.c_str());
+	StringCchCat(szDir, MAX_PATH, TEXT("\\*"));
+
+	// Find the first file in the directory.
+
+	hFind = FindFirstFile(szDir, &ffd);
+
+	if (INVALID_HANDLE_VALUE == hFind) {
+		THROW_ERROR(Error::IO_ERROR, "Invalid handle");
+	}
+
+	stdvec<std::string> ret;
+
+	do {
+		//if (ffd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) {
+		//	_tprintf(TEXT("  %s   <DIR>\n"), ffd.cFileName);
+		//} else {
+		//	filesize.LowPart = ffd.nFileSizeLow;
+		//	filesize.HighPart = ffd.nFileSizeHigh;
+		//	_tprintf(TEXT("  %s   %ld bytes\n"), ffd.cFileName, filesize.QuadPart);
+		//}
+		ret.push_back(ffd.cFileName);
+	} while (FindNextFile(hFind, &ffd) != 0);
+
+	dwError = GetLastError();
+	if (dwError != ERROR_NO_MORE_FILES) {
+		THROW_ERROR(Error::IO_ERROR, "Invalid handle");
+	}
+	FindClose(hFind);
+
+	return ret;
 }
 
 }

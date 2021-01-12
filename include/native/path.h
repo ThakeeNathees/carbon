@@ -46,6 +46,7 @@ class Path : public Object {
 		BIND_METHOD("extension",  &Path::extension);
 		BIND_METHOD("exists",     &Path::exists);
 		BIND_METHOD("isdir",      &Path::isdir);
+		BIND_METHOD("listdir",    &Path::listdir);
 
 	}
 
@@ -59,6 +60,7 @@ public:
 	String extension();
 	bool exists();
 	bool isdir();
+	Array listdir();
 
 	ptr<Path> join(const String& p_path) const;
 	ptr<Path> operator /(const Path& p_other) const;

@@ -49,6 +49,7 @@ const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_string() {
 		_NEW_METHOD_INFO("join",       _PARAMS("strings" ),      _TYPES(var::ARRAY),                 var::STRING  ),
 		_NEW_METHOD_INFO("replace",    _PARAMS("with", "what"),  _TYPES(var::STRING, var::STRING),   var::STRING  ),
 		_NEW_METHOD_INFO("find",       _PARAMS("what", "offset"),_TYPES(var::STRING, var::INT),      var::INT,     false, _DEFVALS(0)),
+		_NEW_METHOD_INFO("contains",   _PARAMS("what"),          _TYPES(var::STRING),                var::BOOL    ),
 	};
 	return member_info_s;
 }
@@ -354,6 +355,10 @@ int64_t String::find(const String& p_what, int64_t p_offset) const {
 	 std::size_t pos = _data->find(p_what.operator const std::string & (), p_offset);
 	 if (pos == std::string::npos) return -1;
 	 return (int64_t)pos;
+}
+
+bool String::contains(const String& p_what) const {
+	return find(p_what) != -1;
 }
 
 } // namespace carbon

@@ -69,6 +69,7 @@ public:
 	Array& sort();
 	var& back();
 	var& front();
+	bool contains(const var& p_elem);
 
 	String to_string() const;
 	operator bool() const;

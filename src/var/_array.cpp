@@ -43,6 +43,7 @@ const stdmap<size_t, ptr<MemberInfo>>& TypeInfo::get_member_info_list_array() {
 		_NEW_METHOD_INFO("resize",       _PARAMS("size" ),    _TYPES(var::INT),     var::_NULL ),
 		_NEW_METHOD_INFO("reserve",      _PARAMS("size" ),    _TYPES(var::INT),     var::_NULL ),
 		_NEW_METHOD_INFO("sort",                                                    var::ARRAY ),
+		_NEW_METHOD_INFO("contains",    _PARAMS("element"),   _TYPES(var::VAR),     var::BOOL  ),
 	};
 	return member_info_s;
 }
@@ -62,6 +63,7 @@ var Array::call_method(const String& p_method, const stdvec<var*>& p_args) {
 		case "resize"_hash: { resize(p_args[0]->operator int64_t()); return var(); }
 		case "reserve"_hash: { reserve(p_args[0]->operator int64_t()); return var(); }
 		case "sort"_hash: { return sort(); }
+		case "contains"_hash: { return contains(p_args[0]); }
 	}
 	// TODO: add more.
 	DEBUG_BREAK(); THROW_ERROR(Error::BUG, "can't reach here.");
@@ -90,6 +92,13 @@ void   Array::reserve(size_t p_size) { _data->reserve(p_size); }
 Array& Array::sort() { std::sort(_data->begin(), _data->end()); return *this; }
 var&   Array::back() { return (*_data).back(); }
 var&   Array::front() { return (*_data).front(); }
+
+bool Array::contains(const var& p_elem) {
+	for (const var& e : (*_data)) {
+		if (e == p_elem) return true;
+	}
+	return false;
+}
 
 var& Array::at(int64_t p_index) {
 	if (0 <= p_index && p_index < (int64_t)size())

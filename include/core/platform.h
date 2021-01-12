@@ -46,6 +46,7 @@ public:
 	static std::string path_absolute(const std::string& p_path);
 	static bool path_exists(const std::string& p_path);
 	static bool path_isdir(const std::string& p_path);
+	static stdvec<std::string> path_listdir(const std::string& p_path);
 };
 
 }

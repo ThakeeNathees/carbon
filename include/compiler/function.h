@@ -60,7 +60,6 @@ public:
 	
 	const stdvec<uint32_t>& get_opcodes() const;
 	const stdmap<uint32_t, uint32_t>& get_op_dbg() const;
-	String get_opcodes_as_string() const;
 
 	var __call(stdvec<var*>& p_args) override;
 };
