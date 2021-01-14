@@ -2,6 +2,7 @@
 
 =============== BUGS =============================================================
  * OS.system("del path\to\file"); not working
+ * import same_file="current_file.cb"; //<-- crash
  * "".substr() check index limit
  * println(Array.append); <-- crash with TODO: bug
  * returning a non static function should be invaled. or

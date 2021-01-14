@@ -100,7 +100,8 @@ void Tokenizer::_eat_escape(String& p_str) {
 		case '"':  p_str += '"';  EAT_CHAR(2); break;
 		case 'r':  p_str += '\r'; EAT_CHAR(2); break;
 		case '\n': EAT_CHAR(1); EAT_LINE(); break;
-		default: p_str += c;
+		default: 
+			throw TOKENIZER_ERROR(Error::SYNTAX_ERROR, "invalid escape character");
 	}
 }
 
@@ -310,7 +311,7 @@ void Tokenizer::tokenize(const String& p_source, const String& p_source_path) {
 							EAT_CHAR(2);
 							break;
 						} else if (GET_CHAR(0) == 0) {
-							throw TOKENIZER_ERROR(Error::UNEXPECTED_EOF, ""); // TODO: Error message.
+							throw TOKENIZER_ERROR(Error::UNEXPECTED_EOF, "");
 						} else if (GET_CHAR(0) == '\n') {
 							EAT_LINE();
 						} else {
@@ -445,9 +446,7 @@ void Tokenizer::tokenize(const String& p_source, const String& p_source_path) {
 				break;
 			default: {
 				
-				// NOTE: 1.2.3 => float=1.2 float=.3 is this okey?
 				// TODO: 1.2e3 => is a valid float number
-				// TODO: hex/binary/octal numbers
 
 				// float value begins with '.'
 				if (GET_CHAR(0) == '.' && IS_NUM(GET_CHAR(1)) ) {
@@ -477,7 +476,7 @@ void Tokenizer::tokenize(const String& p_source, const String& p_source_path) {
 						case INT: {
 							while (IS_NUM(GET_CHAR(0)) || GET_CHAR(0) == '.') {
 								if (GET_CHAR(0) == '.' && mode == FLOAT)
-									break; // TODO: 3.1.2 <-- should be invalid here.
+									throw TOKENIZER_ERROR(Error::SYNTAX_ERROR, "invalid numeric value.");
 								if (GET_CHAR(0) == '.')
 									mode = FLOAT;
 								num += GET_CHAR(0);

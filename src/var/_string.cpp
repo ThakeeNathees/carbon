@@ -142,7 +142,6 @@ String String::operator %(const var& p_other) const {
 						if (i == _data->size() - 1)
 							THROW_ERROR(Error::VALUE_ERROR, "incomplete formated string");
 
-						// TODO: support more formatings
 						switch ((*_data)[i + 1]) {
 							case '%': {
 								ret += '%';
@@ -295,9 +294,25 @@ bool String::startswith(const String& p_str) const {
 
 Array String::split(const String& p_delimiter) const {
 	Array ret;
+	if (size() == 0) return ret;
+
 	size_t start = 0, end = 0;
 	if (p_delimiter == "") { // split by white space
-		THROW_BUG("TODO:"); // use isspace(c)
+		while (true) {
+			// skip all white spaces
+			while (isspace((*_data)[start])) {
+				start++;
+				if (start >= size()) return ret;
+			}
+			end = start;
+			while (end < size() && !isspace((*_data)[end])) {
+				end++;
+			}
+
+			ret.append(substr(start, end));
+			start = end;
+			if (start >= size()) return ret;
+		}
 	} else {
 		while (true) {
 			end = _data->find(p_delimiter.operator std::string(), start);
@@ -311,6 +326,8 @@ Array String::split(const String& p_delimiter) const {
 		}
 		return ret;
 	}
+
+	return ret;
 }
 
 String String::strip() const {
