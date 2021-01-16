@@ -1,6 +1,4 @@
 
 func main() {
-	var arr = [11];
-	arr[0] += 21;
-	println(arr);
+	println(" a\nb  c\td".split());
 }
