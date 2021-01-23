@@ -60,8 +60,8 @@ var Array::call_method(const String& p_method, const stdvec<var*>& p_args) {
 		case "clear"_hash: { clear(); return var(); }
 		case "insert"_hash: { insert(*p_args[0], *p_args[1]); return var(); }
 		case "at"_hash:        return at(p_args[0]->operator int64_t());
-		case "resize"_hash: { resize(p_args[0]->operator int64_t()); return var(); }
-		case "reserve"_hash: { reserve(p_args[0]->operator int64_t()); return var(); }
+		case "resize"_hash: { resize((size_t)p_args[0]->operator int64_t()); return var(); }
+		case "reserve"_hash: { reserve((size_t)p_args[0]->operator int64_t()); return var(); }
 		case "sort"_hash: { return sort(); }
 		case "contains"_hash: { return contains(p_args[0]); }
 	}
@@ -86,7 +86,7 @@ void   Array::push_back(const var& p_var) { _data->push_back(p_var); }
 void   Array::pop_back() { _data->pop_back(); }
 Array& Array::append(const var& p_var) { push_back(p_var); return *this; }
 void   Array::clear() { (*_data).clear(); }
-void   Array::insert(int64_t p_index, const var& p_var) { _data->insert(_data->begin() + p_index, p_var); }
+void   Array::insert(int64_t p_index, const var& p_var) { _data->insert(_data->begin() + (int)p_index, p_var); }
 void   Array::resize(size_t p_size) { _data->resize(p_size); }
 void   Array::reserve(size_t p_size) { _data->reserve(p_size); }
 Array& Array::sort() { std::sort(_data->begin(), _data->end()); return *this; }
@@ -102,24 +102,24 @@ bool Array::contains(const var& p_elem) {
 
 var& Array::at(int64_t p_index) {
 	if (0 <= p_index && p_index < (int64_t)size())
-		return (*_data).at(p_index);
+		return (*_data).at((size_t)p_index);
 	if ((int64_t)size() * -1 <= p_index && p_index < 0)
-		return (*_data).at(size() + p_index);
+		return (*_data).at(size() + (size_t)p_index);
 	THROW_ERROR(Error::INVALID_INDEX, String::format("Array index %i is invalid.", p_index));
 }
 
 var& Array::operator[](int64_t p_index) const {
 	if (0 <= p_index && p_index < (int64_t)size())
-		return _data->operator[](p_index);
+		return _data->operator[]((size_t)p_index);
 	if ((int64_t)size() * -1 <= p_index && p_index < 0)
-		return _data->operator[](size() + p_index);
+		return _data->operator[](size() + (size_t)p_index);
 	THROW_ERROR(Error::INVALID_INDEX, String::format("Array index %i is invalid.", p_index));
 }
 var& Array::operator[](int64_t p_index) {
 	if (0 <= p_index && p_index < (int64_t)size())
-		return _data->operator[](p_index);
+		return _data->operator[]((size_t)p_index);
 	if ((int64_t)size() * -1 <= p_index && p_index < 0)
-		return _data->operator[](size() + p_index);
+		return _data->operator[](size() + (size_t)p_index);
 	THROW_ERROR(Error::INVALID_INDEX, String::format("Array index %i is invalid.", p_index));
 }
 

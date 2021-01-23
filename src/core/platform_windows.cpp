@@ -160,7 +160,7 @@ bool _Platform::path_isdir(const std::string& p_path) {
 stdvec<std::string> _Platform::path_listdir(const std::string& p_path) {
 	// reference: https://docs.microsoft.com/en-us/windows/win32/fileio/listing-the-files-in-a-directory
 	WIN32_FIND_DATA ffd;
-	LARGE_INTEGER filesize;
+	//LARGE_INTEGER filesize;
 	TCHAR szDir[MAX_PATH];
 	size_t path_len;
 	HANDLE hFind = INVALID_HANDLE_VALUE;

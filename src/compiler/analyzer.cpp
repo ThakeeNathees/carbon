@@ -2121,7 +2121,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 					}
 				} break;
 
-					// File.method(); base is a native class.
+				// File.method(); base is a native class.
 				case Parser::IdentifierNode::REF_NATIVE_CLASS: {
 
 					BindData* bd = NativeClasses::singleton()->find_bind_data(base->name, id->name).get();
@@ -2146,7 +2146,7 @@ void Analyzer::_reduce_call(ptr<Parser::Node>& p_expr) {
 
 							for (int i = 0; i < (int)call->args.size(); i++) {
 								if (call->args[i]->type == Parser::Node::Type::CONST_VALUE) {
-									if (mi->get_arg_types()[i].type != ptrcast<Parser::ConstValueNode>(call->args[i])->value.get_type()) {
+									if (!var::is_compatible(mi->get_arg_types()[i].type, ptrcast<Parser::ConstValueNode>(call->args[i])->value.get_type())) {
 										throw ANALYZER_ERROR(Error::TYPE_ERROR, String::format("expected type \"%s\" at argument %i.", var::get_type_name_s(mi->get_arg_types()[i].type), i), call->args[i]->pos);
 									}
 								}

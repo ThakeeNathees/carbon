@@ -41,16 +41,16 @@ static void _check_method_and_args(const String& p_method, const stdvec<var*>& p
 		int arg_count = mp->get_arg_count();
 		int default_arg_count = mp->get_default_arg_count();
 		if (arg_count != -1) {
-			if (p_args.size() + default_arg_count < arg_count) { /* Args not enough. */
+			if ((int)p_args.size() + default_arg_count < arg_count) { /* Args not enough. */
 				if (default_arg_count == 0) THROW_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at exactly %i argument(s).", arg_count));
 				else THROW_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at least %i argument(s).", arg_count - default_arg_count));
-			} else if (p_args.size() > arg_count) { /* More args proveded.    */
+			} else if ((int)p_args.size() > arg_count) { /* More args proveded.    */
 				if (default_arg_count == 0) THROW_ERROR(Error::INVALID_ARG_COUNT, String::format("expected at exactly %i argument(s).", arg_count));
 				else THROW_ERROR(Error::INVALID_ARG_COUNT, String::format(
 					"expected minimum of %i argument(s) and maximum of %i argument(s).", arg_count - default_arg_count, arg_count));
 			}
 		}
-		for (int j = 0; j < mp->get_arg_types().size(); j++) {
+		for (int j = 0; j < (int)mp->get_arg_types().size(); j++) {
 			if (mp->get_arg_types()[j] == VarTypeInfo(var::VAR)) continue; /* can't be _NULL. */
 			if (p_args.size() == j) break; /* rest are default args. */
 			if (mp->get_arg_types()[j] != VarTypeInfo(p_args[j]->get_type(), p_args[j]->get_type_name().c_str()))

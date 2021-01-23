@@ -15,7 +15,7 @@ TEST_CASE("[analyzer_tests]:analyze_files") {
 		"" // end with comma above
 	);
 
-	for (int i = 0; i < files.size() - 1; i++) {
+	for (int i = 0; i < (int)files.size() - 1; i++) {
 		try {
 			tokenizer->tokenize(newptr<File>(files[i], File::READ));
 			parser->parse(tokenizer);

@@ -214,16 +214,16 @@ bool operator!=(const char* p_cstr, const String& p_str) {
 
 char String::operator[](int64_t p_index) const {
 	if (0 <= p_index && p_index < (int64_t)size())
-		return (*_data)[p_index];
+		return (*_data)[(size_t)p_index];
 	if ((int64_t)size() * -1 <= p_index && p_index < 0)
-		return (*_data)[size() + p_index];
+		return (*_data)[size() + (size_t)p_index];
 	THROW_ERROR(Error::INVALID_INDEX, String::format("String index %i is invalid.", p_index));
 }
 char& String::operator[](int64_t p_index) {
 	if (0 <= p_index && p_index < (int64_t)size())
-		return (*_data)[p_index];
+		return (*_data)[(size_t)p_index];
 	if ((int64_t)size() * -1 <= p_index && p_index < 0)
-		return (*_data)[size() + p_index];
+		return (*_data)[size() + (size_t)p_index];
 	THROW_ERROR(Error::INVALID_INDEX, String::format("String index %i is invalid.", p_index));
 }
 
@@ -271,7 +271,7 @@ int64_t String::to_int() const {
 
 String String::substr(int64_t p_start, int64_t p_end) const {
 	// TODO: inconsistance withs arr[-1]
-	return _data->substr(p_start, p_end - p_start);
+	return _data->substr((size_t)p_start, (size_t)(p_end - p_start));
 }
 bool String::endswith(const String& p_str) const {
 	if (p_str.size() > _data->size()) return false;
@@ -351,7 +351,7 @@ String String::strip() const {
 
 String String::join(const Array& p_elements) const {
 	String ret;
-	for (int i = 0; i < p_elements.size(); i++) {
+	for (int i = 0; i < (int)p_elements.size(); i++) {
 		if (i > 0) ret += *this;
 		ret += p_elements[i].operator String();
 	}
@@ -369,7 +369,7 @@ String String::replace(const String& p_with, const String& p_what) const {
 }
 
 int64_t String::find(const String& p_what, int64_t p_offset) const {
-	 std::size_t pos = _data->find(p_what.operator const std::string & (), p_offset);
+	 std::size_t pos = _data->find(p_what.operator const std::string & (), (size_t)p_offset);
 	 if (pos == std::string::npos) return -1;
 	 return (int64_t)pos;
 }

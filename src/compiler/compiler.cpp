@@ -50,7 +50,7 @@ void Compiler::add_include_dir(const String& p_dir) {
 	}
 }
 
-ptr<Bytecode> Compiler::compile_file(const String& p_path) {
+ptr<Bytecode> Compiler::_compile(const String& p_path) {
 
 	// TODO: print only if serialize to bytecode.
 	//Logger::log(String::format("compiling: %s\n", p_path.c_str()).c_str());
@@ -82,8 +82,8 @@ ptr<Bytecode> Compiler::compile_file(const String& p_path) {
 	parser->parse(tokenizer);
 	analyzer->analyze(parser);
 	bytecode = codegen->generate(analyzer);
-
 	file->close();
+
 	for (const Warning& warning : analyzer->get_warnings()) {
 		warning.console_log(); // TODO: it shouldn't print, add to warnings list instead.
 	}
@@ -91,26 +91,23 @@ ptr<Bytecode> Compiler::compile_file(const String& p_path) {
 	return bytecode;
 }
 
-ptr<Bytecode> Compiler::compile(const String& p_path) {
+ptr<Bytecode> Compiler::compile(const String& p_path, bool p_use_cache) {
 
 	if (!Path(p_path).exists()) THROW_ERROR(Error::IO_ERROR, String::format("path \"%s\" does not exists.", p_path.c_str()));
 
 	String path = Path(p_path).absolute();
 	auto it = _cache.find(path);
 	if (it != _cache.end()) {
-		if (it->second.compiling)  throw "TODO: cyclic import found";
-		else return it->second.bytecode;
-
+		if (it->second.compiling)  THROW_ERROR(Error::IO_ERROR, String::format("cyclic import found in \"%s\"", path.c_str()));
+		if (p_use_cache) return it->second.bytecode;
 	} else {
 		_cache[path] = _Cache();
 	}
 
-	//String extension = Path(path).extension();
-	// TODO: check endswith .cb
-
-	ptr<Bytecode> bytecode = compile_file(path);
+	ptr<Bytecode> bytecode = _compile(path);
 
 	_cache[path].bytecode = bytecode;
+	_cache[path].compiling = false;
 	return bytecode;
 }
 

@@ -26,7 +26,11 @@
 /* SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.                */
 /*************************************************************************/
 
-#include "core/internal.h"
+// This file is heavily modified version of the Godot's crahs_handler
+// Usage:
+//   #define CARBON_INCLUDE_CRASH_HANDLER_MAIN
+//   #define CARBON_CRASH_HANDLER_IMPLEMENTATION
+//   #include "crash_handler.h"
 
 #if defined(PLATFORM_WINDOWS)
 
