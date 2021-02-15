@@ -29,6 +29,8 @@ def USER_DATA(env):
 		Glob('tests/codegen/*.cpp'),
 		Glob('tests/vm/*.cpp'),
 	]
+	
+	## A dirty way to skip test application.
 	#env.SOURCES_TEST     = []
 
 	## skip test/main sources if not found
@@ -37,8 +39,6 @@ def USER_DATA(env):
 		env.SOURCES_MAIN = []
 	if not os.path.exists('./tests/'):
 		env.SOURCES_TEST = []
-
-	## env.SCONSCRIPTS = []
 
 	env.LIBS = {
 	"cb_core" : [
@@ -102,10 +102,6 @@ elif 'use_mingw' in opts.args.keys() and opts.args['use_mingw']:
 		tools = ['mingw'], ENV = {'PATH' : os.environ['PATH']}
 	)
 	env['tools'] = ['mingw']
-else:
-	if sys.platform == 'win32':
-		## scons can't find "cl.exe"
-		os.environ['PATH'] = env['ENV']['PATH']
 
 ## Updates the environment with the option variables.
 opts.Update(env)
@@ -148,10 +144,6 @@ elif env['platform'] == 'linux':
 		env.Append(CCFLAGS=['-fPIC', '-g', '-O3'])
 
 elif env['platform'] == "windows":
-	## This makes sure to keep the session environment variables on windows,
-	## that way you can run scons in a vs 2017 prompt and it will find all the required tools
-	env.Append(ENV=os.environ)
-
 	## MSVC
 	if env['CC'] == 'cl':
 		env.Append(CXXFLAGS=['/bigobj'])
@@ -243,10 +235,6 @@ if env['verbose']:
 	dbg_print("env['CPPPATH']")
 	dbg_print("env['LIBS']")
 	dbg_print("env['LIBPATH']")
-
-##Export('env')
-##for script in env.SCONSCRIPTS:
-##	SConscript(script)
 
 ## compile the libs.
 if env['libs']:
